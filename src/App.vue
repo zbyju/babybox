@@ -1,26 +1,32 @@
 <template>
   <div>
-
+    <router-view></router-view>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, onBeforeMount } from "vue";
+import { useStore } from "vuex";
+import { initializeStore } from "@/utils/store";
 
 export default defineComponent({
   name: "App",
-  components: {
-    //Main
-  }
+
+  setup() {
+    onBeforeMount(initializeStore);
+  },
 });
 </script>
 
-
 <style lang="stylus">
+// CSS
 #app
   font-family "Open Sans", Avenir, Helvetica, Arial, sans-serif
   -webkit-font-smoothing antialiased
   -moz-osx-font-smoothing grayscale
+
+  background-color: background
+  color: color
 
 .time-font
   font-family Impact, Avenir, Helvetica, Arial, sans-serif
@@ -29,6 +35,20 @@ export default defineComponent({
 html, body
   padding 0
   margin 0
+  min-width 100vw
+  max-width 100vw
+  width 100vw
+  overflow-x hidden
+
+::-webkit-scrollbar
+  width 10px
+::-webkit-scrollbar-track-piece
+  background-color background
+::-webkit-scrollbar-thumb
+  background lighten(accent, 50%)
+::-webkit-scrollbar-thumb:hover
+  background accent2
+
 
 .w-300
   font-weight 300
@@ -50,5 +70,4 @@ html, body
 
 .fs-normal
   font-style normal
-
 </style>

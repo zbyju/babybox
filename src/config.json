@@ -1,0 +1,7 @@
+{
+  "babybox": {
+    "name": "Praha",
+    "fontSize": 30,
+    "prependBabyboxBeforeName": true
+  }
+}
