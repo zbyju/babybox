@@ -1,7 +1,7 @@
 import { createStore } from "vuex";
 
 import { State } from "@/types/main";
-import { SET_CONFIG } from "./mutation-types/index-types";
+import { SET_CONFIG, SET_TIME_PC } from "./mutation-types/index-types";
 
 export default createStore<State>({
   state: {
@@ -13,6 +13,9 @@ export default createStore<State>({
   mutations: {
     [SET_CONFIG](state, payload) {
       state.config = payload.config;
+    },
+    [SET_TIME_PC](state, payload) {
+      state.timePC = payload.time;
     },
   },
   actions: {},

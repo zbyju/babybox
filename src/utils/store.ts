@@ -1,6 +1,8 @@
-import { SET_CONFIG } from "@/store/mutation-types/index-types";
+import store from "@/store";
+import { SET_CONFIG, SET_TIME_PC } from "@/store/mutation-types/index-types";
 import { Config } from "@/types/main";
 import { useStore } from "vuex";
+import { getCurrentTimePC } from "./time";
 
 /**
  * Fetches data from babybox
@@ -35,7 +37,15 @@ const initializeData = () => {
 /**
  * Gets the current computer time and initilizes it
  */
-const initializeClock = () => {};
+const initializeClock = () => {
+  const store = useStore();
+  setInterval(() => {
+    const time = getCurrentTimePC();
+    store.commit(SET_TIME_PC, {
+      time,
+    });
+  }, 1000);
+};
 
 /**
  * Initilizes the whole store
