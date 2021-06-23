@@ -7,7 +7,8 @@ import moment from "moment";
 
 describe("getCurrentTimePC function", () => {
   test("Should return time that is now", () => {
-    expect(getCurrentTimePC().diff(Date.now())).toBeCloseTo(0);
+    expect(getCurrentTimePC().diff(Date.now(), "seconds")).toBeLessThan(5);
+    expect(getCurrentTimePC()).toBeInstanceOf(moment);
   });
 });
 
