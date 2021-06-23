@@ -1,7 +1,6 @@
 <template>
   <div id="BabyboxName">
-    <p>Test: {{ config }}</p>
-    <span>{{ babyboxName }}</span>
+    <span :style="textStyle"> {{ babyboxName }}</span>
   </div>
 </template>
 
@@ -20,7 +19,10 @@ export default defineComponent({
         ? "Babybox " + config.value.babybox.name
         : config.value.babybox.name
     );
-    return { babyboxName, config };
+    const textStyle = {
+      fontSize: config.value.babybox.fontSize + "px",
+    };
+    return { babyboxName, config, textStyle };
   },
 });
 </script>
