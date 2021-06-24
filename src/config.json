@@ -3,5 +3,11 @@
     "name": "Praha",
     "fontSize": 30,
     "prependBabyboxBeforeName": true
+  },
+  "camera": {
+    "ip": "192.168.120.100",
+    "username": "admin",
+    "password": "admin",
+    "updateDelay": 1000
   }
 }
