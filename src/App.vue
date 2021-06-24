@@ -32,12 +32,14 @@ export default defineComponent({
   font-family Impact, Avenir, Helvetica, Arial, sans-serif
   font-weight 800
 
+scrollbar-width = 10px
+
 html, body
   padding 0
   margin 0
-  min-width 100vw
-  max-width 100vw
-  width 100vw
+  min-width "calc(100vw - %s)" % scrollbar-width
+  max-width "calc(100vw - %s)" % scrollbar-width
+  width "calc(100vw - %s)" % scrollbar-width
   overflow-x hidden
 
 ::-webkit-scrollbar
