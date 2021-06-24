@@ -1,11 +1,21 @@
 import moment from "moment";
 
+export interface CameraConfig {
+  ip: string;
+  username: string;
+  password: string;
+  updateDelay: number;
+}
+
+export interface BabyboxConfig {
+  name: string;
+  fontSize: number;
+  prependBabyboxBeforeName: boolean;
+}
+
 export interface Config {
-  babybox: {
-    name: string;
-    fontSize: number;
-    prependBabyboxBeforeName: boolean;
-  };
+  babybox: BabyboxConfig;
+  camera: CameraConfig;
 }
 
 export interface Data {
