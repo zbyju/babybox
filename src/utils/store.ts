@@ -44,7 +44,7 @@ const initializeClock = () => {
     store.commit(SET_TIME_PC, {
       time,
     });
-  }, 1000);
+  }, 500);
 };
 
 /**
