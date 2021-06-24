@@ -1,13 +1,13 @@
 <template>
   <div id="BigClock">
     <span id="BigClockHours">{{ hours }}</span>
-    <span id="BigClockColon" v-show="showColon">:</span>
+    <span id="BigClockColon" :class="{ transparent: showColon }">:</span>
     <span id="BigClockMinutes">{{ minutes }}</span>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, watch, ref } from "vue";
+import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import useBigClockColon from "@/composables/useBigClockColon";
 import moment from "moment";
@@ -31,5 +31,7 @@ export default defineComponent({
 <style lang="stylus">
 #BigClock
   font-weight 900
-  font-size 30vw
+  font-size 1vw
+.transparent
+  color transparent
 </style>
