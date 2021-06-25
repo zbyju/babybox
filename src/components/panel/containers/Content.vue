@@ -1,10 +1,7 @@
 <template>
-  <div id="Header">
-    <BigClock></BigClock>
-    <Date></Date>
-    <Time></Time>
-    <Camera></Camera>
+  <div id="Content">
     <TableTemperature></TableTemperature>
+    <Camera></Camera>
     <TableMisc></TableMisc>
   </div>
 </template>
@@ -12,9 +9,6 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 
-import BigClock from "@/components/panel/elements/BigClock.vue";
-import Date from "@/components/panel/elements/Date.vue";
-import Time from "@/components/panel/elements/Time.vue";
 import Camera from "@/components/panel/elements/Camera.vue";
 import TableTemperature from "@/components/panel/elements/TableTemperature.vue";
 import TableMisc from "@/components/panel/elements/TableMisc.vue";
@@ -24,9 +18,6 @@ export default defineComponent({
     return {};
   },
   components: {
-    BigClock,
-    Date,
-    Time,
     Camera,
     TableTemperature,
     TableMisc,
@@ -34,4 +25,17 @@ export default defineComponent({
 });
 </script>
 
-<style lang="stylus"></style>
+<style lang="stylus">
+  test = min-content
+#Content
+  grid-area: content
+
+  padding padding-y padding-x
+
+  transition 1s all
+
+  display flex
+  flex-direction row
+  flex-wrap nowrap
+  justify-content space-between
+</style>

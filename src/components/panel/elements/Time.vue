@@ -18,4 +18,9 @@ export default defineComponent({
 });
 </script>
 
-<style lang="stylus"></style>
+<style lang="stylus">
+#Time
+  grid-area time
+  font-weight 600
+  font-size 2vw
+</style>

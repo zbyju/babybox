@@ -1,6 +1,7 @@
 <template>
   <div id="BabyboxName">
-    <span :style="textStyle"> {{ babyboxName }}</span>
+    <span id="BabyboxPrependText">Babybox </span>
+    <span id="BabyboxNameText">{{ babyboxName }}</span>
   </div>
 </template>
 
@@ -14,21 +15,27 @@ export default defineComponent({
     const store = useStore();
     const config = computed((): Config => store.state.config);
 
-    const babyboxName = ref(
-      config.value.babybox.prependBabyboxBeforeName
-        ? "Babybox " + config.value.babybox.name
-        : config.value.babybox.name
-    );
     const textStyle = {
       fontSize: config.value.babybox.fontSize + "px",
     };
-    return { babyboxName, config, textStyle };
+    return {
+      babyboxName: config.value.babybox.name,
+      prependBabybox: config.value.babybox.prependBabyboxBeforeName,
+      config,
+      textStyle,
+    };
   },
 });
 </script>
 
 <style lang="stylus">
 #BabyboxName
+  padding-right 10px
+
   span
-    font-size 40px
+    font-size 2.5vw
+    font-weight 700
+
+  span#BabyboxPrependText
+    color text-primary
 </style>

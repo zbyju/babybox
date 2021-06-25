@@ -18,4 +18,10 @@ export default defineComponent({
 });
 </script>
 
-<style lang="stylus"></style>
+<style lang="stylus">
+#Date
+  white-space nowrap
+  font-size 2vw
+  font-weight 600
+  color: text-secondary
+</style>

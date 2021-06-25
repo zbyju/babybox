@@ -31,7 +31,22 @@ export default defineComponent({
 <style lang="stylus">
 #BigClock
   font-weight 900
-  font-size 1vw
+
+  display flex
+  flex-direction row
+  flex-wrap nowrap
+  justify-content center
+
+  width fit-content
+  height 100%
+
+  white-space nowrap
+
+  span
+    margin-top -2.5vw
+    font-size 21vw
+    line-height 1em
+
 .transparent
   color transparent
 </style>

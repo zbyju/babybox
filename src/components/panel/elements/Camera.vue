@@ -24,6 +24,7 @@ export default defineComponent({
 #CameraWrapper
   grid-area camera
   max-width 100%
+  min-width 300px
   overflow hidden
 
   display flex
@@ -32,11 +33,10 @@ export default defineComponent({
   align-items center
 
   background-color primary
+  border 3px solid secondary
 
   img
-    border-width = 3px
-    width "calc(100% - (%s * 2))" % border-width
+    width 100%
     margin auto
-    border border-width solid secondary
     padding 5px
 </style>

@@ -32,8 +32,6 @@ export default defineComponent({
   font-family Impact, Avenir, Helvetica, Arial, sans-serif
   font-weight 800
 
-scrollbar-width = 10px
-
 html, body
   padding 0
   margin 0
