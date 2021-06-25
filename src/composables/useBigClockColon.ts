@@ -3,7 +3,7 @@ import { ref, watch, ComputedRef } from "vue";
 
 export default function useBigClockColon(time: ComputedRef<moment.Moment>) {
   const showColon = ref(true);
-  let prevTime = time.value;
+  let prevTime = moment();
   const toggleColon = () => {
     if (moment(time.value).diff(prevTime, "seconds") > 0.4) {
       showColon.value = !showColon.value;
