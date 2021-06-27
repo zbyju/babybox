@@ -12,12 +12,18 @@ export default defineComponent({
   components: { Table },
   setup() {
     return {
-      title: "Tabulka teplot",
-      headers: ["Nastaveni", "Vnitrni", "Venkovni", "Skrine", "Horni", "Dolni"],
+      title: "Teploty",
+      headers: [
+        "Vnitřní",
+        "Venkovní",
+        "Vnitřní plášť",
+        "Horní výměník",
+        "Dolní výměník",
+        "Nastavení vnitřní",
+        "Hysterze topení",
+        "Hysterze chlazení",
+      ],
       rows: [
-        {
-          value: "28-0.0+5.0°C",
-        },
         {
           value: "27.1°C",
         },
@@ -33,6 +39,15 @@ export default defineComponent({
         {
           value: "37.9°C",
         },
+        {
+          value: "28°C",
+        },
+        {
+          value: "-0.0°C",
+        },
+        {
+          value: "+5.0°C",
+        },
       ],
     };
   },
@@ -43,5 +58,6 @@ export default defineComponent({
 #TableTemperature
   grid-area table-temperature
 
-  align-self center
+  flex-grow 10
+  align-self flex-end
 </style>

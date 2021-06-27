@@ -21,7 +21,7 @@ export default defineComponent({
 <style lang="stylus">
 #Date
   white-space nowrap
-  font-size 2vw
+  font-size 1.7vw
   font-weight 600
   color: text-secondary
 </style>

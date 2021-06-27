@@ -45,7 +45,7 @@ export default defineComponent({
   #HeaderLeft
     display flex
     flex-direction column
-    max-width 33%
+    max-width 35%
 
   #DateTimeWrapper
     display flex

@@ -30,9 +30,15 @@ export interface Data {
   };
 }
 
+export interface Message {
+  text: string;
+  color: string;
+}
+
 export interface State {
   config: Config | null;
   time: moment.Moment | null;
   timePC: moment.Moment | null;
   data: Data | null;
+  message: Message | null;
 }

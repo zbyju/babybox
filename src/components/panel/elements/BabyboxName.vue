@@ -33,7 +33,7 @@ export default defineComponent({
   padding-right 10px
 
   span
-    font-size 2.5vw
+    font-size 2vw
     font-weight 700
 
   span#BabyboxPrependText

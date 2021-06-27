@@ -29,13 +29,14 @@ export default defineComponent({
   test = min-content
 #Content
   grid-area: content
+  overflow hidden
 
   padding padding-y padding-x
 
-  transition 1s all
+  transition 1s all ease-in-out
 
-  display flex
-  flex-direction row
-  flex-wrap nowrap
-  justify-content space-between
+  display grid
+  grid-template-columns auto minmax(10%, 42%) auto;
+  grid-template-rows: auto;
+  grid-template-areas: "table-temperature camera table-misc"
 </style>

@@ -1,4 +1,4 @@
-import { computed, watch, ref, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { CameraConfig } from "@/types/main";
 
 export default function useCamera(config: CameraConfig) {

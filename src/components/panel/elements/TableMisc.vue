@@ -13,11 +13,18 @@ export default defineComponent({
   setup() {
     return {
       title: "Tabulka ostatni",
-      headers: ["Nastaveni", "Vnitrni", "Venkovni", "Skrine", "Horni", "Dolni"],
+      headers: [
+        "Vnitrni",
+        "Vnitrni",
+        "Vnitrni",
+        "Vnitrni",
+        "Venkovni",
+        "Skrine",
+        "Horni",
+        "Dolni",
+        "Nastaveni",
+      ],
       rows: [
-        {
-          value: "28-0.0+5.0°C",
-        },
         {
           value: "27.1°C",
         },
@@ -33,6 +40,18 @@ export default defineComponent({
         {
           value: "37.9°C",
         },
+        {
+          value: "28-0.0+5.0°C",
+        },
+        {
+          value: "28-0.0+5.0°C",
+        },
+        {
+          value: "28-0.0+5.0°C",
+        },
+        {
+          value: "28-0.0+5.0°C",
+        },
       ],
     };
   },
@@ -43,5 +62,6 @@ export default defineComponent({
 #TableMisc
   grid-area table-misc
 
-  align-self center
+  flex-grow 10
+  align-self flex-end
 </style>

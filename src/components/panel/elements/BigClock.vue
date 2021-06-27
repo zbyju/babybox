@@ -1,5 +1,5 @@
 <template>
-  <div id="BigClock">
+  <div id="BigClock" :class="{ bigger: bigger }">
     <span id="BigClockHours">{{ hours }}</span>
     <span id="BigClockColon" :class="{ transparent: showColon }">:</span>
     <span id="BigClockMinutes">{{ minutes }}</span>
@@ -23,7 +23,10 @@ export default defineComponent({
     const { showColon } = useBigClockColon(time);
     const hours = computed(() => getHoursWithLeadingZeroes(time.value));
     const minutes = computed(() => getMinutesWithLeadingZeroes(time.value));
-    return { hours, minutes, showColon };
+    const bigger = computed(() => {
+      return !store.state.message;
+    });
+    return { hours, minutes, showColon, bigger };
   },
 });
 </script>
@@ -42,11 +45,16 @@ export default defineComponent({
 
   white-space nowrap
 
+  font-size 22vw
+
   span
     margin-top -2.5vw
-    font-size 21vw
+    font-size inherit
     line-height 1em
-
+    transition all 1s ease-in-out
+    transition-delay 1s
+#BigClock.bigger
+  font-size 26vw
 .transparent
   color transparent
 </style>
