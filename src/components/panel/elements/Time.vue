@@ -2,6 +2,7 @@
   <div id="Time">
     <span id="Time">{{ time }}</span>
     <button @click="toggleMessage"></button>
+    <button @click="toggleActive"></button>
   </div>
 </template>
 
@@ -12,6 +13,8 @@ import { getFullTime } from "@/utils/time";
 import {
   REMOVE_MESSAGE,
   SET_MESSAGE,
+  BABYBOX_ACTIVE,
+  BABYBOX_NON_ACTIVE,
 } from "@/store/mutation-types/index-types";
 
 export default defineComponent({
@@ -28,9 +31,12 @@ export default defineComponent({
             color: "text-success",
           },
         });
-      console.log(message);
     };
-    return { time, toggleMessage };
+    const toggleActive = () => {
+      if (store.state.active) store.commit(BABYBOX_NON_ACTIVE);
+      else store.commit(BABYBOX_ACTIVE);
+    };
+    return { time, toggleMessage, toggleActive };
   },
 });
 </script>

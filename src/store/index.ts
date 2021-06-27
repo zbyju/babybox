@@ -6,6 +6,8 @@ import {
   SET_TIME_PC,
   SET_MESSAGE,
   REMOVE_MESSAGE,
+  BABYBOX_ACTIVE,
+  BABYBOX_NON_ACTIVE,
 } from "./mutation-types/index-types";
 
 export default createStore<State>({
@@ -15,6 +17,7 @@ export default createStore<State>({
     timePC: null,
     data: null,
     message: null,
+    active: false,
   },
   mutations: {
     [SET_CONFIG](state, payload) {
@@ -31,6 +34,12 @@ export default createStore<State>({
     },
     [REMOVE_MESSAGE](state) {
       state.message = null;
+    },
+    [BABYBOX_ACTIVE](state) {
+      state.active = true;
+    },
+    [BABYBOX_NON_ACTIVE](state) {
+      state.active = false;
     },
   },
   actions: {},

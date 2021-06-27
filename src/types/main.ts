@@ -41,4 +41,5 @@ export interface State {
   timePC: moment.Moment | null;
   data: Data | null;
   message: Message | null;
+  active: boolean; // TODO: Change to a state variable
 }
