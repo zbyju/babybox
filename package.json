@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0-0",
@@ -56,8 +57,8 @@
       "ecmaVersion": 2020
     },
     "rules": {
-      "@typescript-eslint/no-unused-vars" : "warn",
-      "@typescript-eslint/no-empty-function" : "warn",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-empty-function": "warn",
       "@typescript-eslint/no-var-requires": "off",
       "prettier/prettier": [
         "error",
