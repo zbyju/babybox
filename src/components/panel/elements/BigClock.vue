@@ -32,6 +32,9 @@ export default defineComponent({
 </script>
 
 <style lang="stylus">
+normal-font = 21vw
+big-font = 26vw
+
 #BigClock
   font-weight 900
 
@@ -45,16 +48,41 @@ export default defineComponent({
 
   white-space nowrap
 
-  font-size 22vw
+  font-size normal-font
+
+  animation-name makeNormal
+  animation-duration 1s
+  animation-fill-mode both
 
   span
     margin-top -2.5vw
     font-size inherit
-    line-height 1em
+    line-height 0.95em
     transition all 1s ease-in-out
-    transition-delay 1s
+
 #BigClock.bigger
-  font-size 26vw
+  animation-name makeBigger
+  animation-duration 1s
+  animation-fill-mode both
+  animation-delay 1s
+
 .transparent
   color transparent
+
+@keyframes makeBigger {
+  from {
+    font-size normal-font
+  }
+  to {
+    font-size big-font
+  }
+}
+@keyframes makeNormal {
+  from {
+    font-size big-font
+  }
+  to {
+    font-size normal-font
+  }
+}
 </style>

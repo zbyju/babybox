@@ -26,14 +26,13 @@ export default defineComponent({
   grid-area message
   padding 0 padding-x
 
-  margin -5px auto 5px auto
+  margin -5px auto 15px auto
   display flex
   flex-direction column
   justify-content center
   align-self center
 
   overflow hidden
-  transition 0.1s all
 
   .message
     font-size 6vw
@@ -43,15 +42,58 @@ export default defineComponent({
     text-align center
     padding 5px 0 25px 0
     overflow hidden
-    transition 1s all
-    transition-delay 1s
 
 #Message.hidden
-  max-height 0px;
+  animation-name heightOut
+  animation-duration 1s
+  animation-fill-mode both
+  animation-delay 1s
   .message
-    opacity 0
+    animation-name opacityOut
+    animation-duration 1s
+    animation-fill-mode both
 #Message.visible
-  max-height 500px;
+  animation-name heightIn
+  animation-duration 1s
+  animation-fill-mode both
   .message
+    animation-name opacityIn
+    animation-duration 1s
+    animation-fill-mode both
+    animation-delay 1s
+
+@keyframes heightIn {
+  from {
+    max-height 0px
+  }
+  to {
+    max-height 500px
+  }
+}
+
+@keyframes heightOut {
+  from {
+    max-height 500px
+  }
+  to {
+    max-height 0px
+  }
+}
+
+@keyframes opacityIn {
+  from {
+    opacity 0
+  }
+  to {
     opacity 1
+  }
+}
+@keyframes opacityOut {
+  from {
+    opacity 1
+  }
+  to {
+    opacity 0
+  }
+}
 </style>
