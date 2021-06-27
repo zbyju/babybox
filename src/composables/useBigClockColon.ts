@@ -1,16 +1,28 @@
 import moment from "moment";
 import { ref, watch, ComputedRef } from "vue";
+import _ from "lodash";
 
 export default function useBigClockColon(time: ComputedRef<moment.Moment>) {
+  const BLINK_DELAY = 1000;
+
   const showColon = ref(true);
-  let prevTime = moment();
-  const toggleColon = () => {
-    if (moment(time.value).diff(prevTime, "seconds") > 0.4) {
+  let canBlink = true;
+
+  setInterval(() => {
+    if (canBlink) _.debounce(blink, 1000);
+    canBlink = false;
+  }, BLINK_DELAY + 1000);
+
+  const blink = () => {
+    showColon.value = !showColon.value;
+    setTimeout(() => {
       showColon.value = !showColon.value;
-      prevTime = time.value;
-    }
+    }, BLINK_DELAY);
   };
-  watch(time, toggleColon);
+
+  watch(time, () => {
+    if (!canBlink) canBlink = true;
+  });
 
   return {
     showColon,
