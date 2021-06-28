@@ -1,22 +1,18 @@
 <template>
-  <div :class="active ? 'active' : 'non-active'">
+  <div>
     <router-view></router-view>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, computed } from "vue";
-import { useStore } from "vuex";
+import { defineComponent, onBeforeMount } from "vue";
 import { initializeStore } from "@/utils/store";
 
 export default defineComponent({
   name: "App",
 
   setup() {
-    const active = computed(() => useStore().state.active);
     onBeforeMount(initializeStore);
-
-    return { active };
   },
 });
 </script>
@@ -27,20 +23,6 @@ export default defineComponent({
   font-family "Open Sans", Avenir, Helvetica, Arial, sans-serif
   -webkit-font-smoothing antialiased
   -moz-osx-font-smoothing grayscale
-  color color
-
-  div.non-active
-    background-color background
-    color color
-  div.active
-    animation: mymove 3s infinite;
-    animation-timing-function: ease-in-out;
-
-@keyframes mymove {
-  0% {background-color: black;}
-  50% {background-color: red;}
-  100% {background-color: black;}
-}
 
 .time-font
   font-family Impact, Avenir, Helvetica, Arial, sans-serif

@@ -1,6 +1,6 @@
 <template>
   <div id="Main">
-    <div id="MainWrapper">
+    <div id="MainWrapper" :class="active ? 'active' : 'non-active'">
       <Header></Header>
       <Message></Message>
       <Content></Content>
@@ -10,7 +10,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
+import { useStore } from "vuex";
 
 import Nav from "@/components/Nav.vue";
 import Content from "@/components/panel/containers/Content.vue";
@@ -25,6 +26,10 @@ export default defineComponent({
     Header,
     Message,
   },
+  setup() {
+    const active = computed(() => useStore().state.active);
+    return { active };
+  },
 });
 </script>
 
@@ -35,10 +40,10 @@ export default defineComponent({
   min-height 100vh
   height 100vh
   max-height 100vh
-
   width calc(100vw - scrollbar-width)
 
   overflow hidden
+  color color
 
   display grid
   grid-template-columns 100%;
@@ -47,4 +52,16 @@ export default defineComponent({
   "header"\
   "message"\
   "content"\
+
+#MainWrapper.non-active
+    background-color background
+#MainWrapper.active
+    animation: mymove 3s infinite;
+    animation-timing-function: ease-in-out;
+
+@keyframes mymove {
+  0% {background-color: black;}
+  50% {background-color: red;}
+  100% {background-color: black;}
+}
 </style>
