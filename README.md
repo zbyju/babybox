@@ -1,4 +1,4 @@
-# Babybox monitoring panel
+# Babybox monitoring panel [![Build Status](https://travis-ci.com/zbyju/babybox.svg?branch=main)](https://travis-ci.com/zbyju/babybox)
 
 ## Features
 
