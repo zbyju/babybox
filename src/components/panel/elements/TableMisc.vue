@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import Table from "@/components/Table.vue";
+import Table from "@/components/panel/HTMLElements/Table.vue";
 import { defineComponent } from "vue";
 
 export default defineComponent({
