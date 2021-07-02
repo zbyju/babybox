@@ -21,6 +21,8 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const time = computed((): string => getFullTime(store.state.timePC));
+
+    // TODO: Remove toggleMessage
     const toggleMessage = () => {
       const message = store.state.message;
       if (message) store.commit(REMOVE_MESSAGE);
@@ -32,6 +34,8 @@ export default defineComponent({
           },
         });
     };
+
+    // TODO: Remove toggleActive
     const toggleActive = () => {
       if (store.state.active) store.commit(BABYBOX_NON_ACTIVE);
       else store.commit(BABYBOX_ACTIVE);
