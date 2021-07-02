@@ -21,9 +21,11 @@ export default defineComponent({
     const store = useStore();
     const time = computed((): moment.Moment => store.state.timePC);
     const { showColon } = useBigClockColon(time);
-    const hours = computed(() => getHoursWithLeadingZeroes(time.value));
-    const minutes = computed(() => getMinutesWithLeadingZeroes(time.value));
-    const bigger = computed(() => {
+    const hours = computed((): string => getHoursWithLeadingZeroes(time.value));
+    const minutes = computed((): string =>
+      getMinutesWithLeadingZeroes(time.value)
+    );
+    const bigger = computed((): boolean => {
       return !store.state.message;
     });
     return { hours, minutes, showColon, bigger };

@@ -10,11 +10,12 @@
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import useDelayedMessage from "@/composables/useDelayedMessage";
+import { Message } from "@/types/main";
 
 export default defineComponent({
   setup() {
     const store = useStore();
-    const message = computed(() => store.state.message);
+    const message = computed((): Message => store.state.message);
     const { messageDelayed, heightStyle } = useDelayedMessage(message);
     return { message: messageDelayed, heightStyle };
   },

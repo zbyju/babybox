@@ -13,7 +13,6 @@ export default defineComponent({
   components: {
     Textarea,
   },
-  setup() {},
 });
 </script>
 

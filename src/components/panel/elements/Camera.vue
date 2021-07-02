@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, Ref } from "vue";
 import { useStore } from "vuex";
 import useCamera from "@/composables/useCamera";
 
@@ -11,7 +11,7 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const config = store.state.config.camera;
-    const url = useCamera(config);
+    const url: Ref<string> = useCamera(config);
 
     return { url };
   },
