@@ -36,15 +36,16 @@ const initializeData = () => {
 
 /**
  * Gets the current computer time and initilizes it
+ * @param {number} delay - How frequently should the time update
  */
-const initializeClock = () => {
+const initializeClock = (delay: number) => {
   const store = useStore();
   setInterval(() => {
     const time = getCurrentTimePC();
     store.commit(SET_TIME_PC, {
       time,
     });
-  }, 500);
+  }, delay);
 };
 
 /**
@@ -53,5 +54,5 @@ const initializeClock = () => {
 export const initializeStore = async () => {
   initializeConfig();
   initializeData();
-  initializeClock();
+  initializeClock(500);
 };
