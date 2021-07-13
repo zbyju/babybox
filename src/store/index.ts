@@ -9,6 +9,7 @@ import {
   BABYBOX_ACTIVE,
   BABYBOX_NON_ACTIVE,
 } from "./mutation-types/index-types";
+import { DefaultEngineUnit, DefaultThermalUnit } from "@/types/units-data";
 
 export default createStore<State>({
   state: {
@@ -16,8 +17,10 @@ export default createStore<State>({
     time: null,
     timePC: null,
     data: null,
-    message: null,
-    active: false,
+    message: null, // TODO: Change to a state
+    active: false, // TODO: Change to a state
+    thermalUnit: DefaultThermalUnit,
+    engineUnit: DefaultEngineUnit,
   },
   mutations: {
     [SET_CONFIG](state, payload) {

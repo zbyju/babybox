@@ -1,4 +1,5 @@
 import moment from "moment";
+import { EngineUnit, ThermalUnit } from "./units-data";
 
 export interface CameraConfig {
   ip: string;
@@ -42,4 +43,6 @@ export interface State {
   data: Data | null;
   message: Message | null;
   active: boolean; // TODO: Change to a state variable
+  thermalUnit: ThermalUnit;
+  engineUnit: EngineUnit;
 }
