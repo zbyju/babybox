@@ -7,9 +7,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(header, index) in headers" :key="index">
-          <td class="table-label">{{ header }}</td>
-          <td class="table-value">{{ rows[index].value }}</td>
+        <tr v-for="(row, index) in rows" :key="index">
+          <td class="table-label">{{ row.label }}</td>
+          <td class="table-value">{{ row.value || "--" }}</td>
         </tr>
       </tbody>
     </table>
@@ -17,25 +17,18 @@
 </template>
 
 <script lang="ts">
+import { TableData } from "@/types/tables";
 import { defineComponent, PropType, toRef } from "vue";
-
-type headerProp = Array<string>;
-type row = {
-  value: string;
-};
-type rowsProp = Array<row>;
 
 export default defineComponent({
   props: {
     titleProp: String,
-    headersProp: Array as PropType<headerProp>,
-    rowsProp: Array as PropType<rowsProp>,
+    rowsProp: Array as PropType<TableData>,
   },
   setup(props) {
     const title = toRef(props, "titleProp");
-    const headers = toRef(props, "headersProp");
     const rows = toRef(props, "rowsProp");
-    return { title, headers, rows };
+    return { title, rows };
   },
 });
 </script>

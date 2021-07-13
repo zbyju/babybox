@@ -1,54 +1,28 @@
 <template>
   <div id="TableTemperature">
-    <Table :titleProp="title" :headersProp="headers" :rowsProp="rows"></Table>
+    <Table :titleProp="title" :rowsProp="rows"></Table>
   </div>
 </template>
 
 <script lang="ts">
 import Table from "@/components/panel/HTMLElements/Table.vue";
-import { defineComponent } from "vue";
+import { getRowsTableTemperatures } from "@/utils/tables";
+import { defineComponent, computed } from "vue";
+import { useStore } from "vuex";
 
 export default defineComponent({
   components: { Table },
   setup() {
+    const store = useStore();
+    const rows = computed(() => {
+      return getRowsTableTemperatures(
+        store.state.engineUnit,
+        store.state.thermalUnit
+      );
+    });
     return {
       title: "Teploty",
-      headers: [
-        "Vnitřní",
-        "Venkovní",
-        "Vnitřní plášť",
-        "Horní výměník",
-        "Dolní výměník",
-        "Nastavení vnitřní",
-        "Hysterze topení",
-        "Hysterze chlazení",
-      ],
-      rows: [
-        {
-          value: "27.1°C",
-        },
-        {
-          value: "8.1°C",
-        },
-        {
-          value: "48.3°C",
-        },
-        {
-          value: "29.8°C",
-        },
-        {
-          value: "37.9°C",
-        },
-        {
-          value: "28°C",
-        },
-        {
-          value: "-0.0°C",
-        },
-        {
-          value: "+5.0°C",
-        },
-      ],
+      rows,
     };
   },
 });
