@@ -1,6 +1,8 @@
 export const SET_CONFIG = "SET_CONFIG";
 export const SET_TIME_PC = "SET_TIME_PC";
 export const SET_MESSAGE = "SET_MESSAGE";
+export const SET_ENGINE_UNIT = "SET_ENGINE_UNIT";
+export const SET_THERMAL_UNIT = "SET_THERMAL_UNIT";
 export const REMOVE_MESSAGE = "REMOVE_MESSAGE";
 export const BABYBOX_ACTIVE = "BABYBOX_ACTIVE";
 export const BABYBOX_NON_ACTIVE = "BABYBOX_NON_ACTIVE";

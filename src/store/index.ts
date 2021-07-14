@@ -5,6 +5,8 @@ import {
   SET_CONFIG,
   SET_TIME_PC,
   SET_MESSAGE,
+  SET_ENGINE_UNIT,
+  SET_THERMAL_UNIT,
   REMOVE_MESSAGE,
   BABYBOX_ACTIVE,
   BABYBOX_NON_ACTIVE,
@@ -34,6 +36,12 @@ export default createStore<State>({
     },
     [SET_MESSAGE](state, payload) {
       state.message = payload.message;
+    },
+    [SET_ENGINE_UNIT](state, payload) {
+      state.engineUnit = payload.data;
+    },
+    [SET_THERMAL_UNIT](state, payload) {
+      state.thermalUnit = payload.data;
     },
     [REMOVE_MESSAGE](state) {
       state.message = null;
