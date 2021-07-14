@@ -1,8 +1,8 @@
 import { EngineUnit, ThermalUnit } from "@/types/units-data";
 import { resolveComponent } from "vue";
 
-const thermalURL = "http://192.168.100.85";
-const engineURL = "http://192.168.100.86";
+const engineURL = "http://192.168.100.85";
+const thermalURL = "http://192.168.100.86";
 const postfix = "/get_ram[0]?rn=60";
 
 const getData = (
