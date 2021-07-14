@@ -1,8 +1,11 @@
 <template>
   <div id="Content">
     <TableTemperature></TableTemperature>
+    <TableVoltage></TableVoltage>
+    <TableACState></TableACState>
     <Camera></Camera>
-    <TableMisc></TableMisc>
+    <TableDoors></TableDoors>
+    <TableConnection></TableConnection>
   </div>
 </template>
 
@@ -11,7 +14,10 @@ import { defineComponent } from "vue";
 
 import Camera from "@/components/panel/elements/Camera.vue";
 import TableTemperature from "@/components/panel/elements/TableTemperature.vue";
-import TableMisc from "@/components/panel/elements/TableMisc.vue";
+import TableACState from "@/components/panel/elements/TableACState.vue";
+import TableConnection from "@/components/panel/elements/TableConnection.vue";
+import TableDoors from "@/components/panel/elements/TableDoors.vue";
+import TableVoltage from "@/components/panel/elements/TableVoltage.vue";
 
 export default defineComponent({
   setup() {
@@ -20,7 +26,10 @@ export default defineComponent({
   components: {
     Camera,
     TableTemperature,
-    TableMisc,
+    TableACState,
+    TableConnection,
+    TableDoors,
+    TableVoltage,
   },
 });
 </script>
@@ -36,7 +45,7 @@ export default defineComponent({
   transition 1s all ease-in-out
 
   display grid
-  grid-template-columns auto minmax(10%, 42%) auto;
+  grid-template-columns auto auto auto minmax(10%, 40%) auto auto;
   grid-template-rows: auto;
-  grid-template-areas: "table-temperature camera table-misc"
+  grid-template-areas: "table-temperature table-voltage table-ac camera table-doors table-connection"
 </style>

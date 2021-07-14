@@ -42,7 +42,6 @@ export default defineComponent({
     border 1px solid primary
     margin auto
     font-size 0.75vw
-    min-width 300px
     align-self center
 
     thead tr
