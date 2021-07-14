@@ -1,5 +1,7 @@
 <template>
-  <img :src="url" />
+  <div id="CameraWrapper">
+    <img :src="url" />
+  </div>
 </template>
 
 <script lang="ts">
@@ -20,16 +22,19 @@ export default defineComponent({
 
 <style lang="stylus">
 border-width = 5px
-img
-  max-width 100%;
-  max-height "calc(100% - %s * 2)" % border-width;
-  min-width 100px
-  min-height 100px
-  object-fit cover;
+div#CameraWrapper
+  padding 0 10px
+  grid-area camera
+  img
+    max-width 100%;
+    max-height "calc(100% - %s * 2)" % border-width;
+    min-width 100px
+    min-height 100px
+    object-fit cover;
 
-  margin 0 auto
-  border 5px solid primary
-  border-radius 5px
-  background-color secondary
-  align-self flex-end
+    margin 0 auto
+    border 5px solid primary
+    border-radius 5px
+    background-color secondary
+    align-self flex-end
 </style>
