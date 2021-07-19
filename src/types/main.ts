@@ -6,6 +6,7 @@ export interface CameraConfig {
   username: string;
   password: string;
   updateDelay: number;
+  cameraType: string;
 }
 
 export interface BabyboxConfig {
@@ -45,4 +46,9 @@ export interface State {
   active: boolean; // TODO: Change to a state variable
   thermalUnit: ThermalUnit;
   engineUnit: EngineUnit;
+}
+
+export enum CameraType {
+  dahua = "DAHUA",
+  avtech = "AVTECH",
 }

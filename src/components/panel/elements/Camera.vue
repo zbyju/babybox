@@ -25,15 +25,17 @@ border-width = 5px
 div#CameraWrapper
   padding 0 10px
   grid-area camera
+  align-self flex-end
+  margin 0 auto
   img
     max-width 100%;
     max-height "calc(100% - %s * 2)" % border-width;
-    min-width 100px
-    min-height 100px
+    min-width 320px
+    min-height 180px
     object-fit cover;
 
-    margin 0 auto
     border 5px solid primary
+    margin 0 auto
     border-radius 5px
     background-color secondary
     align-self flex-end
