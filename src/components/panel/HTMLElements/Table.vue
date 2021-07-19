@@ -63,4 +63,7 @@ export default defineComponent({
       font-weight 700
       font-size 14px
       color text-secondary
+      text-align left
+    td.table-value
+      text-align right
 </style>

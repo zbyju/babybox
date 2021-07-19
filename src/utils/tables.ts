@@ -8,6 +8,12 @@ export const getRowsTableTemperatures = (
 ): TableData => {
   return [
     {
+      label: "Cílová teplota",
+      value: `${prettyTemperature(thermalData[29].value)} | ${prettyTemperature(
+        thermalData[29].value
+      )}`,
+    },
+    {
       label: "Vnitřní",
       value: `${prettyTemperature(thermalData[29].value)} | ${prettyTemperature(
         thermalData[29].value
