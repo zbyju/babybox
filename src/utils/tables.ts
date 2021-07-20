@@ -1,6 +1,16 @@
+import store from "@/store";
+import { Connection } from "@/types/connection";
 import { TableData } from "@/types/tables";
 import { EngineUnit, ThermalUnit } from "@/types/units-data";
-import { prettyTemperature } from "./data";
+import { ComputedRef } from "vue";
+import {
+  prettyInt,
+  prettyNumber,
+  prettyPercentage,
+  prettyTemperature,
+  prettyTwoNumbers,
+  prettyTwoTemperatures,
+} from "./data";
 
 export const getRowsTableTemperatures = (
   engineData: EngineUnit,
@@ -9,15 +19,17 @@ export const getRowsTableTemperatures = (
   return [
     {
       label: "Cílová teplota",
-      value: `${prettyTemperature(thermalData[29].value)} | ${prettyTemperature(
+      value: prettyTwoTemperatures(
+        thermalData[29].value,
         thermalData[29].value
-      )}`,
+      ),
     },
     {
       label: "Vnitřní",
-      value: `${prettyTemperature(thermalData[29].value)} | ${prettyTemperature(
+      value: prettyTwoTemperatures(
+        thermalData[29].value,
         thermalData[29].value
-      )}`,
+      ),
     },
     {
       label: "Cílová teplota",
@@ -144,28 +156,47 @@ export const getRowsTableDoors = (
 
 export const getRowsTableConnection = (
   engineData: EngineUnit,
-  thermalData: ThermalUnit
+  thermalData: ThermalUnit,
+  connection: Connection
 ): TableData => {
   return [
     {
       label: "PC dotaz",
-      value: thermalData[29].value,
+      value: prettyTwoNumbers(
+        connection.engineUnit.requests,
+        connection.thermalUnit.requests
+      ),
     },
     {
       label: "BB odpověď",
-      value: thermalData[28].value,
+      value: prettyTwoNumbers(
+        connection.engineUnit.successful,
+        connection.thermalUnit.successful
+      ),
     },
     {
       label: "Ztracené odpovědi",
-      value: thermalData[31].value,
+      value: prettyTwoNumbers(
+        connection.engineUnit.failed,
+        connection.thermalUnit.failed
+      ),
     },
     {
       label: "Kvalita spojení",
-      value: thermalData[32].value,
+      value:
+        prettyPercentage(
+          (connection.engineUnit.successful * 100) /
+            connection.engineUnit.requests
+        ) +
+        " | " +
+        prettyPercentage(
+          (connection.thermalUnit.successful * 100) /
+            connection.thermalUnit.requests
+        ),
     },
     {
       label: "Limit spojení",
-      value: thermalData[30].value,
+      value: store.state.config.app.requestTimeout + "ms",
     },
     {
       label: "Dnů do zkoušky",

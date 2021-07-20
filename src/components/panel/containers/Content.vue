@@ -44,5 +44,5 @@ export default defineComponent({
   display grid
   grid-template-columns auto auto minmax(10%, 40%) auto auto;
   grid-template-rows: auto;
-  grid-template-areas: "table-temperature table-voltage camera table-doors table-connection"
+  grid-template-areas: "table-temperature table-doors camera table-voltage table-connection"
 </style>

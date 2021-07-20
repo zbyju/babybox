@@ -17,7 +17,8 @@ export default defineComponent({
     const rows = computed(() => {
       return getRowsTableConnection(
         store.state.engineUnit,
-        store.state.thermalUnit
+        store.state.thermalUnit,
+        store.state.connection
       );
     });
     return {
