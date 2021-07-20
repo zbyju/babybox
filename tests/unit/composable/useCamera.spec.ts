@@ -6,6 +6,15 @@ const cfg: CameraConfig = {
   username: "user",
   password: "pass",
   updateDelay: 10,
+  cameraType: "dahua",
+};
+
+const cfgAvtech: CameraConfig = {
+  ip: "ip",
+  username: "user",
+  password: "pass",
+  updateDelay: 10,
+  cameraType: "avtech",
 };
 
 describe("useCamera composable function", () => {
@@ -16,6 +25,16 @@ describe("useCamera composable function", () => {
   test("URL should be initially defined", () => {
     const result = useCamera(cfg);
     expect(result.value).toBeDefined();
+  });
+
+  test("Dahua and AvTech cameras should have different URLs", () => {
+    jest.useFakeTimers();
+    const dahua = useCamera(cfg);
+    const avtech = useCamera(cfgAvtech);
+    jest.advanceTimersByTime(cfg.updateDelay * 1.5);
+    expect(dahua.value).toBeDefined();
+    expect(avtech.value).toBeDefined();
+    expect(dahua.value).not.toEqual(avtech.value);
   });
 
   test("URL should contain config credentials and ip", () => {
