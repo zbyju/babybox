@@ -1,18 +1,12 @@
 import { EngineUnit, ThermalUnit } from "@/types/units-data";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
-const engineURL = "http://192.168.100.81";
-const thermalURL = "http://192.168.100.86";
-const postfix = "/get_ram[0]?rn=60";
-
-const getData = (
-  unit: "thermal" | "engine",
-  timeout: number
+export const getData = (
+  timeout: number,
+  ip: string,
+  postfix: string
 ): Promise<EngineUnit | ThermalUnit> => {
-  const url =
-    unit === "thermal"
-      ? thermalURL + postfix + "&" + new Date().getTime()
-      : engineURL + postfix + "&" + new Date().getTime();
+  const url = `http://${ip}${postfix}&${new Date().getTime()}`;
 
   return new Promise((resolve, reject) => {
     fetchWithTimeout(url, { timeout: timeout })
@@ -27,12 +21,4 @@ const getData = (
         reject(err);
       });
   });
-};
-
-export const getEngineData = async (timeout: number): Promise<EngineUnit> => {
-  return getData("engine", timeout);
-};
-
-export const getThermalData = async (timeout: number): Promise<ThermalUnit> => {
-  return getData("thermal", timeout);
 };

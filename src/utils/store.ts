@@ -12,7 +12,7 @@ import {
 import { Config } from "@/types/main";
 import { useStore } from "vuex";
 import { getCurrentTimePC } from "./time";
-import { getEngineData, getThermalData } from "@/api/units";
+import { getData } from "@/api/units";
 
 /**
  * Loads config from the json file
@@ -33,8 +33,10 @@ const initializeConfig = async () => {
 };
 
 const initEngineUnit = async (timeout: number) => {
+  const ip = store.state.config.units.engine.ip;
+  const postfix = store.state.config.units.postfix;
   try {
-    const data = await getEngineData(timeout);
+    const data = await getData(timeout, ip, postfix);
     store.commit(SET_ENGINE_UNIT, {
       data,
     });
@@ -45,8 +47,10 @@ const initEngineUnit = async (timeout: number) => {
 };
 
 const initThermalUnit = async (timeout: number) => {
+  const ip = store.state.config.units.engine.ip;
+  const postfix = store.state.config.units.postfix;
   try {
-    const data = await getThermalData(timeout);
+    const data = await getData(timeout, ip, postfix);
     store.commit(SET_THERMAL_UNIT, {
       data,
     });
