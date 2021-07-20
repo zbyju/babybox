@@ -60,8 +60,8 @@ const initThermalUnit = async (timeout: number) => {
  * Gets data from babybox and updates @data and @time in store
  */
 const initializeData = () => {
-  const delay = store.state.config.app.requestDelay || 2000;
-  const timeout = store.state.config.app.requestTimeout || 5000;
+  const delay = store.state.config.units.requestDelay || 2000;
+  const timeout = store.state.config.units.requestTimeout || 5000;
   setInterval(() => {
     initEngineUnit(timeout);
     initThermalUnit(timeout);

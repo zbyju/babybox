@@ -12,19 +12,41 @@ export interface CameraConfig {
 
 export interface BabyboxConfig {
   name: string;
-  fontSize: number;
   prependBabyboxBeforeName: boolean;
 }
 
 export interface AppConfig {
+  colonDelay: number;
+}
+
+export interface UnitsConfig {
+  engine: {
+    ip: string;
+  };
+  thermal: {
+    ip: string;
+  };
+  postfix: string;
   requestTimeout: number;
   requestDelay: number;
-  colonDelay: number;
+}
+
+export interface FontSizeConfig {
+  babyboxName: number;
+  bigClockBigger: number;
+  bigClockSmaller: number;
+  smallClock: number;
+  tableHeading: number;
+  tableLabel: number;
+  tableValue: number;
+  message: number;
 }
 
 export interface Config {
   babybox: BabyboxConfig;
+  fontSizes: FontSizeConfig;
   camera: CameraConfig;
+  units: UnitsConfig;
   app: AppConfig;
 }
 

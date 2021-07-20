@@ -2,7 +2,6 @@ import store from "@/store";
 import { Connection } from "@/types/connection";
 import { TableData } from "@/types/tables";
 import { EngineUnit, ThermalUnit } from "@/types/units-data";
-import { ComputedRef } from "vue";
 import {
   prettyInt,
   prettyNumber,
@@ -30,10 +29,6 @@ export const getRowsTableTemperatures = (
         thermalData[29].value,
         thermalData[29].value
       ),
-    },
-    {
-      label: "Cílová teplota",
-      value: prettyTemperature(thermalData[28].value),
     },
     {
       label: "Venkovní",
@@ -196,7 +191,7 @@ export const getRowsTableConnection = (
     },
     {
       label: "Limit spojení",
-      value: store.state.config.app.requestTimeout + "ms",
+      value: store.state.config.units.requestTimeout + "ms",
     },
     {
       label: "Dnů do zkoušky",
