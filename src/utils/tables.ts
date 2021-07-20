@@ -124,19 +124,19 @@ export const getRowsTableDoors = (
   return [
     {
       label: "Levé poloha",
-      value: thermalData[29].value,
+      value: engineData[37].value,
     },
     {
       label: "Levé zátěž",
-      value: thermalData[28].value,
+      value: engineData[46].value,
     },
     {
       label: "Pravé poloha",
-      value: thermalData[31].value,
+      value: engineData[38].value,
     },
     {
       label: "Pravé zátěž",
-      value: thermalData[32].value,
+      value: engineData[47].value,
     },
     {
       label: "Paprsek nad vaničkou",
