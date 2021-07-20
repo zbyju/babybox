@@ -5,6 +5,13 @@ export const prettyTemperature = (temp: string): string => {
   return `${(parsed / 100).toFixed(2)}°C`;
 };
 
+export const prettyVoltage = (x: string): string => {
+  if (!x || x === "") return "";
+  const parsed = parseInt(x);
+  if (isNaN(parsed)) return "";
+  return ((parsed / 1096) * 32).toFixed(1) + "V";
+};
+
 export const prettyInt = (num: number): string => {
   return num.toFixed(0);
 };

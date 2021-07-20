@@ -9,17 +9,28 @@
         </thead>
         <tbody>
           <tr>
-            <td class="table-label active" :style="labelSize" colspan="2">
+            <td
+              class="table-label"
+              :class="{ active: heatingCase }"
+              :style="labelSize"
+              colspan="2"
+            >
               Topí plášť
             </td>
             <td
-              class="table-label border-cell active"
+              class="table-label border-cell"
+              :class="{ active: heatingAir }"
               :style="labelSize"
               colspan="2"
             >
               Topí vzduch
             </td>
-            <td class="table-label active" :style="labelSize" colspan="2">
+            <td
+              class="table-label"
+              :class="{ active: cooling }"
+              :style="labelSize"
+              colspan="2"
+            >
               Chladí vzduch
             </td>
           </tr>
@@ -51,6 +62,15 @@ export default defineComponent({
         store.state.thermalUnit
       );
     });
+
+    const heatingCase = computed(
+      () => store.state.thermalUnit[24].value === "255"
+    );
+    const heatingAir = computed(
+      () => store.state.thermalUnit[25].value === "255"
+    );
+    const cooling = computed(() => store.state.thermalUnit[26].value === "255");
+
     const headSize = {
       fontSize: store.state.config.fontSizes.tableHeading + "vw",
     };
@@ -66,6 +86,9 @@ export default defineComponent({
       headSize,
       labelSize,
       valueSize,
+      heatingCase,
+      heatingAir,
+      cooling,
     };
   },
 });

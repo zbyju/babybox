@@ -9,6 +9,7 @@ import {
   prettyTemperature,
   prettyTwoNumbers,
   prettyTwoTemperatures,
+  prettyVoltage,
 } from "./data";
 
 export const getRowsTableTemperatures = (
@@ -25,10 +26,7 @@ export const getRowsTableTemperatures = (
     },
     {
       label: "Vnitřní",
-      value: prettyTwoTemperatures(
-        thermalData[29].value,
-        thermalData[29].value
-      ),
+      value: prettyTwoTemperatures(thermalData[29].value, engineData[28].value),
     },
     {
       label: "Venkovní",
@@ -88,19 +86,19 @@ export const getRowsVoltage = (
   return [
     {
       label: "Zdroj",
-      value: prettyTemperature(thermalData[29].value),
+      value: prettyVoltage(thermalData[35].value),
     },
     {
       label: "Akumulátor",
-      value: prettyTemperature(thermalData[29].value),
+      value: prettyVoltage(thermalData[36].value),
     },
     {
       label: "Řídící jednotky",
-      value: prettyTemperature(thermalData[29].value),
+      value: prettyVoltage(thermalData[37].value),
     },
     {
       label: "GSM Komunikátor",
-      value: prettyTemperature(thermalData[29].value),
+      value: prettyVoltage(thermalData[38].value),
     },
     {
       label: "Zdroj",
@@ -140,11 +138,11 @@ export const getRowsTableDoors = (
     },
     {
       label: "Paprsek nad vaničkou",
-      value: thermalData[30].value,
+      value: engineData[17].value === "255" ? "Překážka" : "Volno",
     },
     {
       label: "Blokováno",
-      value: thermalData[30].value,
+      value: "?",
     },
   ];
 };
@@ -195,7 +193,7 @@ export const getRowsTableConnection = (
     },
     {
       label: "Dnů do zkoušky",
-      value: thermalData[30].value,
+      value: Math.max(7 - parseInt(engineData[33].value), 0).toString(),
     },
   ];
 };
