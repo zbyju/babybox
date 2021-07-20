@@ -47,7 +47,7 @@ export default defineComponent({
 
   display grid
   grid-template-columns 100%;
-  grid-template-rows: min-content 1fr minmax(35%, min-content);
+  grid-template-rows: min-content 1fr auto;
   grid-template-areas:
   "header"\
   "message"\

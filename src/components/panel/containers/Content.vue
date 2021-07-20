@@ -42,7 +42,8 @@ export default defineComponent({
   transition 1s all ease-in-out
 
   display grid
-  grid-template-columns auto auto minmax(10%, 40%) auto auto;
+  justify-content space-between
+  grid-template-columns auto auto auto auto auto;
   grid-template-rows: auto;
   grid-template-areas: "table-temperature table-doors camera table-voltage table-connection"
 </style>
