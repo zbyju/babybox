@@ -3,13 +3,15 @@
     <table>
       <thead>
         <tr>
-          <th colspan="2">{{ title }}</th>
+          <th colspan="2" :style="headSize">{{ title }}</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(row, index) in rows" :key="index">
-          <td class="table-label">{{ row.label }}</td>
-          <td class="table-value">{{ row.value || "--" }}</td>
+          <td class="table-label" :style="labelSize">{{ row.label }}</td>
+          <td class="table-value" :style="valueSize">
+            {{ row.value || "--" }}
+          </td>
         </tr>
       </tbody>
     </table>
@@ -19,6 +21,7 @@
 <script lang="ts">
 import { TableData } from "@/types/tables";
 import { defineComponent, PropType, toRef } from "vue";
+import { useStore } from "vuex";
 
 export default defineComponent({
   props: {
@@ -26,9 +29,19 @@ export default defineComponent({
     rowsProp: Array as PropType<TableData>,
   },
   setup(props) {
+    const store = useStore();
     const title = toRef(props, "titleProp");
     const rows = toRef(props, "rowsProp");
-    return { title, rows };
+    const headSize = {
+      fontSize: store.state.config.fontSizes.tableHeading + "vw",
+    };
+    const labelSize = {
+      fontSize: store.state.config.fontSizes.tableLabel + "vw",
+    };
+    const valueSize = {
+      fontSize: store.state.config.fontSizes.tableValue + "vw",
+    };
+    return { title, rows, headSize, labelSize, valueSize };
   },
 });
 </script>

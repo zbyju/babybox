@@ -1,6 +1,6 @@
 <template>
   <div id="Time">
-    <span id="Time">{{ time }}</span>
+    <span id="Time" :style="textSize">{{ time }}</span>
     <button @click="toggleMessage"></button>
     <button @click="toggleActive"></button>
   </div>
@@ -21,6 +21,9 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const time = computed((): string => getFullTime(store.state.timePC));
+    const textSize = {
+      fontSize: store.state.config.fontSizes.smallClock + "vw",
+    };
 
     // TODO: Remove toggleMessage
     const toggleMessage = () => {
@@ -40,7 +43,7 @@ export default defineComponent({
       if (store.state.active) store.commit(BABYBOX_NON_ACTIVE);
       else store.commit(BABYBOX_ACTIVE);
     };
-    return { time, toggleMessage, toggleActive };
+    return { time, textSize, toggleMessage, toggleActive };
   },
 });
 </script>

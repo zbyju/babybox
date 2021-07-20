@@ -4,20 +4,32 @@
       <table>
         <thead>
           <tr>
-            <th colspan="6">{{ title }}</th>
+            <th colspan="6" :style="headSize">{{ title }}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="table-label active" colspan="2">Topí plášť</td>
-            <td class="table-label border-cell active" colspan="2">
+            <td class="table-label active" :style="labelSize" colspan="2">
+              Topí plášť
+            </td>
+            <td
+              class="table-label border-cell active"
+              :style="labelSize"
+              colspan="2"
+            >
               Topí vzduch
             </td>
-            <td class="table-label active" colspan="2">Chladí vzduch</td>
+            <td class="table-label active" :style="labelSize" colspan="2">
+              Chladí vzduch
+            </td>
           </tr>
           <tr v-for="(row, index) in rows" :key="index">
-            <td class="table-label" colspan="3">{{ row.label }}</td>
-            <td class="table-value" colspan="3">{{ row.value || "--" }}</td>
+            <td class="table-label" :style="labelSize" colspan="3">
+              {{ row.label }}
+            </td>
+            <td class="table-value" :style="valueSize" colspan="3">
+              {{ row.value || "--" }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -39,9 +51,21 @@ export default defineComponent({
         store.state.thermalUnit
       );
     });
+    const headSize = {
+      fontSize: store.state.config.fontSizes.tableHeading + "vw",
+    };
+    const labelSize = {
+      fontSize: store.state.config.fontSizes.tableLabel + "vw",
+    };
+    const valueSize = {
+      fontSize: store.state.config.fontSizes.tableValue + "vw",
+    };
     return {
       title: "Topení/chlazení",
       rows,
+      headSize,
+      labelSize,
+      valueSize,
     };
   },
 });
@@ -59,5 +83,5 @@ export default defineComponent({
     border-left 1px solid primary
 
   .active
-    background text-success
+    background success
 </style>

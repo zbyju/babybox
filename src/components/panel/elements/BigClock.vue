@@ -1,8 +1,13 @@
 <template>
-  <div id="BigClock" :class="{ bigger: bigger }">
-    <span id="BigClockHours">{{ hours }}</span>
-    <span id="BigClockColon" :class="{ transparent: showColon }">:</span>
-    <span id="BigClockMinutes">{{ minutes }}</span>
+  <div id="BigClock" :class="{ bigger: bigger }" :style="textSize">
+    <span id="BigClockHours" :style="textSize">{{ hours }}</span>
+    <span
+      id="BigClockColon"
+      :style="textSize"
+      :class="{ transparent: showColon }"
+      >:</span
+    >
+    <span id="BigClockMinutes" :style="textSize">{{ minutes }}</span>
   </div>
 </template>
 
@@ -28,14 +33,21 @@ export default defineComponent({
     const bigger = computed((): boolean => {
       return !store.state.message;
     });
-    return { hours, minutes, showColon, bigger };
+    const textSize = computed(() => {
+      return bigger.value
+        ? {
+            fontSize: store.state.config.fontSizes.bigClockBigger + "vw",
+          }
+        : {
+            fontSize: store.state.config.fontSizes.bigClockSmaller + "vw",
+          };
+    });
+    return { hours, minutes, showColon, bigger, textSize };
   },
 });
 </script>
 
 <style lang="stylus">
-normal-font = 21vw
-big-font = 26vw
 
 #BigClock
   font-weight 900
@@ -50,41 +62,19 @@ big-font = 26vw
 
   white-space nowrap
 
-  font-size normal-font
-
-  animation-name makeNormal
   animation-duration 1s
   animation-fill-mode both
 
   span
     margin-top -2.5vw
-    font-size inherit
     line-height 0.95em
     transition all 1s ease-in-out
 
 #BigClock.bigger
-  animation-name makeBigger
   animation-duration 1s
   animation-fill-mode both
   animation-delay 1s
 
 .transparent
   color transparent
-
-@keyframes makeBigger {
-  from {
-    font-size normal-font
-  }
-  to {
-    font-size big-font
-  }
-}
-@keyframes makeNormal {
-  from {
-    font-size big-font
-  }
-  to {
-    font-size normal-font
-  }
-}
 </style>

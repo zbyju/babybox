@@ -1,6 +1,11 @@
 <template>
   <div id="Message" :class="heightStyle">
-    <div class="message" v-if="message" :class="message.color">
+    <div
+      class="message"
+      v-if="message"
+      :style="textSize"
+      :class="message.color"
+    >
       {{ message.text }}
     </div>
   </div>
@@ -16,8 +21,11 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const message = computed((): Message => store.state.message);
+    const textSize = {
+      fontSize: store.state.config.fontSizes.message + "vw",
+    };
     const { messageDelayed, heightStyle } = useDelayedMessage(message);
-    return { message: messageDelayed, heightStyle };
+    return { message: messageDelayed, heightStyle, textSize };
   },
 });
 </script>

@@ -1,7 +1,7 @@
 <template>
   <div id="BabyboxName">
-    <span id="BabyboxPrependText">Babybox </span>
-    <span id="BabyboxNameText">{{ babyboxName }}</span>
+    <span id="BabyboxPrependText" :style="textStyle">Babybox </span>
+    <span id="BabyboxNameText" :style="textStyle">{{ babyboxName }}</span>
   </div>
 </template>
 
@@ -16,7 +16,7 @@ export default defineComponent({
     const config = computed((): Config => store.state.config);
 
     const textStyle = {
-      fontSize: config.value.babybox.fontSize + "px",
+      fontSize: config.value.fontSizes.babyboxName + "vw",
     };
     return {
       babyboxName: config.value.babybox.name,

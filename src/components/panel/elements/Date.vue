@@ -1,6 +1,6 @@
 <template>
   <div id="Date">
-    <span id="Date">{{ date }}</span>
+    <span id="Date" :style="textSize">{{ date }}</span>
   </div>
 </template>
 
@@ -13,7 +13,10 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const date = computed((): string => getFullDate(store.state.timePC));
-    return { date };
+    const textSize = {
+      fontSize: store.state.config.fontSizes.smallClock + "vw",
+    };
+    return { date, textSize };
   },
 });
 </script>
