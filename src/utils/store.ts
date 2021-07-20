@@ -1,5 +1,9 @@
 import store from "@/store";
 import {
+  INCREMENT_FAIL_ENGINE,
+  INCREMENT_FAIL_THERMAL,
+  INCREMENT_SUCCESS_ENGINE,
+  INCREMENT_SUCCESS_THERMAL,
   SET_CONFIG,
   SET_ENGINE_UNIT,
   SET_THERMAL_UNIT,
@@ -28,44 +32,47 @@ const initializeConfig = async () => {
   });
 };
 
-const initEngineUnit = async () => {
+const initEngineUnit = async (timeout: number) => {
   try {
-    const data = await getEngineData();
+    const data = await getEngineData(timeout);
     store.commit(SET_ENGINE_UNIT, {
       data,
     });
+    store.commit(INCREMENT_SUCCESS_ENGINE);
   } catch (err) {
-    console.log(err);
+    store.commit(INCREMENT_FAIL_ENGINE);
   }
 };
 
-const initThermalUnit = async () => {
+const initThermalUnit = async (timeout: number) => {
   try {
-    const data = await getThermalData();
+    const data = await getThermalData(timeout);
     store.commit(SET_THERMAL_UNIT, {
       data,
     });
+    store.commit(INCREMENT_SUCCESS_THERMAL);
   } catch (err) {
-    console.log(err);
+    store.commit(INCREMENT_FAIL_THERMAL);
   }
 };
 
 /**
  * Gets data from babybox and updates @data and @time in store
  */
-const initializeData = (delay: number) => {
+const initializeData = () => {
+  const delay = store.state.config.app.requestDelay || 2000;
+  const timeout = store.state.config.app.requestTimeout || 5000;
   setInterval(() => {
-    initEngineUnit();
-    initThermalUnit();
+    initEngineUnit(timeout);
+    initThermalUnit(timeout);
   }, delay);
 };
 
 /**
  * Gets the current computer time and initilizes it
- * @param {number} delay - How frequently should the time update
  */
-const initializeClock = (delay: number) => {
-  const store = useStore();
+const initializeClock = () => {
+  const delay = store.state.config.app.colonDelay;
   setInterval(() => {
     const time = getCurrentTimePC();
     store.commit(SET_TIME_PC, {
@@ -79,6 +86,6 @@ const initializeClock = (delay: number) => {
  */
 export const initializeStore = async () => {
   initializeConfig();
-  initializeData(2000);
-  initializeClock(500);
+  initializeData();
+  initializeClock();
 };

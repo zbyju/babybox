@@ -1,4 +1,5 @@
 import moment from "moment";
+import { Connection } from "./connection";
 import { EngineUnit, ThermalUnit } from "./units-data";
 
 export interface CameraConfig {
@@ -15,9 +16,16 @@ export interface BabyboxConfig {
   prependBabyboxBeforeName: boolean;
 }
 
+export interface AppConfig {
+  requestTimeout: number;
+  requestDelay: number;
+  colonDelay: number;
+}
+
 export interface Config {
   babybox: BabyboxConfig;
   camera: CameraConfig;
+  app: AppConfig;
 }
 
 export interface Data {
@@ -46,6 +54,7 @@ export interface State {
   active: boolean; // TODO: Change to a state variable
   thermalUnit: ThermalUnit;
   engineUnit: EngineUnit;
+  connection: Connection;
 }
 
 export enum CameraType {

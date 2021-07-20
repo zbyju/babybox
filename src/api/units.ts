@@ -1,12 +1,13 @@
 import { EngineUnit, ThermalUnit } from "@/types/units-data";
-import { resolveComponent } from "vue";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
-const engineURL = "http://192.168.100.85";
+const engineURL = "http://192.168.100.81";
 const thermalURL = "http://192.168.100.86";
 const postfix = "/get_ram[0]?rn=60";
 
 const getData = (
-  unit: "thermal" | "engine"
+  unit: "thermal" | "engine",
+  timeout: number
 ): Promise<EngineUnit | ThermalUnit> => {
   const url =
     unit === "thermal"
@@ -14,7 +15,7 @@ const getData = (
       : engineURL + postfix + "&" + new Date().getTime();
 
   return new Promise((resolve, reject) => {
-    fetch(url)
+    fetchWithTimeout(url, { timeout: timeout })
       .then((response) => response.text())
       .then((data) => {
         const unitData = data.split("|").map((x, i) => {
@@ -28,10 +29,10 @@ const getData = (
   });
 };
 
-export const getEngineData = async (): Promise<EngineUnit> => {
-  return getData("engine");
+export const getEngineData = async (timeout: number): Promise<EngineUnit> => {
+  return getData("engine", timeout);
 };
 
-export const getThermalData = async (): Promise<EngineUnit> => {
-  return getData("thermal");
+export const getThermalData = async (timeout: number): Promise<ThermalUnit> => {
+  return getData("thermal", timeout);
 };
