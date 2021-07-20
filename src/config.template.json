@@ -1,0 +1,37 @@
+{
+  "babybox": {
+    "name": "Praha",
+    "prependBabyboxBeforeName": true
+  },
+  "fontSizes": {
+    "babyboxName": 2,
+    "bigClockBigger": 26,
+    "bigClockSmaller": 21,
+    "smallClock": 1.7,
+    "tableHeading": 0.9,
+    "tableLabel": 0.75,
+    "tableValue": 0.72,
+    "message": 6
+  },
+  "units": {
+    "engine": {
+      "ip": "10.1.1.5"
+    },
+    "thermal": {
+      "ip": "10.1.1.6"
+    },
+    "postfix": "/get_ram[0]?rn=60",
+    "requestDelay": 2000,
+    "requestTimeout": 5000
+  },
+  "camera": {
+    "ip": "10.1.1.7",
+    "username": "username",
+    "password": "password",
+    "updateDelay": 1000,
+    "cameraType": "dahua"
+  },
+  "app": {
+    "colonDelay": 500
+  }
+}
