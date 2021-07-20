@@ -47,7 +47,7 @@ const initEngineUnit = async (timeout: number) => {
 };
 
 const initThermalUnit = async (timeout: number) => {
-  const ip = store.state.config.units.engine.ip;
+  const ip = store.state.config.units.thermal.ip;
   const postfix = store.state.config.units.postfix;
   try {
     const data = await getData(timeout, ip, postfix);
