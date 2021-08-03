@@ -1,25 +1,14 @@
 <template>
-  <div id="Notes">
-    <p>Poznámky:</p>
-    <Textarea></Textarea>
-  </div>
+  <div id="Notes"></div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import Textarea from "@/components/panel/HTMLElements/Textarea.vue";
+import { useStore } from "vuex";
 
 export default defineComponent({
-  components: {
-    Textarea,
-  },
+  setup() {},
 });
 </script>
 
-<style lang="stylus">
-#Date
-  white-space nowrap
-  font-size 1.7vw
-  font-weight 600
-  color: text-secondary
-</style>
+<style lang="stylus"></style>
