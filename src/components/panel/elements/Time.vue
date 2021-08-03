@@ -10,12 +10,7 @@
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import { getFullTime } from "@/utils/time";
-import {
-  REMOVE_MESSAGE,
-  SET_MESSAGE,
-  BABYBOX_ACTIVE,
-  BABYBOX_NON_ACTIVE,
-} from "@/store/mutation-types/index-types";
+import { SET_STATE, RESET_STATE } from "@/store/mutation-types/index-types";
 
 export default defineComponent({
   setup() {
@@ -27,21 +22,31 @@ export default defineComponent({
 
     // TODO: Remove toggleMessage
     const toggleMessage = () => {
-      const message = store.state.message;
-      if (message) store.commit(REMOVE_MESSAGE);
+      const appState = store.state.appState;
+      if (appState && appState.message) store.commit(RESET_STATE);
       else
-        store.commit(SET_MESSAGE, {
-          message: {
-            text: "Babybox mimo provoz",
-            color: "text-success",
+        store.commit(SET_STATE, {
+          state: {
+            message: {
+              text: "Babybox mimo provoz",
+              color: "text-warning",
+            },
+            active: false,
           },
         });
     };
 
     // TODO: Remove toggleActive
     const toggleActive = () => {
-      if (store.state.active) store.commit(BABYBOX_NON_ACTIVE);
-      else store.commit(BABYBOX_ACTIVE);
+      const appState = store.state.appState;
+      if (appState?.active) store.commit(RESET_STATE);
+      else
+        store.commit(SET_STATE, {
+          state: {
+            message: { text: "Babybox aktivní!", color: "text-active" },
+            active: true,
+          },
+        });
     };
     return { time, textSize, toggleMessage, toggleActive };
   },

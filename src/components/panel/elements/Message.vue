@@ -20,7 +20,9 @@ import { Message } from "@/types/main";
 export default defineComponent({
   setup() {
     const store = useStore();
-    const message = computed((): Message => store.state.message);
+    const message = computed(
+      (): Message => store.state.appState.message || null
+    );
     const textSize = {
       fontSize: store.state.config.fontSizes.message + "vw",
     };
@@ -47,7 +49,6 @@ export default defineComponent({
     font-size 6vw
     line-height 0.9em
     font-weight 700
-    color warning
     text-align center
     padding 5px 0 25px 0
     overflow hidden

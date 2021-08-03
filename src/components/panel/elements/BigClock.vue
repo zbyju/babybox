@@ -31,7 +31,7 @@ export default defineComponent({
       getMinutesWithLeadingZeroes(time.value)
     );
     const bigger = computed((): boolean => {
-      return !store.state.message;
+      return !store.state.appState.message?.text;
     });
     const textSize = computed(() => {
       return bigger.value
