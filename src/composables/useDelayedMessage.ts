@@ -1,7 +1,7 @@
 import { computed, watch, ref, ComputedRef } from "vue";
 import { Message } from "@/types/main";
 
-export default function useCamera(message: ComputedRef<Message>) {
+export default function useDelayedMessage(message: ComputedRef<Message>) {
   const MESSAGE_DELAY = 1000;
 
   const messageDelayed = ref(message.value);
