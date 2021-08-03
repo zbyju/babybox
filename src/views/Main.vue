@@ -10,13 +10,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from "vue";
+import { defineComponent, computed, onBeforeMount } from "vue";
 import { useStore } from "vuex";
 
 import Nav from "@/components/Nav.vue";
 import Content from "@/components/panel/containers/Content.vue";
 import Header from "@/components/panel/containers/Header.vue";
 import Message from "@/components/panel/elements/Message.vue";
+
+import { initializeStore } from "@/utils/store";
 
 export default defineComponent({
   name: "Home",
@@ -27,7 +29,9 @@ export default defineComponent({
     Message,
   },
   setup() {
-    const active = computed(() => useStore().state.active);
+    onBeforeMount(initializeStore);
+
+    const active = computed(() => useStore().state.appState.active);
     return { active };
   },
 });
@@ -54,14 +58,25 @@ export default defineComponent({
   "content"\
 
 #MainWrapper.non-active
-    background-color background
+  background-color background
 #MainWrapper.active
-    animation: mymove 3s infinite;
+  animation: activeAnimBackground 3s infinite;
+  animation-timing-function: ease-in-out;
+
+  .message
+    animation: activeAnimText 3s infinite;
     animation-timing-function: ease-in-out;
 
-@keyframes mymove {
+@keyframes activeAnimBackground {
   0% {background-color: black;}
   50% {background-color: red;}
   100% {background-color: black;}
+}
+
+@keyframes activeAnimText {
+  0% {color: red;}
+  30% {color: black;}
+  60% {color: black;}
+  100% {color: red;}
 }
 </style>
