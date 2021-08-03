@@ -67,13 +67,17 @@ export interface Message {
   color: string;
 }
 
+export interface AppState {
+  message?: Message;
+  active: boolean;
+}
+
 export interface State {
   config: Config | null;
   time: moment.Moment | null;
   timePC: moment.Moment | null;
   data: Data | null;
-  message: Message | null;
-  active: boolean; // TODO: Change to a state variable
+  appState: AppState;
   thermalUnit: ThermalUnit;
   engineUnit: EngineUnit;
   connection: Connection;
