@@ -3,6 +3,7 @@ import { Connection } from "@/types/connection";
 import { TableData } from "@/types/tables";
 import { EngineUnit, ThermalUnit } from "@/types/units-data";
 import {
+  beamAboveContainer,
   prettyInt,
   prettyNumber,
   prettyPercentage,
@@ -138,7 +139,7 @@ export const getRowsTableDoors = (
     },
     {
       label: "Paprsek nad vaničkou",
-      value: engineData[17].value === "255" ? "Překážka" : "Volno",
+      value: beamAboveContainer(engineData[17].value),
     },
     {
       label: "Blokováno",
