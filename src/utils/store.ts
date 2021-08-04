@@ -10,9 +10,9 @@ import {
   SET_TIME_PC,
 } from "@/store/mutation-types/index-types";
 import { Config } from "@/types/main";
-import { useStore } from "vuex";
 import { getCurrentTimePC } from "./time";
 import { getData } from "@/api/units";
+import { getNewState } from "./state";
 
 /**
  * Loads config from the json file
@@ -22,11 +22,17 @@ const getConfig = (): Config => {
 };
 
 /**
+ * Looks at the data in store and updates the state accordingly
+ */
+const updateState = () => {
+  const newState = getNewState(store.state);
+};
+
+/**
  * Gets data from the json file and updates it in store
  */
 const initializeConfig = async () => {
   const config = getConfig();
-  const store = useStore();
   store.commit(SET_CONFIG, {
     config,
   });

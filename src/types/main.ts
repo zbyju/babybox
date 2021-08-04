@@ -65,6 +65,7 @@ export interface Data {
 export interface Message {
   text: string;
   color: string;
+  sound?: string;
 }
 
 export interface AppState {
