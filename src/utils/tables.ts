@@ -164,29 +164,23 @@ export const getRowsTableConnection = (
     {
       label: "BB odpověď",
       value: prettyTwoNumbers(
-        connection.engineUnit.successful,
-        connection.thermalUnit.successful
+        connection.engineUnit.successes,
+        connection.thermalUnit.successes
       ),
     },
     {
       label: "Ztracené odpovědi",
       value: prettyTwoNumbers(
-        connection.engineUnit.failed,
-        connection.thermalUnit.failed
+        connection.engineUnit.fails,
+        connection.thermalUnit.fails
       ),
     },
     {
       label: "Kvalita spojení",
       value:
-        prettyPercentage(
-          (connection.engineUnit.successful * 100) /
-            connection.engineUnit.requests
-        ) +
+        prettyPercentage(connection.engineUnit.getQuality()) +
         " | " +
-        prettyPercentage(
-          (connection.thermalUnit.successful * 100) /
-            connection.thermalUnit.requests
-        ),
+        prettyPercentage(connection.thermalUnit.getQuality()),
     },
     {
       label: "Limit spojení",
@@ -194,7 +188,7 @@ export const getRowsTableConnection = (
     },
     {
       label: "Dnů do zkoušky",
-      value: Math.max(7 - parseInt(engineData[33].value), 0).toString(),
+      value: Math.max(7 - parseInt(engineData[33].value), 0).toString() || "--",
     },
   ];
 };

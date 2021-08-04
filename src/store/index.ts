@@ -14,8 +14,8 @@ import {
   INCREMENT_FAIL_THERMAL,
 } from "./mutation-types/index-types";
 import { DefaultEngineUnit, DefaultThermalUnit } from "@/types/units-data";
-import { DefaultConnection } from "@/types/connection";
 import { getDefaultAppState } from "@/defaults/appState";
+import { ConnectionResult, getDefaultConnection } from "@/types/connection";
 
 export default createStore<State>({
   state: {
@@ -26,7 +26,7 @@ export default createStore<State>({
     appState: getDefaultAppState(),
     thermalUnit: DefaultThermalUnit,
     engineUnit: DefaultEngineUnit,
-    connection: DefaultConnection,
+    connection: getDefaultConnection(),
   },
   mutations: {
     [SET_CONFIG](state, payload) {
@@ -54,20 +54,16 @@ export default createStore<State>({
     },
 
     [INCREMENT_SUCCESS_ENGINE](state) {
-      state.connection.engineUnit.requests += 1;
-      state.connection.engineUnit.successful += 1;
+      state.connection.engineUnit.addResult(ConnectionResult.Success);
     },
     [INCREMENT_SUCCESS_THERMAL](state) {
-      state.connection.thermalUnit.requests += 1;
-      state.connection.thermalUnit.successful += 1;
+      state.connection.thermalUnit.addResult(ConnectionResult.Success);
     },
     [INCREMENT_FAIL_ENGINE](state) {
-      state.connection.engineUnit.requests += 1;
-      state.connection.engineUnit.failed += 1;
+      state.connection.engineUnit.addResult(ConnectionResult.Fail);
     },
     [INCREMENT_FAIL_THERMAL](state) {
-      state.connection.thermalUnit.requests += 1;
-      state.connection.thermalUnit.failed += 1;
+      state.connection.thermalUnit.addResult(ConnectionResult.Fail);
     },
   },
   actions: {},

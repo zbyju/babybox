@@ -1,21 +1,18 @@
-export interface UnitConnection {
-  requests: number;
-  successful: number;
-  failed: number;
+import { ConnectionTracker } from "@/utils/connections";
+
+export enum ConnectionResult {
+  Success = 1,
+  Fail = 0,
 }
 
 export interface Connection {
-  engineUnit: UnitConnection;
-  thermalUnit: UnitConnection;
+  engineUnit: ConnectionTracker;
+  thermalUnit: ConnectionTracker;
 }
 
-export const DefaultUnitConnection: UnitConnection = {
-  requests: 0,
-  successful: 0,
-  failed: 0,
-};
-
-export const DefaultConnection: Connection = {
-  engineUnit: Object.assign({}, DefaultUnitConnection),
-  thermalUnit: Object.assign({}, DefaultUnitConnection),
+export const getDefaultConnection = (): Connection => {
+  return {
+    engineUnit: new ConnectionTracker(),
+    thermalUnit: new ConnectionTracker(),
+  };
 };
