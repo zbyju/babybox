@@ -22,7 +22,9 @@
     },
     "postfix": "/get_ram[0]?rn=60",
     "requestDelay": 2000,
-    "requestTimeout": 5000
+    "requestTimeout": 5000,
+    "warningThreshold": 5,
+    "errorThreshold": 25
   },
   "camera": {
     "ip": "10.1.1.7",
