@@ -1,11 +1,12 @@
 import { getDefaultAppState } from "@/defaults/appState";
+import store from "@/store";
 import { AppState, State } from "@/types/main";
 
 export const getNewState = (state: State): AppState => {
   let result = getDefaultAppState();
 
-  const errThreshold1 = 5;
-  const errThreshold2 = 25;
+  const warningThreshold = store.state.config.units.warningThreshold || 5;
+  const errorThreshold = store.state.config.units.errorThreshold || 25;
 
   // X dni neprovedena zkouska
   const inspection = parseInt(state.engineUnit[33].value);
@@ -160,7 +161,7 @@ export const getNewState = (state: State): AppState => {
     state.connection.engineUnit.failStreak +
     state.connection.thermalUnit.failStreak;
   console.log(errStreak);
-  if (errStreak > errThreshold1 * 2) {
+  if (errStreak > warningThreshold * 2) {
     result = {
       active: false,
       message: {
@@ -169,7 +170,7 @@ export const getNewState = (state: State): AppState => {
       },
     };
   }
-  if (errStreak > errThreshold2 * 2) {
+  if (errStreak > errorThreshold * 2) {
     result = {
       active: false,
       message: {
