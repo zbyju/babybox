@@ -29,6 +29,8 @@ export interface UnitsConfig {
   postfix: string;
   requestTimeout: number;
   requestDelay: number;
+  warningThreshold: number;
+  errorThreshold: number;
 }
 
 export interface FontSizeConfig {
