@@ -27,9 +27,7 @@ const getConfig = (): Config => {
  * Looks at the data in store and updates the state accordingly
  */
 const updateState = () => {
-  store.commit(RESET_STATE);
   const newState = getNewState(store.state);
-  console.log(newState);
   store.commit(SET_STATE, {
     state: newState,
   });
