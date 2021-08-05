@@ -4,8 +4,10 @@ import {
   INCREMENT_FAIL_THERMAL,
   INCREMENT_SUCCESS_ENGINE,
   INCREMENT_SUCCESS_THERMAL,
+  RESET_STATE,
   SET_CONFIG,
   SET_ENGINE_UNIT,
+  SET_STATE,
   SET_THERMAL_UNIT,
   SET_TIME_PC,
 } from "@/store/mutation-types/index-types";
@@ -25,7 +27,12 @@ const getConfig = (): Config => {
  * Looks at the data in store and updates the state accordingly
  */
 const updateState = () => {
+  store.commit(RESET_STATE);
   const newState = getNewState(store.state);
+  console.log(newState);
+  store.commit(SET_STATE, {
+    state: newState,
+  });
 };
 
 /**
@@ -38,7 +45,7 @@ const initializeConfig = async () => {
   });
 };
 
-const initEngineUnit = async (timeout: number) => {
+const updateEngineUnit = async (timeout: number) => {
   const ip = store.state.config.units.engine.ip;
   const postfix = store.state.config.units.postfix;
   try {
@@ -52,7 +59,7 @@ const initEngineUnit = async (timeout: number) => {
   }
 };
 
-const initThermalUnit = async (timeout: number) => {
+const updateThermalUnit = async (timeout: number) => {
   const ip = store.state.config.units.thermal.ip;
   const postfix = store.state.config.units.postfix;
   try {
@@ -73,8 +80,9 @@ const initializeData = () => {
   const delay = store.state.config.units.requestDelay || 2000;
   const timeout = store.state.config.units.requestTimeout || 5000;
   setInterval(() => {
-    initEngineUnit(timeout);
-    initThermalUnit(timeout);
+    updateEngineUnit(timeout);
+    updateThermalUnit(timeout);
+    updateState();
   }, delay);
 };
 
