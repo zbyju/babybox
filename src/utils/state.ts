@@ -160,7 +160,7 @@ export const getNewState = (state: State): AppState => {
   const errStreak: number =
     state.connection.engineUnit.failStreak +
     state.connection.thermalUnit.failStreak;
-  console.log(errStreak);
+
   if (errStreak > warningThreshold * 2) {
     result = {
       active: false,
