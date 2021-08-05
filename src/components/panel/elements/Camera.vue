@@ -25,7 +25,6 @@ border-width = 5px
 div#CameraWrapper
   padding 0 10px
   grid-area camera
-  align-self flex-end
   margin 0 auto -7px auto
   img
     max-width 100%;
@@ -39,5 +38,4 @@ div#CameraWrapper
     margin 0 auto
     border-radius 5px
     background-color secondary
-    align-self flex-end
 </style>

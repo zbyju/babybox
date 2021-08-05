@@ -6,7 +6,7 @@
 
 <script lang="ts">
 import Table from "@/components/panel/HTMLElements/Table.vue";
-import { getRowsTableDoors, getRowsTableTemperatures } from "@/utils/tables";
+import { getRowsTableDoors } from "@/utils/tables";
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 
@@ -30,5 +30,4 @@ export default defineComponent({
   grid-area table-doors
 
   flex-grow 10
-  align-self flex-end
 </style>

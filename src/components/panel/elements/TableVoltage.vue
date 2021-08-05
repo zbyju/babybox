@@ -30,5 +30,4 @@ export default defineComponent({
   grid-area table-voltage
 
   flex-grow 10
-  align-self flex-end
 </style>

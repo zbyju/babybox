@@ -99,7 +99,6 @@ export default defineComponent({
   grid-area table-temperature
 
   flex-grow 10
-  align-self flex-end
 
   .border-cell
     border-right 1px solid primary

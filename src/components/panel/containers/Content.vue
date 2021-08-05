@@ -43,6 +43,7 @@ export default defineComponent({
 
   display grid
   justify-content space-between
+  align-items flex-start
   grid-template-columns auto auto auto auto auto;
   grid-template-rows: auto;
   grid-template-areas: "table-temperature table-doors camera table-voltage table-connection"
