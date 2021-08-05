@@ -1,10 +1,16 @@
+import { getDefaultAppState } from "@/defaults/appState";
 import { AppState, State } from "@/types/main";
 
 export const getNewState = (state: State): AppState => {
+  let result = getDefaultAppState();
+
+  const errThreshold1 = 5;
+  const errThreshold2 = 25;
+
   // X dni neprovedena zkouska
   const inspection = parseInt(state.engineUnit[33].value);
   if (inspection > 0) {
-    return {
+    result = {
       active: false,
       message: {
         text: `${inspection} dní neprovedena zkouška!`,
@@ -16,7 +22,7 @@ export const getNewState = (state: State): AppState => {
   // Different engine blockactions
   const engineBlock = parseInt(state.engineUnit[45].value);
   if (engineBlock & 256) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Babybox mimo provoz",
@@ -25,7 +31,7 @@ export const getNewState = (state: State): AppState => {
     };
   }
   if (engineBlock & 4 || engineBlock & 8) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Teplota mimo rozsah",
@@ -34,7 +40,7 @@ export const getNewState = (state: State): AppState => {
     };
   }
   if (engineBlock & 128) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Porucha dvířek, babybox blokován!",
@@ -46,7 +52,7 @@ export const getNewState = (state: State): AppState => {
   // Different thermal blockactions
   const thermalBlock = parseInt(state.thermalUnit[46].value);
   if (thermalBlock & 4) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Závada v babyboxu!",
@@ -55,7 +61,7 @@ export const getNewState = (state: State): AppState => {
     };
   }
   if (thermalBlock & 2) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Závada záložního zdroje!",
@@ -64,7 +70,7 @@ export const getNewState = (state: State): AppState => {
     };
   }
   if (thermalBlock & 1) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Výpadek napětí!",
@@ -75,7 +81,7 @@ export const getNewState = (state: State): AppState => {
 
   // Different engine states
   if (engineBlock & 2 && !(engineBlock & 1)) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Babybox byl otevřen!",
@@ -85,7 +91,7 @@ export const getNewState = (state: State): AppState => {
     };
   }
   if (engineBlock & 64) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Servisní dveře otevřeny",
@@ -97,7 +103,7 @@ export const getNewState = (state: State): AppState => {
   // Different door states
   const doorState = parseInt(state.engineUnit[48].value);
   if (doorState & 1 || doorState & 2) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Dvířka se otevírají",
@@ -107,7 +113,7 @@ export const getNewState = (state: State): AppState => {
     };
   }
   if (doorState & 4 || doorState & 64) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Překážka ve dvířkách",
@@ -116,7 +122,7 @@ export const getNewState = (state: State): AppState => {
     };
   }
   if (doorState & 8) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Dvířka jsou otevřena",
@@ -125,7 +131,7 @@ export const getNewState = (state: State): AppState => {
     };
   }
   if (doorState & 16 || doorState & 32) {
-    return {
+    result = {
       active: false,
       message: {
         text: "Dvířka se zavírají",
@@ -136,7 +142,7 @@ export const getNewState = (state: State): AppState => {
 
   // Activation
   if (engineBlock & 1) {
-    return {
+    result = {
       active: true,
       message: {
         text: "Babybox AKTIVNÍ!",
@@ -150,5 +156,30 @@ export const getNewState = (state: State): AppState => {
            if( (BlokaceMot & 1)==0 && (BlokaceMot & 2)==0 ) */
 
   // Connection
-  // TODO: Connection error
+  const errStreak: number =
+    state.connection.engineUnit.failStreak +
+    state.connection.thermalUnit.failStreak;
+  console.log(errStreak);
+  if (errStreak > errThreshold1 * 2) {
+    result = {
+      active: false,
+      message: {
+        text: "Navazuji spojení...",
+        color: "text-warning",
+      },
+    };
+  }
+  if (errStreak > errThreshold2 * 2) {
+    result = {
+      active: false,
+      message: {
+        text: "Chyba spojení!",
+        color: "text-error",
+        sound: "ZtrataSpojeni.wma",
+      },
+    };
+  }
+
+  // Else return default state
+  return result;
 };
