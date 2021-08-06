@@ -15,6 +15,7 @@ import { Config } from "@/types/main";
 import { getCurrentTimePC } from "./time";
 import { getData } from "@/api/units";
 import { getNewState } from "./state";
+import _ from "lodash";
 
 /**
  * Loads config from the json file
@@ -28,9 +29,11 @@ const getConfig = (): Config => {
  */
 const updateState = () => {
   const newState = getNewState(store.state);
-  store.commit(SET_STATE, {
-    state: newState,
-  });
+  if (!_.isEqual(store.state.appState, newState)) {
+    store.commit(SET_STATE, {
+      state: newState,
+    });
+  }
 };
 
 /**
