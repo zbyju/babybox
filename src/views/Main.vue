@@ -1,6 +1,6 @@
 <template>
   <div id="Main">
-    <div id="MainWrapper" :class="active ? 'active' : 'non-active'">
+    <div id="MainWrapper" :class="appState.active ? 'active' : 'non-active'">
       <Header></Header>
       <Message></Message>
       <Content></Content>
@@ -38,13 +38,26 @@ export default defineComponent({
     const soundPlayer = useSounds();
 
     watch(appState, (newValue, prevValue) => {
-      if (!appState.value.message) return;
-      if (newValue.message?.sound !== prevValue.message?.sound) {
+      if (
+        newValue.message?.sound !== prevValue.message?.sound &&
+        newValue.message?.sound != null &&
+        newValue.message?.sound != undefined &&
+        newValue.message?.sound != ""
+      ) {
         soundPlayer.playSound(newValue.message.sound);
+      }
+      if (
+        newValue.message == null ||
+        newValue.message == undefined ||
+        newValue.message.sound == null ||
+        newValue.message.sound == undefined ||
+        newValue.message.sound === ""
+      ) {
+        soundPlayer.stopSound();
       }
     });
 
-    return { active: appState.value.active };
+    return { appState: appState };
   },
 });
 </script>
@@ -81,14 +94,14 @@ export default defineComponent({
 
 @keyframes activeAnimBackground {
   0% {background-color: black;}
-  50% {background-color: red;}
+  50% {background-color: text-error;}
   100% {background-color: black;}
 }
 
 @keyframes activeAnimText {
-  0% {color: red;}
+  0% {color: text-error;}
   30% {color: black;}
   60% {color: black;}
-  100% {color: red;}
+  100% {color: text-error;}
 }
 </style>
