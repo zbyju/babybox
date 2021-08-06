@@ -24,6 +24,7 @@ export const prettyVoltage = (x: string): string => {
 };
 
 export const prettyInt = (num: number): string => {
+  if (num == null || num == undefined || isNaN(num)) return "";
   return num.toFixed(0);
 };
 
@@ -40,6 +41,10 @@ export const prettyTwoTemperatures = (temp1: string, temp2: string): string => {
   return prettyTwoItems(prettyTemperature(temp1), prettyTemperature(temp2));
 };
 
+export const prettyTwoPercentages = (num1: number, num2: number): string => {
+  return prettyTwoItems(prettyPercentage(num1), prettyPercentage(num2));
+};
+
 export const prettyTwoNumbers = (num1: number, num2: number): string => {
   try {
     return prettyTwoItems(num1.toString(), num2.toString());
@@ -53,9 +58,11 @@ export const prettyTwoItems = (s1: string, s2: string): string => {
     s1 == null ||
     s1 == undefined ||
     s1 == NaN.toString() ||
+    s1 == "" ||
     s2 == null ||
     s2 == undefined ||
-    s2 == NaN.toString()
+    s2 == NaN.toString() ||
+    s2 == ""
   )
     return "";
   return `${s1} | ${s2}`;

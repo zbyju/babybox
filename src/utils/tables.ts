@@ -9,6 +9,7 @@ import {
   prettyPercentage,
   prettyTemperature,
   prettyTwoNumbers,
+  prettyTwoPercentages,
   prettyTwoTemperatures,
   prettyVoltage,
 } from "./data";
@@ -153,6 +154,9 @@ export const getRowsTableConnection = (
   thermalData: ThermalUnit,
   connection: Connection
 ): TableData => {
+  // console.log(engineData[59].value, "Casovac od zkousky-aktivace");
+  // console.log(engineData[11].value, "perioda zkousek");
+  // console.log(engineData[33].value, "Dnu od zkousky-aktivace");
   return [
     {
       label: "PC dotaz",
@@ -177,10 +181,10 @@ export const getRowsTableConnection = (
     },
     {
       label: "Kvalita spojení",
-      value:
-        prettyPercentage(connection.engineUnit.getQuality()) +
-        " | " +
-        prettyPercentage(connection.thermalUnit.getQuality()),
+      value: prettyTwoPercentages(
+        connection.engineUnit.getQuality(),
+        connection.thermalUnit.getQuality()
+      ),
     },
     {
       label: "Limit spojení",
@@ -188,7 +192,7 @@ export const getRowsTableConnection = (
     },
     {
       label: "Dnů do zkoušky",
-      value: Math.max(7 - parseInt(engineData[33].value), 0).toString() || "--",
+      value: prettyInt(Math.max(7 - parseInt(engineData[33].value), 0)),
     },
   ];
 };
