@@ -27,6 +27,8 @@ class BabyboxSoundPlayer {
     if (this.playing) this.playing.stop();
 
     const howl = this.loadHowl(name, loop);
+    if (howl === null) return;
+
     this.playing = howl;
 
     this.playing.play();
