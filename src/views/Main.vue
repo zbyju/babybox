@@ -20,9 +20,7 @@ import Message from "@/components/panel/elements/Message.vue";
 
 import { initializeStore } from "@/utils/store";
 import { AppState } from "@/types/main";
-import { BabyboxSounds, useSounds } from "@/composables/useSounds";
-
-const activation = require("@/assets/sounds/Aktivace.mp3");
+import { useSounds } from "@/composables/useSounds";
 
 export default defineComponent({
   name: "Home",
@@ -37,33 +35,12 @@ export default defineComponent({
     const store = useStore();
     const appState = computed((): AppState => store.state.appState);
 
-    const sounds: BabyboxSounds = useSounds();
-    let playing = null;
+    const soundPlayer = useSounds();
 
     watch(appState, (newValue, prevValue) => {
       if (!appState.value.message) return;
       if (newValue.message?.sound !== prevValue.message?.sound) {
-        if (playing) playing.stop();
-        if (newValue.message.sound === "Aktivace") {
-          playing = sounds.activation.sound;
-          playing.play();
-        }
-        if (newValue.message.sound === "BylOtevren") {
-          playing = sounds.wasOpened.sound;
-          playing.play();
-        }
-        if (newValue.message.sound === "Otevirani") {
-          playing = sounds.opening.sound;
-          playing.play();
-        }
-        if (newValue.message.sound === "Start") {
-          playing = sounds.start.sound;
-          playing.play();
-        }
-        if (newValue.message.sound === "ZtrataSpojeni") {
-          playing = sounds.connectionLost.sound;
-          playing.play();
-        }
+        soundPlayer.playSound(newValue.message.sound);
       }
     });
 
