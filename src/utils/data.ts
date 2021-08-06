@@ -41,10 +41,23 @@ export const prettyTwoTemperatures = (temp1: string, temp2: string): string => {
 };
 
 export const prettyTwoNumbers = (num1: number, num2: number): string => {
-  return prettyTwoItems(num1.toString(), num2.toString());
+  try {
+    return prettyTwoItems(num1.toString(), num2.toString());
+  } catch (err) {
+    return "";
+  }
 };
 
 export const prettyTwoItems = (s1: string, s2: string): string => {
+  if (
+    s1 == null ||
+    s1 == undefined ||
+    s1 == NaN.toString() ||
+    s2 == null ||
+    s2 == undefined ||
+    s2 == NaN.toString()
+  )
+    return "";
   return `${s1} | ${s2}`;
 };
 
