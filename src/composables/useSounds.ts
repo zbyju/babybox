@@ -14,6 +14,7 @@ class BabyboxSoundPlayer {
   }
 
   private loadHowl(name: string, loop: boolean) {
+    if (!name || name == null || name == undefined || name == "") return null;
     const sound = require(`@/assets/sounds/${name}.mp3`);
     return new Howl({
       src: [sound],
