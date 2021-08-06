@@ -43,7 +43,11 @@ export default defineComponent({
       else
         store.commit(SET_STATE, {
           state: {
-            message: { text: "Babybox aktivní!", color: "text-active" },
+            message: {
+              text: "Babybox aktivní!",
+              color: "text-active",
+              sound: "Aktivace",
+            },
             active: true,
           },
         });
