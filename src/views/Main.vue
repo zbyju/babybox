@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onBeforeMount } from "vue";
+import { defineComponent, computed, onBeforeMount, watch } from "vue";
 import { useStore } from "vuex";
 
 import Nav from "@/components/Nav.vue";
@@ -19,6 +19,10 @@ import Header from "@/components/panel/containers/Header.vue";
 import Message from "@/components/panel/elements/Message.vue";
 
 import { initializeStore } from "@/utils/store";
+import { AppState } from "@/types/main";
+import { BabyboxSounds, useSounds } from "@/composables/useSounds";
+
+const activation = require("@/assets/sounds/Aktivace.mp3");
 
 export default defineComponent({
   name: "Home",
@@ -30,9 +34,40 @@ export default defineComponent({
   },
   setup() {
     onBeforeMount(initializeStore);
+    const store = useStore();
+    const appState = computed((): AppState => store.state.appState);
 
-    const active = computed(() => useStore().state.appState.active);
-    return { active };
+    const sounds: BabyboxSounds = useSounds();
+    let playing = null;
+
+    watch(appState, (newValue, prevValue) => {
+      if (!appState.value.message) return;
+      if (newValue.message?.sound !== prevValue.message?.sound) {
+        if (playing) playing.stop();
+        if (newValue.message.sound === "Aktivace") {
+          playing = sounds.activation.sound;
+          playing.play();
+        }
+        if (newValue.message.sound === "BylOtevren") {
+          playing = sounds.wasOpened.sound;
+          playing.play();
+        }
+        if (newValue.message.sound === "Otevirani") {
+          playing = sounds.opening.sound;
+          playing.play();
+        }
+        if (newValue.message.sound === "Start") {
+          playing = sounds.start.sound;
+          playing.play();
+        }
+        if (newValue.message.sound === "ZtrataSpojeni") {
+          playing = sounds.connectionLost.sound;
+          playing.play();
+        }
+      }
+    });
+
+    return { active: appState.value.active };
   },
 });
 </script>

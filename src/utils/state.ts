@@ -87,7 +87,7 @@ export const getNewState = (state: State): AppState => {
       message: {
         text: "Babybox byl otevřen!",
         color: "text-warning",
-        sound: "BylOtevren.wma",
+        sound: "BylOtevren",
       },
     };
   }
@@ -109,7 +109,7 @@ export const getNewState = (state: State): AppState => {
       message: {
         text: "Dvířka se otevírají",
         color: "text-success",
-        sound: "Otevirani.wma",
+        sound: "Otevirani",
       },
     };
   }
@@ -148,7 +148,7 @@ export const getNewState = (state: State): AppState => {
       message: {
         text: "Babybox AKTIVNÍ!",
         color: "text-error",
-        sound: "Aktivace.wma",
+        sound: "Aktivace",
       },
     };
   }
@@ -176,7 +176,7 @@ export const getNewState = (state: State): AppState => {
       message: {
         text: "Chyba spojení!",
         color: "text-error",
-        sound: "ZtrataSpojeni.wma",
+        sound: "ZtrataSpojeni",
       },
     };
   }
