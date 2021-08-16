@@ -5,6 +5,7 @@ import { EngineUnit, ThermalUnit } from "@/types/units-data";
 import {
   beamAboveContainer,
   prettyInt,
+  prettyBooleanString,
   prettyNumber,
   prettyPercentage,
   prettyTemperature,
@@ -45,38 +46,6 @@ export const getRowsTableTemperatures = (
     {
       label: "Plášť",
       value: prettyTemperature(thermalData[30].value),
-    },
-  ];
-};
-
-export const getRowsACState = (
-  engineData: EngineUnit,
-  thermalData: ThermalUnit
-): TableData => {
-  return [
-    {
-      label: "Topí plášť",
-      value: prettyTemperature(thermalData[29].value),
-    },
-    {
-      label: "Topí vzduch",
-      value: prettyTemperature(thermalData[29].value),
-    },
-    {
-      label: "Chladí vzduch",
-      value: prettyTemperature(thermalData[29].value),
-    },
-    {
-      label: "Cílová teplota",
-      value: prettyTemperature(thermalData[29].value),
-    },
-    {
-      label: "Hysterze topení",
-      value: prettyTemperature(thermalData[29].value),
-    },
-    {
-      label: "Hysterze chlazení",
-      value: prettyTemperature(thermalData[29].value),
     },
   ];
 };
@@ -144,7 +113,7 @@ export const getRowsTableDoors = (
     },
     {
       label: "Blokováno",
-      value: "?",
+      value: prettyBooleanString(engineData[45].value),
     },
   ];
 };
