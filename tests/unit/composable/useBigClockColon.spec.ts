@@ -14,7 +14,17 @@ describe("useBigClockColon composable function", () => {
   test("showColon should be defined", () => {
     const storeTime = ref(moment());
     const time = computed(() => storeTime.value);
-    const { showColon } = useBigClockColon(time, 50);
+    const active = computed(() => false);
+    const { showColon } = useBigClockColon(time, active, 50);
     expect(showColon).toBeDefined();
+  });
+
+  test("showColon should be true if babybox is active", () => {
+    const storeTime = ref(moment());
+    const time = computed(() => storeTime.value);
+    const active = computed(() => true);
+    const { showColon } = useBigClockColon(time, active, 50);
+    expect(showColon).toBeDefined();
+    expect(showColon).toBeTruthy();
   });
 });
