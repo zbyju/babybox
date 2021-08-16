@@ -1,11 +1,23 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import Main from "../views/Main.vue";
+import Data from "../views/Settings.vue";
+import Settings from "../views/Data.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     name: "Main",
     component: Main,
+  },
+  {
+    path: "/settings",
+    name: "Settings",
+    component: Settings,
+  },
+  {
+    path: "/data",
+    name: "Data",
+    component: Data,
   },
 ];
 
