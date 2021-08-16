@@ -6,8 +6,6 @@ import {
   beamAboveContainer,
   prettyInt,
   prettyBooleanString,
-  prettyNumber,
-  prettyPercentage,
   prettyTemperature,
   prettyTwoNumbers,
   prettyTwoPercentages,

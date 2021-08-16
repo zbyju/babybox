@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, watch } from "vue";
+import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import useBigClockColon from "@/composables/useBigClockColon";
 import useActiveTime from "@/composables/useActiveTime";
