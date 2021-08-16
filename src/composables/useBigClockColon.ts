@@ -1,9 +1,10 @@
 import moment from "moment";
-import { ref, watch, ComputedRef } from "vue";
+import { ref, watch, Ref, ComputedRef } from "vue";
 import _ from "lodash";
 
 export default function useBigClockColon(
-  time: ComputedRef<moment.Moment>,
+  time: Ref<moment.Moment>,
+  active: ComputedRef<boolean>,
   blinkDelay = 1000
 ) {
   const showColon = ref(true);
@@ -21,6 +22,10 @@ export default function useBigClockColon(
 
   // Blink when time changes
   watch(time, (newTime, oldTime) => {
+    if (active.value) {
+      showColon.value = true;
+      return;
+    }
     if (newTime?.unix().toString() !== oldTime?.unix().toString()) {
       throttledBlink();
     }

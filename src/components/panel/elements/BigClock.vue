@@ -4,7 +4,7 @@
     <span
       id="BigClockColon"
       :style="textSize"
-      :class="{ transparent: showColon }"
+      :class="{ transparent: !showColon }"
       >:</span
     >
     <span id="BigClockMinutes" :style="textSize">{{ minutes }}</span>
@@ -12,9 +12,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from "vue";
+import { defineComponent, computed, watch } from "vue";
 import { useStore } from "vuex";
 import useBigClockColon from "@/composables/useBigClockColon";
+import useActiveTime from "@/composables/useActiveTime";
 import moment from "moment";
 import {
   getHoursWithLeadingZeroes,
@@ -24,8 +25,10 @@ import {
 export default defineComponent({
   setup() {
     const store = useStore();
-    const time = computed((): moment.Moment => store.state.time);
-    const { showColon } = useBigClockColon(time);
+    const storeTime = computed((): moment.Moment => store.state.time);
+    const active = computed((): boolean => store.state.appState.active);
+    const time = useActiveTime(storeTime, active);
+    const { showColon } = useBigClockColon(time, active);
     const hours = computed((): string => getHoursWithLeadingZeroes(time.value));
     const minutes = computed((): string =>
       getMinutesWithLeadingZeroes(time.value)
