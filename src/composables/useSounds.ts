@@ -35,6 +35,6 @@ class BabyboxSoundPlayer {
   }
 
   stopSound() {
-    this.playing.stop();
+    this.playing?.stop();
   }
 }
