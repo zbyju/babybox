@@ -6,7 +6,6 @@
         <Date></Date>
         <Time></Time>
       </div>
-      <Notes></Notes>
     </div>
     <BigClock></BigClock>
   </div>
@@ -19,7 +18,6 @@ import BigClock from "@/components/panel/elements/BigClock.vue";
 import BabyboxName from "@/components/panel/elements/BabyboxName.vue";
 import Time from "@/components/panel/elements/Time.vue";
 import Date from "@/components/panel/elements/Date.vue";
-import Notes from "@/components/panel/elements/Notes.vue";
 
 export default defineComponent({
   setup() {
@@ -30,7 +28,6 @@ export default defineComponent({
     Time,
     Date,
     BigClock,
-    Notes,
   },
 });
 </script>
