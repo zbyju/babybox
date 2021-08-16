@@ -4,10 +4,12 @@ import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 export const getData = (
   timeout: number,
   ip: string,
-  postfix: string
+  postfix: string,
+  appendTime = true
 ): Promise<EngineUnit | ThermalUnit> => {
-  const url = `http://${ip}${postfix}&${new Date().getTime()}`;
-
+  const time = appendTime ? "&" + new Date().getTime() : "";
+  const url = `http://${ip}${postfix}${time}`;
+  console.log(url);
   return new Promise((resolve, reject) => {
     fetchWithTimeout(url, { timeout: timeout })
       .then((response) => response.text())

@@ -75,6 +75,12 @@ const updateThermalUnit = async (timeout: number) => {
   }
 };
 
+const updateWatchdogEngine = async (timeout: number) => {
+  const ip = store.state.config.units.engine.ip;
+  const postfix = store.state.config.units.postfixWatchdog;
+  await getData(timeout, ip, postfix, false);
+};
+
 /**
  * Gets data from babybox and updates @data and @time in store
  */
@@ -85,6 +91,7 @@ const initializeData = () => {
     updateEngineUnit(timeout);
     updateThermalUnit(timeout);
     updateState();
+    updateWatchdogEngine(timeout);
   }, delay);
 };
 

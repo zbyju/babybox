@@ -27,6 +27,7 @@ export interface UnitsConfig {
     ip: string;
   };
   postfix: string;
+  postfixWatchdog: string;
   requestTimeout: number;
   requestDelay: number;
   warningThreshold: number;
