@@ -12,7 +12,7 @@ import { getFullDate } from "@/utils/time";
 export default defineComponent({
   setup() {
     const store = useStore();
-    const date = computed((): string => getFullDate(store.state.timePC));
+    const date = computed((): string => getFullDate(store.state.time));
     const textSize = {
       fontSize: store.state.config.fontSizes.smallClock + "vw",
     };

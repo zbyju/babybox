@@ -9,10 +9,10 @@ import {
   SET_ENGINE_UNIT,
   SET_STATE,
   SET_THERMAL_UNIT,
-  SET_TIME_PC,
+  SET_TIME,
 } from "@/store/mutation-types/index-types";
 import { Config } from "@/types/main";
-import { getCurrentTimePC } from "./time";
+import { convertSDSTimeToMoment, getCurrentTimePC } from "./time";
 import { getData } from "@/api/units";
 import { getNewState } from "./state";
 import _ from "lodash";
@@ -34,6 +34,7 @@ const updateState = () => {
       state: newState,
     });
   }
+  updateClock();
 };
 
 /**
@@ -88,16 +89,13 @@ const initializeData = () => {
 };
 
 /**
- * Gets the current computer time and initilizes it
+ * Gets the time from engine unit and stores it in store
  */
-const initializeClock = () => {
-  const delay = store.state.config.app.colonDelay;
-  setInterval(() => {
-    const time = getCurrentTimePC();
-    store.commit(SET_TIME_PC, {
-      time,
-    });
-  }, delay);
+const updateClock = () => {
+  const time = convertSDSTimeToMoment(store.state.engineUnit);
+  store.commit(SET_TIME, {
+    time,
+  });
 };
 
 /**
@@ -106,5 +104,4 @@ const initializeClock = () => {
 export const initializeStore = async () => {
   initializeConfig();
   initializeData();
-  initializeClock();
 };

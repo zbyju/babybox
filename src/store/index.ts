@@ -3,7 +3,6 @@ import { createStore } from "vuex";
 import { State } from "@/types/main";
 import {
   SET_CONFIG,
-  SET_TIME_PC,
   SET_STATE,
   RESET_STATE,
   SET_ENGINE_UNIT,
@@ -12,6 +11,7 @@ import {
   INCREMENT_SUCCESS_THERMAL,
   INCREMENT_FAIL_ENGINE,
   INCREMENT_FAIL_THERMAL,
+  SET_TIME,
 } from "./mutation-types/index-types";
 import { DefaultEngineUnit, DefaultThermalUnit } from "@/types/units-data";
 import { getDefaultAppState } from "@/defaults/appState";
@@ -21,7 +21,6 @@ export default createStore<State>({
   state: {
     config: null,
     time: null,
-    timePC: null,
     data: null,
     appState: getDefaultAppState(),
     thermalUnit: DefaultThermalUnit,
@@ -32,13 +31,9 @@ export default createStore<State>({
     [SET_CONFIG](state, payload) {
       state.config = payload.config;
     },
-    [SET_TIME_PC](state, payload) {
-      state.timePC = payload.time;
+    [SET_TIME](state, payload) {
+      state.time = payload.time;
     },
-    [SET_TIME_PC](state, payload) {
-      state.timePC = payload.time;
-    },
-
     [SET_STATE](state, payload) {
       state.appState = payload.state;
     },

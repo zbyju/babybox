@@ -1,3 +1,4 @@
+import { EngineUnit } from "@/types/units-data";
 import moment from "moment";
 
 export const getHoursWithLeadingZeroes = (time: moment.Moment): string => {
@@ -24,4 +25,16 @@ export const getFullDate = (time: moment.Moment): string => {
 
 export const getCurrentTimePC = (): moment.Moment => {
   return moment();
+};
+
+export const convertSDSTimeToMoment = (
+  engineUnit: EngineUnit
+): moment.Moment => {
+  return moment()
+    .date(parseInt(engineUnit[39].value))
+    .month(parseInt(engineUnit[40].value))
+    .year(parseInt(engineUnit[41].value))
+    .hour(parseInt(engineUnit[42].value))
+    .minute(parseInt(engineUnit[43].value))
+    .second(parseInt(engineUnit[44].value));
 };

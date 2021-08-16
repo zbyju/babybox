@@ -24,7 +24,7 @@ import {
 export default defineComponent({
   setup() {
     const store = useStore();
-    const time = computed((): moment.Moment => store.state.timePC);
+    const time = computed((): moment.Moment => store.state.time);
     const { showColon } = useBigClockColon(time);
     const hours = computed((): string => getHoursWithLeadingZeroes(time.value));
     const minutes = computed((): string =>

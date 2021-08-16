@@ -15,7 +15,7 @@ import { SET_STATE, RESET_STATE } from "@/store/mutation-types/index-types";
 export default defineComponent({
   setup() {
     const store = useStore();
-    const time = computed((): string => getFullTime(store.state.timePC));
+    const time = computed((): string => getFullTime(store.state.time));
     const textSize = {
       fontSize: store.state.config.fontSizes.smallClock + "vw",
     };

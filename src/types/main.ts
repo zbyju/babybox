@@ -78,7 +78,6 @@ export interface AppState {
 export interface State {
   config: Config | null;
   time: moment.Moment | null;
-  timePC: moment.Moment | null;
   data: Data | null;
   appState: AppState;
   thermalUnit: ThermalUnit;

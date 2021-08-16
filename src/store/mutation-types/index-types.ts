@@ -1,5 +1,5 @@
 export const SET_CONFIG = "SET_CONFIG";
-export const SET_TIME_PC = "SET_TIME_PC";
+export const SET_TIME = "SET_TIME";
 
 export const SET_STATE = "SET_STATE";
 export const RESET_STATE = "RESET_STATE";
