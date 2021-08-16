@@ -22,10 +22,7 @@ export const getRowsTableTemperatures = (
   return [
     {
       label: "Cílová teplota",
-      value: prettyTwoTemperatures(
-        thermalData[29].value,
-        thermalData[29].value
-      ),
+      value: prettyTemperature(thermalData[0].value),
     },
     {
       label: "Vnitřní",
