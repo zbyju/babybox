@@ -20,7 +20,11 @@ export default function useBigClockColon(
   const throttledBlink = _.throttle(blink, blinkDelay * 2);
 
   // Blink when time changes
-  watch(time, throttledBlink);
+  watch(time, (newTime, oldTime) => {
+    if (newTime?.unix().toString() !== oldTime?.unix().toString()) {
+      throttledBlink();
+    }
+  });
 
   return {
     showColon,
