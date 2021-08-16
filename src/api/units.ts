@@ -9,7 +9,6 @@ export const getData = (
 ): Promise<EngineUnit | ThermalUnit> => {
   const time = appendTime ? "&" + new Date().getTime() : "";
   const url = `http://${ip}${postfix}${time}`;
-  console.log(url);
   return new Promise((resolve, reject) => {
     fetchWithTimeout(url, { timeout: timeout })
       .then((response) => response.text())
