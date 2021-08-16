@@ -32,6 +32,16 @@ export const prettyNumber = (num: number): string => {
   return num.toFixed(2);
 };
 
+export const prettyBooleanString = (s: string): string => {
+  if (s.toLowerCase() === "true" || s == "1") return prettyBoolean(true);
+  if (s.toLowerCase() === "false" || s == "0") return prettyBoolean(false);
+  return "";
+};
+
+export const prettyBoolean = (bool: boolean): string => {
+  return bool ? "Ano" : "Ne";
+};
+
 export const prettyPercentage = (num: number): string => {
   if (num !== 0 && (!num || isNaN(num))) return "";
   return `${prettyNumber(num)}%`;
