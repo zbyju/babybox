@@ -33,9 +33,15 @@ export const prettyNumber = (num: number): string => {
 };
 
 export const prettyBooleanString = (s: string): string => {
-  if (s.toLowerCase() === "true" || s == "1") return prettyBoolean(true);
+  if (s.toLowerCase() === "true") return prettyBoolean(true);
   if (s.toLowerCase() === "false" || s == "0") return prettyBoolean(false);
-  return "";
+  try {
+    const parsed = parseIntOrEmpty(s);
+    if (parsed == 0) return prettyBoolean(false);
+    if (parsed > 0) return prettyBoolean(true);
+  } catch (err) {
+    return "";
+  }
 };
 
 export const prettyBoolean = (bool: boolean): string => {
