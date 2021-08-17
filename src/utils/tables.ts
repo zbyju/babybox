@@ -11,6 +11,7 @@ import {
   prettyTwoPercentages,
   prettyTwoTemperatures,
   prettyVoltage,
+  secondsToTime,
 } from "./data";
 
 export const getRowsTableTemperatures = (
@@ -155,8 +156,8 @@ export const getRowsTableConnection = (
       value: store.state.config.units.requestTimeout + "ms",
     },
     {
-      label: "Dnů do zkoušky",
-      value: prettyInt(Math.max(7 - parseInt(engineData[33].value), 0)),
+      label: "Čas do zkoušky",
+      value: secondsToTime(engineData[59].value),
     },
   ];
 };

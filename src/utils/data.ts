@@ -93,3 +93,26 @@ export const beamAboveContainer = (s: string): string => {
     return "";
   }
 };
+
+const zeroFilled = (num: number, padlen: number): string => {
+  const pad_char = "0";
+  const pad = new Array(1 + padlen).join(pad_char);
+  return (pad + num).slice(-pad.length);
+};
+
+export const secondsToTime = (str: string): string => {
+  try {
+    const parsed: number = parseIntOrEmpty(str);
+    const d = Math.floor(parsed / (3600 * 24));
+    const h = Math.floor((parsed % (3600 * 24)) / 3600);
+    const m = Math.floor((parsed % 3600) / 60);
+    const s = Math.floor(parsed % 60);
+    const dl = d > 1 ? "dnů" : d == 0 ? "den" : "";
+    return `${d} ${dl} ${zeroFilled(h, 2)}:${zeroFilled(m, 2)}:${zeroFilled(
+      s,
+      2
+    )}`;
+  } catch (err) {
+    return "";
+  }
+};
