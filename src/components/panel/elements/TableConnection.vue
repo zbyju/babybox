@@ -32,6 +32,4 @@ export default defineComponent({
 <style lang="stylus">
 #TableConnection
   grid-area table-connection
-
-  flex-grow 10
 </style>

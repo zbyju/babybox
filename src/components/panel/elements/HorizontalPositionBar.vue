@@ -51,15 +51,16 @@ export default defineComponent({
 
 <style lang="stylus">
 div.verticalPositionBar
-  width 49.5%
-  height 5px
   display flex
   flex-direction row
+  height 4px
+  flex-grow 1
 
   div.fill
     align-self flex-end
     height 100%
-    width 0%
+    width 0
+    border-radius 5px 5px 0 0
     background-color text-success
     transition 0.5s all
 </style>

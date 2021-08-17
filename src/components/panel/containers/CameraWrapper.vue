@@ -46,11 +46,14 @@ export default defineComponent({
 
 <style lang="stylus">
 #CameraWrapper
-  grid-area camera
+  height 100%
   display flex
   flex-direction column
+
   #DoorBars
+    width 100%
     display flex
     flex-direction row
     justify-content space-between
+    gap 5px
 </style>

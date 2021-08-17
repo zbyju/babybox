@@ -1,7 +1,5 @@
 <template>
-  <div id="Camera">
-    <img :src="url" />
-  </div>
+  <img :src="url" />
 </template>
 
 <script lang="ts">
@@ -23,17 +21,15 @@ export default defineComponent({
 <style lang="stylus">
 border-width = 5px
 div#Camera
-  margin 3px auto 0px auto
-  img
-    max-width 100%;
-    width auto
-    max-height 37vh;
-    min-width 320px
-    min-height 180px
-    object-fit cover;
-
-    border 5px solid primary
-    margin 0 auto
-    border-radius 5px
-    background-color secondary
+  height 100%
+  display inline-block
+  background red
+img
+  max-width 100%
+  max-height 98%
+  height 98%
+  object-fit contain;
+  border 3px solid primary
+  border-top 0
+  border-radius 0 0 5px 5px
 </style>

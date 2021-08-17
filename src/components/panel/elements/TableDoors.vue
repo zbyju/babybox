@@ -28,6 +28,4 @@ export default defineComponent({
 <style lang="stylus">
 #TableDoors
   grid-area table-doors
-
-  flex-grow 10
 </style>

@@ -41,12 +41,14 @@ export default defineComponent({
 
   transition 1s all ease-in-out
 
-  display grid
+  display flex
   justify-content space-between
   align-items flex-start
-  grid-template-columns auto auto auto auto auto;
-  grid-template-rows: auto;
-  grid-template-areas: "table-temperature table-doors camera table-voltage table-connection"
+  gap 10px
+  max-height 37vh
+  // grid-template-columns auto auto auto auto auto;
+  // grid-template-rows: auto;
+  // grid-template-areas: "table-temperature table-doors camera table-voltage table-connection"
 
   background background
   border-top 5px solid primary

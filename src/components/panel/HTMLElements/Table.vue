@@ -56,6 +56,7 @@ export default defineComponent({
     margin auto
     font-size 0.75vw
     align-self center
+    white-space nowrap
 
     thead tr
       background-color primary

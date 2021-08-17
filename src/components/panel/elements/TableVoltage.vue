@@ -28,6 +28,4 @@ export default defineComponent({
 <style lang="stylus">
 #TableVoltage
   grid-area table-voltage
-
-  flex-grow 10
 </style>
