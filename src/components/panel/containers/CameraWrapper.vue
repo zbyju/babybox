@@ -49,6 +49,7 @@ export default defineComponent({
   height 100%
   display flex
   flex-direction column
+  flex-grow 1
 
   #DoorBars
     width 100%
