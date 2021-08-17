@@ -1,7 +1,6 @@
 <template>
   <div class="verticalPositionBar" :style="{ flexDirection }">
     <div class="fill" :style="{ width: width + '%' }"></div>
-    {{ width }}
   </div>
 </template>
 
@@ -37,7 +36,10 @@ export default defineComponent({
         typeof minValue.value === "number" &&
         typeof value.value === "number"
       ) {
-        return ((value.value - minValue.value) * 100) / maxValue.value;
+        return Math.max(
+          100 - ((value.value - minValue.value) * 100) / maxValue.value,
+          100
+        );
       } else {
         return 0;
       }
@@ -58,5 +60,6 @@ div.verticalPositionBar
     align-self flex-end
     height 100%
     width 0%
-    background-color red
+    background-color text-success
+    transition 0.5s all
 </style>

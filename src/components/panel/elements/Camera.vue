@@ -23,11 +23,11 @@ export default defineComponent({
 <style lang="stylus">
 border-width = 5px
 div#Camera
-  margin 0 auto -7px auto
+  margin 3px auto 0px auto
   img
     max-width 100%;
     width auto
-    max-height 38vh;
+    max-height 37vh;
     min-width 320px
     min-height 180px
     object-fit cover;
