@@ -1,5 +1,5 @@
 <template>
-  <div id="CameraWrapper">
+  <div id="Camera">
     <img :src="url" />
   </div>
 </template>
@@ -22,9 +22,7 @@ export default defineComponent({
 
 <style lang="stylus">
 border-width = 5px
-div#CameraWrapper
-  padding 0 10px
-  grid-area camera
+div#Camera
   margin 0 auto -7px auto
   img
     max-width 100%;

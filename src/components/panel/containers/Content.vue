@@ -2,7 +2,7 @@
   <div id="Content">
     <TableTemperature></TableTemperature>
     <TableVoltage></TableVoltage>
-    <Camera></Camera>
+    <CameraWrapper></CameraWrapper>
     <TableDoors></TableDoors>
     <TableConnection></TableConnection>
   </div>
@@ -11,22 +11,22 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 
-import Camera from "@/components/panel/elements/Camera.vue";
 import TableTemperature from "@/components/panel/elements/TableTemperature.vue";
 import TableConnection from "@/components/panel/elements/TableConnection.vue";
 import TableDoors from "@/components/panel/elements/TableDoors.vue";
 import TableVoltage from "@/components/panel/elements/TableVoltage.vue";
+import CameraWrapper from "@/components/panel/containers/CameraWrapper.vue";
 
 export default defineComponent({
   setup() {
     return {};
   },
   components: {
-    Camera,
     TableTemperature,
     TableConnection,
     TableDoors,
     TableVoltage,
+    CameraWrapper,
   },
 });
 </script>

@@ -1,0 +1,62 @@
+<template>
+  <div class="verticalPositionBar" :style="{ flexDirection }">
+    <div class="fill" :style="{ width: width + '%' }"></div>
+    {{ width }}
+  </div>
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, toRefs } from "vue";
+
+export default defineComponent({
+  props: {
+    maxValue: {
+      type: Number,
+      required: true,
+    },
+    minValue: {
+      type: Number,
+      required: true,
+    },
+    value: {
+      type: Number,
+      required: true,
+    },
+    direction: {
+      type: String,
+      required: true,
+    },
+  },
+
+  setup(props) {
+    const { maxValue, minValue, value, direction } = toRefs(props);
+
+    const width = computed(() => {
+      if (
+        typeof maxValue.value === "number" &&
+        typeof minValue.value === "number" &&
+        typeof value.value === "number"
+      ) {
+        return ((value.value - minValue.value) * 100) / maxValue.value;
+      } else {
+        return 0;
+      }
+    });
+    return { width, flexDirection: direction };
+  },
+});
+</script>
+
+<style lang="stylus">
+div.verticalPositionBar
+  width 49.5%
+  height 5px
+  display flex
+  flex-direction row
+
+  div.fill
+    align-self flex-end
+    height 100%
+    width 0%
+    background-color red
+</style>
