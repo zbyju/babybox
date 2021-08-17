@@ -36,7 +36,7 @@ export default defineComponent({
         typeof minValue.value === "number" &&
         typeof value.value === "number"
       ) {
-        return Math.max(
+        return Math.min(
           100 - ((value.value - minValue.value) * 100) / maxValue.value,
           100
         );
