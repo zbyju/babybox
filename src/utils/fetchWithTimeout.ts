@@ -8,7 +8,12 @@ export async function fetchWithTimeout(url, options) {
     ...options,
     signal: controller.signal,
   });
-  clearTimeout(id);
+
+  try {
+    clearTimeout(id);
+  } catch (err) {
+    console.log(err);
+  }
 
   return response;
 }
