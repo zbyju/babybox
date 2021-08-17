@@ -1,9 +1,9 @@
 <template>
   <div id="Content">
     <TableTemperature></TableTemperature>
-    <TableVoltage></TableVoltage>
-    <CameraWrapper></CameraWrapper>
     <TableDoors></TableDoors>
+    <CameraWrapper></CameraWrapper>
+    <TableVoltage></TableVoltage>
     <TableConnection></TableConnection>
   </div>
 </template>
