@@ -69,7 +69,7 @@ export default defineComponent({
   min-height 100vh
   height 100vh
   max-height 100vh
-  width calc(100vw - scrollbar-width)
+  width 100vw
 
   overflow hidden
   color color

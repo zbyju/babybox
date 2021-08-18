@@ -26,19 +26,10 @@ export default defineComponent({
 html, body
   padding 0
   margin 0
-  min-width "calc(100vw - %s)" % scrollbar-width
-  max-width "calc(100vw - %s)" % scrollbar-width
-  width "calc(100vw - %s)" % scrollbar-width
+  min-width 100vw
+  max-width 100vw
+  width 100vw
   overflow-x hidden
-
-::-webkit-scrollbar
-  width 10px
-::-webkit-scrollbar-track-piece
-  background-color background
-::-webkit-scrollbar-thumb
-  background lighten(accent, 50%)
-::-webkit-scrollbar-thumb:hover
-  background accent2
 
 
 .w-300
