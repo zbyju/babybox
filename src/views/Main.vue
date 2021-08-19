@@ -10,7 +10,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onBeforeMount, watch } from "vue";
+import {
+  defineComponent,
+  computed,
+  onBeforeMount,
+  watch,
+  onBeforeUnmount,
+} from "vue";
 import { useStore } from "vuex";
 
 import Nav from "@/components/Nav.vue";
@@ -18,7 +24,7 @@ import Content from "@/components/panel/containers/Content.vue";
 import Header from "@/components/panel/containers/Header.vue";
 import Message from "@/components/panel/elements/Message.vue";
 
-import { initializeStore } from "@/utils/store";
+import { AppManager } from "@/utils/store";
 import { AppState } from "@/types/main";
 import { useSounds } from "@/composables/useSounds";
 
@@ -31,31 +37,17 @@ export default defineComponent({
     Message,
   },
   setup() {
-    onBeforeMount(initializeStore);
+    const appManager = new AppManager();
+    onBeforeMount(() => appManager.startPanelLoop());
+    onBeforeUnmount(() => appManager.stopPanelLoop());
+
     const store = useStore();
     const appState = computed((): AppState => store.state.appState);
 
     const soundPlayer = useSounds();
-
-    watch(appState, (newValue, prevValue) => {
-      if (
-        newValue.message?.sound !== prevValue.message?.sound &&
-        newValue.message?.sound != null &&
-        newValue.message?.sound != undefined &&
-        newValue.message?.sound != ""
-      ) {
-        soundPlayer.playSound(newValue.message.sound);
-      }
-      if (
-        newValue.message == null ||
-        newValue.message == undefined ||
-        newValue.message.sound == null ||
-        newValue.message.sound == undefined ||
-        newValue.message.sound === ""
-      ) {
-        soundPlayer.stopSound();
-      }
-    });
+    watch(appState, (newValue, prevValue) =>
+      soundPlayer.updateSound(newValue, prevValue)
+    );
 
     return { appState: appState };
   },

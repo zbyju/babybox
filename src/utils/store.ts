@@ -16,102 +16,87 @@ import { getData } from "@/api/units";
 import { getNewState } from "./state";
 import _ from "lodash";
 
-/**
- * Loads config from the json file
- */
-const getConfig = (): Config => {
-  return require("@/assets/config/config.json");
-};
+export class AppManager {
+  private panelLoopInterval = null;
 
-/**
- * Looks at the data in store and updates the state accordingly
- */
-const updateState = () => {
-  const newState = getNewState(store.state);
-  if (!_.isEqual(store.state.appState, newState)) {
-    store.commit(SET_STATE, {
-      state: newState,
+  private async updateEngineUnit(timeout: number) {
+    const ip = store.state.config.units.engine.ip;
+    const postfix = store.state.config.units.postfix;
+    try {
+      const data = await getData(timeout, ip, postfix);
+      store.commit(SET_ENGINE_UNIT, {
+        data,
+      });
+      store.commit(INCREMENT_SUCCESS_ENGINE);
+    } catch (err) {
+      store.commit(INCREMENT_FAIL_ENGINE);
+    }
+  }
+  private async updateThermalUnit(timeout: number) {
+    const ip = store.state.config.units.thermal.ip;
+    const postfix = store.state.config.units.postfix;
+    try {
+      const data = await getData(timeout, ip, postfix);
+      store.commit(SET_THERMAL_UNIT, {
+        data,
+      });
+      store.commit(INCREMENT_SUCCESS_THERMAL);
+    } catch (err) {
+      store.commit(INCREMENT_FAIL_THERMAL);
+    }
+  }
+  private updateClock() {
+    const time = convertSDSTimeToMoment(store.state.engineUnit);
+    store.commit(SET_TIME, {
+      time,
     });
   }
-  updateClock();
-};
+  private updateState() {
+    const newState = getNewState(store.state);
+    if (!_.isEqual(store.state.appState, newState)) {
+      store.commit(SET_STATE, {
+        state: newState,
+      });
+    }
+    this.updateClock();
+  }
+  private async updateWatchdogEngine(timeout: number) {
+    const ip = store.state.config.units.engine.ip;
+    const postfix = store.state.config.units.postfixWatchdog;
+    try {
+      await getData(timeout, ip, postfix, false);
+    } catch (err) {
+      // Dont care about the error
+    }
+  }
 
-/**
- * Gets data from the json file and updates it in store
- */
-const initializeConfig = async () => {
-  const config = getConfig();
-  store.commit(SET_CONFIG, {
-    config,
-  });
-};
+  private getConfig() {
+    return require("@/assets/config/config.json");
+  }
 
-const updateEngineUnit = async (timeout: number) => {
-  const ip = store.state.config.units.engine.ip;
-  const postfix = store.state.config.units.postfix;
-  try {
-    const data = await getData(timeout, ip, postfix);
-    store.commit(SET_ENGINE_UNIT, {
-      data,
+  private initializeConfig() {
+    const config = this.getConfig();
+    store.commit(SET_CONFIG, {
+      config,
     });
-    store.commit(INCREMENT_SUCCESS_ENGINE);
-  } catch (err) {
-    store.commit(INCREMENT_FAIL_ENGINE);
   }
-};
 
-const updateThermalUnit = async (timeout: number) => {
-  const ip = store.state.config.units.thermal.ip;
-  const postfix = store.state.config.units.postfix;
-  try {
-    const data = await getData(timeout, ip, postfix);
-    store.commit(SET_THERMAL_UNIT, {
-      data,
-    });
-    store.commit(INCREMENT_SUCCESS_THERMAL);
-  } catch (err) {
-    store.commit(INCREMENT_FAIL_THERMAL);
+  startPanelLoop() {
+    const delay = store.state.config.units.requestDelay || 2000;
+    const timeout = store.state.config.units.requestTimeout || 5000;
+    this.panelLoopInterval = setInterval(() => {
+      this.updateEngineUnit(timeout);
+      this.updateThermalUnit(timeout);
+      this.updateState();
+      this.updateWatchdogEngine(timeout);
+    }, delay);
   }
-};
 
-const updateWatchdogEngine = async (timeout: number) => {
-  const ip = store.state.config.units.engine.ip;
-  const postfix = store.state.config.units.postfixWatchdog;
-  try {
-    await getData(timeout, ip, postfix, false);
-  } catch (err) {
-    console.log(err);
+  stopPanelLoop() {
+    clearInterval(this.panelLoopInterval);
   }
-};
 
-/**
- * Gets data from babybox and updates @data and @time in store
- */
-const initializeData = () => {
-  const delay = store.state.config.units.requestDelay || 2000;
-  const timeout = store.state.config.units.requestTimeout || 5000;
-  setInterval(() => {
-    updateEngineUnit(timeout);
-    updateThermalUnit(timeout);
-    updateState();
-    updateWatchdogEngine(timeout);
-  }, delay);
-};
-
-/**
- * Gets the time from engine unit and stores it in store
- */
-const updateClock = () => {
-  const time = convertSDSTimeToMoment(store.state.engineUnit);
-  store.commit(SET_TIME, {
-    time,
-  });
-};
-
-/**
- * Initilizes the whole store
- */
-export const initializeStore = async () => {
-  initializeConfig();
-  initializeData();
-};
+  initializeGlobal() {
+    this.initializeConfig();
+  }
+}

@@ -5,10 +5,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, onBeforeMount } from "vue";
+import { AppManager } from "@/utils/store";
 
 export default defineComponent({
   name: "App",
+  setup() {
+    const appManager = new AppManager();
+    onBeforeMount(() => appManager.initializeGlobal());
+  },
 });
 </script>
 

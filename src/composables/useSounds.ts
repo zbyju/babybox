@@ -1,3 +1,4 @@
+import { AppState } from "@/types/main";
 import { Howl } from "howler";
 
 export const useSounds = () => {
@@ -21,6 +22,26 @@ class BabyboxSoundPlayer {
       autoplay: false,
       loop: loop,
     });
+  }
+
+  updateSound(newValue: AppState, prevValue: AppState) {
+    if (
+      newValue.message?.sound !== prevValue.message?.sound &&
+      newValue.message?.sound != null &&
+      newValue.message?.sound != undefined &&
+      newValue.message?.sound != ""
+    ) {
+      this.playSound(newValue.message.sound);
+    }
+    if (
+      newValue.message == null ||
+      newValue.message == undefined ||
+      newValue.message.sound == null ||
+      newValue.message.sound == undefined ||
+      newValue.message.sound === ""
+    ) {
+      this.stopSound();
+    }
   }
 
   playSound(name: string, loop = true) {
