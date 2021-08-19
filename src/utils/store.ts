@@ -20,7 +20,7 @@ import _ from "lodash";
  * Loads config from the json file
  */
 const getConfig = (): Config => {
-  return require("@/config.json");
+  return require("@/assets/config/config.json");
 };
 
 /**
