@@ -37,5 +37,5 @@ export default defineComponent({
     font-weight 700
 
   span#BabyboxPrependText
-    color text-primary
+    color text-brand
 </style>
