@@ -1,0 +1,57 @@
+<template>
+  <div id="Actions">
+    <h2>Akce</h2>
+    <div class="action-wrapper">
+      <button class="btn-primary">Načíst aktuální parametry</button>
+      <button class="btn-primary">Doplnit doporučené parametry</button>
+      <button class="btn-success">Uložit parametry</button>
+      <button class="btn-error">Smazat nové hodnoty</button>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent } from "vue";
+
+export default defineComponent({
+  setup() {},
+});
+</script>
+
+<style lang="stylus">
+#Actions
+  div.action-wrapper
+    display flex
+    flex-direction row
+    flex-wrap wrap
+    gap 10px
+
+    button
+      padding 10px 12px
+      border 0
+      background-color app-primary
+      color white
+      transition all 0.5s ease-in-out
+      font-weight 700
+      font-size 0.9em
+      border-radius 8px
+    button:hover
+      cursor pointer
+
+    button.btn-primary
+      background-color app-primary
+    button.btn-success
+      background-color app-success
+    button.btn-error
+      background-color app-error
+    button.btn-warning
+      background-color app-warning
+    button.btn-primary:hover
+      background-color app-primary-hover
+    button.btn-success:hover
+      background-color app-success-hover
+    button.btn-error:hover
+      background-color app-error-hover
+    button.btn-warning:hover
+      background-color app-warning-hover
+</style>
