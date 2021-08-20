@@ -1,13 +1,53 @@
 <template>
-  <div id="SettingsLog">Log</div>
+  <div id="SettingsLogsHeader">
+    <h2>Log</h2>
+    <button class="btn-error btn-small" @click="manager.deleteLog">
+      Smazat log
+    </button>
+  </div>
+  <div id="SettingsLog">
+    <div
+      class="log-message"
+      v-for="(msg, index) in manager.log.value"
+      :key="index"
+    >
+      {{ msg }}
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { computed, defineComponent } from "vue";
 
 export default defineComponent({
-  setup() {},
+  props: {
+    manager: {
+      type: Object,
+      required: true,
+    },
+  },
+  setup(props) {},
 });
 </script>
 
-<style lang="stylus"></style>
+<style lang="stylus">
+#SettingsLog
+  background-color accent
+  min-height 150px
+  width 100%
+  border 1px solid app-primary
+  border-radius 8px
+  .log-message
+    border-bottom 1px solid primary
+    border-radius 8px
+    padding 5px 10px 4px 10px
+    transition all 0.5s
+  .log-message:hover
+    background-color accent2
+#SettingsLogsHeader
+  display flex
+  flex-direction row
+  flex-wrap wrap
+  align-items center
+  gap 20px
+</style>

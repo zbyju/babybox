@@ -1,15 +1,15 @@
 <template>
   <div id="SettingsForm">
     <Header></Header>
-    <Actions></Actions>
-    <Result></Result>
-    <Table></Table>
-    <Log></Log>
+    <Actions :manager="manager"></Actions>
+    <Result :manager="manager"></Result>
+    <Table :manager="manager"></Table>
+    <Log :manager="manager"></Log>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, toRefs } from "vue";
 
 import Actions from "@/components/settings/Actions.vue";
 import Header from "@/components/settings/Header.vue";
@@ -18,6 +18,12 @@ import Result from "@/components/settings/Result.vue";
 import Table from "@/components/settings/Table.vue";
 
 export default defineComponent({
+  props: {
+    manager: {
+      type: Object,
+      required: true,
+    },
+  },
   components: {
     Actions,
     Header,
@@ -25,7 +31,6 @@ export default defineComponent({
     Result,
     Table,
   },
-  setup() {},
 });
 </script>
 
