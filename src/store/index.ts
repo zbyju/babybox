@@ -1,6 +1,6 @@
 import { createStore } from "vuex";
 
-import { State } from "@/types/main";
+import { State } from "@/types/panel/main";
 import {
   SET_CONFIG,
   SET_STATE,
@@ -13,9 +13,15 @@ import {
   INCREMENT_FAIL_THERMAL,
   SET_TIME,
 } from "./mutation-types/index-types";
-import { DefaultEngineUnit, DefaultThermalUnit } from "@/types/units-data";
+import {
+  DefaultEngineUnit,
+  DefaultThermalUnit,
+} from "@/types/panel/units-data";
 import { getDefaultAppState } from "@/defaults/appState";
-import { ConnectionResult, getDefaultConnection } from "@/types/connection";
+import {
+  ConnectionResult,
+  getDefaultConnection,
+} from "@/types/panel/connection";
 
 export default createStore<State>({
   state: {

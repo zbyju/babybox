@@ -15,7 +15,7 @@
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 import useDelayedMessage from "@/composables/useDelayedMessage";
-import { Message } from "@/types/main";
+import { Message } from "@/types/panel/main";
 
 export default defineComponent({
   setup() {

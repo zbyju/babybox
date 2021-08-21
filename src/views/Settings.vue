@@ -13,7 +13,7 @@ import Nav from "../components/Nav.vue";
 import SettingsForm from "../components/settings/Form.vue";
 import { SettingsManager } from "@/utils/settings/settings";
 import { useStore } from "vuex";
-import { Config } from "@/types/main";
+import { Config } from "@/types/panel/main";
 
 export default defineComponent({
   name: "Settings",

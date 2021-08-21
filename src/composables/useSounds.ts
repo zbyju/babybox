@@ -1,4 +1,4 @@
-import { AppState } from "@/types/main";
+import { AppState } from "@/types/panel/main";
 import { Howl } from "howler";
 
 export const useSounds = () => {

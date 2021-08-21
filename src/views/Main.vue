@@ -25,7 +25,7 @@ import Header from "@/components/panel/containers/Header.vue";
 import Message from "@/components/panel/elements/Message.vue";
 
 import { AppManager } from "@/utils/store";
-import { AppState } from "@/types/main";
+import { AppState } from "@/types/panel/main";
 import { useSounds } from "@/composables/useSounds";
 
 export default defineComponent({

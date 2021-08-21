@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts">
-import { TableData } from "@/types/tables";
+import { TableData } from "@/types/panel/tables";
 import { defineComponent, PropType, toRef } from "vue";
 import { useStore } from "vuex";
 

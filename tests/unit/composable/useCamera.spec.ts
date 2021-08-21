@@ -1,5 +1,5 @@
 import useCamera from "@/composables/useCamera";
-import { CameraConfig } from "@/types/main";
+import { CameraConfig } from "@/types/panel/main";
 
 const cfg: CameraConfig = {
   ip: "ip",

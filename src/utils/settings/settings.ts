@@ -12,7 +12,8 @@ export class SettingsManager {
     this.ipThermal = ipThermal;
     this.log = ref([]);
   }
-
+  private testConnectionUnit(unit: "engine" | "thermal") {}
+  testConnection() {}
   loadSettings() {
     this.log.value.push("Načítám parametry");
   }

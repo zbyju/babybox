@@ -10,7 +10,7 @@ import {
   SET_THERMAL_UNIT,
   SET_TIME,
 } from "@/store/mutation-types/index-types";
-import { Config } from "@/types/main";
+import { Config } from "@/types/panel/main";
 import { convertSDSTimeToMoment, getCurrentTimePC } from "./time";
 import { getData } from "@/api/units";
 import { getNewState } from "./panel/state";

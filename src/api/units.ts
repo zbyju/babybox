@@ -1,4 +1,4 @@
-import { EngineUnit, ThermalUnit } from "@/types/units-data";
+import { EngineUnit, ThermalUnit } from "@/types/panel/units-data";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 export const getData = (

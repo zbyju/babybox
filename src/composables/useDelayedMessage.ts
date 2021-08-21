@@ -1,5 +1,5 @@
 import { computed, watch, ref, ComputedRef } from "vue";
-import { Message } from "@/types/main";
+import { Message } from "@/types/panel/main";
 
 export default function useDelayedMessage(message: ComputedRef<Message>) {
   const MESSAGE_DELAY = 1000;

@@ -1,4 +1,4 @@
-import { ConnectionResult } from "@/types/connection";
+import { ConnectionResult } from "@/types/panel/connection";
 
 export class ConnectionTracker {
   private RECENT_SIZE: number;

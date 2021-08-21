@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import { Config } from "@/types/main";
+import { Config } from "@/types/panel/main";
 import { defineComponent } from "vue";
 import { useStore } from "vuex";
 

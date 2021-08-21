@@ -1,4 +1,4 @@
-import { AppState } from "@/types/main";
+import { AppState } from "@/types/panel/main";
 
 export const getDefaultAppState = (): AppState => {
   return {

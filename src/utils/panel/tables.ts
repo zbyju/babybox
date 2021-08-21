@@ -1,7 +1,7 @@
 import store from "@/store";
-import { Connection } from "@/types/connection";
-import { TableData } from "@/types/tables";
-import { EngineUnit, ThermalUnit } from "@/types/units-data";
+import { Connection } from "@/types/panel/connection";
+import { TableData } from "@/types/panel/tables";
+import { EngineUnit, ThermalUnit } from "@/types/panel/units-data";
 import {
   beamAboveContainer,
   prettyInt,

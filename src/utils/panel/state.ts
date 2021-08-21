@@ -1,6 +1,6 @@
 import { getDefaultAppState } from "@/defaults/appState";
 import store from "@/store";
-import { AppState, State } from "@/types/main";
+import { AppState, State } from "@/types/panel/main";
 
 export const getNewState = (state: State): AppState => {
   let result = getDefaultAppState();
