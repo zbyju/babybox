@@ -13,15 +13,18 @@ export class SettingsManager {
     this.log = ref([]);
   }
   private testConnectionUnit(unit: "engine" | "thermal") {}
+  private addLogMessage(message: string) {
+    this.log.value.unshift(message);
+  }
   testConnection() {}
   loadSettings() {
-    this.log.value.push("Načítám parametry");
+    this.addLogMessage("Načítám parametry");
   }
   saveSettings() {
-    this.log.value.push("Ukládám parametry");
+    this.addLogMessage("Ukládám parametry");
   }
   deleteChanges() {
-    this.log.value.push("Mažu změny");
+    this.addLogMessage("Mažu změny");
   }
   deleteLog() {
     this.log.value = [];
