@@ -34,6 +34,8 @@ export default defineComponent({
 #SettingsLog
   background-color accent
   min-height 150px
+  max-height 500px
+  overflow-y scroll
   width 100%
   border 1px solid app-primary
   border-radius 8px
@@ -43,7 +45,7 @@ export default defineComponent({
     padding 5px 10px 4px 10px
     transition all 0.5s
   .log-message:hover
-    background-color accent2
+    background-color accent-hover
 #SettingsLogsHeader
   display flex
   flex-direction row
