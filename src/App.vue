@@ -19,7 +19,7 @@ export default defineComponent({
 
 <style lang="stylus">
 // CSS
-#app, button
+#app, button, input
   font-family "Open Sans", Avenir, Helvetica, Arial, sans-serif
   -webkit-font-smoothing antialiased
   -moz-osx-font-smoothing grayscale
