@@ -37,7 +37,6 @@ export default defineComponent({
 <style lang="stylus">
 #Settings
   min-height 100vh
-  height 100vh
   width 100vw
 
   background-color app-background
