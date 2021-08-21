@@ -1,6 +1,6 @@
 import { ref, Ref } from "vue";
 import { CameraConfig } from "@/types/main";
-import { getURLPostfix, stringToCameraType } from "@/utils/camera";
+import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
 
 export default function useCamera(config: CameraConfig): Ref<string> {
   const url = ref("");

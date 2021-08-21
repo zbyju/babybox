@@ -13,7 +13,7 @@ import {
 import { Config } from "@/types/main";
 import { convertSDSTimeToMoment, getCurrentTimePC } from "./time";
 import { getData } from "@/api/units";
-import { getNewState } from "./state";
+import { getNewState } from "./panel/state";
 import _ from "lodash";
 
 export class AppManager {

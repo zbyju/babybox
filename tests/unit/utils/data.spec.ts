@@ -4,7 +4,7 @@ import {
   prettyNumber,
   prettyTemperature,
   prettyTwoNumbers,
-} from "@/utils/data";
+} from "@/utils/panel/data";
 
 describe("parseIntOrEmpty function", () => {
   test("Should return number when string is number", () => {

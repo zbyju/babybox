@@ -11,7 +11,7 @@
 import { computed, ComputedRef, defineComponent, onBeforeMount } from "vue";
 import Nav from "../components/Nav.vue";
 import SettingsForm from "../components/settings/Form.vue";
-import { SettingsManager } from "@/utils/settings";
+import { SettingsManager } from "@/utils/settings/settings";
 import { useStore } from "vuex";
 import { Config } from "@/types/main";
 

@@ -49,7 +49,7 @@
 </template>
 
 <script lang="ts">
-import { getRowsTableTemperatures } from "@/utils/tables";
+import { getRowsTableTemperatures } from "@/utils/panel/tables";
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 

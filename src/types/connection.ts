@@ -1,4 +1,4 @@
-import { ConnectionTracker } from "@/utils/connections";
+import { ConnectionTracker } from "@/utils/panel/connections";
 
 export enum ConnectionResult {
   Success = 1,

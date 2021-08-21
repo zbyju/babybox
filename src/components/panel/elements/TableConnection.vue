@@ -6,7 +6,7 @@
 
 <script lang="ts">
 import Table from "@/components/panel/HTMLElements/Table.vue";
-import { getRowsTableConnection } from "@/utils/tables";
+import { getRowsTableConnection } from "@/utils/panel/tables";
 import { defineComponent, computed } from "vue";
 import { useStore } from "vuex";
 
