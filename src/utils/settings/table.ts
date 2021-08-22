@@ -1,6 +1,6 @@
 import { SettingsTableData, valueType } from "@/types/settings/table";
 
-export const getSettingsHeader = () => {
+export const getSettingsHeaders = () => {
   return [
     "#",
     "Název parametru",
@@ -155,7 +155,7 @@ export const typeToMeasureUnit = (type: valueType) => {
   if (type === "temperature") return "°C";
   if (type === "voltage") return "V";
   if (type === "seconds") return "s";
-  if (type === "days") return " dnů";
+  if (type === "days") return "den";
 };
 
 export const settingsRowMapper = (data: SettingsTableData) => {
@@ -163,8 +163,8 @@ export const settingsRowMapper = (data: SettingsTableData) => {
     return {
       label: data.label,
       name: data.name,
-      engine: data.label.includes("M") ? "" : "---",
-      thermal: data.label.includes("T") ? "" : "---",
+      engine: data.label.includes("M") ? "" : "—",
+      thermal: data.label.includes("T") ? "" : "—",
       recommended: data.recommended + typeToMeasureUnit(data.type),
       note: data.note,
       type: data.type,

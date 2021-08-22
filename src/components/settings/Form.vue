@@ -2,6 +2,7 @@
   <div id="SettingsForm">
     <div class="settings-row">
       <Actions :manager="manager"></Actions>
+      <Filters :manager="manager"></Filters>
       <Result :manager="manager"></Result>
     </div>
     <Table :manager="manager"></Table>
@@ -13,6 +14,7 @@
 import { defineComponent, toRefs } from "vue";
 
 import Actions from "@/components/settings/Actions.vue";
+import Filters from "@/components/settings/Filters.vue";
 import Log from "@/components/settings/Log.vue";
 import Result from "@/components/settings/Result.vue";
 import Table from "@/components/settings/Table.vue";
@@ -26,6 +28,7 @@ export default defineComponent({
   },
   components: {
     Actions,
+    Filters,
     Log,
     Result,
     Table,
