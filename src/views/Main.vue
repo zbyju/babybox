@@ -37,17 +37,21 @@ export default defineComponent({
     Message,
   },
   setup() {
-    const appManager = new AppManager();
-    onBeforeMount(() => appManager.startPanelLoop());
-    onBeforeUnmount(() => appManager.stopPanelLoop());
-
     const store = useStore();
     const appState = computed((): AppState => store.state.appState);
 
+    // Sounds
     const soundPlayer = useSounds();
     watch(appState, (newValue, prevValue) =>
       soundPlayer.updateSound(newValue, prevValue)
     );
+    // App loop
+    const appManager = new AppManager();
+    onBeforeMount(() => appManager.startPanelLoop());
+    onBeforeUnmount(() => {
+      appManager.stopPanelLoop();
+      soundPlayer.stopSound();
+    });
 
     return { appState: appState };
   },
