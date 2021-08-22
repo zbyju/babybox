@@ -3,7 +3,7 @@
     <table>
       <thead>
         <tr>
-          <th v-for="head in header" :key="head">{{ head }}</th>
+          <th v-for="header in headers" :key="header">{{ header }}</th>
         </tr>
       </thead>
       <tbody>
@@ -13,7 +13,12 @@
           <td>{{ row.engine }}</td>
           <td>{{ row.thermal }}</td>
           <td>
-            <input />
+            <div class="newvalue-wrapper">
+              <input />
+              <span class="measure-unit" v-if="row.type !== 'string'"
+                >[{{ typeToMeasureUnit(row.type) }}]</span
+              >
+            </div>
           </td>
           <td>{{ row.recommended }}</td>
           <td>{{ row.note }}</td>
@@ -25,17 +30,19 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import {
-  getSettingsHeader,
-  getSettingsTableRows,
-  settingsRowMapper,
-} from "@/utils/settings/table";
+import { typeToMeasureUnit } from "@/utils/settings/table";
 
 export default defineComponent({
-  setup() {
-    const header = getSettingsHeader();
-    const rows = settingsRowMapper(getSettingsTableRows());
-    return { header, rows };
+  props: {
+    manager: {
+      type: Object,
+      required: true,
+    },
+  },
+  setup(props) {
+    const headers = props.manager.getHeaders();
+    const rows = props.manager.getRows();
+    return { headers, rows, typeToMeasureUnit };
   },
 });
 </script>
@@ -66,14 +73,21 @@ export default defineComponent({
         td
           padding 7px 10px
           border-right 1px solid #1b1a30
-          input
-            background-color #000
-            border 1px solid #2d2b52
-            border-radius 5px
-            width calc(100% - 8px)
-            padding 5px 4px
-            color white
-            font-size 1.1em
+          div.newvalue-wrapper
+            display flex
+            flex-direction row
+            justify-content space-between
+            align-items center
+            span
+              padding-left 10px
+            input
+              background-color #000
+              border 1px solid #2d2b52
+              border-radius 5px
+              padding 5px 4px
+              color white
+              flex-grow 1
+              font-size 1.1em
       tr:hover
         background-color #020024
 
