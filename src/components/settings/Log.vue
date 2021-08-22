@@ -39,6 +39,7 @@ export default defineComponent({
   width 100%
   border 1px solid app-primary
   border-radius 8px
+  margin-top 12px
   .log-message
     border-bottom 1px solid primary
     border-radius 8px
@@ -52,4 +53,7 @@ export default defineComponent({
   flex-wrap wrap
   align-items center
   gap 20px
+  margin-top 20px
+  h2
+    margin 0
 </style>
