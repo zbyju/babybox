@@ -45,6 +45,8 @@ export default defineComponent({
     select
       height 95%
       border 1px solid #2d2b52
+      border-radius 10px
+      padding 5px
       background-color #000
       color #fff
 </style>

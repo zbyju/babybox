@@ -13,11 +13,11 @@
 <script lang="ts">
 import { defineComponent, toRefs } from "vue";
 
-import Actions from "@/components/settings/Actions.vue";
-import Filters from "@/components/settings/Filters.vue";
-import Log from "@/components/settings/Log.vue";
-import Result from "@/components/settings/Result.vue";
-import Table from "@/components/settings/Table.vue";
+import Actions from "@/components/settings/form/Actions.vue";
+import Filters from "@/components/settings/form/Filters.vue";
+import Log from "@/components/settings/form/Log.vue";
+import Result from "@/components/settings/form/Result.vue";
+import Table from "@/components/settings/form/Table.vue";
 
 export default defineComponent({
   props: {
