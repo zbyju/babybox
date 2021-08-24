@@ -72,7 +72,9 @@ export default defineComponent({
 
   height 50px
 
-  background-color accent
+  background-color #010017
+  border-bottom 1px solid #2d2b52
+  border-collapse collapse
 
   display flex
   flex-direction row
@@ -88,7 +90,9 @@ export default defineComponent({
     color white
     text-decoration none
     transition all 0.5s ease-in-out
+    border-bottom 1px solid #2d2b52
 
   a.link:hover
-    background-color accent-hover
+    background-color #020024
+    border-bottom 1px solid #4A148C
 </style>
