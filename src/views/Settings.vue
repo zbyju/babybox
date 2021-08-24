@@ -2,6 +2,7 @@
   <div id="Settings">
     <Nav></Nav>
     <div id="SettingsWrapper">
+      <QuickActions></QuickActions>
       <SettingsForm :manager="settingsManager"></SettingsForm>
     </div>
   </div>
@@ -10,7 +11,8 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, onBeforeMount } from "vue";
 import Nav from "../components/Nav.vue";
-import SettingsForm from "../components/settings/Form.vue";
+import SettingsForm from "../components/settings/form/Form.vue";
+import QuickActions from "../components/settings/QuickActions.vue";
 import { SettingsManager } from "@/utils/settings/settings";
 import { useStore } from "vuex";
 import { Config } from "@/types/panel/main";
@@ -20,6 +22,7 @@ export default defineComponent({
   components: {
     Nav,
     SettingsForm,
+    QuickActions,
   },
   setup() {
     const store = useStore();
