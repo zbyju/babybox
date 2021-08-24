@@ -18,7 +18,7 @@ export const getSettingsTableRows = (): SettingsTableData => {
       label: "M108",
       name: "Blokování babyboxu",
       recommended: "0/1",
-      note: "0 = Babybox mimo provoz",
+      note: "1 = Babybox mimo provoz",
       type: "string",
     },
     {
