@@ -84,12 +84,16 @@ export class AppManager {
   startPanelLoop() {
     const delay = store.state.config.units.requestDelay || 2000;
     const timeout = store.state.config.units.requestTimeout || 5000;
-    this.panelLoopInterval = setInterval(() => {
-      this.updateEngineUnit(timeout);
-      this.updateThermalUnit(timeout);
-      this.updateState();
-      this.updateWatchdogEngine(timeout);
-    }, delay);
+    const appState = store.state.appState;
+    this.panelLoopInterval = setInterval(
+      () => {
+        this.updateEngineUnit(timeout);
+        this.updateThermalUnit(timeout);
+        this.updateState();
+        this.updateWatchdogEngine(timeout);
+      },
+      appState.message ? delay / 2 : delay
+    );
   }
 
   stopPanelLoop() {
