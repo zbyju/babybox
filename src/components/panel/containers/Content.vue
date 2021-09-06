@@ -32,7 +32,6 @@ export default defineComponent({
 </script>
 
 <style lang="stylus">
-  test = min-content
 #Content
   grid-area: content
   overflow hidden

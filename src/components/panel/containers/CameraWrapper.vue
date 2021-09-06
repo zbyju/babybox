@@ -46,13 +46,13 @@ export default defineComponent({
 
 <style lang="stylus">
 #CameraWrapper
-  height 100%
   display flex
   flex-direction column
-  flex-grow 1
+  height 100%
 
   #DoorBars
     width 100%
+    max-height 100%
     display flex
     flex-direction row
     justify-content space-between

@@ -20,15 +20,11 @@ export default defineComponent({
 
 <style lang="stylus">
 border-width = 5px
-div#Camera
-  height 100%
-  display inline-block
-  background red
 img
-  max-width 100%
-  max-height 98%
-  height 98%
-  object-fit contain;
+  max-height 100%
+  width auto
+  object-fit scale-down;
+  overflow hidden
   border 3px solid primary
   border-top 0
   border-radius 0 0 5px 5px
