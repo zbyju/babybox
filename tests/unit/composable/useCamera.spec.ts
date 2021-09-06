@@ -6,7 +6,7 @@ const cfg: CameraConfig = {
   username: "user",
   password: "pass",
   updateDelay: 10,
-  cameraType: "dahua",
+  cameraType: "dahua-image",
 };
 
 const cfgAvtech: CameraConfig = {
