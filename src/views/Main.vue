@@ -65,7 +65,7 @@ export default defineComponent({
   min-height 100vh
   height 100vh
   max-height 100vh
-  width 100vw
+  width calc(100vw - 10px)
 
   overflow hidden
   color color

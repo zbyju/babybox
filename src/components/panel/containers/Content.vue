@@ -43,8 +43,8 @@ export default defineComponent({
   display flex
   justify-content space-between
   align-items flex-start
-  gap 10px
   max-height 37vh
+  width calc(100% - 39px)
   // grid-template-columns auto auto auto auto auto;
   // grid-template-rows: auto;
   // grid-template-areas: "table-temperature table-doors camera table-voltage table-connection"

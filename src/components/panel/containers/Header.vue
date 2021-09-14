@@ -38,6 +38,8 @@ export default defineComponent({
 
   padding padding-y padding-x
 
+  width calc(100% - 30px)
+
   display flex
   flex-direction row
   justify-content space-between
