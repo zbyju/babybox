@@ -23,3 +23,31 @@ export const getData = (
       });
   });
 };
+
+export const openDoors = (ip: string, timeout = 10000): Promise<any> => {
+  const url = `http://${ip}/sdscep?sys141=201`;
+  return new Promise((resolve, reject) => {
+    fetchWithTimeout(url, { timeout })
+      .then((response) => response.text())
+      .then((data) => {
+        resolve(data);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
+};
+
+export const resetBabybox = (ip: string, timeout = 10000): Promise<any> => {
+  const url = `http://${ip}/sdscep?sys141=202`;
+  return new Promise((resolve, reject) => {
+    fetchWithTimeout(url, { timeout })
+      .then((response) => response.text())
+      .then((data) => {
+        resolve(data);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
+};
