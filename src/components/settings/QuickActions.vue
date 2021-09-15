@@ -2,21 +2,40 @@
   <div id="QuickActions">
     <h2>Rychlé akce</h2>
     <div class="action-wrapper">
-      <button class="card-button">Otevřít Babybox</button>
-      <button class="card-button">Otevřít servisní dveře</button>
+      <button class="card-button" @click="openBabybox">Otevřít Babybox</button>
+      <button class="card-button" @click="openServiceDoors">
+        Otevřít servisní dveře
+      </button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { openDoors, resetBabybox } from "@/api/units";
+import { Config } from "@/types/panel/main";
+import { computed, defineComponent } from "vue";
+import { useStore } from "vuex";
 
 export default defineComponent({
-  props: {
-    manager: {
-      type: Object,
-      required: true,
-    },
+  setup() {
+    const store = useStore();
+    const config = computed((): Config => store.state.config);
+    const openBabybox = async () => {
+      try {
+        await openDoors(config.value.units.engine.ip);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    const openServiceDoors = async () => {
+      try {
+        await resetBabybox(config.value.units.engine.ip);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    return { openBabybox, openServiceDoors };
   },
 });
 </script>
