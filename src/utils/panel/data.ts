@@ -103,6 +103,7 @@ const zeroFilled = (num: number, padlen: number): string => {
 export const secondsToTime = (str: string): string => {
   try {
     const parsed: number = parseIntOrEmpty(str);
+    if (parsed < 0) return "Neprovedena";
     const d = Math.floor(parsed / (3600 * 24));
     const h = Math.floor((parsed % (3600 * 24)) / 3600);
     const m = Math.floor((parsed % 3600) / 60);
