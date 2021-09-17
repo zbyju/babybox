@@ -32,16 +32,21 @@ export const prettyNumber = (num: number): string => {
   return num.toFixed(2);
 };
 
-export const prettyBooleanString = (s: string): string => {
-  if (s.toLowerCase() === "true") return prettyBoolean(true);
-  if (s.toLowerCase() === "false" || s == "0") return prettyBoolean(false);
+export const parseBoolean = (s: string): boolean => {
+  if (s.toLowerCase() === "true") return true;
+  if (s.toLowerCase() === "false" || s == "0") return false;
   try {
     const parsed = parseIntOrEmpty(s);
-    if (parsed == 0) return prettyBoolean(false);
-    if (parsed > 0) return prettyBoolean(true);
+    if (parsed == 0) return false;
+    if (parsed > 0) return true;
   } catch (err) {
-    return "";
+    return false;
   }
+};
+
+export const prettyBooleanString = (s: string): string => {
+  const boolean = parseBoolean(s);
+  return prettyBoolean(boolean);
 };
 
 export const prettyBoolean = (bool: boolean): string => {

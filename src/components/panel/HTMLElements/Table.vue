@@ -3,13 +3,27 @@
     <table>
       <thead>
         <tr>
-          <th colspan="2" :style="headSize">{{ title }}</th>
+          <th colspan="6" :style="headSize">{{ title }}</th>
         </tr>
       </thead>
       <tbody>
+        <tr v-for="(blockRows, index) in blocks" :key="index">
+          <td
+            v-for="(block, index) in blockRows"
+            :key="index"
+            class="table-block"
+            :class="[block.active ? block.color : '']"
+            :style="{ labelSize }"
+            :colspan="block.colspan"
+          >
+            {{ block.label }}
+          </td>
+        </tr>
         <tr v-for="(row, index) in rows" :key="index">
-          <td class="table-label" :style="labelSize">{{ row.label }}</td>
-          <td class="table-value" :style="valueSize">
+          <td class="table-label" :style="labelSize" colspan="3">
+            {{ row.label }}
+          </td>
+          <td class="table-value" :style="valueSize" colspan="3">
             {{ row.value || "--" }}
           </td>
         </tr>
@@ -19,7 +33,7 @@
 </template>
 
 <script lang="ts">
-import { TableData } from "@/types/panel/tables";
+import { TableData, TableBlockData } from "@/types/panel/tables";
 import { defineComponent, PropType, toRef } from "vue";
 import { useStore } from "vuex";
 
@@ -27,11 +41,13 @@ export default defineComponent({
   props: {
     titleProp: String,
     rowsProp: Array as PropType<TableData>,
+    blocksProp: Array as PropType<TableBlockData>,
   },
   setup(props) {
     const store = useStore();
     const title = toRef(props, "titleProp");
     const rows = toRef(props, "rowsProp");
+    const blocks = toRef(props, "blocksProp");
     const headSize = {
       fontSize: store.state.config.fontSizes.tableHeading + "vw",
     };
@@ -41,7 +57,7 @@ export default defineComponent({
     const valueSize = {
       fontSize: store.state.config.fontSizes.tableValue + "vw",
     };
-    return { title, rows, headSize, labelSize, valueSize };
+    return { title, rows, headSize, labelSize, valueSize, blocks };
   },
 });
 </script>
@@ -78,6 +94,13 @@ export default defineComponent({
       font-size 14px
       color text-secondary
       text-align left
+    td.table-block
+      font-weight 700
+      font-size 14px
+      color text-secondary
+      text-align center
+      border-left 1px solid third
+      border-right 1px solid third
     td.table-value
       text-align right
 </style>

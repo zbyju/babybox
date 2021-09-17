@@ -1,5 +1,16 @@
-export type RowData = {
+export interface RowData {
   label: string;
   value: string;
-};
-export type TableData = Array<RowData>;
+}
+
+export interface BlockData {
+  label: string;
+  active: boolean;
+  colspan: number;
+  color?: string;
+}
+
+export type BlockRows = BlockData[];
+
+export type TableData = RowData[];
+export type TableBlockData = BlockRows[];

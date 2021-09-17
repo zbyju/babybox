@@ -1,6 +1,6 @@
 import store from "@/store";
 import { Connection } from "@/types/panel/connection";
-import { TableData } from "@/types/panel/tables";
+import { TableBlockData, TableData } from "@/types/panel/tables";
 import { EngineUnit, ThermalUnit } from "@/types/panel/units-data";
 import {
   beamAboveContainer,
@@ -12,6 +12,7 @@ import {
   prettyTwoTemperatures,
   prettyVoltage,
   secondsToTime,
+  parseBoolean,
 } from "./data";
 
 export const getRowsTableTemperatures = (
@@ -43,6 +44,34 @@ export const getRowsTableTemperatures = (
       label: "Plášť",
       value: prettyTemperature(thermalData[30].value),
     },
+  ];
+};
+
+export const getBlocksTableTemperature = (
+  engineData: EngineUnit,
+  thermalData: ThermalUnit
+): TableBlockData => {
+  return [
+    [
+      {
+        label: "Topí plášť",
+        active: thermalData[24].value === "255",
+        colspan: 2,
+        color: "success",
+      },
+      {
+        label: "Topí vzduch",
+        active: thermalData[25].value === "255",
+        colspan: 2,
+        color: "success",
+      },
+      {
+        label: "Chladí vzduch",
+        active: thermalData[26].value === "255",
+        colspan: 2,
+        color: "success",
+      },
+    ],
   ];
 };
 
@@ -107,10 +136,22 @@ export const getRowsTableDoors = (
       label: "Paprsek nad vaničkou",
       value: beamAboveContainer(engineData[17].value),
     },
-    {
-      label: "Blokováno",
-      value: prettyBooleanString(engineData[45].value),
-    },
+  ];
+};
+
+export const getBlocksTableDoors = (
+  engineData: EngineUnit,
+  thermalData: ThermalUnit
+): TableBlockData => {
+  return [
+    [
+      {
+        label: "Blokováno",
+        active: parseBoolean(engineData[45].value),
+        colspan: 6,
+        color: "error",
+      },
+    ],
   ];
 };
 
