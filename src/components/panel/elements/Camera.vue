@@ -28,4 +28,6 @@ img
   border 3px solid primary
   border-top 0
   border-radius 0 0 5px 5px
+  min-width 160px
+  min-height 90px
 </style>
