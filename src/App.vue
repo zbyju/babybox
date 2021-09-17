@@ -1,18 +1,23 @@
 <template>
-  <div>
+  <div v-if="config">
     <router-view></router-view>
   </div>
+  <div v-else>Chybí config soubor</div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount } from "vue";
+import { computed, defineComponent, onBeforeMount } from "vue";
 import { AppManager } from "@/utils/store";
+import { useStore } from "vuex";
 
 export default defineComponent({
   name: "App",
   setup() {
+    const store = useStore();
     const appManager = new AppManager();
-    onBeforeMount(() => appManager.initializeGlobal());
+    const config = computed(() => store.state.config);
+    onBeforeMount(async () => await appManager.initializeGlobal());
+    return { config };
   },
 });
 </script>

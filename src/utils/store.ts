@@ -70,18 +70,30 @@ export class AppManager {
     }
   }
 
-  private getConfig() {
-    return require("@/assets/config/config.json");
-  }
+  private fetchConfig() {}
 
-  private initializeConfig() {
-    const config = this.getConfig();
-    store.commit(SET_CONFIG, {
-      config,
+  private getConfig() {
+    return new Promise((resolve, reject) => {
+      fetch("config/config.json")
+        .then((response) => {
+          return response.json();
+        })
+        .then((config) => {
+          resolve(config);
+        });
     });
   }
 
-  startPanelLoop() {
+  private async initializeConfig() {
+    const config = await this.getConfig();
+    return new Promise((resolve, reject) => {
+      store.commit(SET_CONFIG, {
+        config,
+      });
+    });
+  }
+
+  async startPanelLoop() {
     const delay = store.state.config.units.requestDelay || 2000;
     const timeout = store.state.config.units.requestTimeout || 5000;
     const appState = store.state.appState;
@@ -100,7 +112,7 @@ export class AppManager {
     clearInterval(this.panelLoopInterval);
   }
 
-  initializeGlobal() {
-    this.initializeConfig();
+  initializeGlobal(): Promise<any> {
+    return this.initializeConfig();
   }
 }
