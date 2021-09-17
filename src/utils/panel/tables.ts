@@ -13,6 +13,9 @@ import {
   prettyVoltage,
   secondsToTime,
   parseBoolean,
+  errorInnerTemperature,
+  errorVoltageBattery,
+  errorVoltageIn,
 } from "./data";
 
 export const getRowsTableTemperatures = (
@@ -27,6 +30,7 @@ export const getRowsTableTemperatures = (
     {
       label: "Vnitřní",
       value: prettyTwoTemperatures(thermalData[29].value, engineData[28].value),
+      error: errorInnerTemperature(engineData, thermalData),
     },
     {
       label: "Venkovní",
@@ -83,10 +87,12 @@ export const getRowsVoltage = (
     {
       label: "Zdroj",
       value: prettyVoltage(thermalData[35].value),
+      error: errorVoltageIn(engineData, thermalData),
     },
     {
       label: "Akumulátor",
       value: prettyVoltage(thermalData[36].value),
+      error: errorVoltageBattery(engineData, thermalData),
     },
     {
       label: "Řídící jednotky",
@@ -147,6 +153,7 @@ export const getBlocksTableDoors = (
     [
       {
         label: "Blokováno",
+        nonActiveLabel: "Neblokováno",
         active: parseBoolean(engineData[45].value),
         colspan: 6,
         color: "error",

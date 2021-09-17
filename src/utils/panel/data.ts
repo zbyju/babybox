@@ -1,3 +1,5 @@
+import { EngineUnit, ThermalUnit } from "@/types/panel/units-data";
+
 export const parseIntOrEmpty = (x: string): number => {
   if (!x || x === "") throw "Not a number";
   const parsed = parseInt(x);
@@ -121,4 +123,32 @@ export const secondsToTime = (str: string): string => {
   } catch (err) {
     return "";
   }
+};
+
+export const errorInnerTemperature = (
+  engineData: EngineUnit,
+  thermalData: ThermalUnit
+): boolean => {
+  const parsedTemperature = parseInt(thermalData[29].value);
+  const parsedMin = parseInt(thermalData[3].value);
+  const parsedMax = parseInt(thermalData[4].value);
+  return parsedTemperature < parsedMin || parsedTemperature > parsedMax;
+};
+
+export const errorVoltageIn = (
+  engineData: EngineUnit,
+  thermalData: ThermalUnit
+): boolean => {
+  const parsedVoltage = parseInt(thermalData[35].value);
+  const parsedMin = parseInt(thermalData[6].value);
+  return parsedVoltage < parsedMin;
+};
+
+export const errorVoltageBattery = (
+  engineData: EngineUnit,
+  thermalData: ThermalUnit
+): boolean => {
+  const parsedVoltage = parseInt(thermalData[36].value);
+  const parsedMin = parseInt(thermalData[6].value);
+  return parsedVoltage < parsedMin;
 };

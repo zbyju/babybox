@@ -16,11 +16,22 @@
             :style="{ labelSize }"
             :colspan="block.colspan"
           >
-            {{ block.label }}
+            {{
+              block.active ? block.label : block.nonActiveLabel || block.label
+            }}
           </td>
         </tr>
         <tr v-for="(row, index) in rows" :key="index">
-          <td class="table-label" :style="labelSize" colspan="3">
+          <td
+            class="table-label"
+            :class="[
+              row.error ? 'error' : '',
+              row.success ? 'success' : '',
+              row.warning ? 'warning' : '',
+            ]"
+            :style="labelSize"
+            colspan="3"
+          >
             {{ row.label }}
           </td>
           <td class="table-value" :style="valueSize" colspan="3">
@@ -101,6 +112,7 @@ export default defineComponent({
       text-align center
       border-left 1px solid third
       border-right 1px solid third
+      padding 7px
     td.table-value
       text-align right
 </style>
