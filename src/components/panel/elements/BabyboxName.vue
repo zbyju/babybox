@@ -1,6 +1,8 @@
 <template>
   <div id="BabyboxName">
-    <span id="BabyboxPrependText" :style="textStyle">Babybox </span>
+    <span v-if="prependBabybox" id="BabyboxPrependText" :style="textStyle"
+      >Babybox
+    </span>
     <span id="BabyboxNameText" :style="textStyle">{{ babyboxName }}</span>
   </div>
 </template>
