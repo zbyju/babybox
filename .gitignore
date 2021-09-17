@@ -22,4 +22,4 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-/src/assets/config/config.json
+/public/config/config.json
