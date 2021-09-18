@@ -40,6 +40,8 @@ html, body
   max-width 100vw
   width 100vw
   overflow-x hidden
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;
 
 
 .w-300
