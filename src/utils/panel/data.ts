@@ -152,3 +152,21 @@ export const errorVoltageBattery = (
   const parsedMin = parseInt(thermalData[6].value);
   return parsedVoltage < parsedMin;
 };
+
+export const errorVoltageUnits = (
+  engineData: EngineUnit,
+  thermalData: ThermalUnit
+): boolean => {
+  const parsedVoltage = parseInt(thermalData[37].value);
+  const parsedMin = parseInt(thermalData[6].value);
+  return parsedVoltage < parsedMin;
+};
+
+export const errorVoltageGSM = (
+  engineData: EngineUnit,
+  thermalData: ThermalUnit
+): boolean => {
+  const parsedVoltage = parseInt(thermalData[38].value);
+  const parsedMin = parseInt(thermalData[6].value);
+  return parsedVoltage < parsedMin;
+};

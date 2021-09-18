@@ -16,6 +16,8 @@ import {
   errorInnerTemperature,
   errorVoltageBattery,
   errorVoltageIn,
+  errorVoltageUnits,
+  errorVoltageGSM,
 } from "./data";
 
 export const getRowsTableTemperatures = (
@@ -97,10 +99,12 @@ export const getRowsVoltage = (
     {
       label: "Řídící jednotky",
       value: prettyVoltage(thermalData[37].value),
+      error: errorVoltageUnits(engineData, thermalData),
     },
     {
       label: "GSM Komunikátor",
       value: prettyVoltage(thermalData[38].value),
+      error: errorVoltageGSM(engineData, thermalData),
     },
     {
       label: "Zdroj",
