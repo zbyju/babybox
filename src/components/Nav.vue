@@ -74,6 +74,7 @@ export default defineComponent({
 
   background-color #010017
   border-bottom 1px solid #2d2b52
+  border-top 1px solid #2d2b52
   border-collapse collapse
 
   display flex
