@@ -25,7 +25,7 @@ img
   width auto
   object-fit scale-down;
   overflow hidden
-  border 3px solid primary
+  border 3px solid app-border-primary
   border-top 0
   border-radius 0 0 5px 5px
   min-width 160px

@@ -45,14 +45,14 @@ export default defineComponent({
   padding 10px
   min-width 230px
   min-height 100px
-  background-color #010017
-  border 1px solid #2d2b52
+  background-color app-bg-primary
+  border 1px solid app-border-secondary
   border-radius 20px
   margin-right 30px
   font-size 1.1em
   font-weight 100
 .card-button:hover
-  background-color #020024
+  background-color app-bg-primary-hover
 
 #QuickActions
   h2

@@ -53,8 +53,7 @@ export default defineComponent({
     border-radius 10px
     border-collapse collapse
     border-style hidden
-    // box-shadow: 0 0 0 2px app-primary;
-    background-color #010017
+    background-color app-bg-primary
     color white
     width 100%
     text-align left
@@ -63,16 +62,16 @@ export default defineComponent({
     thead
       tr
         background: rgb(2,0,43);
-        background: linear-gradient(216deg, rgba(2,0,43,1) 0%, rgba(0,48,119,1) 40%, rgba(66,0,116,1) 100%);
+        background: app-bg-primary-gradient
         th
           padding 10px 15px
     tbody
       tr
-        border-bottom 1px solid #1b1a30
+        border-bottom 1px solid app-border-primary
         transition 0.5s all
         td
           padding 7px 10px
-          border-right 1px solid #1b1a30
+          border-right 1px solid app-border-primary
           div.newvalue-wrapper
             display flex
             flex-direction row
@@ -81,15 +80,15 @@ export default defineComponent({
             span
               padding-left 10px
             input
-              background-color #000
-              border 1px solid #2d2b52
+              background-color app-bg-black
+              border 1px solid app-border-secondary
               border-radius 5px
               padding 5px 4px
               color white
               flex-grow 1
               font-size 1.1em
       tr:hover
-        background-color #020024
+        background-color app-bg-primary-hover
 
     tr:last-child td:first-child
     border-bottom-left-radius 10px

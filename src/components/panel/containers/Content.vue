@@ -44,11 +44,11 @@ export default defineComponent({
   justify-content space-between
   align-items flex-start
   max-height 37vh
-  width calc(100% - 39px)
+  width calc(100% - 32px)
   // grid-template-columns auto auto auto auto auto;
   // grid-template-rows: auto;
   // grid-template-areas: "table-temperature table-doors camera table-voltage table-connection"
 
   background background
-  border-top 5px solid primary
+  border-top 5px solid app-border-secondary
 </style>

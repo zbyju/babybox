@@ -79,27 +79,31 @@ export default defineComponent({
 
   table
     border-collapse collapse
-    border 1px solid primary
+    overflow hidden
     margin auto
     font-size 0.75vw
     align-self center
     white-space nowrap
+    border-radius 10px
 
-    thead tr
-      background-color primary
-      color text-secondary
-      font-size 16px
+
+    thead
+      border-bottom 1px solid app-border-secondary
+      border-radius 10px
+      tr
+        background app-bg-secondary-gradient
+        color text-secondary
+        font-size 16px
+        border-radius 10px
 
     th, td
       padding 10px 10px
 
     tr
-      background-color primary-black
-      border-bottom 1px solid third
+      background-color app-bg-primary
+      border-bottom 1px solid app-border-primary
     tr:nth-of-type(even)
-      background-color primary-black-lighten
-    tr:last-child
-      border-bottom: none;
+      background-color app-bg-primary-light
     td.table-label
       font-weight 700
       font-size 14px
@@ -110,8 +114,6 @@ export default defineComponent({
       font-size 14px
       color text-secondary
       text-align center
-      border-left 1px solid third
-      border-right 1px solid third
       padding 7px
     td.table-value
       text-align right
