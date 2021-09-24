@@ -5,7 +5,7 @@
       <button class="btn-primary" @click="manager.loadSettings">
         Načíst aktuální parametry
       </button>
-      <button class="btn-primary" @click="manager.loadSettings">
+      <button class="btn-primary" @click="manager.insertDefault">
         Doplnit doporučené parametry
       </button>
       <button class="btn-success" @click="manager.saveSettings">
@@ -19,12 +19,13 @@
 </template>
 
 <script lang="ts">
+import { AppManager } from "@/utils/store";
 import { defineComponent } from "vue";
 
 export default defineComponent({
   props: {
     manager: {
-      type: Object,
+      type: AppManager,
       required: true,
     },
   },
