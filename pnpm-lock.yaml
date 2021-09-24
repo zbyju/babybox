@@ -23,6 +23,7 @@ specifiers:
   lodash: ^4.17.21
   moment: ^2.29.1
   prettier: ^2.2.1
+  regenerator-runtime: ^0.13.9
   style-resources-loader: ^1.4.1
   stylus: ^0.54.7
   stylus-loader: ^3.0.2
@@ -37,6 +38,7 @@ dependencies:
   howler: 2.2.3
   lodash: 4.17.21
   moment: 2.29.1
+  regenerator-runtime: 0.13.9
   vue: 3.2.16
   vue-router: 4.0.11_vue@3.2.16
   vuex: 4.0.2_vue@3.2.16
@@ -9003,7 +9005,6 @@ packages:
 
   /regenerator-runtime/0.13.9:
     resolution: {integrity: sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==}
-    dev: true
 
   /regenerator-transform/0.14.5:
     resolution: {integrity: sha512-eOf6vka5IO151Jfsw2NO9WpGX58W6wWmefK3I1zEGr0lOD0u8rwPaNqQL1aRxUaxLeKO3ArNh3VYg1KbaD+FFw==}
