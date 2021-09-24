@@ -19,13 +19,14 @@
 </template>
 
 <script lang="ts">
+import { SettingsManager } from "@/utils/settings/settings";
 import { AppManager } from "@/utils/store";
 import { defineComponent } from "vue";
 
 export default defineComponent({
   props: {
     manager: {
-      type: AppManager,
+      type: SettingsManager,
       required: true,
     },
   },
