@@ -21,6 +21,7 @@
       "ip": "10.1.1.6"
     },
     "postfix": "/get_ram[0]?rn=60",
+    "postfixWatchdog": "/sdscep?sys141=115",
     "requestDelay": 2000,
     "requestTimeout": 5000,
     "warningThreshold": 5,
