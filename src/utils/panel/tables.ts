@@ -26,28 +26,28 @@ export const getRowsTableTemperatures = (
 ): TableData => {
   return [
     {
-      label: "Cílová teplota",
+      label: "Cílová teplota 1|2",
       value: prettyTemperature(thermalData[0].value),
     },
     {
-      label: "Vnitřní",
+      label: "Vnitřní teplota",
       value: prettyTwoTemperatures(thermalData[29].value, engineData[28].value),
       error: errorInnerTemperature(engineData, thermalData),
     },
     {
-      label: "Venkovní",
+      label: "Venkovní teplota",
       value: prettyTemperature(thermalData[28].value),
     },
     {
-      label: "Dolní",
+      label: "Vnitřní výměník vzduch",
       value: prettyTemperature(thermalData[31].value),
     },
     {
-      label: "Horní",
+      label: "Venkovní výměník vzduch",
       value: prettyTemperature(thermalData[32].value),
     },
     {
-      label: "Plášť",
+      label: "Vnitřní plášť teplota",
       value: prettyTemperature(thermalData[30].value),
     },
   ];
@@ -107,15 +107,15 @@ export const getRowsVoltage = (
       error: errorVoltageGSM(engineData, thermalData),
     },
     {
-      label: "Zdroj",
+      label: "Zdroj cíl",
       value: "14-15V",
     },
     {
-      label: "Akumulátor",
+      label: "Akumulátor cíl",
       value: "12,8-14V",
     },
     {
-      label: "Řídící jednotky",
+      label: "Řídící jednotky cíl",
       value: "12,1-13V",
     },
   ];
