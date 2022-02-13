@@ -37,6 +37,7 @@ export default defineComponent({
   overflow hidden
 
   padding padding-y padding-x
+  margin-bottom 10px
 
   transition 1s all ease-in-out
 
