@@ -6,6 +6,7 @@
       <button class="card-button" @click="openServiceDoors">
         Otevřít servisní dveře
       </button>
+      <CameraWrapper />
     </div>
   </div>
 </template>
@@ -15,6 +16,7 @@ import { openDoors, resetBabybox } from "@/api/units";
 import { Config } from "@/types/panel/main";
 import { computed, defineComponent } from "vue";
 import { useStore } from "vuex";
+import CameraWrapper from "../panel/containers/CameraWrapper.vue";
 
 export default defineComponent({
   setup() {
@@ -27,7 +29,6 @@ export default defineComponent({
         console.log(err);
       }
     };
-
     const openServiceDoors = async () => {
       try {
         await resetBabybox(config.value.units.engine.ip);
@@ -37,6 +38,7 @@ export default defineComponent({
     };
     return { openBabybox, openServiceDoors };
   },
+  components: { CameraWrapper },
 });
 </script>
 
@@ -58,5 +60,8 @@ export default defineComponent({
   h2
     margin 0 0 10px 0
   .action-wrapper
+    display: flex
+    flex-direction: row
+    justify-content: flex-start
     margin-bottom 15px
 </style>
