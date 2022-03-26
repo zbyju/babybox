@@ -35,6 +35,7 @@
     "cameraType": "dahua"
   },
   "app": {
+    "password": "password",
     "colonDelay": 500
   }
 }

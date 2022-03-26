@@ -48,6 +48,14 @@ export default defineComponent({
 </script>
 
 <style lang="stylus">
+input
+  background-color app-bg-black
+  border 1px solid app-border-secondary
+  border-radius 5px
+  padding 5px 4px
+  color white
+  flex-grow 1
+  font-size 1.1em
 #SettingsTable
   table
     border-radius 10px
@@ -79,14 +87,6 @@ export default defineComponent({
             align-items center
             span
               padding-left 10px
-            input
-              background-color app-bg-black
-              border 1px solid app-border-secondary
-              border-radius 5px
-              padding 5px 4px
-              color white
-              flex-grow 1
-              font-size 1.1em
       tr:hover
         background-color app-bg-primary-hover
 

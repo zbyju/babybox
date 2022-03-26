@@ -44,7 +44,7 @@ export default defineComponent({
   display flex
   justify-content space-between
   align-items flex-start
-  max-height 45vh
+  height 38vh
   width calc(100% - 32px)
   // grid-template-columns auto auto auto auto auto;
   // grid-template-rows: auto;

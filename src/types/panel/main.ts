@@ -16,6 +16,7 @@ export interface BabyboxConfig {
 }
 
 export interface AppConfig {
+  password: string;
   colonDelay: number;
 }
 
