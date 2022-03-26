@@ -49,7 +49,7 @@ export default defineComponent({
   display flex
   flex-direction column
   height 100%
-  width 30vw
+  aspect-ratio: 16/9
 
   #DoorBars
     width 100%

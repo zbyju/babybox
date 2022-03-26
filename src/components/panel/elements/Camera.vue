@@ -22,6 +22,7 @@ export default defineComponent({
 border-width = 5px
 img
   max-height 100%
+  height 100%
   width auto
   object-fit scale-down;
   overflow hidden
