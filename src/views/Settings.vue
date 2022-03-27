@@ -9,13 +9,13 @@
 </template>
 
 <script lang="ts">
+import { Config } from "@/types/panel/main";
+import { SettingsManager } from "@/utils/settings/settings";
 import { computed, ComputedRef, defineComponent, onBeforeMount } from "vue";
+import { useStore } from "vuex";
 import Nav from "../components/Nav.vue";
 import SettingsForm from "../components/settings/form/Form.vue";
 import QuickActions from "../components/settings/QuickActions.vue";
-import { SettingsManager } from "@/utils/settings/settings";
-import { useStore } from "vuex";
-import { Config } from "@/types/panel/main";
 
 export default defineComponent({
   name: "Settings",

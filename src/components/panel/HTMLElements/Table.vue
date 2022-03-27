@@ -44,7 +44,7 @@
 </template>
 
 <script lang="ts">
-import { TableData, TableBlockData } from "@/types/panel/tables";
+import { TableBlockData, TableData } from "@/types/panel/tables";
 import { defineComponent, PropType, toRef } from "vue";
 import { useStore } from "vuex";
 

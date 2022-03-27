@@ -3,9 +3,9 @@
 </template>
 
 <script lang="ts">
+import useCamera from "@/composables/useCamera";
 import { defineComponent, Ref } from "vue";
 import { useStore } from "vuex";
-import useCamera from "@/composables/useCamera";
 
 export default defineComponent({
   setup() {

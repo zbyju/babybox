@@ -1,6 +1,6 @@
-import moment from "moment";
-import { ref, watch, Ref, ComputedRef } from "vue";
 import _ from "lodash";
+import moment from "moment";
+import { ComputedRef, ref, Ref, watch } from "vue";
 
 export default function useBigClockColon(
   time: Ref<moment.Moment>,

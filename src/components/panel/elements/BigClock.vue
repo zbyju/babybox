@@ -12,15 +12,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from "vue";
-import { useStore } from "vuex";
-import useBigClockColon from "@/composables/useBigClockColon";
 import useActiveTime from "@/composables/useActiveTime";
-import moment from "moment";
+import useBigClockColon from "@/composables/useBigClockColon";
 import {
   getHoursWithLeadingZeroes,
   getMinutesWithLeadingZeroes,
 } from "@/utils/time";
+import moment from "moment";
+import { computed, defineComponent } from "vue";
+import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {

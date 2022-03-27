@@ -1,11 +1,11 @@
 import { SettingsTableData } from "@/types/settings/table";
+import _ from "lodash";
 import { ref, Ref } from "vue";
 import {
   getSettingsHeaders,
   getSettingsTableRows,
   settingsRowMapper,
 } from "./table";
-import _ from "lodash";
 
 export class SettingsManager {
   private ipEngine: string;

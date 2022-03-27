@@ -10,23 +10,21 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  computed,
-  onBeforeMount,
-  watch,
-  onBeforeUnmount,
-} from "vue";
-import { useStore } from "vuex";
-
 import Nav from "@/components/Nav.vue";
 import Content from "@/components/panel/containers/Content.vue";
 import Header from "@/components/panel/containers/Header.vue";
 import Message from "@/components/panel/elements/Message.vue";
-
-import { AppManager } from "@/utils/store";
-import { AppState } from "@/types/panel/main";
 import { useSounds } from "@/composables/useSounds";
+import { AppState } from "@/types/panel/main";
+import { AppManager } from "@/utils/store";
+import {
+  computed,
+  defineComponent,
+  onBeforeMount,
+  onBeforeUnmount,
+  watch,
+} from "vue";
+import { useStore } from "vuex";
 
 export default defineComponent({
   name: "Home",

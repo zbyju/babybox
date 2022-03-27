@@ -7,7 +7,7 @@
 <script lang="ts">
 import Table from "@/components/panel/HTMLElements/Table.vue";
 import { getRowsVoltage } from "@/utils/panel/tables";
-import { defineComponent, computed } from "vue";
+import { computed, defineComponent } from "vue";
 import { useStore } from "vuex";
 
 export default defineComponent({

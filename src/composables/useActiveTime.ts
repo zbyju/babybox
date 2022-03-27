@@ -1,6 +1,5 @@
 import moment from "moment";
-import { ref, watch, ComputedRef } from "vue";
-import _ from "lodash";
+import { ComputedRef, ref, watch } from "vue";
 
 export default function useActiveTime(
   time: ComputedRef<moment.Moment>,

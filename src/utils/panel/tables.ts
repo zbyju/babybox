@@ -4,20 +4,18 @@ import { TableBlockData, TableData } from "@/types/panel/tables";
 import { EngineUnit, ThermalUnit } from "@/types/panel/units-data";
 import {
   beamAboveContainer,
-  prettyInt,
-  prettyBooleanString,
+  errorInnerTemperature,
+  errorVoltageBattery,
+  errorVoltageGSM,
+  errorVoltageIn,
+  errorVoltageUnits,
+  parseBoolean,
   prettyTemperature,
   prettyTwoNumbers,
   prettyTwoPercentages,
   prettyTwoTemperatures,
   prettyVoltage,
   secondsToTime,
-  parseBoolean,
-  errorInnerTemperature,
-  errorVoltageBattery,
-  errorVoltageIn,
-  errorVoltageUnits,
-  errorVoltageGSM,
 } from "./data";
 
 export const getRowsTableTemperatures = (

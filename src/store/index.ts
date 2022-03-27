@@ -1,27 +1,26 @@
-import { createStore } from "vuex";
-
-import { State } from "@/types/panel/main";
-import {
-  SET_CONFIG,
-  SET_STATE,
-  RESET_STATE,
-  SET_ENGINE_UNIT,
-  SET_THERMAL_UNIT,
-  INCREMENT_SUCCESS_ENGINE,
-  INCREMENT_SUCCESS_THERMAL,
-  INCREMENT_FAIL_ENGINE,
-  INCREMENT_FAIL_THERMAL,
-  SET_TIME,
-} from "./mutation-types/index-types";
-import {
-  DefaultEngineUnit,
-  DefaultThermalUnit,
-} from "@/types/panel/units-data";
 import { getDefaultAppState } from "@/defaults/appState";
 import {
   ConnectionResult,
   getDefaultConnection,
 } from "@/types/panel/connection";
+import { State } from "@/types/panel/main";
+import {
+  DefaultEngineUnit,
+  DefaultThermalUnit,
+} from "@/types/panel/units-data";
+import { createStore } from "vuex";
+import {
+  INCREMENT_FAIL_ENGINE,
+  INCREMENT_FAIL_THERMAL,
+  INCREMENT_SUCCESS_ENGINE,
+  INCREMENT_SUCCESS_THERMAL,
+  RESET_STATE,
+  SET_CONFIG,
+  SET_ENGINE_UNIT,
+  SET_STATE,
+  SET_THERMAL_UNIT,
+  SET_TIME,
+} from "./mutation-types/index-types";
 
 export default createStore<State>({
   state: {

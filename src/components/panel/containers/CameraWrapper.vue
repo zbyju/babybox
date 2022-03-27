@@ -19,10 +19,10 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
 import Camera from "@/components/panel/elements/Camera.vue";
 import HorizontalPositionBar from "@/components/panel/elements/HorizontalPositionBar.vue";
+import { computed, defineComponent } from "vue";
+import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {

@@ -12,12 +12,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-
-import BigClock from "@/components/panel/elements/BigClock.vue";
 import BabyboxName from "@/components/panel/elements/BabyboxName.vue";
-import Time from "@/components/panel/elements/Time.vue";
+import BigClock from "@/components/panel/elements/BigClock.vue";
 import Date from "@/components/panel/elements/Date.vue";
+import Time from "@/components/panel/elements/Time.vue";
+import { defineComponent } from "vue";
 
 export default defineComponent({
   setup() {

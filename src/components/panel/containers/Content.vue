@@ -9,13 +9,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-
-import TableTemperature from "@/components/panel/elements/TableTemperature.vue";
+import CameraWrapper from "@/components/panel/containers/CameraWrapper.vue";
 import TableConnection from "@/components/panel/elements/TableConnection.vue";
 import TableDoors from "@/components/panel/elements/TableDoors.vue";
+import TableTemperature from "@/components/panel/elements/TableTemperature.vue";
 import TableVoltage from "@/components/panel/elements/TableVoltage.vue";
-import CameraWrapper from "@/components/panel/containers/CameraWrapper.vue";
+import { defineComponent } from "vue";
 
 export default defineComponent({
   setup() {
