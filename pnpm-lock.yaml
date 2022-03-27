@@ -1,6 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@rushstack/eslint-patch': ^1.1.1
   '@types/jest': ^24.0.19
   '@typescript-eslint/eslint-plugin': ^4.18.0
   '@typescript-eslint/parser': ^4.18.0
@@ -46,6 +47,7 @@ dependencies:
   vuex: 4.0.2_vue@3.2.16
 
 devDependencies:
+  '@rushstack/eslint-patch': 1.1.1
   '@types/jest': 24.9.1
   '@typescript-eslint/eslint-plugin': 4.31.2_f4c9c54d1e5ef26f0cdf5314d15b1e5f
   '@typescript-eslint/parser': 4.31.2_eslint@6.8.0+typescript@4.1.6
@@ -1480,6 +1482,10 @@ packages:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.13.0
+    dev: true
+
+  /@rushstack/eslint-patch/1.1.1:
+    resolution: {integrity: sha512-BUyKJGdDWqvWC5GEhyOiUrGNi9iJUr4CU0O2WxJL6QJhHeeA/NVBalH+FeK0r/x/W0rPymXt5s78TDS7d6lCwg==}
     dev: true
 
   /@soda/friendly-errors-webpack-plugin/1.8.0_webpack@4.46.0:

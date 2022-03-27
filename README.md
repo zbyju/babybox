@@ -25,7 +25,7 @@
 ### Other technologies
 
 - Moment - working with time and date
-- Lodash - utility funciton
+- Lodash - utility function
 
 ## Commands
 
