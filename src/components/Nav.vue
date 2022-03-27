@@ -22,7 +22,7 @@
         </template>
       </div>
     </div>
-    <input type="password" placeholder="Heslo" v-model="password" />
+    <Input type="password" placeholder="Heslo" v-model="password" />
   </div>
 </template>
 
@@ -30,8 +30,10 @@
 import { Config } from "@/types/panel/main";
 import { computed, defineComponent, ref } from "vue";
 import { useStore } from "vuex";
+import Input from "./panel/HTMLElements/Input.vue";
 
 export default defineComponent({
+  components: { Input },
   setup() {
     const store = useStore();
     const config: Config = store.state.config;

@@ -14,7 +14,7 @@
           <td>{{ row.thermal }}</td>
           <td>
             <div class="newvalue-wrapper">
-              <input />
+              <Input />
               <span class="measure-unit" v-if="row.type !== 'string'"
                 >[{{ typeToMeasureUnit(row.type) }}]</span
               >
@@ -31,6 +31,7 @@
 <script lang="ts">
 import { typeToMeasureUnit } from "@/utils/settings/table";
 import { defineComponent } from "vue";
+import Input from "../../panel/HTMLElements/Input.vue";
 
 export default defineComponent({
   props: {
@@ -38,6 +39,9 @@ export default defineComponent({
       type: Object,
       required: true,
     },
+  },
+  components: {
+    Input,
   },
   setup(props) {
     const headers = props.manager.getHeaders();
@@ -48,14 +52,7 @@ export default defineComponent({
 </script>
 
 <style lang="stylus">
-input
-  background-color app-bg-black
-  border 1px solid app-border-secondary
-  border-radius 5px
-  padding 5px 4px
-  color white
-  flex-grow 1
-  font-size 1.1em
+
 #SettingsTable
   table
     border-radius 10px
