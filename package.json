@@ -3,18 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "test": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint",
     "serve": "pnpm build && serve dist",
-    "serve:only": "serve dist"
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "dev": "vue-cli-service serve",
+    "serve:only": "serve dist",
+    "test": "vue-cli-service test:unit"
   },
   "dependencies": {
     "core-js": "^3.6.5",
     "howler": "^2.2.3",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
+    "pinia": "^2.0.13",
     "regenerator-runtime": "^0.13.9",
     "serve": "^13.0.2",
     "vue": "^3.0.0",
@@ -44,6 +45,7 @@
     "stylus": "^0.54.7",
     "stylus-loader": "^3.0.2",
     "typescript": "~4.1.5",
+    "vue-cli-plugin-pinia": "^0.1.2",
     "vue-jest": "^5.0.0-0"
   },
   "eslintConfig": {

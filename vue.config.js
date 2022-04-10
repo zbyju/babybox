@@ -7,6 +7,17 @@ module.exports = {
       addStyleResource(config.module.rule("stylus").oneOf(type))
     );
   },
+  configureWebpack: {
+    module: {
+      rules: [
+        {
+          test: /\.mjs$/,
+          include: /node_modules/,
+          type: "javascript/auto",
+        },
+      ],
+    },
+  },
 };
 
 function addStyleResource(rule) {
