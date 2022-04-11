@@ -8,22 +8,21 @@
 </template>
 
 <script lang="ts">
-import { Config } from "@/types/panel/main";
-import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
+import { useConfigStore } from "@/pinia/configStore";
+import { storeToRefs } from "pinia";
+import { defineComponent } from "vue";
 
 export default defineComponent({
   setup() {
-    const store = useStore();
-    const config = computed((): Config => store.state.config);
+    const configStore = useConfigStore();
+    const { babybox, fontSize } = storeToRefs(configStore);
 
     const textStyle = {
-      fontSize: config.value.fontSizes.babyboxName + "vw",
+      fontSize: fontSize.value.babyboxName + "vw",
     };
     return {
-      babyboxName: config.value.babybox.name,
-      prependBabybox: config.value.babybox.prependBabyboxBeforeName,
-      config,
+      babyboxName: babybox.value.name,
+      prependBabybox: babybox.value.prependBabyboxBeforeName,
       textStyle,
     };
   },

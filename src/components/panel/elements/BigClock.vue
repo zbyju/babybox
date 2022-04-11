@@ -14,19 +14,26 @@
 <script lang="ts">
 import useActiveTime from "@/composables/useActiveTime";
 import useBigClockColon from "@/composables/useBigClockColon";
+import { useAppStateStore } from "@/pinia/appStateStore";
+import { useConfigStore } from "@/pinia/configStore";
+import { useUnitsStore } from "@/pinia/unitsStore";
 import {
   getHoursWithLeadingZeroes,
   getMinutesWithLeadingZeroes,
 } from "@/utils/time";
 import moment from "moment";
+import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
 import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {
-    const store = useStore();
-    const storeTime = computed((): moment.Moment => store.state.time);
-    const active = computed((): boolean => store.state.appState.active);
+    const unitsStore = useUnitsStore();
+    const appStateStore = useAppStateStore();
+    const configStore = useConfigStore();
+    const { time: storeTime } = storeToRefs(unitsStore);
+    const { message, active } = storeToRefs(appStateStore);
+    const { fontSize } = storeToRefs(configStore);
     const time = useActiveTime(storeTime, active);
     const { showColon } = useBigClockColon(time, active);
     const hours = computed((): string => getHoursWithLeadingZeroes(time.value));
@@ -34,15 +41,15 @@ export default defineComponent({
       getMinutesWithLeadingZeroes(time.value)
     );
     const bigger = computed((): boolean => {
-      return !store.state.appState.message?.text;
+      return !message?.value.text;
     });
     const textSize = computed(() => {
       return bigger.value
         ? {
-            fontSize: store.state.config.fontSizes.bigClockBigger + "vw",
+            fontSize: fontSize.value.bigClockBigger + "vw",
           }
         : {
-            fontSize: store.state.config.fontSizes.bigClockSmaller + "vw",
+            fontSize: fontSize.value.bigClockSmaller + "vw",
           };
     });
     return { hours, minutes, showColon, bigger, textSize };

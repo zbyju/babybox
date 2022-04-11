@@ -13,18 +13,19 @@
 
 <script lang="ts">
 import useDelayedMessage from "@/composables/useDelayedMessage";
-import { Message } from "@/types/panel/main";
-import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
+import { useAppStateStore } from "@/pinia/appStateStore";
+import { useConfigStore } from "@/pinia/configStore";
+import { storeToRefs } from "pinia";
+import { defineComponent } from "vue";
 
 export default defineComponent({
   setup() {
-    const store = useStore();
-    const message = computed(
-      (): Message => store.state.appState.message || null
-    );
+    const appStateStore = useAppStateStore();
+    const configStore = useConfigStore();
+    const { message } = storeToRefs(appStateStore);
+    const { fontSize } = storeToRefs(configStore);
     const textSize = {
-      fontSize: store.state.config.fontSizes.message + "vw",
+      fontSize: fontSize.value.message + "vw",
     };
     const { messageDelayed, heightStyle } = useDelayedMessage(message);
     return { message: messageDelayed, heightStyle, textSize };

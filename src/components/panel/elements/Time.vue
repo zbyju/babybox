@@ -5,18 +5,23 @@
 </template>
 
 <script lang="ts">
+import { useConfigStore } from "@/pinia/configStore";
+import { useUnitsStore } from "@/pinia/unitsStore";
 import { getFullTime } from "@/utils/time";
+import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {
-    const store = useStore();
-    const time = computed((): string => getFullTime(store.state.time));
+    const unitsStore = useUnitsStore();
+    const configStore = useConfigStore();
+    const { time } = storeToRefs(unitsStore);
+    const { fontSize } = storeToRefs(configStore);
+    const fullTime = computed((): string => getFullTime(time.value));
     const textSize = {
-      fontSize: store.state.config.fontSizes.smallClock + "vw",
+      fontSize: fontSize.value.smallClock + "vw",
     };
-    return { time, textSize };
+    return { fullTime, textSize };
   },
 });
 </script>

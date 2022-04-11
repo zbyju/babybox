@@ -54,8 +54,9 @@ export interface ConfigFontSize {
 
 export const useConfigStore = defineStore("config", {
   state: () => ({
+    initialised: false as boolean,
     app: null as ConfigApp,
-    babybox: null as ConfigApp,
+    babybox: null as ConfigBabybox,
     camera: null as ConfigCamera,
     units: null as ConfigUnits,
     fontSize: null as ConfigFontSize,

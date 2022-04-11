@@ -9,8 +9,10 @@
 </template>
 
 <script lang="ts">
+import { useConfigStore } from "@/pinia/configStore";
 import { Config } from "@/types/panel/main";
 import { SettingsManager } from "@/utils/settings/settings";
+import { storeToRefs } from "pinia";
 import { computed, ComputedRef, defineComponent, onBeforeMount } from "vue";
 import { useStore } from "vuex";
 import Nav from "../components/Nav.vue";
@@ -25,11 +27,11 @@ export default defineComponent({
     QuickActions,
   },
   setup() {
-    const store = useStore();
-    const config: ComputedRef<Config> = computed(() => store.state.config);
+    const configStore = useConfigStore();
+    const { units } = storeToRefs(configStore);
     const settingsManager = new SettingsManager(
-      config.value.units.engine.ip,
-      config.value.units.thermal.ip
+      units.value.engine.ip,
+      units.value.thermal.ip
     );
     onBeforeMount(() => settingsManager.loadSettings);
     return { settingsManager };

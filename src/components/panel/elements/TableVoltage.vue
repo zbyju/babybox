@@ -6,16 +6,19 @@
 
 <script lang="ts">
 import Table from "@/components/panel/HTMLElements/Table.vue";
+import { useUnitsStore } from "@/pinia/unitsStore";
 import { getRowsVoltage } from "@/utils/panel/tables";
+import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
 import { useStore } from "vuex";
 
 export default defineComponent({
   components: { Table },
   setup() {
-    const store = useStore();
+    const unitsStore = useUnitsStore();
+    const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
     const rows = computed(() => {
-      return getRowsVoltage(store.state.engineUnit, store.state.thermalUnit);
+      return getRowsVoltage(engineUnit.value, thermalUnit.value);
     });
     return {
       title: "Napětí",

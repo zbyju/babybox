@@ -1,7 +1,8 @@
-import store from "@/store";
+import { useConfigStore } from "@/pinia/configStore";
+import { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
 import { Connection } from "@/types/panel/connection";
 import { TableBlockData, TableData } from "@/types/panel/tables";
-import { EngineUnit, ThermalUnit } from "@/types/panel/units-data";
+import { storeToRefs } from "pinia";
 import {
   beamAboveContainer,
   errorInnerTemperature,
@@ -169,9 +170,8 @@ export const getRowsTableConnection = (
   thermalData: ThermalUnit,
   connection: Connection
 ): TableData => {
-  // console.log(engineData[59].value, "Casovac od zkousky-aktivace");
-  // console.log(engineData[11].value, "perioda zkousek");
-  // console.log(engineData[33].value, "Dnu od zkousky-aktivace");
+  const configStore = useConfigStore();
+  const { units } = storeToRefs(configStore);
   return [
     {
       label: "PC dotaz",
@@ -203,7 +203,7 @@ export const getRowsTableConnection = (
     },
     {
       label: "Limit spojení",
-      value: store.state.config.units.requestTimeout + "ms",
+      value: units.value.requestTimeout + "ms",
     },
     {
       label: "Čas do zkoušky",

@@ -1,12 +1,16 @@
 import { getDefaultAppState } from "@/defaults/appState";
+import { useConfigStore } from "@/pinia/configStore";
 import store from "@/store";
 import { AppState, State } from "@/types/panel/main";
+import { storeToRefs } from "pinia";
 
 export const getNewState = (state: State): AppState => {
   let result = getDefaultAppState();
 
-  const warningThreshold = store.state.config.units.warningThreshold || 5;
-  const errorThreshold = store.state.config.units.errorThreshold || 25;
+  const configStore = useConfigStore();
+  const { units } = storeToRefs(configStore);
+  const warningThreshold = units.value.warningThreshold || 5;
+  const errorThreshold = units.value.errorThreshold || 25;
 
   // X dni neprovedena zkouska
   const inspection = parseInt(state.engineUnit[33].value);

@@ -15,8 +15,10 @@ import Content from "@/components/panel/containers/Content.vue";
 import Header from "@/components/panel/containers/Header.vue";
 import Message from "@/components/panel/elements/Message.vue";
 import { useSounds } from "@/composables/useSounds";
+import { useAppStateStore } from "@/pinia/appStateStore";
 import { AppState } from "@/types/panel/main";
 import { AppManager } from "@/utils/store";
+import { storeToRefs } from "pinia";
 import {
   computed,
   defineComponent,
@@ -35,8 +37,8 @@ export default defineComponent({
     Message,
   },
   setup() {
-    const store = useStore();
-    const appState = computed((): AppState => store.state.appState);
+    const appStateStore = useAppStateStore();
+    const appState = computed((): AppState => appStateStore.$state);
 
     // Sounds
     const soundPlayer = useSounds();

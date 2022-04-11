@@ -5,16 +5,22 @@
 </template>
 
 <script lang="ts">
+import { useConfigStore } from "@/pinia/configStore";
+import { useUnitsStore } from "@/pinia/unitsStore";
 import { getFullDate } from "@/utils/time";
+import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
 import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {
-    const store = useStore();
-    const date = computed((): string => getFullDate(store.state.time));
+    const unitsStore = useUnitsStore();
+    const configStore = useConfigStore();
+    const { time } = storeToRefs(unitsStore);
+    const { fontSize } = storeToRefs(configStore);
+    const date = computed((): string => getFullDate(time.value)); // TODO: Change to computed without time
     const textSize = {
-      fontSize: store.state.config.fontSizes.smallClock + "vw",
+      fontSize: fontSize.value.smallClock + "vw",
     };
     return { date, textSize };
   },

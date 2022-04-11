@@ -8,28 +8,24 @@
 
 <script lang="ts">
 import Table from "@/components/panel/HTMLElements/Table.vue";
+import { useUnitsStore } from "@/pinia/unitsStore";
 import {
   getBlocksTableTemperature,
   getRowsTableTemperatures,
 } from "@/utils/panel/tables";
+import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   components: { Table },
   setup() {
-    const store = useStore();
+    const unitsStore = useUnitsStore();
+    const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
     const rows = computed(() => {
-      return getRowsTableTemperatures(
-        store.state.engineUnit,
-        store.state.thermalUnit
-      );
+      return getRowsTableTemperatures(engineUnit.value, thermalUnit.value);
     });
     const blocks = computed(() => {
-      return getBlocksTableTemperature(
-        store.state.engineUnit,
-        store.state.thermalUnit
-      );
+      return getBlocksTableTemperature(engineUnit.value, thermalUnit.value);
     });
     return {
       title: "Topení/chlazení",

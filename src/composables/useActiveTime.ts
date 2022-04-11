@@ -1,9 +1,9 @@
 import moment from "moment";
-import { ComputedRef, ref, watch } from "vue";
+import { ComputedRef, Ref, ref, watch } from "vue";
 
 export default function useActiveTime(
-  time: ComputedRef<moment.Moment>,
-  active: ComputedRef<boolean>
+  time: Ref<moment.Moment>,
+  active: Ref<boolean>
 ) {
   const result = ref(time.value);
   watch(time, (newTime, oldTime) => {

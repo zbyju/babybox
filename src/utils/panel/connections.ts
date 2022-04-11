@@ -6,8 +6,8 @@ export enum ConnectionResult {
 }
 
 export class ConnectionTracker {
-  private RECENT_SIZE: number;
-  private recentQueue: Array<ConnectionResult>;
+  RECENT_SIZE: number;
+  recentQueue: Array<ConnectionResult>;
   requests: number;
   successes: number;
   fails: number;

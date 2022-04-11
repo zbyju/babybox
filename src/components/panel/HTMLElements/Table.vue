@@ -44,7 +44,9 @@
 </template>
 
 <script lang="ts">
+import { useConfigStore } from "@/pinia/configStore";
 import { TableBlockData, TableData } from "@/types/panel/tables";
+import { storeToRefs } from "pinia";
 import { defineComponent, PropType, toRef } from "vue";
 import { useStore } from "vuex";
 
@@ -55,18 +57,20 @@ export default defineComponent({
     blocksProp: Array as PropType<TableBlockData>,
   },
   setup(props) {
-    const store = useStore();
+    const configStore = useConfigStore();
+    const { fontSize } = storeToRefs(configStore);
+    // TODO: Refactor getting props
     const title = toRef(props, "titleProp");
     const rows = toRef(props, "rowsProp");
     const blocks = toRef(props, "blocksProp");
     const headSize = {
-      fontSize: store.state.config.fontSizes.tableHeading + "vw",
+      fontSize: fontSize.value.tableHeading + "vw",
     };
     const labelSize = {
-      fontSize: store.state.config.fontSizes.tableLabel + "vw",
+      fontSize: fontSize.value.tableLabel + "vw",
     };
     const valueSize = {
-      fontSize: store.state.config.fontSizes.tableValue + "vw",
+      fontSize: fontSize.value.tableValue + "vw",
     };
     return { title, rows, headSize, labelSize, valueSize, blocks };
   },

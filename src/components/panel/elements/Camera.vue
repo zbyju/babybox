@@ -4,14 +4,15 @@
 
 <script lang="ts">
 import useCamera from "@/composables/useCamera";
+import { useConfigStore } from "@/pinia/configStore";
+import { storeToRefs } from "pinia";
 import { defineComponent, Ref } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {
-    const store = useStore();
-    const config = store.state.config.camera;
-    const url: Ref<string> = useCamera(config);
+    const configStore = useConfigStore();
+    const { camera } = storeToRefs(configStore);
+    const url: Ref<string> = useCamera(camera.value);
 
     return { url };
   },

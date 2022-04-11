@@ -21,20 +21,18 @@
 <script lang="ts">
 import Camera from "@/components/panel/elements/Camera.vue";
 import HorizontalPositionBar from "@/components/panel/elements/HorizontalPositionBar.vue";
+import { useUnitsStore } from "@/pinia/unitsStore";
+import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {
-    const store = useStore();
-    const minDoors = computed(() => parseInt(store.state.engineUnit[2].value));
-    const maxDoors = computed(() => parseInt(store.state.engineUnit[3].value));
-    const leftDoors = computed(() =>
-      parseInt(store.state.engineUnit[37].value)
-    );
-    const rightDoors = computed(() =>
-      parseInt(store.state.engineUnit[38].value)
-    );
+    const unitsStore = useUnitsStore();
+    const { engineUnit } = storeToRefs(unitsStore);
+    const minDoors = computed(() => parseInt(engineUnit.value[2].value));
+    const maxDoors = computed(() => parseInt(engineUnit.value[3].value));
+    const leftDoors = computed(() => parseInt(engineUnit.value[37].value));
+    const rightDoors = computed(() => parseInt(engineUnit.value[38].value));
     return { minDoors, maxDoors, leftDoors, rightDoors };
   },
   components: {

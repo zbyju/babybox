@@ -1,23 +1,24 @@
 <template>
-  <div v-if="config">
+  <div v-if="initialised">
     <router-view></router-view>
   </div>
   <div v-else>Chybí config soubor</div>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onBeforeMount } from "vue";
+import { defineComponent, onBeforeMount } from "vue";
 import { AppManager } from "@/utils/store";
-import { useStore } from "vuex";
+import { useConfigStore } from "./pinia/configStore";
+import { storeToRefs } from "pinia";
 
 export default defineComponent({
   name: "App",
   setup() {
-    const store = useStore();
+    const configStore = useConfigStore();
     const appManager = new AppManager();
-    const config = computed(() => store.state.config);
+    const { initialised } = storeToRefs(configStore);
     onBeforeMount(async () => await appManager.initializeGlobal());
-    return { config };
+    return { initialised };
   },
 });
 </script>

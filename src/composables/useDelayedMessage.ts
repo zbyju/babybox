@@ -1,7 +1,7 @@
 import { Message } from "@/types/panel/main";
-import { computed, ComputedRef, ref, watch } from "vue";
+import { computed, Ref, ref, watch } from "vue";
 
-export default function useDelayedMessage(message: ComputedRef<Message>) {
+export default function useDelayedMessage(message: Ref<Message>) {
   const MESSAGE_DELAY = 1000;
 
   const messageDelayed = ref(message.value);

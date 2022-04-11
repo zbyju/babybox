@@ -27,19 +27,20 @@
 </template>
 
 <script lang="ts">
+import { useConfigStore } from "@/pinia/configStore";
 import { Config } from "@/types/panel/main";
+import { storeToRefs } from "pinia";
 import { computed, defineComponent, ref } from "vue";
-import { useStore } from "vuex";
 import Input from "./panel/HTMLElements/Input.vue";
 
 export default defineComponent({
   components: { Input },
   setup() {
-    const store = useStore();
-    const config: Config = store.state.config;
+    const configStore = useConfigStore();
+    const { app, units, camera } = storeToRefs(configStore);
 
     const isUnlocked = computed(() => {
-      return password.value === config.app.password;
+      return password.value === app.value.password;
     });
     const password = ref("");
 
@@ -72,19 +73,19 @@ export default defineComponent({
           secured: true,
         },
         {
-          link: `http://${config.units.engine.ip}/`,
+          link: `http://${units.value.engine.ip}/`,
           label: "SDS Motory",
           external: true,
           secured: true,
         },
         {
-          link: `http://${config.units.thermal.ip}/`,
+          link: `http://${units.value.thermal.ip}/`,
           label: "SDS Topení",
           external: true,
           secured: true,
         },
         {
-          link: `http://${config.camera.ip}/`,
+          link: `http://${camera.value.ip}/`,
           label: "Kamera",
           external: true,
           secured: true,
