@@ -1,6 +1,6 @@
 <template>
   <div id="Time">
-    <span id="Time" :style="textSize">{{ time }}</span>
+    <span id="Time" :style="textSize">{{ fullTime }}</span>
   </div>
 </template>
 

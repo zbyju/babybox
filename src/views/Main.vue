@@ -26,7 +26,6 @@ import {
   onBeforeUnmount,
   watch,
 } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   name: "Home",
@@ -38,8 +37,13 @@ export default defineComponent({
   },
   setup() {
     const appStateStore = useAppStateStore();
-    const appState = computed((): AppState => appStateStore.$state);
-
+    const { message, active } = storeToRefs(appStateStore);
+    const appState = computed(
+      (): AppState => ({
+        message: message.value,
+        active: active.value,
+      })
+    );
     // Sounds
     const soundPlayer = useSounds();
     watch(appState, (newValue, prevValue) =>
