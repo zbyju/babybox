@@ -1,12 +1,3 @@
-export type UnitVariable = {
-  index: number;
-  value: string;
-  label?: string;
-};
-
-export type EngineUnit = Array<UnitVariable>;
-export type ThermalUnit = Array<UnitVariable>;
-
 export const DefaultThermalUnit = [
   {
     index: 0,
