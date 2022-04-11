@@ -8,7 +8,7 @@ export interface AppStateMessage {
 
 export type AppStateActive = boolean;
 
-export const useStore = defineStore("main", {
+export const useStore = defineStore("appState", {
   state: () => ({
     message: null as AppStateMessage,
     active: false as AppStateActive,

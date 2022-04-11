@@ -1,4 +1,9 @@
-import { ConnectionResult } from "@/types/panel/connection";
+// TODO: Remove this file - move to connection store
+
+export enum ConnectionResult {
+  Success = 1,
+  Fail = 0,
+}
 
 export class ConnectionTracker {
   private RECENT_SIZE: number;

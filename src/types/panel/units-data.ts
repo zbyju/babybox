@@ -1,6 +1,7 @@
 export type UnitVariable = {
   index: number;
   value: string;
+  label?: string;
 };
 
 export type EngineUnit = Array<UnitVariable>;
