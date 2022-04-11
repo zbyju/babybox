@@ -3,7 +3,7 @@
     "name": "Praha",
     "prependBabyboxBeforeName": true
   },
-  "fontSizes": {
+  "fontSize": {
     "babyboxName": 2,
     "bigClockBigger": 26,
     "bigClockSmaller": 21,
