@@ -21,5 +21,15 @@ export const useUnitsStore = defineStore("engineUnit", {
     time: null as moment.Moment,
   }),
   getters: {}, // TODO: Add used getters
-  actions: {},
+  actions: {
+    setEngineUnit(engineUnit: EngineUnit) {
+      this.engineUnit = engineUnit;
+    },
+    setThermalUnit(thermalUnit: ThermalUnit) {
+      this.thermalUnit = thermalUnit;
+    },
+    setTime(time: moment.Moment) {
+      this.time = time;
+    },
+  },
 });

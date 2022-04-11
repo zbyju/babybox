@@ -30,6 +30,11 @@ export class AppManager {
   private thermalUnit: Ref<ThermalUnit>;
   private connection: Ref<Connection>;
 
+  private unitsStore;
+  private connectionStore;
+  private configStore;
+  private appStateStore;
+
   constructor() {
     // TODO: Refactor
     const configStore = useConfigStore();
@@ -45,6 +50,11 @@ export class AppManager {
     this.engineUnit = engineUnit;
     this.thermalUnit = thermalUnit;
     this.connection = ref({ engineUnit: euc, thermalUnit: tuc });
+
+    this.unitsStore = unitsStore;
+    this.connectionStore = connectionStore;
+    this.configStore = configStore;
+    this.appStateStore = appStateStore;
   }
 
   private async updateEngineUnit(timeout: number) {
@@ -52,12 +62,10 @@ export class AppManager {
     const postfix = this.unitsConfig.value.postfix;
     try {
       const data = await getData(timeout, ip, postfix);
-      store.commit(SET_ENGINE_UNIT, {
-        data,
-      });
-      store.commit(INCREMENT_SUCCESS_ENGINE);
+      this.unitsStore.setEngineUnit(data);
+      this.connectionStore.incrementSuccessEngine();
     } catch (err) {
-      store.commit(INCREMENT_FAIL_ENGINE);
+      this.connectionStore.incrementFailEngine();
     }
   }
   private async updateThermalUnit(timeout: number) {
@@ -65,19 +73,15 @@ export class AppManager {
     const postfix = this.unitsConfig.value.postfix;
     try {
       const data = await getData(timeout, ip, postfix);
-      store.commit(SET_THERMAL_UNIT, {
-        data,
-      });
-      store.commit(INCREMENT_SUCCESS_THERMAL);
+      this.unitsStore.setThermalUnit(data);
+      this.connectionStore.incrementSuccessThermal();
     } catch (err) {
-      store.commit(INCREMENT_FAIL_THERMAL);
+      this.connectionStore.incrementFailThermal();
     }
   }
   private updateClock() {
     const time = convertSDSTimeToMoment(this.engineUnit.value);
-    store.commit(SET_TIME, {
-      time,
-    });
+    this.unitsStore.setTime(time);
   }
   private updateState() {
     const newState = getNewState(
@@ -85,16 +89,14 @@ export class AppManager {
       this.thermalUnit.value,
       this.connection.value
     );
-    if (!_.isEqual(store.state.appState, newState)) {
-      store.commit(SET_STATE, {
-        state: newState,
-      });
+    if (!_.isEqual(this.appState.value, newState)) {
+      this.appStateStore.setState(newState);
     }
     this.updateClock();
   }
   private async updateWatchdogEngine(timeout: number) {
-    const ip = store.state.config.units.engine.ip;
-    const postfix = store.state.config.units.postfixWatchdog;
+    const ip = this.unitsConfig.value.engine.ip;
+    const postfix = this.unitsConfig.value.postfixWatchdog;
     try {
       await getData(timeout, ip, postfix, false);
     } catch (err) {
@@ -119,9 +121,7 @@ export class AppManager {
   private async initializeConfig() {
     const config = await this.getConfig();
     return new Promise((resolve, reject) => {
-      store.commit(SET_CONFIG, {
-        config,
-      });
+      this.configStore.setConfig(config);
     });
   }
 

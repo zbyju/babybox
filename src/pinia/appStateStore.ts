@@ -1,3 +1,4 @@
+import { AppState } from "@/types/panel/main";
 import { defineStore } from "pinia";
 
 export interface AppStateMessage {
@@ -13,5 +14,10 @@ export const useAppStateStore = defineStore("appState", {
     message: null as AppStateMessage,
     active: false as AppStateActive,
   }),
-  actions: {},
+  actions: {
+    setState(state: AppState) {
+      this.message = state.message;
+      this.active = state.active;
+    },
+  },
 });
