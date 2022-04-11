@@ -1,17 +1,6 @@
 import { getData } from "@/api/units";
-import { Config, useConfigStore } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/configStore";
 import { ref, Ref } from "vue";
-import {
-  INCREMENT_FAIL_ENGINE,
-  INCREMENT_FAIL_THERMAL,
-  INCREMENT_SUCCESS_ENGINE,
-  INCREMENT_SUCCESS_THERMAL,
-  SET_CONFIG,
-  SET_ENGINE_UNIT,
-  SET_STATE,
-  SET_THERMAL_UNIT,
-  SET_TIME,
-} from "@/store/mutation-types/index-types";
 import { AppState, UnitsConfig } from "@/types/panel/main";
 import _ from "lodash";
 import { storeToRefs } from "pinia";

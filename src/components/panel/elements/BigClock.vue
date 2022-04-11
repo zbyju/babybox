@@ -21,10 +21,8 @@ import {
   getHoursWithLeadingZeroes,
   getMinutesWithLeadingZeroes,
 } from "@/utils/time";
-import moment from "moment";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {
@@ -41,7 +39,7 @@ export default defineComponent({
       getMinutesWithLeadingZeroes(time.value)
     );
     const bigger = computed((): boolean => {
-      return !message?.value.text;
+      return !message.value?.text;
     });
     const textSize = computed(() => {
       return bigger.value

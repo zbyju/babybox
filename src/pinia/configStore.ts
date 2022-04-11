@@ -68,6 +68,7 @@ export const useConfigStore = defineStore("config", {
       this.camera = config.camera;
       this.units = config.units;
       this.fontSize = config.fontSize;
+      this.initialised = true;
     },
   },
 });
