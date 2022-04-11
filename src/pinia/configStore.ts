@@ -52,21 +52,21 @@ export interface ConfigFontSize {
   message: number;
 }
 
-export const useStore = defineStore("config", {
+export const useConfigStore = defineStore("config", {
   state: () => ({
     app: null as ConfigApp,
     babybox: null as ConfigApp,
     camera: null as ConfigCamera,
     units: null as ConfigUnits,
-    fontSize: null as ConfigFontSize
+    fontSize: null as ConfigFontSize,
   }),
   actions: {
     setConfig(config: Config) {
-      this.app = config.app
-      this.babybox = config.babybox
-      this.camera = config.camera
-      this.units = config.units
-      this.fontSize = config.fontSize
-    }
+      this.app = config.app;
+      this.babybox = config.babybox;
+      this.camera = config.camera;
+      this.units = config.units;
+      this.fontSize = config.fontSize;
+    },
   },
 });
