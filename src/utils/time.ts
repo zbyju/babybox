@@ -1,4 +1,4 @@
-import { EngineUnit } from "@/types/panel/units-data";
+import { EngineUnit } from "@/pinia/unitsStore";
 import moment from "moment";
 
 export const getHoursWithLeadingZeroes = (time: moment.Moment): string => {

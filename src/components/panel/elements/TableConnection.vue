@@ -23,7 +23,7 @@ export default defineComponent({
     // TODO: Check to refactor
     const { engineUnit: eu, thermalUnit: tu } = storeToRefs(connectionStore);
     const rows = computed(() => {
-      return getRowsTableConnection(engineUnit, thermalUnit, {
+      return getRowsTableConnection(engineUnit.value, thermalUnit.value, {
         engineUnit: eu.value,
         thermalUnit: tu.value,
       });

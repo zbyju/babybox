@@ -1,10 +1,15 @@
 import { getDefaultAppState } from "@/defaults/appState";
 import { useConfigStore } from "@/pinia/configStore";
-import store from "@/store";
-import { AppState, State } from "@/types/panel/main";
+import { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
+import { Connection } from "@/types/panel/connection";
+import { AppState } from "@/types/panel/main";
 import { storeToRefs } from "pinia";
 
-export const getNewState = (state: State): AppState => {
+export const getNewState = (
+  engineUnit: EngineUnit,
+  thermalUnit: ThermalUnit,
+  connection: Connection
+): AppState => {
   let result = getDefaultAppState();
 
   const configStore = useConfigStore();
@@ -13,7 +18,7 @@ export const getNewState = (state: State): AppState => {
   const errorThreshold = units.value.errorThreshold || 25;
 
   // X dni neprovedena zkouska
-  const inspection = parseInt(state.engineUnit[33].value);
+  const inspection = parseInt(engineUnit[33].value);
   if (inspection > 0) {
     result = {
       active: false,
@@ -25,7 +30,7 @@ export const getNewState = (state: State): AppState => {
   }
 
   // Different engine blockactions
-  const engineBlock = parseInt(state.engineUnit[45].value);
+  const engineBlock = parseInt(engineUnit[45].value);
   if (engineBlock & 256) {
     result = {
       active: false,
@@ -55,7 +60,7 @@ export const getNewState = (state: State): AppState => {
   }
 
   // Different thermal blockactions
-  const thermalBlock = parseInt(state.thermalUnit[46].value);
+  const thermalBlock = parseInt(thermalUnit[46].value);
   if (thermalBlock & 4) {
     result = {
       active: false,
@@ -106,7 +111,7 @@ export const getNewState = (state: State): AppState => {
   }
 
   // Different door states
-  const doorState = parseInt(state.engineUnit[48].value);
+  const doorState = parseInt(engineUnit[48].value);
   if (doorState & 1 || doorState & 2) {
     result = {
       active: false,
@@ -162,8 +167,7 @@ export const getNewState = (state: State): AppState => {
 
   // Connection
   const errStreak: number =
-    state.connection.engineUnit.failStreak +
-    state.connection.thermalUnit.failStreak;
+    connection.engineUnit.failStreak + connection.thermalUnit.failStreak;
 
   if (errStreak > warningThreshold * 2) {
     result = {

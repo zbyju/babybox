@@ -1,5 +1,6 @@
 import { getData } from "@/api/units";
-import store from "@/store";
+import { Config, useConfigStore } from "@/pinia/configStore";
+import { ref, Ref } from "vue";
 import {
   INCREMENT_FAIL_ENGINE,
   INCREMENT_FAIL_THERMAL,
@@ -11,16 +12,44 @@ import {
   SET_THERMAL_UNIT,
   SET_TIME,
 } from "@/store/mutation-types/index-types";
+import { AppState, UnitsConfig } from "@/types/panel/main";
 import _ from "lodash";
+import { storeToRefs } from "pinia";
 import { getNewState } from "./panel/state";
 import { convertSDSTimeToMoment } from "./time";
+import { useAppStateStore } from "@/pinia/appStateStore";
+import { EngineUnit, ThermalUnit, useUnitsStore } from "@/pinia/unitsStore";
+import { Connection } from "@/types/panel/connection";
+import { useConnectionStore } from "@/pinia/connectionStore";
 
 export class AppManager {
   private panelLoopInterval = null;
+  private unitsConfig: Ref<UnitsConfig>;
+  private appState: Ref<AppState>;
+  private engineUnit: Ref<EngineUnit>;
+  private thermalUnit: Ref<ThermalUnit>;
+  private connection: Ref<Connection>;
+
+  constructor() {
+    // TODO: Refactor
+    const configStore = useConfigStore();
+    const appStateStore = useAppStateStore();
+    const unitsStore = useUnitsStore();
+    const connectionStore = useConnectionStore();
+    const { units } = storeToRefs(configStore);
+    const { message, active } = storeToRefs(appStateStore);
+    const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
+    const { engineUnit: euc, thermalUnit: tuc } = storeToRefs(connectionStore);
+    this.unitsConfig = units;
+    this.appState = ref({ message, active });
+    this.engineUnit = engineUnit;
+    this.thermalUnit = thermalUnit;
+    this.connection = ref({ engineUnit: euc, thermalUnit: tuc });
+  }
 
   private async updateEngineUnit(timeout: number) {
-    const ip = store.state.config.units.engine.ip;
-    const postfix = store.state.config.units.postfix;
+    const ip = this.unitsConfig.value.engine.ip;
+    const postfix = this.unitsConfig.value.postfix;
     try {
       const data = await getData(timeout, ip, postfix);
       store.commit(SET_ENGINE_UNIT, {
@@ -32,8 +61,8 @@ export class AppManager {
     }
   }
   private async updateThermalUnit(timeout: number) {
-    const ip = store.state.config.units.thermal.ip;
-    const postfix = store.state.config.units.postfix;
+    const ip = this.unitsConfig.value.thermal.ip;
+    const postfix = this.unitsConfig.value.postfix;
     try {
       const data = await getData(timeout, ip, postfix);
       store.commit(SET_THERMAL_UNIT, {
@@ -45,13 +74,17 @@ export class AppManager {
     }
   }
   private updateClock() {
-    const time = convertSDSTimeToMoment(store.state.engineUnit);
+    const time = convertSDSTimeToMoment(this.engineUnit.value);
     store.commit(SET_TIME, {
       time,
     });
   }
   private updateState() {
-    const newState = getNewState(store.state);
+    const newState = getNewState(
+      this.engineUnit.value,
+      this.thermalUnit.value,
+      this.connection.value
+    );
     if (!_.isEqual(store.state.appState, newState)) {
       store.commit(SET_STATE, {
         state: newState,
@@ -93,9 +126,9 @@ export class AppManager {
   }
 
   async startPanelLoop() {
-    const delay = store.state.config.units.requestDelay || 2000;
-    const timeout = store.state.config.units.requestTimeout || 5000;
-    const appState = store.state.appState;
+    const delay = this.unitsConfig.value.requestDelay || 2000;
+    const timeout = this.unitsConfig.value.requestTimeout || 5000;
+    const appState = this.appState.value;
     this.panelLoopInterval = setInterval(
       () => {
         this.updateEngineUnit(timeout);
@@ -109,6 +142,7 @@ export class AppManager {
 
   stopPanelLoop() {
     clearInterval(this.panelLoopInterval);
+    return;
   }
 
   initializeGlobal(): Promise<any> {

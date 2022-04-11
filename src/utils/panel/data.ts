@@ -1,4 +1,4 @@
-import { EngineUnit, ThermalUnit } from "@/types/panel/units-data";
+import { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
 
 export const parseIntOrEmpty = (x: string): number => {
   if (!x || x === "") throw "Not a number";

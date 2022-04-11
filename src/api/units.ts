@@ -1,4 +1,4 @@
-import { EngineUnit, ThermalUnit } from "@/types/panel/units-data";
+import { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 export const getData = (
