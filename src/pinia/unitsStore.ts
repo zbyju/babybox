@@ -4,6 +4,7 @@ import {
 } from "@/types/panel/units-data";
 import moment from "moment";
 import { defineStore } from "pinia";
+import { getFullDate } from "@/utils/time";
 
 export type UnitVariable = {
   index: number;
@@ -20,7 +21,11 @@ export const useUnitsStore = defineStore("engineUnit", {
     thermalUnit: DefaultThermalUnit as ThermalUnit,
     time: null as moment.Moment,
   }),
-  getters: {}, // TODO: Add used getters
+  getters: {
+    fullDate(state) {
+      return getFullDate(state.time);
+    },
+  },
   actions: {
     setEngineUnit(engineUnit: EngineUnit) {
       this.engineUnit = engineUnit;
