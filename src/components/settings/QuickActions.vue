@@ -14,10 +14,8 @@
 <script lang="ts">
 import { openDoors, resetBabybox } from "@/api/units";
 import { useConfigStore } from "@/pinia/configStore";
-import { Config } from "@/types/panel/main";
 import { storeToRefs } from "pinia";
-import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
+import { defineComponent } from "vue";
 import CameraWrapper from "../panel/containers/CameraWrapper.vue";
 
 export default defineComponent({

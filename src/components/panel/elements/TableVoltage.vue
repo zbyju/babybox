@@ -1,6 +1,6 @@
 <template>
   <div id="TableVoltage">
-    <Table :titleProp="title" :rowsProp="rows"></Table>
+    <Table :title="title" :rows="rows"></Table>
   </div>
 </template>
 
@@ -10,7 +10,6 @@ import { useUnitsStore } from "@/pinia/unitsStore";
 import { getRowsVoltage } from "@/utils/panel/tables";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   components: { Table },

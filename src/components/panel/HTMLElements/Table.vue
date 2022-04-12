@@ -3,11 +3,11 @@
     <table>
       <thead>
         <tr>
-          <th colspan="6" :style="headSize">{{ title }}</th>
+          <th colspan="6" :style="headSize">{{ $props.title }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(blockRows, index) in blocks" :key="index">
+        <tr v-for="(blockRows, index) in $props.blocks" :key="index">
           <td
             v-for="(block, index) in blockRows"
             :key="index"
@@ -21,7 +21,7 @@
             }}
           </td>
         </tr>
-        <tr v-for="(row, index) in rows" :key="index">
+        <tr v-for="(row, index) in $props.rows" :key="index">
           <td
             class="table-label"
             :class="[
@@ -47,22 +47,17 @@
 import { useConfigStore } from "@/pinia/configStore";
 import { TableBlockData, TableData } from "@/types/panel/tables";
 import { storeToRefs } from "pinia";
-import { defineComponent, PropType, toRef } from "vue";
-import { useStore } from "vuex";
+import { defineComponent, PropType } from "vue";
 
 export default defineComponent({
   props: {
-    titleProp: String,
-    rowsProp: Array as PropType<TableData>,
-    blocksProp: Array as PropType<TableBlockData>,
+    title: String,
+    rows: Array as PropType<TableData>,
+    blocks: Array as PropType<TableBlockData>,
   },
-  setup(props) {
+  setup() {
     const configStore = useConfigStore();
     const { fontSize } = storeToRefs(configStore);
-    // TODO: Refactor getting props
-    const title = toRef(props, "titleProp");
-    const rows = toRef(props, "rowsProp");
-    const blocks = toRef(props, "blocksProp");
     const headSize = {
       fontSize: fontSize.value.tableHeading + "vw",
     };
@@ -72,7 +67,11 @@ export default defineComponent({
     const valueSize = {
       fontSize: fontSize.value.tableValue + "vw",
     };
-    return { title, rows, headSize, labelSize, valueSize, blocks };
+    return {
+      headSize,
+      labelSize,
+      valueSize,
+    };
   },
 });
 </script>

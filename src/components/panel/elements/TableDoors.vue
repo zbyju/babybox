@@ -1,6 +1,6 @@
 <template>
   <div id="TableDoors">
-    <Table :titleProp="title" :rowsProp="rows" :blocksProp="blocks"></Table>
+    <Table :title="title" :rows="rows" :blocks="blocks"></Table>
   </div>
 </template>
 
@@ -10,7 +10,6 @@ import { useUnitsStore } from "@/pinia/unitsStore";
 import { getBlocksTableDoors, getRowsTableDoors } from "@/utils/panel/tables";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   components: { Table },

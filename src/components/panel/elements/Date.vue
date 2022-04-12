@@ -10,7 +10,6 @@ import { useUnitsStore } from "@/pinia/unitsStore";
 import { getFullDate } from "@/utils/time";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
-import { useStore } from "vuex";
 
 export default defineComponent({
   setup() {
