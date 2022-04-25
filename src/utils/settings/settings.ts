@@ -26,6 +26,7 @@ export class SettingsManager {
     this.rows = ref(settingsRowMapper(getSettingsTableRows()));
     this.filteredRows = _.cloneDeep(this.rows);
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private testConnectionUnit(unit: "engine" | "thermal") {}
   private addLogMessage(message: string) {
     this.log.value.unshift(message);

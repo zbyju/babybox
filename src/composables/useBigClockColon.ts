@@ -1,10 +1,10 @@
 import _ from "lodash";
-import moment from "moment";
+import type { Moment } from "moment";
 import { ref, watch } from "vue";
 import type { Ref } from "vue";
 
 export default function useBigClockColon(
-  time: Ref<moment.Moment>,
+  time: Ref<Moment>,
   active: Ref<boolean>,
   blinkDelay = 1000
 ) {

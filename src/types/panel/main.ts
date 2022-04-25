@@ -1,4 +1,4 @@
-import moment from "moment";
+import type { Moment } from "moment";
 import type { Connection } from "./connection";
 import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
 
@@ -79,7 +79,7 @@ export interface AppState {
 
 export interface State {
   config: Config | null;
-  time: moment.Moment | null;
+  time: Moment | null;
   data: Data | null;
   appState: AppState;
   thermalUnit: ThermalUnit;

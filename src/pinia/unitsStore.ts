@@ -2,7 +2,7 @@ import {
   DefaultEngineUnit,
   DefaultThermalUnit,
 } from "@/types/panel/units-data";
-import moment from "moment";
+import type { Moment } from "moment";
 import { defineStore } from "pinia";
 
 export type UnitVariable = {
@@ -18,7 +18,7 @@ export const useUnitsStore = defineStore("engineUnit", {
   state: () => ({
     engineUnit: DefaultEngineUnit as EngineUnit,
     thermalUnit: DefaultThermalUnit as ThermalUnit,
-    time: null as moment.Moment,
+    time: null as Moment,
   }),
   getters: {}, // TODO: Add used getters
   actions: {
@@ -28,7 +28,7 @@ export const useUnitsStore = defineStore("engineUnit", {
     setThermalUnit(thermalUnit: ThermalUnit) {
       this.thermalUnit = thermalUnit;
     },
-    setTime(time: moment.Moment) {
+    setTime(time: Moment) {
       this.time = time;
     },
   },
