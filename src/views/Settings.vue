@@ -10,10 +10,9 @@
 
 <script lang="ts">
 import { useConfigStore } from "@/pinia/configStore";
-import type { Config } from "@/types/panel/main";
 import { SettingsManager } from "@/utils/settings/settings";
 import { storeToRefs } from "pinia";
-import { computed, defineComponent, onBeforeMount } from "vue";
+import { defineComponent, onBeforeMount } from "vue";
 import Nav from "../components/Nav.vue";
 import SettingsForm from "../components/settings/form/Form.vue";
 import QuickActions from "../components/settings/QuickActions.vue";

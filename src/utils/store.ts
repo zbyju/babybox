@@ -1,5 +1,5 @@
 import { getData } from "@/api/units";
-import { useConfigStore } from "@/pinia/configStore";
+import { useConfigStore, type Config } from "@/pinia/configStore";
 import { ref } from "vue";
 import type { Ref } from "vue";
 import type { AppState, UnitsConfig } from "@/types/panel/main";
@@ -100,8 +100,8 @@ export class AppManager {
 
   private fetchConfig() {}
 
-  private getConfig() {
-    return new Promise((resolve, reject) => {
+  private getConfig(): Promise<Config> {
+    return new Promise((resolve) => {
       fetch("config/config.json")
         .then((response) => {
           return response.json();
@@ -114,9 +114,7 @@ export class AppManager {
 
   private async initializeConfig() {
     const config = await this.getConfig();
-    return new Promise((resolve, reject) => {
-      this.configStore.setConfig(config);
-    });
+    this.configStore.setConfig(config);
   }
 
   async startPanelLoop() {
