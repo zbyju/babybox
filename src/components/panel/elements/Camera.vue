@@ -26,7 +26,7 @@ img
   max-height 100%
   height 100%
   width auto
-  object-fit scale-down;
+  object-fit fill;
   overflow hidden
   border 3px solid app-border-primary
   border-top 0
