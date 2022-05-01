@@ -6,7 +6,7 @@ export const useSounds = () => {
 };
 
 class BabyboxSoundPlayer {
-  playing;
+  playing: Howl | null;
   private readonly SOUND_PATH: string;
 
   constructor() {
@@ -16,10 +16,8 @@ class BabyboxSoundPlayer {
 
   private loadHowl(name: string, loop: boolean) {
     if (!name || name == null || name == undefined || name == "") return null;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const sound = require(`@/assets/sounds/${name}.mp3`);
     return new Howl({
-      src: [sound],
+      src: [`/sounds/${name}.mp3`],
       autoplay: false,
       loop: loop,
     });
