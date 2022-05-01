@@ -6,7 +6,7 @@
       <button class="card-button" @click="openServiceDoors">
         Otevřít servisní dveře
       </button>
-      <CameraWrapper />
+      <CameraWrapper maxW="200px" />
     </div>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <div id="CameraWrapper">
+  <div id="CameraWrapper" :style="maxW ? { maxWidth: maxW } : null">
     <div id="DoorBars">
       <HorizontalPositionBar
         :maxValue="maxDoors"
@@ -26,6 +26,9 @@ import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
 
 export default defineComponent({
+  props: {
+    maxW: String,
+  },
   setup() {
     const unitsStore = useUnitsStore();
     const { engineUnit } = storeToRefs(unitsStore);
