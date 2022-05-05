@@ -2,7 +2,7 @@
   <div id="Content">
     <TableTemperature></TableTemperature>
     <TableDoors></TableDoors>
-    <CameraWrapper></CameraWrapper>
+    <CameraWrapper :displayDoors="true"></CameraWrapper>
     <TableVoltage></TableVoltage>
     <TableConnection></TableConnection>
   </div>

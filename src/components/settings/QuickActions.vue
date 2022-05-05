@@ -6,7 +6,7 @@
       <button class="card-button" @click="openServiceDoors">
         Otevřít servisní dveře
       </button>
-      <CameraWrapper maxW="200px" />
+      <CameraWrapper maxH="100px" maxW="200px" :displayDoors="false"/>
     </div>
   </div>
 </template>
@@ -14,9 +14,8 @@
 <script lang="ts">
 import { openDoors, resetBabybox } from "@/api/units";
 import { useConfigStore } from "@/pinia/configStore";
-import type { Config } from "@/types/panel/main";
 import { storeToRefs } from "pinia";
-import { computed, defineComponent } from "vue";
+import { defineComponent } from "vue";
 import CameraWrapper from "../panel/containers/CameraWrapper.vue";
 
 export default defineComponent({

@@ -1,6 +1,6 @@
 <template>
-  <div id="CameraWrapper" :style="maxW ? { maxWidth: maxW } : null">
-    <div id="DoorBars">
+  <div id="CameraWrapper" :style="{maxHeight: maxH, maxWidth: maxW }">
+    <div id="DoorBars" v-if="displayDoors">
       <HorizontalPositionBar
         :maxValue="maxDoors"
         :minValue="minDoors"
@@ -14,7 +14,7 @@
         :direction="'row-reverse'"
       ></HorizontalPositionBar>
     </div>
-    <Camera></Camera>
+    <Camera :displayTopBorder="displayDoors === false"></Camera>
   </div>
 </template>
 
@@ -28,6 +28,8 @@ import { computed, defineComponent } from "vue";
 export default defineComponent({
   props: {
     maxW: String,
+    maxH: String,
+    displayDoors: Boolean
   },
   setup() {
     const unitsStore = useUnitsStore();
@@ -47,10 +49,9 @@ export default defineComponent({
 
 <style lang="stylus">
 #CameraWrapper
-  display flex
-  flex-direction column
-  height 100%
   aspect-ratio: 16/9
+  flex-grow 1
+  max-height 100%
 
   #DoorBars
     width 100%

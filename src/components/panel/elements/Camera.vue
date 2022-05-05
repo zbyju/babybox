@@ -1,5 +1,5 @@
 <template>
-  <img :src="url" />
+  <img :src="url" :style="{ borderTopWidth: displayTopBorder ? undefined : '0px'}" />
 </template>
 
 <script lang="ts">
@@ -10,6 +10,9 @@ import { defineComponent } from "vue";
 import type { Ref } from "vue";
 
 export default defineComponent({
+  props: {
+    displayTopBorder: Boolean
+  },
   setup() {
     const configStore = useConfigStore();
     const { camera } = storeToRefs(configStore);
@@ -25,12 +28,12 @@ border-width = 5px
 img
   max-height 100%
   height 100%
-  width auto
-  object-fit fill;
+  width 100%
+  object-fit contain;
   overflow hidden
   border 3px solid app-border-primary
-  border-top 0
   border-radius 0 0 5px 5px
+  align-self center
   min-width 160px
   min-height 90px
 </style>
