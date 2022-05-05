@@ -24,7 +24,7 @@ export const getNewState = (
       active: false,
       message: {
         text: `${inspection} dní neprovedena zkouška!`,
-        color: "text-white",
+        color: "color-text-white",
       },
     };
   }
@@ -36,7 +36,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Babybox mimo provoz",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -45,7 +45,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Teplota mimo rozsah",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -54,7 +54,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Porucha dvířek, babybox blokován!",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -66,7 +66,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Závada v babyboxu!",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -75,7 +75,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Závada záložního zdroje!",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -84,7 +84,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Výpadek napětí!",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -95,7 +95,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Babybox byl otevřen!",
-        color: "text-warning",
+        color: "color-text-warning",
         sound: "BylOtevren",
       },
     };
@@ -105,7 +105,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Servisní dveře otevřeny",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -117,7 +117,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Dvířka se otevírají",
-        color: "text-success",
+        color: "color-text-success",
         sound: "Otevirani",
       },
     };
@@ -127,7 +127,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Překážka ve dvířkách",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -136,7 +136,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Dvířka jsou otevřena",
-        color: "text-success",
+        color: "color-text-success",
       },
     };
   }
@@ -145,7 +145,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Dvířka se zavírají",
-        color: "text-success",
+        color: "color-text-success",
       },
     };
   }
@@ -156,7 +156,7 @@ export const getNewState = (
       active: true,
       message: {
         text: "Babybox AKTIVNÍ!",
-        color: "text-error",
+        color: "color-text-error",
         sound: "Aktivace",
       },
     };
@@ -174,7 +174,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Navazuji spojení...",
-        color: "text-warning",
+        color: "color-text-warning",
       },
     };
   }
@@ -183,7 +183,7 @@ export const getNewState = (
       active: false,
       message: {
         text: "Chyba spojení!",
-        color: "text-error",
+        color: "color-text-error",
         sound: "ZtrataSpojeni",
       },
     };

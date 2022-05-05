@@ -35,20 +35,8 @@ export interface UnitsConfig {
   errorThreshold: number;
 }
 
-export interface FontSizeConfig {
-  babyboxName: number;
-  bigClockBigger: number;
-  bigClockSmaller: number;
-  smallClock: number;
-  tableHeading: number;
-  tableLabel: number;
-  tableValue: number;
-  message: number;
-}
-
 export interface Config {
   babybox: BabyboxConfig;
-  fontSizes: FontSizeConfig;
   camera: CameraConfig;
   units: UnitsConfig;
   app: AppConfig;

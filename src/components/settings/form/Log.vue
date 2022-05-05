@@ -32,21 +32,21 @@ export default defineComponent({
 
 <style lang="stylus">
 #SettingsLog
-  background-color app-bg-primary
+  background-color color-bg-primary
   min-height 150px
   max-height 500px
   overflow-y scroll
   width 100%
-  border 1px solid app-border-primary
+  border 1px solid color-border-primary
   border-radius 8px
   margin-top 12px
   .log-message
-    border-bottom 1px solid app-border-secondary
+    border-bottom 1px solid color-border-secondary
     border-radius 8px
     padding 5px 10px 4px 10px
     transition all 0.5s
   .log-message:hover
-    background-color app-bg-primary-hover
+    background-color color-bg-primary-hover
 #SettingsLogsHeader
   display flex
   flex-direction row

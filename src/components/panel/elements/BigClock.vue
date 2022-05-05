@@ -1,13 +1,12 @@
 <template>
-  <div id="BigClock" :class="{ bigger: bigger }" :style="textSize">
-    <span id="BigClockHours" :style="textSize">{{ hours }}</span>
+  <div id="BigClock" :class="{ bigger: bigger }">
+    <span id="BigClockHours">{{ hours }}</span>
     <span
       id="BigClockColon"
-      :style="textSize"
       :class="{ transparent: !showColon }"
       >:</span
     >
-    <span id="BigClockMinutes" :style="textSize">{{ minutes }}</span>
+    <span id="BigClockMinutes">{{ minutes }}</span>
   </div>
 </template>
 
@@ -15,7 +14,6 @@
 import useActiveTime from "@/composables/useActiveTime";
 import useBigClockColon from "@/composables/useBigClockColon";
 import { useAppStateStore } from "@/pinia/appStateStore";
-import { useConfigStore } from "@/pinia/configStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import {
   getHoursWithLeadingZeroes,
@@ -28,10 +26,8 @@ export default defineComponent({
   setup() {
     const unitsStore = useUnitsStore();
     const appStateStore = useAppStateStore();
-    const configStore = useConfigStore();
     const { time: storeTime } = storeToRefs(unitsStore);
     const { message, active } = storeToRefs(appStateStore);
-    const { fontSize } = storeToRefs(configStore);
     const time = useActiveTime(storeTime, active);
     const { showColon } = useBigClockColon(time, active);
     const hours = computed((): string => getHoursWithLeadingZeroes(time.value));
@@ -41,16 +37,7 @@ export default defineComponent({
     const bigger = computed((): boolean => {
       return !message.value?.text;
     });
-    const textSize = computed(() => {
-      return bigger.value
-        ? {
-            fontSize: fontSize.value.bigClockBigger + "vw",
-          }
-        : {
-            fontSize: fontSize.value.bigClockSmaller + "vw",
-          };
-    });
-    return { hours, minutes, showColon, bigger, textSize };
+    return { hours, minutes, showColon, bigger };
   },
 });
 </script>
@@ -58,6 +45,7 @@ export default defineComponent({
 <style lang="stylus">
 
 #BigClock
+  font-size font-size-bigClockSmaller vw
   font-weight 900
 
   display flex
@@ -82,6 +70,7 @@ export default defineComponent({
   animation-duration 1s
   animation-fill-mode both
   animation-delay 1s
+  font-size font-size-bigClockBigger vw
 
 .transparent
   color transparent

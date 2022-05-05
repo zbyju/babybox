@@ -1,7 +1,7 @@
 <template>
   <div id="TableTemperature">
     <div class="Table">
-      <Table :titleProp="title" :rowsProp="rows" :blocksProp="blocks"></Table>
+      <Table :title="title" :rows="rows" :blocks="blocks"></Table>
     </div>
   </div>
 </template>

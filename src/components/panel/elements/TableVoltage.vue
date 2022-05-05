@@ -1,6 +1,6 @@
 <template>
   <div id="TableVoltage">
-    <Table :titleProp="title" :rowsProp="rows"></Table>
+    <Table :title="title" :rows="rows"></Table>
   </div>
 </template>
 

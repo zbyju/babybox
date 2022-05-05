@@ -58,7 +58,7 @@ export default defineComponent({
     border-radius 10px
     border-collapse collapse
     border-style hidden
-    background-color app-bg-primary
+    background-color color-bg-primary
     color white
     width 100%
     text-align left
@@ -67,12 +67,12 @@ export default defineComponent({
     thead
       tr
         background: rgb(2,0,43);
-        background: app-bg-primary-gradient
+        background: color-bg-primary-gradient
         th
           padding 10px 15px
     tbody
       tr
-        border-bottom 1px solid app-border-primary
+        border-bottom 1px solid color-border-primary
         transition 0.5s all
         td
           padding 7px 10px
@@ -85,7 +85,7 @@ export default defineComponent({
             span
               padding-left 10px
       tr:hover
-        background-color app-bg-primary-hover
+        background-color color-bg-primary-hover
 
     tr:last-child td:first-child
     border-bottom-left-radius 10px

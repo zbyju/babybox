@@ -1,6 +1,6 @@
 <template>
   <div id="TableConnection">
-    <Table :titleProp="title" :rowsProp="rows"></Table>
+    <Table :title="title" :rows="rows"></Table>
   </div>
 </template>
 
@@ -8,7 +8,6 @@
 import Table from "@/components/panel/HTMLElements/Table.vue";
 import { useConnectionStore } from "@/pinia/connectionStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
-import type { Connection } from "@/types/panel/connection";
 import { getRowsTableConnection } from "@/utils/panel/tables";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";

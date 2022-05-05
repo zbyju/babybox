@@ -3,7 +3,6 @@
     <div
       class="message"
       v-if="message"
-      :style="textSize"
       :class="message.color"
     >
       {{ message.text }}
@@ -14,21 +13,15 @@
 <script lang="ts">
 import useDelayedMessage from "@/composables/useDelayedMessage";
 import { useAppStateStore } from "@/pinia/appStateStore";
-import { useConfigStore } from "@/pinia/configStore";
 import { storeToRefs } from "pinia";
 import { defineComponent } from "vue";
 
 export default defineComponent({
   setup() {
     const appStateStore = useAppStateStore();
-    const configStore = useConfigStore();
     const { message } = storeToRefs(appStateStore);
-    const { fontSize } = storeToRefs(configStore);
-    const textSize = {
-      fontSize: fontSize.value.message + "vw",
-    };
     const { messageDelayed, heightStyle } = useDelayedMessage(message);
-    return { message: messageDelayed, heightStyle, textSize };
+    return { message: messageDelayed, heightStyle };
   },
 });
 </script>

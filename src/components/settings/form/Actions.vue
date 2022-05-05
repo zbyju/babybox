@@ -44,8 +44,8 @@ button
   display inline-block
   padding 10px 12px
   border 0
-  background-color app-primary
-  color white
+  background-color color-bg-primary
+  color color-text-white
   transition all 0.5s ease-in-out
   font-weight 700
   font-size 0.9em
@@ -55,21 +55,21 @@ button:hover
   cursor pointer
 
 button.btn-primary
-  background-color app-primary
+  background-color color-primary
 button.btn-success
-  background-color app-success
+  background-color color-success
 button.btn-error
-  background-color app-error
+  background-color color-error
 button.btn-warning
-  background-color app-warning
+  background-color color-warning
 button.btn-primary:hover
-  background-color app-primary-hover
+  background-color color-primary-hover
 button.btn-success:hover
-  background-color app-success-hover
+  background-color color-success-hover
 button.btn-error:hover
-  background-color app-error-hover
+  background-color color-error-hover
 button.btn-warning:hover
-  background-color app-warning-hover
+  background-color color-warning-hover
 button.btn-small
   height 30px
   padding 5px 7px

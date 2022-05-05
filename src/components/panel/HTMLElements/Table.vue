@@ -3,7 +3,7 @@
     <table>
       <thead>
         <tr>
-          <th colspan="6" :style="headSize">{{ title }}</th>
+          <th colspan="6">{{ title }}</th>
         </tr>
       </thead>
       <tbody>
@@ -13,7 +13,6 @@
             :key="index"
             class="table-block"
             :class="[block.active ? block.color : '']"
-            :style="{ labelSize }"
             :colspan="block.colspan"
           >
             {{
@@ -29,12 +28,11 @@
               row.success ? 'success' : '',
               row.warning ? 'warning' : '',
             ]"
-            :style="labelSize"
             colspan="3"
           >
             {{ row.label }}
           </td>
-          <td class="table-value" :style="valueSize" colspan="3">
+          <td class="table-value" colspan="3">
             {{ row.value || "--" }}
           </td>
         </tr>
@@ -44,35 +42,17 @@
 </template>
 
 <script lang="ts">
-import { useConfigStore } from "@/pinia/configStore";
 import type { TableBlockData, TableData } from "@/types/panel/tables";
-import { storeToRefs } from "pinia";
-import { defineComponent, PropType, toRef } from "vue";
+import { defineComponent } from "vue";
+import type { PropType } from "vue"
 
 export default defineComponent({
   props: {
-    titleProp: String,
-    rowsProp: Array as PropType<TableData>,
-    blocksProp: Array as PropType<TableBlockData>,
-  },
-  setup(props) {
-    const configStore = useConfigStore();
-    const { fontSize } = storeToRefs(configStore);
-    // TODO: Refactor getting props
-    const title = toRef(props, "titleProp");
-    const rows = toRef(props, "rowsProp");
-    const blocks = toRef(props, "blocksProp");
-    const headSize = {
-      fontSize: fontSize.value.tableHeading + "vw",
-    };
-    const labelSize = {
-      fontSize: fontSize.value.tableLabel + "vw",
-    };
-    const valueSize = {
-      fontSize: fontSize.value.tableValue + "vw",
-    };
-    return { title, rows, headSize, labelSize, valueSize, blocks };
-  },
+    title: String,
+    rows: Array as PropType<TableData>,
+    blocks: Array as PropType<TableBlockData>,
+  }
+
 });
 </script>
 
@@ -84,40 +64,41 @@ export default defineComponent({
     border-collapse collapse
     overflow hidden
     margin auto
-    font-size 0.75vw
+    font-size font-size-tableLabel vw
     align-self center
     white-space nowrap
     border-radius 10px
 
 
     thead
-      border-bottom 1px solid app-border-secondary
+      border-bottom 1px solid color-border-secondary 
       border-radius 10px
       tr
-        background app-bg-secondary-gradient
-        color text-secondary
-        font-size 16px
+        background color-bg-secondary-gradient
+        color color-text-secondary
+        font-size font-size-tableHeading vw
         border-radius 10px
 
     th, td
       padding 10px 10px
 
     tr
-      background-color app-bg-primary
-      border-bottom 1px solid app-border-primary
+      background-color color-bg-primary
+      border-bottom 1px solid color-border-primary
     tr:nth-of-type(even)
-      background-color app-bg-primary-light
+      background-color color-bg-primary-light
     td.table-label
       font-weight 700
-      font-size 14px
-      color text-secondary
+      font-size font-size-tableLabel vw
+      color color-text-secondary
       text-align left
     td.table-block
       font-weight 700
-      font-size 14px
-      color text-secondary
+      font-size font-size-tableLabel vw
+      color color-text-secondary
       text-align center
       padding 7px
     td.table-value
       text-align right
+      font-size font-size-tableValue vw
 </style>

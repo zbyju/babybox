@@ -50,6 +50,6 @@ export default defineComponent({
   // grid-template-rows: auto;
   // grid-template-areas: "table-temperature table-doors camera table-voltage table-connection"
 
-  background background
-  border-top 5px solid app-border-secondary
+  background color-bg-black
+  border-top 5px solid color-border-secondary
 </style>

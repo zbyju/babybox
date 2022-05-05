@@ -1,9 +1,9 @@
 <template>
   <div id="BabyboxName">
-    <span v-if="prependBabybox" id="BabyboxPrependText" :style="textStyle"
+    <span v-if="prependBabybox" id="BabyboxPrependText" 
       >Babybox
     </span>
-    <span id="BabyboxNameText" :style="textStyle">{{ babyboxName }}</span>
+    <span id="BabyboxNameText" >{{ babyboxName }}</span>
   </div>
 </template>
 
@@ -15,15 +15,11 @@ import { defineComponent } from "vue";
 export default defineComponent({
   setup() {
     const configStore = useConfigStore();
-    const { babybox, fontSize } = storeToRefs(configStore);
+    const { babybox } = storeToRefs(configStore);
 
-    const textStyle = {
-      fontSize: fontSize.value.babyboxName + "vw",
-    };
     return {
       babyboxName: babybox.value.name,
       prependBabybox: babybox.value.prependBabyboxBeforeName,
-      textStyle,
     };
   },
 });
@@ -34,7 +30,7 @@ export default defineComponent({
   padding-right 10px
 
   span
-    font-size 2vw
+    font-size font-size-babyboxName vw
     font-weight 700
 
   span#BabyboxPrependText

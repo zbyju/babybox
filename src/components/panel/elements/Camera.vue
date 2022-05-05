@@ -31,7 +31,7 @@ img
   width 100%
   object-fit contain;
   overflow hidden
-  border 3px solid app-border-primary
+  border 3px solid color-border-primary 
   border-radius 0 0 5px 5px
   align-self center
   min-width 160px

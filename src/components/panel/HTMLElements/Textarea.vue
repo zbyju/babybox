@@ -10,9 +10,9 @@ export default defineComponent({});
 
 <style lang="stylus">
 .my-textarea
-  background primary
+  background color-bg-primary 
   color color
-  border 1px solid secondary
+  border 1px solid color-border-secondary
 
   width 70%
   max-width 70%

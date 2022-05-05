@@ -16,11 +16,11 @@ export default {
 
 <style lang="stylus">
 input
-  background-color app-bg-black
-  border 1px solid app-border-secondary
+  background-color color-bg-black 
+  border 1px solid color-border-secondary
   border-radius 5px
   padding 5px 4px
-  color white
+  color color-text-white
   flex-grow 1
   font-size 1.1em
 </style>

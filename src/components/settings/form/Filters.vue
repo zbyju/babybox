@@ -44,9 +44,9 @@ export default defineComponent({
 
     select
       height 95%
-      border 1px solid app-border-secondary
+      border 1px solid color-border-secondary
       border-radius 10px
       padding 5px
-      background-color app-bg-black
+      background-color color-bg-black
       color #fff
 </style>

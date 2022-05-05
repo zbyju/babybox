@@ -72,7 +72,7 @@ export default defineComponent({
   width 100vw
 
   overflow hidden
-  color color
+  color color-text-white
 
   display grid
   grid-template-columns 100%;
@@ -83,7 +83,7 @@ export default defineComponent({
   "content"\
 
 #MainWrapper.non-active
-  background-color background
+  background-color color-bg-black
 #MainWrapper.active
   animation: activeAnimBackground 3s infinite;
   animation-timing-function: ease-in-out;
@@ -94,14 +94,14 @@ export default defineComponent({
 
 @keyframes activeAnimBackground {
   0% {background-color: black;}
-  50% {background-color: text-error;}
+  50% {background-color: color-bg-active;}
   100% {background-color: black;}
 }
 
 @keyframes activeAnimText {
-  0% {color: text-error;}
+  0% {color: color-bg-active;}
   30% {color: black;}
   60% {color: black;}
-  100% {color: text-error;}
+  100% {color: color-bg-active;}
 }
 </style>

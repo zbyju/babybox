@@ -125,13 +125,13 @@ export default defineComponent({
     min-height 100%
     padding 0 20px
     font-weight 700
-    color white
+    color color-text-white
     text-decoration none
     transition all 0.5s ease-in-out
     border-bottom 1px solid #2d2b52
 
   a.link.disabled
-    color text-white-error
+    color color-text-white-error
 
   a.link:hover
     background-color #020024
