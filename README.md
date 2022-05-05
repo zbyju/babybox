@@ -22,6 +22,7 @@ Main technologies:
 
 Other libraries:
 
+- Stylus
 - Howler
 - Moment.js
 - Lodash
@@ -56,7 +57,13 @@ pnpm run build
 
 ### Run the code in production
 
-After build the code for production, a `dist` folder will appear. You can do `serve dist` to serve files from dist folder to the browser.
+After build the code for production, a `dist` folder will appear. You can do:
+
+```sh
+serve dist
+```
+
+This will serve the files from the dist folder on `http://localhost:PORT`
 
 ### Run Unit Tests with [Vitest](https://vitest.dev/)
 
