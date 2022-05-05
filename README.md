@@ -1,52 +1,71 @@
-# Babybox-vite
+# Babybox Panel 
 
-This template should help get you started developing with Vue 3 in Vite.
+This is a repository for the frontend web application that serves as the primary monitoring tool for an individual [Babybox](httt://www.babybox.cz).
 
-## Recommended IDE Setup
+It is built for 24/7 uncontrolled monitoring with many fallbacks and alarms for the hospital staff.
+
+## Development
+
+### IDE
 
 [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.vscode-typescript-vue-plugin).
 
-## Type Support for `.vue` Imports in TS
+### Used technologies
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+Main technologies:
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+- Vue 3
+- Vite
+- Vue router
+- Pinia
+- pnpm
 
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+Other libraries:
 
-## Customize configuration
+- Howler
+- Moment.js
+- Lodash
+
+## Commands
+
+### Customize configuration
 
 See [Vite Configuration Reference](https://vitejs.dev/config/).
 
-## Project Setup
+In order to run this website you need to have [pnpm](https://pnpm.io/). It is recommended to also install [Node.js](https://nodejs.org/en/) (LTS version) - this will also install `npm`, so you can then install *pnpm* by simply running `npm install -g pnpm`.
+
+To run this in production you also need a way to serve the files. The easiest way to do this is by using *serve*. You can install *serve* by running `pnpm i -g serve`. 
+
+### Install all the dependecies
 
 ```sh
-npm install
+pnpm install
 ```
 
 ### Compile and Hot-Reload for Development
 
 ```sh
-npm run dev
+pnpm run dev
 ```
 
 ### Type-Check, Compile and Minify for Production
 
 ```sh
-npm run build
+pnpm run build
 ```
+
+### Run the code in production
+
+After build the code for production, a `dist` folder will appear. You can do `serve dist` to serve files from dist folder to the browser.
 
 ### Run Unit Tests with [Vitest](https://vitest.dev/)
 
 ```sh
-npm run test:unit
+pnpm run test:unit
 ```
 
 ### Lint with [ESLint](https://eslint.org/)
 
 ```sh
-npm run lint
+pnpm run lint
 ```
