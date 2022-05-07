@@ -2,6 +2,15 @@ import type { Message } from "@/types/panel/main";
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
 
+/**
+ * This composable is for the animation of the message and when it should get displayed.
+ *
+ * The message gets displayed immeadiately when there is one; but when it is getting deleted
+ * it should not get deleted until some delay so that the animation can complete.
+ *
+ * @param message - message to be displayed
+ * @returns object - messageDelayed - the actual message; heightStyle - should the message be hidden
+ */
 export default function useDelayedMessage(message: Ref<Message>) {
   const MESSAGE_DELAY = 1000;
 

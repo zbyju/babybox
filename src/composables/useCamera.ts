@@ -3,6 +3,14 @@ import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
 import { ref } from "vue";
 import type { Ref } from "vue";
 
+/**
+ * This composable is for getting the url to the camera.
+ *
+ * Depending on the implementation this value might change (to refresh the img).
+ *
+ * @param config - camera config
+ * @returns url to the image
+ */
 export default function useCamera(config: CameraConfig): Ref<string> {
   const url = ref("");
   // if (config.cameraType === "dahua") {

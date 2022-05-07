@@ -1,17 +1,19 @@
 import type { AppState } from "@/types/panel/main";
 import { Howl } from "howler";
 
+/**
+ * This composable creates a new SoundPlayer. This class manages what sounds are being played.
+ * @returns BabyboxSoundPlayer
+ */
 export const useSounds = () => {
   return new BabyboxSoundPlayer();
 };
 
 class BabyboxSoundPlayer {
   playing: Howl | null;
-  private readonly SOUND_PATH: string;
 
   constructor() {
     this.playing = null;
-    this.SOUND_PATH = "@/assets/sounds/";
   }
 
   private loadHowl(name: string, loop: boolean) {

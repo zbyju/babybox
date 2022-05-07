@@ -1,11 +1,7 @@
 <template>
   <div id="BigClock" :class="{ bigger: bigger }">
     <span id="BigClockHours">{{ hours }}</span>
-    <span
-      id="BigClockColon"
-      :class="{ transparent: !showColon }"
-      >:</span
-    >
+    <span id="BigClockColon" :class="{ transparent: !showColon }">:</span>
     <span id="BigClockMinutes">{{ minutes }}</span>
   </div>
 </template>

@@ -3,6 +3,19 @@ import type { Moment } from "moment";
 import { ref, watch } from "vue";
 import type { Ref } from "vue";
 
+/**
+ * This composable is for the blinking colon functionality
+ *
+ * The colon is supposed to blink, but only when the babybox is not active;
+ * if it is then the colon is visible at all times
+ *
+ * The colon should be blinking when the time changes (but it is throttled to not blinking too fast)
+ *
+ * @param time - current time
+ * @param active - is babybox active
+ * @param blinkDelay - how quickly the colon blinks
+ * @returns boolean - should the colon be displayed
+ */
 export default function useBigClockColon(
   time: Ref<Moment>,
   active: Ref<boolean>,
