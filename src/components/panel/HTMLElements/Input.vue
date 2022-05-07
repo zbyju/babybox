@@ -16,7 +16,7 @@ export default {
 
 <style lang="stylus">
 input
-  background-color color-bg-black 
+  background-color color-bg-black
   border 1px solid color-border-secondary
   border-radius 5px
   padding 5px 4px

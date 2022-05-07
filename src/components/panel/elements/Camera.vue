@@ -1,5 +1,8 @@
 <template>
-  <img :src="url" :style="{ borderTopWidth: displayTopBorder ? undefined : '0px'}" />
+  <img
+    :src="url"
+    :style="{ borderTopWidth: displayTopBorder ? undefined : '0px' }"
+  />
 </template>
 
 <script lang="ts">
@@ -11,7 +14,7 @@ import type { Ref } from "vue";
 
 export default defineComponent({
   props: {
-    displayTopBorder: Boolean
+    displayTopBorder: Boolean,
   },
   setup() {
     const configStore = useConfigStore();
@@ -31,7 +34,7 @@ img
   width 100%
   object-fit contain;
   overflow hidden
-  border 3px solid color-border-primary 
+  border 3px solid color-border-primary
   border-radius 0 0 5px 5px
   align-self center
   min-width 160px

@@ -61,6 +61,6 @@ div.verticalPositionBar
     height 100%
     width 0
     border-radius 5px 5px 0 0
-    background-color color-text-success 
+    background-color color-text-success
     transition 0.5s all
 </style>

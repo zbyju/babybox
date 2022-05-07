@@ -1,5 +1,5 @@
 <template>
-  <div id="CameraWrapper" :style="{maxHeight: maxH, maxWidth: maxW }">
+  <div id="CameraWrapper" :style="{ maxHeight: maxH, maxWidth: maxW }">
     <div id="DoorBars" v-if="displayDoors">
       <HorizontalPositionBar
         :maxValue="maxDoors"
@@ -29,7 +29,7 @@ export default defineComponent({
   props: {
     maxW: String,
     maxH: String,
-    displayDoors: Boolean
+    displayDoors: Boolean,
   },
   setup() {
     const unitsStore = useUnitsStore();

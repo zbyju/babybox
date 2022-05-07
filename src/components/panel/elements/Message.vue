@@ -1,10 +1,6 @@
 <template>
   <div id="Message" :class="heightStyle">
-    <div
-      class="message"
-      v-if="message"
-      :class="message.color"
-    >
+    <div class="message" v-if="message" :class="message.color">
       {{ message.text }}
     </div>
   </div>

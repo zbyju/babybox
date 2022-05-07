@@ -28,7 +28,6 @@
 
 <script lang="ts">
 import { useConfigStore } from "@/pinia/configStore";
-import type { Config } from "@/types/panel/main";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent, ref } from "vue";
 import Input from "./panel/HTMLElements/Input.vue";

@@ -122,7 +122,7 @@ export const getRowsVoltage = (
 
 export const getRowsTableDoors = (
   engineData: EngineUnit,
-  thermalData: ThermalUnit
+  _: ThermalUnit
 ): TableData => {
   return [
     {
@@ -150,7 +150,7 @@ export const getRowsTableDoors = (
 
 export const getBlocksTableDoors = (
   engineData: EngineUnit,
-  thermalData: ThermalUnit
+  _: ThermalUnit
 ): TableBlockData => {
   return [
     [
@@ -167,7 +167,7 @@ export const getBlocksTableDoors = (
 
 export const getRowsTableConnection = (
   engineData: EngineUnit,
-  thermalData: ThermalUnit,
+  _: ThermalUnit,
   connection: Connection
 ): TableData => {
   const configStore = useConfigStore();

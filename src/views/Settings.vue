@@ -42,7 +42,7 @@ export default defineComponent({
   min-height 100vh
   width 100vw
 
-  background-color color-bg-black 
+  background-color color-bg-black
   color color-text-white
   #SettingsWrapper
     padding 1.5vw
