@@ -6,7 +6,7 @@
       <button class="card-button" @click="openServiceDoors">
         Otevřít servisní dveře
       </button>
-      <CameraWrapper maxH="100px" maxW="200px" :displayDoors="false"/>
+      <CameraWrapper maxH="100px" maxW="200px" :displayDoors="false" />
     </div>
   </div>
 </template>
@@ -47,14 +47,14 @@ export default defineComponent({
   padding 10px
   min-width 230px
   min-height 100px
-  background-color app-bg-primary
-  border 1px solid app-border-secondary
+  background-color color-bg-primary
+  border 1px solid color-border-secondary
   border-radius 20px
   margin-right 30px
   font-size 1.1em
   font-weight 100
 .card-button:hover
-  background-color app-bg-primary-hover
+  background-color color-bg-primary-hover
 
 #QuickActions
   h2

@@ -85,6 +85,7 @@ export default defineComponent({
 #MainWrapper.non-active
   background-color color-bg-black
 #MainWrapper.active
+  background-color color-bg-active
   animation: activeAnimBackground 3s infinite;
   animation-timing-function: ease-in-out;
 

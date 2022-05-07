@@ -59,7 +59,7 @@ export default defineComponent({
     border-collapse collapse
     border-style hidden
     background-color color-bg-primary
-    color white
+    color color-white
     width 100%
     text-align left
     overflow: hidden
@@ -76,7 +76,7 @@ export default defineComponent({
         transition 0.5s all
         td
           padding 7px 10px
-          border-right 1px solid app-border-primary
+          border-right 1px solid color-border-primary
           div.newvalue-wrapper
             display flex
             flex-direction row

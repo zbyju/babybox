@@ -62,19 +62,19 @@ export const getBlocksTableTemperature = (
         label: "Topí plášť",
         active: thermalData[24].value === "255",
         colspan: 2,
-        color: "success",
+        color: "color-success",
       },
       {
         label: "Topí vzduch",
         active: thermalData[25].value === "255",
         colspan: 2,
-        color: "success",
+        color: "color-success",
       },
       {
         label: "Chladí vzduch",
         active: thermalData[26].value === "255",
         colspan: 2,
-        color: "success",
+        color: "color-success",
       },
     ],
   ];
@@ -159,7 +159,7 @@ export const getBlocksTableDoors = (
         nonActiveLabel: "Neblokováno",
         active: parseBoolean(engineData[45].value),
         colspan: 6,
-        color: "error",
+        color: "color-error",
       },
     ],
   ];

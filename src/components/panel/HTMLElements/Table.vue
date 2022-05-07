@@ -24,9 +24,9 @@
           <td
             class="table-label"
             :class="[
-              row.error ? 'error' : '',
-              row.success ? 'success' : '',
-              row.warning ? 'warning' : '',
+              row.error ? 'color-error' : '',
+              row.success ? 'color-success' : '',
+              row.warning ? 'color-warning' : '',
             ]"
             colspan="3"
           >
@@ -44,15 +44,14 @@
 <script lang="ts">
 import type { TableBlockData, TableData } from "@/types/panel/tables";
 import { defineComponent } from "vue";
-import type { PropType } from "vue"
+import type { PropType } from "vue";
 
 export default defineComponent({
   props: {
     title: String,
     rows: Array as PropType<TableData>,
     blocks: Array as PropType<TableBlockData>,
-  }
-
+  },
 });
 </script>
 
@@ -71,7 +70,7 @@ export default defineComponent({
 
 
     thead
-      border-bottom 1px solid color-border-secondary 
+      border-bottom 1px solid color-border-secondary
       border-radius 10px
       tr
         background color-bg-secondary-gradient

@@ -1,9 +1,7 @@
 <template>
   <div id="BabyboxName">
-    <span v-if="prependBabybox" id="BabyboxPrependText" 
-      >Babybox
-    </span>
-    <span id="BabyboxNameText" >{{ babyboxName }}</span>
+    <span v-if="prependBabybox" id="BabyboxPrependText">Babybox </span>
+    <span id="BabyboxNameText">{{ babyboxName }}</span>
   </div>
 </template>
 
@@ -34,5 +32,5 @@ export default defineComponent({
     font-weight 700
 
   span#BabyboxPrependText
-    color text-brand
+    color color-text-brand
 </style>
