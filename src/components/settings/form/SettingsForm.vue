@@ -5,7 +5,7 @@
       <SettingsFilters :manager="manager"></SettingsFilters>
       <SettingsResult :manager="manager"></SettingsResult>
     </div>
-    <BaseTable :manager="manager"></BaseTable>
+    <SettingsTable :manager="manager"></SettingsTable>
     <SettingsLog :manager="manager"></SettingsLog>
   </div>
 </template>

@@ -14,7 +14,7 @@
         :direction="'row-reverse'"
       ></HorizontalPositionBar>
     </div>
-    <Camera :displayTopBorder="displayDoors === false"></Camera>
+    <CameraView :displayTopBorder="displayDoors === false"></CameraView>
   </div>
 </template>
 

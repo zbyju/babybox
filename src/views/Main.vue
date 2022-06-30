@@ -2,10 +2,10 @@
   <div id="Main">
     <div id="MainWrapper" :class="appState.active ? 'active' : 'non-active'">
       <TheHeader></TheHeader>
-      <TheMessage></TheMessage>
+      <HighlightMessage></HighlightMessage>
       <TheContent></TheContent>
     </div>
-    <Nav></Nav>
+    <TheNav></TheNav>
   </div>
 </template>
 
