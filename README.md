@@ -46,13 +46,13 @@ pnpm install
 ### Compile and Hot-Reload for Development
 
 ```sh
-pnpm run dev
+pnpm dev
 ```
 
 ### Type-Check, Compile and Minify for Production
 
 ```sh
-pnpm run build
+pnpm build
 ```
 
 ### Run the code in production
@@ -68,11 +68,11 @@ This will serve the files from the dist folder on `http://localhost:PORT`
 ### Run Unit Tests with [Vitest](https://vitest.dev/)
 
 ```sh
-pnpm run test:unit
+pnpm test:unit
 ```
 
 ### Lint with [ESLint](https://eslint.org/)
 
 ```sh
-pnpm run lint
+pnpm lint
 ```
