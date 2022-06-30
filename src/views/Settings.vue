@@ -1,6 +1,6 @@
 <template>
   <div id="Settings">
-    <Nav></Nav>
+    <TheNav></TheNav>
     <div id="SettingsWrapper">
       <QuickActions></QuickActions>
       <SettingsForm :manager="settingsManager"></SettingsForm>
@@ -13,14 +13,14 @@ import { useConfigStore } from "@/pinia/configStore";
 import { SettingsManager } from "@/utils/settings/settings";
 import { storeToRefs } from "pinia";
 import { defineComponent, onBeforeMount } from "vue";
-import Nav from "../components/Nav.vue";
-import SettingsForm from "../components/settings/form/Form.vue";
+import TheNav from "../components/TheNav.vue";
+import SettingsForm from "../components/settings/form/SettingsForm.vue";
 import QuickActions from "../components/settings/QuickActions.vue";
 
 export default defineComponent({
   name: "Settings",
   components: {
-    Nav,
+    TheNav,
     SettingsForm,
     QuickActions,
   },

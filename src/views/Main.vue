@@ -1,19 +1,19 @@
 <template>
   <div id="Main">
     <div id="MainWrapper" :class="appState.active ? 'active' : 'non-active'">
-      <Header></Header>
-      <Message></Message>
-      <Content></Content>
+      <TheHeader></TheHeader>
+      <TheMessage></TheMessage>
+      <TheContent></TheContent>
     </div>
     <Nav></Nav>
   </div>
 </template>
 
 <script lang="ts">
-import Nav from "@/components/Nav.vue";
-import Content from "@/components/panel/containers/Content.vue";
-import Header from "@/components/panel/containers/Header.vue";
-import Message from "@/components/panel/elements/Message.vue";
+import TheNav from "@/components/TheNav.vue";
+import TheContent from "@/components/panel/containers/TheContent.vue";
+import TheHeader from "@/components/panel/containers/TheHeader.vue";
+import HighlightMessage from "@/components/panel/elements/HighlightMessage.vue";
 import { useSounds } from "@/composables/useSounds";
 import { useAppStateStore } from "@/pinia/appStateStore";
 import type { AppState } from "@/types/panel/main";
@@ -30,10 +30,10 @@ import {
 export default defineComponent({
   name: "Home",
   components: {
-    Nav,
-    Content,
-    Header,
-    Message,
+    TheNav,
+    TheContent,
+    TheHeader,
+    HighlightMessage,
   },
   setup() {
     const appStateStore = useAppStateStore();

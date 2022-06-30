@@ -1,18 +1,18 @@
 <template>
   <div id="TableVoltage">
-    <Table :title="title" :rows="rows"></Table>
+    <BaseTable :title="title" :rows="rows"></BaseTable>
   </div>
 </template>
 
 <script lang="ts">
-import Table from "@/components/panel/HTMLElements/Table.vue";
+import BaseTable from "@/components/panel/HTMLElements/BaseTable.vue";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { getRowsVoltage } from "@/utils/panel/tables";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
 
 export default defineComponent({
-  components: { Table },
+  components: { BaseTable },
   setup() {
     const unitsStore = useUnitsStore();
     const { engineUnit, thermalUnit } = storeToRefs(unitsStore);

@@ -22,7 +22,7 @@
         </template>
       </div>
     </div>
-    <Input type="password" placeholder="Heslo" v-model="password" />
+    <BaseInput type="password" placeholder="Heslo" v-model="password" />
   </div>
 </template>
 
@@ -30,10 +30,10 @@
 import { useConfigStore } from "@/pinia/configStore";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent, ref } from "vue";
-import Input from "./panel/HTMLElements/Input.vue";
+import BaseInput from "./panel/HTMLElements/BaseInput.vue";
 
 export default defineComponent({
-  components: { Input },
+  components: { BaseInput },
   setup() {
     const configStore = useConfigStore();
     const { app, units, camera } = storeToRefs(configStore);

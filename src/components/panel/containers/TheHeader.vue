@@ -3,8 +3,8 @@
     <div id="HeaderLeft">
       <BabyboxName></BabyboxName>
       <div id="DateTimeWrapper">
-        <Date></Date>
-        <Time></Time>
+        <FullDate></FullDate>
+        <FullTime></FullTime>
       </div>
     </div>
     <BigClock></BigClock>
@@ -14,8 +14,8 @@
 <script lang="ts">
 import BabyboxName from "@/components/panel/elements/BabyboxName.vue";
 import BigClock from "@/components/panel/elements/BigClock.vue";
-import Date from "@/components/panel/elements/Date.vue";
-import Time from "@/components/panel/elements/Time.vue";
+import FullDate from "@/components/panel/elements/FullDate.vue";
+import FullTime from "@/components/panel/elements/FullTime.vue";
 import { defineComponent } from "vue";
 
 export default defineComponent({
@@ -24,8 +24,8 @@ export default defineComponent({
   },
   components: {
     BabyboxName,
-    Time,
-    Date,
+    FullTime,
+    FullDate,
     BigClock,
   },
 });

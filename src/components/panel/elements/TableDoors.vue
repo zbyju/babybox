@@ -1,18 +1,18 @@
 <template>
   <div id="TableDoors">
-    <Table :title="title" :rows="rows" :blocks="blocks"></Table>
+    <BaseTable :title="title" :rows="rows" :blocks="blocks"></BaseTable>
   </div>
 </template>
 
 <script lang="ts">
-import Table from "@/components/panel/HTMLElements/Table.vue";
+import BaseTable from "@/components/panel/HTMLElements/BaseTable.vue";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { getBlocksTableDoors, getRowsTableDoors } from "@/utils/panel/tables";
 import { storeToRefs } from "pinia";
 import { computed, defineComponent } from "vue";
 
 export default defineComponent({
-  components: { Table },
+  components: { BaseTable },
   setup() {
     const unitsStore = useUnitsStore();
     const { engineUnit, thermalUnit } = storeToRefs(unitsStore);

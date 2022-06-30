@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts">
-import Camera from "@/components/panel/elements/Camera.vue";
+import CameraView from "@/components/panel/elements/CameraView.vue";
 import HorizontalPositionBar from "@/components/panel/elements/HorizontalPositionBar.vue";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { storeToRefs } from "pinia";
@@ -41,7 +41,7 @@ export default defineComponent({
     return { minDoors, maxDoors, leftDoors, rightDoors };
   },
   components: {
-    Camera,
+    CameraView,
     HorizontalPositionBar,
   },
 });

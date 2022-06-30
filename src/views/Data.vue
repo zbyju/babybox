@@ -1,17 +1,17 @@
 <template>
   <div id="Data">
-    <Nav></Nav>
+    <TheNav></TheNav>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import Nav from "../components/Nav.vue";
+import TheNav from "../components/TheNav.vue";
 
 export default defineComponent({
   name: "Data",
   components: {
-    Nav,
+    TheNav,
   },
 });
 </script>

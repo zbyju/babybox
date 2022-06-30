@@ -31,7 +31,7 @@
 <script lang="ts">
 import { typeToMeasureUnit } from "@/utils/settings/table";
 import { defineComponent } from "vue";
-import Input from "../../panel/HTMLElements/Input.vue";
+import BaseInput from "../../panel/HTMLElements/BaseInput.vue";
 
 export default defineComponent({
   props: {
@@ -41,7 +41,7 @@ export default defineComponent({
     },
   },
   components: {
-    Input,
+    BaseInput,
   },
   setup(props) {
     const headers = props.manager.getHeaders();
