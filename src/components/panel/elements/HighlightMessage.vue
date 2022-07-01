@@ -37,10 +37,10 @@ export default defineComponent({
 
   .message
     font-size 6vw
-    line-height 0.9em
+    line-height 1em
     font-weight 700
     text-align center
-    padding 5px 0 25px 0
+    padding 5px 0 5px 0
     overflow hidden
 
 #Message.hidden
