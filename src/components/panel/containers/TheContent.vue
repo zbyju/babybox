@@ -1,10 +1,10 @@
 <template>
   <div id="Content">
-    <TableTemperature></TableTemperature>
-    <TableDoors></TableDoors>
-    <CameraWrapper :displayDoors="true"></CameraWrapper>
-    <TableVoltage></TableVoltage>
-    <TableConnection></TableConnection>
+    <TableTemperature/>
+    <TableDoors/>
+    <CameraWrapper :displayDoors="true"/>
+    <TableVoltage/>
+    <TableConnection/>
   </div>
 </template>
 

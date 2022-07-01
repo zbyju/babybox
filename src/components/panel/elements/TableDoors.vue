@@ -1,6 +1,6 @@
 <template>
   <div id="TableDoors">
-    <BaseTable :title="title" :rows="rows" :blocks="blocks"></BaseTable>
+    <BaseTable :title="title" :rows="rows" :blocks="blocks"/>
   </div>
 </template>
 

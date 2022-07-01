@@ -1,6 +1,6 @@
 <template>
   <div id="TableConnection">
-    <BaseTable :title="title" :rows="rows"></BaseTable>
+    <BaseTable :title="title" :rows="rows"/>
   </div>
 </template>
 

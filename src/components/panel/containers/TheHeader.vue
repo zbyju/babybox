@@ -1,13 +1,13 @@
 <template>
   <div id="Header">
     <div id="HeaderLeft">
-      <BabyboxName></BabyboxName>
+      <BabyboxName/>
       <div id="DateTimeWrapper">
-        <FullDate></FullDate>
-        <FullTime></FullTime>
+        <FullDate/>
+        <FullTime/>
       </div>
     </div>
-    <BigClock></BigClock>
+    <BigClock/>
   </div>
 </template>
 

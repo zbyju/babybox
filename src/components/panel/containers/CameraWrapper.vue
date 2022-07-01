@@ -6,15 +6,15 @@
         :minValue="minDoors"
         :value="leftDoors"
         :direction="'row'"
-      ></HorizontalPositionBar>
+      />
       <HorizontalPositionBar
         :maxValue="maxDoors"
         :minValue="minDoors"
         :value="rightDoors"
         :direction="'row-reverse'"
-      ></HorizontalPositionBar>
+      />
     </div>
-    <CameraView :displayTopBorder="displayDoors === false"></CameraView>
+    <CameraView :displayTopBorder="displayDoors === false" />
   </div>
 </template>
 

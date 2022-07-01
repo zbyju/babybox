@@ -1,12 +1,12 @@
 <template>
   <div id="SettingsForm">
     <div class="settings-row">
-      <SettingsActions :manager="manager"></SettingsActions>
-      <SettingsFilters :manager="manager"></SettingsFilters>
-      <SettingsResult :manager="manager"></SettingsResult>
+      <SettingsActions :manager="manager"/>
+      <SettingsFilters :manager="manager"/>
+      <SettingsResult :manager="manager"/>
     </div>
-    <SettingsTable :manager="manager"></SettingsTable>
-    <SettingsLog :manager="manager"></SettingsLog>
+    <SettingsTable :manager="manager"/>
+    <SettingsLog :manager="manager"/>
   </div>
 </template>
 
