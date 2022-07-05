@@ -3,21 +3,21 @@
     id="CameraWrapper"
     :style="{ maxHeight: props.maxH, maxWidth: props.maxW }"
   >
-    <div id="DoorBars" v-if="displayDoors">
+    <div v-if="displayDoors" id="DoorBars">
       <HorizontalPositionBar
-        :maxValue="maxDoors"
-        :minValue="minDoors"
+        :max-value="maxDoors"
+        :min-value="minDoors"
         :value="leftDoors"
         :direction="'row'"
       />
       <HorizontalPositionBar
-        :maxValue="maxDoors"
-        :minValue="minDoors"
+        :max-value="maxDoors"
+        :min-value="minDoors"
         :value="rightDoors"
         :direction="'row-reverse'"
       />
     </div>
-    <CameraView :displayTopBorder="displayDoors === false" />
+    <CameraView :display-top-border="displayDoors === false" />
   </div>
 </template>
 

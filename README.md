@@ -1,4 +1,4 @@
-# Babybox Panel 
+# Babybox Panel
 
 This is a repository for the frontend web application that serves as the primary monitoring tool for an individual [Babybox](httt://www.babybox.cz).
 
@@ -33,9 +33,9 @@ Other libraries:
 
 See [Vite Configuration Reference](https://vitejs.dev/config/).
 
-In order to run this website you need to have [pnpm](https://pnpm.io/). It is recommended to also install [Node.js](https://nodejs.org/en/) (LTS version) - this will also install `npm`, so you can then install *pnpm* by simply running `npm install -g pnpm`.
+In order to run this website you need to have [pnpm](https://pnpm.io/). It is recommended to also install [Node.js](https://nodejs.org/en/) (LTS version) - this will also install `npm`, so you can then install _pnpm_ by simply running `npm install -g pnpm`.
 
-To run this in production you also need a way to serve the files. The easiest way to do this is by using *serve*. You can install *serve* by running `pnpm i -g serve`. 
+To run this in production you also need a way to serve the files. The easiest way to do this is by using _serve_. You can install _serve_ by running `pnpm i -g serve`.
 
 ### Install all the dependecies
 

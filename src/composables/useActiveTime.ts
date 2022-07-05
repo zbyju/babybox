@@ -11,11 +11,11 @@ import type { Ref } from "vue";
  * @returns
  */
 export default function useActiveTime(time: Ref<Moment>, active: Ref<boolean>) {
-    const result = ref(time.value);
-    watch(time, (newTime, _) => {
-        if (!active.value) {
-            result.value = newTime;
-        }
-    });
-    return result;
+  const result = ref(time.value);
+  watch(time, (newTime, _) => {
+    if (!active.value) {
+      result.value = newTime;
+    }
+  });
+  return result;
 }
