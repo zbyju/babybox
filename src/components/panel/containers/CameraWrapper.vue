@@ -26,11 +26,11 @@
   import HorizontalPositionBar from "@/components/panel/elements/HorizontalPositionBar.vue";
   import { useUnitsStore } from "@/pinia/unitsStore";
   import { storeToRefs } from "pinia";
-  import { computed } from "vue";
+  import { computed, ref } from "vue";
 
   const props = defineProps<{
-    maxW: string;
-    maxH: string;
+    maxW?: string;
+    maxH?: string;
     displayDoors: boolean;
   }>();
 

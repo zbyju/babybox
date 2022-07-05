@@ -11,7 +11,10 @@ import type { Ref } from "vue";
  * @param config - camera config
  * @returns url to the image
  */
-export default function useCamera(config: CameraConfig): Ref<string> {
+export default function useCamera(
+  config: CameraConfig,
+  onUpdate?: () => any,
+): Ref<string> {
   const url = ref("");
   // if (config.cameraType === "dahua") {
   //   url.value = `http://${config.username}:${config.password}@${config.ip}/cgi-bin/mjpg/video.cgi?channel=0&subtype=1`;
@@ -22,6 +25,10 @@ export default function useCamera(config: CameraConfig): Ref<string> {
     url.value = `http://${config.username}:${config.password}@${
       config.ip
     }${getURLPostfix(stringToCameraType(config.cameraType))}${time}`;
+
+    if (onUpdate) {
+      onUpdate();
+    }
   }, config.updateDelay);
   // }
 

@@ -1,5 +1,6 @@
 <template>
   <img
+    ref="image"
     :src="url"
     :style="{
       borderTopWidth: props.displayTopBorder ? undefined : '0px',
@@ -11,10 +12,14 @@
   import useCamera from "@/composables/useCamera";
   import { useConfigStore } from "@/pinia/configStore";
   import { storeToRefs } from "pinia";
-  import type { Ref } from "vue";
+  import { onMounted, ref, type Ref } from "vue";
 
   const props = defineProps<{
     displayTopBorder: boolean;
+  }>();
+
+  const emit = defineEmits<{
+    (e: "updatedImage", width: number, height: number): void;
   }>();
 
   const configStore = useConfigStore();
