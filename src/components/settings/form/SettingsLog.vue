@@ -17,12 +17,11 @@
 </template>
 
 <script lang="ts" setup>
-  const props = defineProps({
-    manager: {
-      type: Object,
-      required: true,
-    },
-  });
+  import type { SettingsManager } from "@/utils/settings/settings";
+
+  const props = defineProps<{
+    manager: SettingsManager;
+  }>();
 </script>
 
 <style lang="stylus">

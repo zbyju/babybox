@@ -8,7 +8,12 @@
 </template>
 
 <script lang="ts" setup>
-  const props = defineProps(["modelValue", "type", "placeholder"]);
+  const props = defineProps<{
+    type: string;
+    placeholder: string;
+    modelValue: string;
+  }>();
+
   const emit = defineEmits<{
     (e: "update:modelValue", value: string): void;
   }>();

@@ -12,20 +12,21 @@
 </template>
 
 <script lang="ts" setup>
+  import type { SettingsManager } from "@/utils/settings/settings";
   import { ref } from "vue";
 
-  const props = defineProps({
-    manager: {
-      type: Object,
-      required: true,
-    },
-  });
+  const props = defineProps<{
+    manager: SettingsManager;
+  }>();
 
   const selected = ref("no");
   const filterChange = (event: Event) => {
-    if (event.target.value === "no") props.manager.removeFilterRows();
-    if (event.target.value === "engine") props.manager.filterEngineRows();
-    if (event.target.value === "thermal") props.manager.filterThermalRows();
+    if ((event.target as HTMLInputElement).value === "no")
+      props.manager.removeFilterRows();
+    if ((event.target as HTMLInputElement).value === "engine")
+      props.manager.filterEngineRows();
+    if ((event.target as HTMLInputElement).value === "thermal")
+      props.manager.filterThermalRows();
   };
 </script>
 

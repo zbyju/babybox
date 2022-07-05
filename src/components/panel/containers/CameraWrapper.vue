@@ -28,11 +28,11 @@
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
 
-  const props = defineProps({
-    maxW: String,
-    maxH: String,
-    displayDoors: Boolean,
-  });
+  const props = defineProps<{
+    maxW: string;
+    maxH: string;
+    displayDoors: boolean;
+  }>();
 
   const unitsStore = useUnitsStore();
   const { engineUnit } = storeToRefs(unitsStore);

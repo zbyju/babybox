@@ -16,13 +16,11 @@
   import SettingsLog from "@/components/settings/form/SettingsLog.vue";
   import SettingsResult from "@/components/settings/form/SettingsResult.vue";
   import SettingsTable from "@/components/settings/form/SettingsTable.vue";
+  import type { SettingsManager } from "@/utils/settings/settings";
 
-  const props = defineProps({
-    manager: {
-      type: Object,
-      required: true,
-    },
-  });
+  const props = defineProps<{
+    manager: SettingsManager;
+  }>();
 </script>
 
 <style lang="stylus">

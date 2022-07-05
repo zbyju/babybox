@@ -31,15 +31,14 @@
 </template>
 
 <script lang="ts" setup>
+  import type { SettingsManager } from "@/utils/settings/settings";
   import { typeToMeasureUnit } from "@/utils/settings/table";
   import BaseInput from "../../panel/HTMLElements/BaseInput.vue";
 
-  const props = defineProps({
-    manager: {
-      type: Object,
-      required: true,
-    },
-  });
+  const props = defineProps<{
+    manager: SettingsManager;
+  }>();
+
   const headers = props.manager.getHeaders();
   const rows = props.manager.getRows();
 </script>

@@ -7,24 +7,13 @@
 <script lang="ts" setup>
   import { computed } from "vue";
 
-  const props = defineProps({
-    maxValue: {
-      type: Number,
-      required: true,
-    },
-    minValue: {
-      type: Number,
-      required: true,
-    },
-    value: {
-      type: Number,
-      required: true,
-    },
-    direction: {
-      type: String,
-      required: true,
-    },
-  });
+  const props = defineProps<{
+    maxValue: number;
+    minValue: number;
+    value: number;
+    direction: string;
+  }>();
+
   const width = computed(() => {
     if (
       typeof props.maxValue === "number" &&

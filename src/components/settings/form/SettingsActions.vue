@@ -19,14 +19,11 @@
 </template>
 
 <script lang="ts" setup>
-  import { SettingsManager } from "@/utils/settings/settings";
+  import type { SettingsManager } from "@/utils/settings/settings";
 
-  const props = defineProps({
-    manager: {
-      type: SettingsManager,
-      required: true,
-    },
-  });
+  const props = defineProps<{
+    manager: SettingsManager;
+  }>();
 </script>
 
 <style lang="stylus">

@@ -13,9 +13,10 @@
   import { storeToRefs } from "pinia";
   import type { Ref } from "vue";
 
-  const props = defineProps({
-    displayTopBorder: Boolean,
-  });
+  const props = defineProps<{
+    displayTopBorder: boolean;
+  }>();
+
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);
   const url: Ref<string> = useCamera(camera.value);

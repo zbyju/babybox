@@ -7,10 +7,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(blockRows, index) in props.blocks" :key="index">
+        <tr v-for="(blockRows, i) in props.blocks" :key="i">
           <td
-            v-for="(block, index) in blockRows"
-            :key="index"
+            v-for="(block, j) in blockRows"
+            :key="j"
             class="table-block"
             :class="[block.active ? block.color : '']"
             :colspan="block.colspan"
@@ -43,13 +43,12 @@
 
 <script lang="ts" setup>
   import type { TableBlockData, TableData } from "@/types/panel/tables";
-  import type { PropType } from "vue";
 
-  const props = defineProps({
-    title: String,
-    rows: Array as PropType<TableData>,
-    blocks: Array as PropType<TableBlockData>,
-  });
+  const props = defineProps<{
+    title: string;
+    rows: TableData;
+    blocks: TableBlockData;
+  }>();
 </script>
 
 <style lang="stylus">
