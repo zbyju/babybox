@@ -1,98 +1,91 @@
 <template>
-  <div id="Navbar">
-    <div class="links">
-      <div v-for="link in links" :key="link.label">
-        <template v-if="link.secured && !isUnlocked">
-          <a class="link disabled">
-            {{ link.label }}
-          </a>
-        </template>
-        <template v-else>
-          <a
-            v-if="link.external"
-            class="link"
-            :href="link.link"
-            target="_blank"
-          >
-            {{ link.label }}
-          </a>
-          <router-link v-else class="link" :to="{ name: link.link }">{{
-            link.label
-          }}</router-link>
-        </template>
-      </div>
+    <div id="Navbar">
+        <div class="links">
+            <div v-for="link in links" :key="link.label">
+                <template v-if="link.secured && !isUnlocked">
+                    <a class="link disabled">
+                        {{ link.label }}
+                    </a>
+                </template>
+                <template v-else>
+                    <a
+                        v-if="link.external"
+                        class="link"
+                        :href="link.link"
+                        target="_blank">
+                        {{ link.label }}
+                    </a>
+                    <router-link
+                        v-else
+                        class="link"
+                        :to="{ name: link.link }"
+                        >{{ link.label }}</router-link
+                    >
+                </template>
+            </div>
+        </div>
+        <BaseInput type="password" placeholder="Heslo" v-model="password" />
     </div>
-    <BaseInput type="password" placeholder="Heslo" v-model="password" />
-  </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { useConfigStore } from "@/pinia/configStore";
 import { storeToRefs } from "pinia";
-import { computed, defineComponent, ref } from "vue";
+import { computed, ref } from "vue";
 import BaseInput from "./panel/HTMLElements/BaseInput.vue";
 
-export default defineComponent({
-  components: { BaseInput },
-  setup() {
-    const configStore = useConfigStore();
-    const { app, units, camera } = storeToRefs(configStore);
+const configStore = useConfigStore();
+const { app, units, camera } = storeToRefs(configStore);
 
-    const isUnlocked = computed(() => {
-      return password.value === app.value.password;
-    });
-    const password = ref("");
-
-    return {
-      isUnlocked,
-      password,
-      links: [
-        {
-          link: "Main",
-          label: "Panel",
-          external: false,
-          secured: false,
-        },
-        {
-          link: "Settings",
-          label: "Nastavení",
-          external: false,
-          secured: true,
-        },
-        {
-          link: "http://localhost:3000/",
-          label: "BB-Util",
-          external: true,
-          secured: true,
-        },
-        {
-          link: "Data",
-          label: "Data",
-          external: false,
-          secured: true,
-        },
-        {
-          link: `http://${units.value.engine.ip}/`,
-          label: "SDS Motory",
-          external: true,
-          secured: true,
-        },
-        {
-          link: `http://${units.value.thermal.ip}/`,
-          label: "SDS Topení",
-          external: true,
-          secured: true,
-        },
-        {
-          link: `http://${camera.value.ip}/`,
-          label: "Kamera",
-          external: true,
-          secured: true,
-        },
-      ],
-    };
-  },
+const isUnlocked = computed(() => {
+    return password.value === app.value.password;
 });
+const password = ref("");
+
+const links = [
+    {
+        link: "Main",
+        label: "Panel",
+        external: false,
+        secured: false,
+    },
+    {
+        link: "Settings",
+        label: "Nastavení",
+        external: false,
+        secured: true,
+    },
+    {
+        link: "http://localhost:3000/",
+        label: "BB-Util",
+        external: true,
+        secured: true,
+    },
+    {
+        link: "Data",
+        label: "Data",
+        external: false,
+        secured: true,
+    },
+    {
+        link: `http://${units.value.engine.ip}/`,
+        label: "SDS Motory",
+        external: true,
+        secured: true,
+    },
+    {
+        link: `http://${units.value.thermal.ip}/`,
+        label: "SDS Topení",
+        external: true,
+        secured: true,
+    },
+    {
+        link: `http://${camera.value.ip}/`,
+        label: "Kamera",
+        external: true,
+        secured: true,
+    },
+];
 </script>
 
 <style lang="stylus">

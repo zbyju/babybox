@@ -1,51 +1,45 @@
 <template>
-  <div class="verticalPositionBar" :style="{ flexDirection }">
-    <div class="fill" :style="{ width: width + '%' }"></div>
-  </div>
+    <div
+        class="verticalPositionBar"
+        :style="{ flexDirection: props.direction }">
+        <div class="fill" :style="{ width: width + '%' }"></div>
+    </div>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, toRefs } from "vue";
+<script lang="ts" setup>
+import { computed } from "vue";
 
-export default defineComponent({
-  props: {
+const props = defineProps({
     maxValue: {
-      type: Number,
-      required: true,
+        type: Number,
+        required: true,
     },
     minValue: {
-      type: Number,
-      required: true,
+        type: Number,
+        required: true,
     },
     value: {
-      type: Number,
-      required: true,
+        type: Number,
+        required: true,
     },
     direction: {
-      type: String,
-      required: true,
+        type: String,
+        required: true,
     },
-  },
-
-  setup(props) {
-    const { maxValue, minValue, value, direction } = toRefs(props);
-
-    const width = computed(() => {
-      if (
-        typeof maxValue.value === "number" &&
-        typeof minValue.value === "number" &&
-        typeof value.value === "number"
-      ) {
+});
+const width = computed(() => {
+    if (
+        typeof props.maxValue === "number" &&
+        typeof props.minValue === "number" &&
+        typeof props.value === "number"
+    ) {
         return Math.min(
-          100 - ((value.value - minValue.value) * 100) / maxValue.value,
-          100
+            100 - ((props.value - props.minValue) * 100) / props.maxValue,
+            100
         );
-      } else {
+    } else {
         return 0;
-      }
-    });
-    return { width, flexDirection: direction };
-  },
+    }
 });
 </script>
 

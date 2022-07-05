@@ -1,23 +1,18 @@
 <template>
-  <div id="Time">
-    <span id="Time">{{ fullTime }}</span>
-  </div>
+    <div id="Time">
+        <span id="Time">{{ fullTime }}</span>
+    </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { getFullTime } from "@/utils/time";
 import { storeToRefs } from "pinia";
-import { computed, defineComponent } from "vue";
+import { computed } from "vue";
 
-export default defineComponent({
-  setup() {
-    const unitsStore = useUnitsStore();
-    const { time } = storeToRefs(unitsStore);
-    const fullTime = computed((): string => getFullTime(time.value));
-    return { fullTime };
-  },
-});
+const unitsStore = useUnitsStore();
+const { time } = storeToRefs(unitsStore);
+const fullTime = computed((): string => getFullTime(time.value));
 </script>
 
 <style lang="stylus">

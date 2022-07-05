@@ -1,12 +1,8 @@
 <template>
-  <textarea class="my-textarea"></textarea>
+    <textarea class="my-textarea"></textarea>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
-
-export default defineComponent({});
-</script>
+<script lang="ts" setup></script>
 
 <style lang="stylus">
 .my-textarea

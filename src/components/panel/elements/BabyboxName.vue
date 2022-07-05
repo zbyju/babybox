@@ -1,26 +1,19 @@
 <template>
-  <div id="BabyboxName">
-    <span v-if="prependBabybox" id="BabyboxPrependText">Babybox </span>
-    <span id="BabyboxNameText">{{ babyboxName }}</span>
-  </div>
+    <div id="BabyboxName">
+        <span v-if="prependBabybox" id="BabyboxPrependText">Babybox </span>
+        <span id="BabyboxNameText">{{ babyboxName }}</span>
+    </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { useConfigStore } from "@/pinia/configStore";
 import { storeToRefs } from "pinia";
-import { defineComponent } from "vue";
 
-export default defineComponent({
-  setup() {
-    const configStore = useConfigStore();
-    const { babybox } = storeToRefs(configStore);
+const configStore = useConfigStore();
+const { babybox } = storeToRefs(configStore);
 
-    return {
-      babyboxName: babybox.value.name,
-      prependBabybox: babybox.value.prependBabyboxBeforeName,
-    };
-  },
-});
+const babyboxName = babybox.value.name;
+const prependBabybox = babybox.value.prependBabyboxBeforeName;
 </script>
 
 <style lang="stylus">

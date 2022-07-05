@@ -1,23 +1,18 @@
 <template>
-  <div id="Date">
-    <span id="Date">{{ date }}</span>
-  </div>
+    <div id="Date">
+        <span id="Date">{{ date }}</span>
+    </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { getFullDate } from "@/utils/time";
 import { storeToRefs } from "pinia";
-import { computed, defineComponent } from "vue";
+import { computed } from "vue";
 
-export default defineComponent({
-  setup() {
-    const unitsStore = useUnitsStore();
-    const { time } = storeToRefs(unitsStore);
-    const date = computed((): string => getFullDate(time.value)); // TODO: Change to computed without time
-    return { date };
-  },
-});
+const unitsStore = useUnitsStore();
+const { time } = storeToRefs(unitsStore);
+const date = computed((): string => getFullDate(time.value)); // TODO: Change to computed without time
 </script>
 
 <style lang="stylus">

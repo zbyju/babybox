@@ -1,17 +1,20 @@
 <template>
-  <input
-    :type="type"
-    :placeholder="placeholder"
-    :value="modelValue"
-    @input="$emit('update:modelValue', $event.target.value)"
-  />
+    <input
+        :type="type"
+        :placeholder="placeholder"
+        :value="props.modelValue"
+        @input="inputChange" />
 </template>
 
-<script lang="ts">
-export default {
-  props: ["modelValue", "type", "placeholder"],
-  emits: ["update:modelValue"],
-};
+<script lang="ts" setup>
+const props = defineProps(["modelValue", "type", "placeholder"]);
+const emit = defineEmits<{
+    (e: "update:modelValue", value: string): void;
+}>();
+
+function inputChange(event: Event) {
+    emit("update:modelValue", (event.target as HTMLInputElement).value);
+}
 </script>
 
 <style lang="stylus">

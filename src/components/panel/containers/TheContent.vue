@@ -1,33 +1,19 @@
 <template>
-  <div id="Content">
-    <TableTemperature/>
-    <TableDoors/>
-    <CameraWrapper :displayDoors="true"/>
-    <TableVoltage/>
-    <TableConnection/>
-  </div>
+    <div id="Content">
+        <TableTemperature />
+        <TableDoors />
+        <CameraWrapper :displayDoors="true" />
+        <TableVoltage />
+        <TableConnection />
+    </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import CameraWrapper from "@/components/panel/containers/CameraWrapper.vue";
 import TableConnection from "@/components/panel/elements/TableConnection.vue";
 import TableDoors from "@/components/panel/elements/TableDoors.vue";
 import TableTemperature from "@/components/panel/elements/TableTemperature.vue";
 import TableVoltage from "@/components/panel/elements/TableVoltage.vue";
-import { defineComponent } from "vue";
-
-export default defineComponent({
-  setup() {
-    return {};
-  },
-  components: {
-    TableTemperature,
-    TableConnection,
-    TableDoors,
-    TableVoltage,
-    CameraWrapper,
-  },
-});
 </script>
 
 <style lang="stylus">

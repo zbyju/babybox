@@ -1,39 +1,30 @@
 <template>
-  <div id="TableTemperature">
-    <div class="Table">
-      <BaseTable :title="title" :rows="rows" :blocks="blocks"/>
+    <div id="TableTemperature">
+        <div class="Table">
+            <BaseTable :title="title" :rows="rows" :blocks="blocks" />
+        </div>
     </div>
-  </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import BaseTable from "@/components/panel/HTMLElements/BaseTable.vue";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import {
-  getBlocksTableTemperature,
-  getRowsTableTemperatures,
+    getBlocksTableTemperature,
+    getRowsTableTemperatures,
 } from "@/utils/panel/tables";
 import { storeToRefs } from "pinia";
-import { computed, defineComponent } from "vue";
+import { computed } from "vue";
 
-export default defineComponent({
-  components: { BaseTable },
-  setup() {
-    const unitsStore = useUnitsStore();
-    const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
-    const rows = computed(() => {
-      return getRowsTableTemperatures(engineUnit.value, thermalUnit.value);
-    });
-    const blocks = computed(() => {
-      return getBlocksTableTemperature(engineUnit.value, thermalUnit.value);
-    });
-    return {
-      title: "Topení/chlazení",
-      rows,
-      blocks,
-    };
-  },
+const unitsStore = useUnitsStore();
+const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
+const rows = computed(() => {
+    return getRowsTableTemperatures(engineUnit.value, thermalUnit.value);
 });
+const blocks = computed(() => {
+    return getBlocksTableTemperature(engineUnit.value, thermalUnit.value);
+});
+const title = "Topení/chlazení";
 </script>
 
 <style lang="stylus"></style>

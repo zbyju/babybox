@@ -1,15 +1,17 @@
 <template>
-  <div id="Main">
-    <div id="MainWrapper" :class="appState.active ? 'active' : 'non-active'">
-      <TheHeader/>
-      <HighlightMessage/>
-      <TheContent/>
+    <div id="Main">
+        <div
+            id="MainWrapper"
+            :class="appState.active ? 'active' : 'non-active'">
+            <TheHeader />
+            <HighlightMessage />
+            <TheContent />
+        </div>
+        <TheNav />
     </div>
-    <TheNav/>
-  </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import TheNav from "@/components/TheNav.vue";
 import TheContent from "@/components/panel/containers/TheContent.vue";
 import TheHeader from "@/components/panel/containers/TheHeader.vue";
@@ -19,46 +21,27 @@ import { useAppStateStore } from "@/pinia/appStateStore";
 import type { AppState } from "@/types/panel/main";
 import { AppManager } from "@/utils/store";
 import { storeToRefs } from "pinia";
-import {
-  computed,
-  defineComponent,
-  onBeforeMount,
-  onBeforeUnmount,
-  watch,
-} from "vue";
+import { computed, onBeforeMount, onBeforeUnmount, watch } from "vue";
 
-export default defineComponent({
-  name: "Home",
-  components: {
-    TheNav,
-    TheContent,
-    TheHeader,
-    HighlightMessage,
-  },
-  setup() {
-    const appStateStore = useAppStateStore();
-    const { message, active } = storeToRefs(appStateStore);
-    const appState = computed(
-      (): AppState => ({
+const appStateStore = useAppStateStore();
+const { message, active } = storeToRefs(appStateStore);
+const appState = computed(
+    (): AppState => ({
         message: message.value,
         active: active.value,
-      })
-    );
-    // Sounds
-    const soundPlayer = useSounds();
-    watch(appState, (newValue, prevValue) =>
-      soundPlayer.updateSound(newValue, prevValue)
-    );
-    // App loop
-    const appManager = new AppManager();
-    onBeforeMount(() => appManager.startPanelLoop());
-    onBeforeUnmount(() => {
-      appManager.stopPanelLoop();
-      soundPlayer.stopSound();
-    });
-
-    return { appState: appState };
-  },
+    })
+);
+// Sounds
+const soundPlayer = useSounds();
+watch(appState, (newValue, prevValue) =>
+    soundPlayer.updateSound(newValue, prevValue)
+);
+// App loop
+const appManager = new AppManager();
+onBeforeMount(() => appManager.startPanelLoop());
+onBeforeUnmount(() => {
+    appManager.stopPanelLoop();
+    soundPlayer.stopSound();
 });
 </script>
 

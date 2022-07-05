@@ -1,45 +1,40 @@
 <template>
-  <div id="QuickActions">
-    <h2>Rychlé akce</h2>
-    <div class="action-wrapper">
-      <button class="card-button" @click="openBabybox">Otevřít Babybox</button>
-      <button class="card-button" @click="openServiceDoors">
-        Otevřít servisní dveře
-      </button>
-      <CameraWrapper maxH="100px" maxW="200px" :displayDoors="false" />
+    <div id="QuickActions">
+        <h2>Rychlé akce</h2>
+        <div class="action-wrapper">
+            <button class="card-button" @click="openBabybox">
+                Otevřít Babybox
+            </button>
+            <button class="card-button" @click="openServiceDoors">
+                Otevřít servisní dveře
+            </button>
+            <CameraWrapper maxH="100px" maxW="200px" :displayDoors="false" />
+        </div>
     </div>
-  </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { openDoors, resetBabybox } from "@/api/units";
 import { useConfigStore } from "@/pinia/configStore";
 import { storeToRefs } from "pinia";
-import { defineComponent } from "vue";
 import CameraWrapper from "../panel/containers/CameraWrapper.vue";
 
-export default defineComponent({
-  setup() {
-    const configStore = useConfigStore();
-    const { units } = storeToRefs(configStore);
-    const openBabybox = async () => {
-      try {
+const configStore = useConfigStore();
+const { units } = storeToRefs(configStore);
+const openBabybox = async () => {
+    try {
         await openDoors(units.value.engine.ip);
-      } catch (err) {
+    } catch (err) {
         console.log(err);
-      }
-    };
-    const openServiceDoors = async () => {
-      try {
+    }
+};
+const openServiceDoors = async () => {
+    try {
         await resetBabybox(units.value.engine.ip);
-      } catch (err) {
+    } catch (err) {
         console.log(err);
-      }
-    };
-    return { openBabybox, openServiceDoors };
-  },
-  components: { CameraWrapper },
-});
+    }
+};
 </script>
 
 <style lang="stylus">

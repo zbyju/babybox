@@ -6,57 +6,58 @@ import { Howl } from "howler";
  * @returns BabyboxSoundPlayer
  */
 export const useSounds = () => {
-  return new BabyboxSoundPlayer();
+    return new BabyboxSoundPlayer();
 };
 
 class BabyboxSoundPlayer {
-  playing: Howl | null;
+    playing: Howl | null;
 
-  constructor() {
-    this.playing = null;
-  }
-
-  private loadHowl(name: string, loop: boolean) {
-    if (!name || name == null || name == undefined || name == "") return null;
-    return new Howl({
-      src: [`/sounds/${name}.mp3`],
-      autoplay: false,
-      loop: loop,
-    });
-  }
-
-  updateSound(newValue: AppState, prevValue: AppState) {
-    if (
-      newValue.message?.sound !== prevValue.message?.sound &&
-      newValue.message?.sound != null &&
-      newValue.message?.sound != undefined &&
-      newValue.message?.sound != ""
-    ) {
-      this.playSound(newValue.message.sound);
+    constructor() {
+        this.playing = null;
     }
-    if (
-      newValue.message == null ||
-      newValue.message == undefined ||
-      newValue.message.sound == null ||
-      newValue.message.sound == undefined ||
-      newValue.message.sound === ""
-    ) {
-      this.stopSound();
+
+    private loadHowl(name: string, loop: boolean) {
+        if (!name || name == null || name == undefined || name == "")
+            return null;
+        return new Howl({
+            src: [`/sounds/${name}.mp3`],
+            autoplay: false,
+            loop: loop,
+        });
     }
-  }
 
-  playSound(name: string, loop = true) {
-    if (this.playing) this.playing.stop();
+    updateSound(newValue: AppState, prevValue: AppState) {
+        if (
+            newValue.message?.sound !== prevValue.message?.sound &&
+            newValue.message?.sound != null &&
+            newValue.message?.sound != undefined &&
+            newValue.message?.sound != ""
+        ) {
+            this.playSound(newValue.message.sound);
+        }
+        if (
+            newValue.message == null ||
+            newValue.message == undefined ||
+            newValue.message.sound == null ||
+            newValue.message.sound == undefined ||
+            newValue.message.sound === ""
+        ) {
+            this.stopSound();
+        }
+    }
 
-    const howl = this.loadHowl(name, loop);
-    if (howl === null) return;
+    playSound(name: string, loop = true) {
+        if (this.playing) this.playing.stop();
 
-    this.playing = howl;
+        const howl = this.loadHowl(name, loop);
+        if (howl === null) return;
 
-    this.playing.play();
-  }
+        this.playing = howl;
 
-  stopSound() {
-    this.playing?.stop();
-  }
+        this.playing.play();
+    }
+
+    stopSound() {
+        this.playing?.stop();
+    }
 }

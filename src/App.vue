@@ -1,8 +1,8 @@
 <template>
-  <div v-if="initialised">
-    <router-view></router-view>
-  </div>
-  <div v-else>Chybí config soubor</div>
+    <div v-if="initialised">
+        <router-view></router-view>
+    </div>
+    <div v-else>Chybí config soubor</div>
 </template>
 
 <script lang="ts">
@@ -12,14 +12,14 @@ import { useConfigStore } from "./pinia/configStore";
 import { storeToRefs } from "pinia";
 
 export default defineComponent({
-  name: "App",
-  setup() {
-    const configStore = useConfigStore();
-    const appManager = new AppManager();
-    const { initialised } = storeToRefs(configStore);
-    onBeforeMount(async () => await appManager.initializeGlobal());
-    return { initialised };
-  },
+    name: "App",
+    setup() {
+        const configStore = useConfigStore();
+        const appManager = new AppManager();
+        const { initialised } = storeToRefs(configStore);
+        onBeforeMount(async () => await appManager.initializeGlobal());
+        return { initialised };
+    },
 });
 </script>
 

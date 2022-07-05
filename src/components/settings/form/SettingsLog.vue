@@ -1,32 +1,26 @@
 <template>
-  <div id="SettingsLogsHeader">
-    <h2>Log</h2>
-    <button class="btn-error btn-small" @click="manager.deleteLog">
-      Smazat log
-    </button>
-  </div>
-  <div id="SettingsLog">
-    <div
-      class="log-message"
-      v-for="(msg, index) in manager.log.value"
-      :key="index"
-    >
-      {{ msg }}
+    <div id="SettingsLogsHeader">
+        <h2>Log</h2>
+        <button class="btn-error btn-small" @click="props.manager.deleteLog">
+            Smazat log
+        </button>
     </div>
-  </div>
+    <div id="SettingsLog">
+        <div
+            class="log-message"
+            v-for="(msg, index) in props.manager.log.value"
+            :key="index">
+            {{ msg }}
+        </div>
+    </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
-
-export default defineComponent({
-  props: {
+<script lang="ts" setup>
+const props = defineProps({
     manager: {
-      type: Object,
-      required: true,
+        type: Object,
+        required: true,
     },
-  },
-  setup() {},
 });
 </script>
 

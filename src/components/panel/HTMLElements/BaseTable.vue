@@ -1,57 +1,54 @@
 <template>
-  <div class="Table">
-    <table>
-      <thead>
-        <tr>
-          <th colspan="6">{{ title }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(blockRows, index) in blocks" :key="index">
-          <td
-            v-for="(block, index) in blockRows"
-            :key="index"
-            class="table-block"
-            :class="[block.active ? block.color : '']"
-            :colspan="block.colspan"
-          >
-            {{
-              block.active ? block.label : block.nonActiveLabel || block.label
-            }}
-          </td>
-        </tr>
-        <tr v-for="(row, index) in rows" :key="index">
-          <td
-            class="table-label"
-            :class="[
-              row.error ? 'color-error' : '',
-              row.success ? 'color-success' : '',
-              row.warning ? 'color-warning' : '',
-            ]"
-            colspan="3"
-          >
-            {{ row.label }}
-          </td>
-          <td class="table-value" colspan="3">
-            {{ row.value || "--" }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="Table">
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="6">{{ props.title }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(blockRows, index) in props.blocks" :key="index">
+                    <td
+                        v-for="(block, index) in blockRows"
+                        :key="index"
+                        class="table-block"
+                        :class="[block.active ? block.color : '']"
+                        :colspan="block.colspan">
+                        {{
+                            block.active
+                                ? block.label
+                                : block.nonActiveLabel || block.label
+                        }}
+                    </td>
+                </tr>
+                <tr v-for="(row, index) in props.rows" :key="index">
+                    <td
+                        class="table-label"
+                        :class="[
+                            row.error ? 'color-error' : '',
+                            row.success ? 'color-success' : '',
+                            row.warning ? 'color-warning' : '',
+                        ]"
+                        colspan="3">
+                        {{ row.label }}
+                    </td>
+                    <td class="table-value" colspan="3">
+                        {{ row.value || "--" }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import type { TableBlockData, TableData } from "@/types/panel/tables";
-import { defineComponent } from "vue";
 import type { PropType } from "vue";
 
-export default defineComponent({
-  props: {
+const props = defineProps({
     title: String,
     rows: Array as PropType<TableData>,
     blocks: Array as PropType<TableBlockData>,
-  },
 });
 </script>
 

@@ -1,25 +1,20 @@
 <template>
-  <div id="Message" :class="heightStyle">
-    <div class="message" v-if="message" :class="message.color">
-      {{ message.text }}
+    <div id="Message" :class="heightStyle">
+        <div class="message" v-if="message" :class="message.color">
+            {{ message.text }}
+        </div>
     </div>
-  </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import useDelayedMessage from "@/composables/useDelayedMessage";
 import { useAppStateStore } from "@/pinia/appStateStore";
 import { storeToRefs } from "pinia";
-import { defineComponent } from "vue";
 
-export default defineComponent({
-  setup() {
-    const appStateStore = useAppStateStore();
-    const { message } = storeToRefs(appStateStore);
-    const { messageDelayed, heightStyle } = useDelayedMessage(message);
-    return { message: messageDelayed, heightStyle };
-  },
-});
+const appStateStore = useAppStateStore();
+const { message: messageFromStore } = storeToRefs(appStateStore);
+const { messageDelayed: message, heightStyle } =
+    useDelayedMessage(messageFromStore);
 </script>
 
 <style lang="stylus">

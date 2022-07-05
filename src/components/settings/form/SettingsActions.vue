@@ -1,34 +1,31 @@
 <template>
-  <div id="Actions">
-    <h2>Akce</h2>
-    <div class="action-wrapper">
-      <button class="btn-primary" @click="manager.loadSettings">
-        Načíst aktuální parametry
-      </button>
-      <button class="btn-primary" @click="manager.insertDefault">
-        Doplnit doporučené parametry
-      </button>
-      <button class="btn-success" @click="manager.saveSettings">
-        Uložit parametry
-      </button>
-      <button class="btn-error" @click="manager.deleteChanges">
-        Smazat nové hodnoty
-      </button>
+    <div id="Actions">
+        <h2>Akce</h2>
+        <div class="action-wrapper">
+            <button class="btn-primary" @click="props.manager.loadSettings">
+                Načíst aktuální parametry
+            </button>
+            <button class="btn-primary" @click="props.manager.insertDefault">
+                Doplnit doporučené parametry
+            </button>
+            <button class="btn-success" @click="props.manager.saveSettings">
+                Uložit parametry
+            </button>
+            <button class="btn-error" @click="props.manager.deleteChanges">
+                Smazat nové hodnoty
+            </button>
+        </div>
     </div>
-  </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { SettingsManager } from "@/utils/settings/settings";
-import { defineComponent } from "vue";
 
-export default defineComponent({
-  props: {
+const props = defineProps({
     manager: {
-      type: SettingsManager,
-      required: true,
+        type: SettingsManager,
+        required: true,
     },
-  },
 });
 </script>
 

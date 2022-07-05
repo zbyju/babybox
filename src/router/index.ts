@@ -1,30 +1,30 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
-import Data from "../views/Data.vue";
-import Main from "../views/Main.vue";
-import Settings from "../views/Settings.vue";
+import DataView from "../views/DataView.vue";
+import MainView from "../views/MainView.vue";
+import SettingsView from "../views/SettingsView.vue";
 
 const routes: Array<RouteRecordRaw> = [
-  {
-    path: "/",
-    name: "Main",
-    component: Main,
-  },
-  {
-    path: "/settings",
-    name: "Settings",
-    component: Settings,
-  },
-  {
-    path: "/data",
-    name: "Data",
-    component: Data,
-  },
+    {
+        path: "/",
+        name: "Main",
+        component: MainView,
+    },
+    {
+        path: "/settings",
+        name: "Settings",
+        component: SettingsView,
+    },
+    {
+        path: "/data",
+        name: "Data",
+        component: DataView,
+    },
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes,
+    history: createWebHistory(),
+    routes,
 });
 
 export default router;

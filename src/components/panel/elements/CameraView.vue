@@ -1,29 +1,23 @@
 <template>
-  <img
-    :src="url"
-    :style="{ borderTopWidth: displayTopBorder ? undefined : '0px' }"
-  />
+    <img
+        :src="url"
+        :style="{
+            borderTopWidth: props.displayTopBorder ? undefined : '0px',
+        }" />
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import useCamera from "@/composables/useCamera";
 import { useConfigStore } from "@/pinia/configStore";
 import { storeToRefs } from "pinia";
-import { defineComponent } from "vue";
 import type { Ref } from "vue";
 
-export default defineComponent({
-  props: {
+const props = defineProps({
     displayTopBorder: Boolean,
-  },
-  setup() {
-    const configStore = useConfigStore();
-    const { camera } = storeToRefs(configStore);
-    const url: Ref<string> = useCamera(camera.value);
-
-    return { url };
-  },
 });
+const configStore = useConfigStore();
+const { camera } = storeToRefs(configStore);
+const url: Ref<string> = useCamera(camera.value);
 </script>
 
 <style lang="stylus">

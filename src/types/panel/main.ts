@@ -3,79 +3,79 @@ import type { Connection } from "./connection";
 import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
 
 export interface CameraConfig {
-  ip: string;
-  username: string;
-  password: string;
-  updateDelay: number;
-  cameraType: string;
+    ip: string;
+    username: string;
+    password: string;
+    updateDelay: number;
+    cameraType: string;
 }
 
 export interface BabyboxConfig {
-  name: string;
-  prependBabyboxBeforeName: boolean;
+    name: string;
+    prependBabyboxBeforeName: boolean;
 }
 
 export interface AppConfig {
-  password: string;
-  colonDelay: number;
+    password: string;
+    colonDelay: number;
 }
 
 export interface UnitsConfig {
-  engine: {
-    ip: string;
-  };
-  thermal: {
-    ip: string;
-  };
-  postfix: string;
-  postfixWatchdog: string;
-  requestTimeout: number;
-  requestDelay: number;
-  warningThreshold: number;
-  errorThreshold: number;
+    engine: {
+        ip: string;
+    };
+    thermal: {
+        ip: string;
+    };
+    postfix: string;
+    postfixWatchdog: string;
+    requestTimeout: number;
+    requestDelay: number;
+    warningThreshold: number;
+    errorThreshold: number;
 }
 
 export interface Config {
-  babybox: BabyboxConfig;
-  camera: CameraConfig;
-  units: UnitsConfig;
-  app: AppConfig;
+    babybox: BabyboxConfig;
+    camera: CameraConfig;
+    units: UnitsConfig;
+    app: AppConfig;
 }
 
 export interface Data {
-  temperatureUnit: {
-    temperatures: {
-      inner: number;
-      outside: number;
+    temperatureUnit: {
+        temperatures: {
+            inner: number;
+            outside: number;
+        };
     };
-  };
-  engineUnit: {
-    status: boolean;
-  };
+    engineUnit: {
+        status: boolean;
+    };
 }
 
 export interface Message {
-  text: string;
-  color: string;
-  sound?: string;
+    text: string;
+    color: string;
+    sound?: string;
 }
 
 export interface AppState {
-  message?: Message;
-  active: boolean;
+    message?: Message;
+    active: boolean;
 }
 
 export interface State {
-  config: Config | null;
-  time: Moment | null;
-  data: Data | null;
-  appState: AppState;
-  thermalUnit: ThermalUnit;
-  engineUnit: EngineUnit;
-  connection: Connection;
+    config: Config | null;
+    time: Moment | null;
+    data: Data | null;
+    appState: AppState;
+    thermalUnit: ThermalUnit;
+    engineUnit: EngineUnit;
+    connection: Connection;
 }
 
 export enum CameraType {
-  dahua = "DAHUA",
-  avtech = "AVTECH",
+    dahua = "DAHUA",
+    avtech = "AVTECH",
 }

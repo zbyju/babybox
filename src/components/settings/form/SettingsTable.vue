@@ -1,54 +1,49 @@
 <template>
-  <div id="SettingsTable">
-    <table>
-      <thead>
-        <tr>
-          <th v-for="header in headers" :key="header">{{ header }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="row in rows" :key="row.label">
-          <td>{{ row.label }}</td>
-          <td>{{ row.name }}</td>
-          <td>{{ row.engine }}</td>
-          <td>{{ row.thermal }}</td>
-          <td>
-            <div class="newvalue-wrapper">
-              <Input />
-              <span class="measure-unit" v-if="row.type !== 'string'"
-                >[{{ typeToMeasureUnit(row.type) }}]</span
-              >
-            </div>
-          </td>
-          <td>{{ row.recommended }}</td>
-          <td>{{ row.note }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div id="SettingsTable">
+        <table>
+            <thead>
+                <tr>
+                    <th v-for="header in headers" :key="header">
+                        {{ header }}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="row in rows" :key="row.label">
+                    <td>{{ row.label }}</td>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.engine }}</td>
+                    <td>{{ row.thermal }}</td>
+                    <td>
+                        <div class="newvalue-wrapper">
+                            <BaseInput />
+                            <span
+                                class="measure-unit"
+                                v-if="row.type !== 'string'"
+                                >[{{ typeToMeasureUnit(row.type) }}]</span
+                            >
+                        </div>
+                    </td>
+                    <td>{{ row.recommended }}</td>
+                    <td>{{ row.note }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { typeToMeasureUnit } from "@/utils/settings/table";
-import { defineComponent } from "vue";
 import BaseInput from "../../panel/HTMLElements/BaseInput.vue";
 
-export default defineComponent({
-  props: {
+const props = defineProps({
     manager: {
-      type: Object,
-      required: true,
+        type: Object,
+        required: true,
     },
-  },
-  components: {
-    BaseInput,
-  },
-  setup(props) {
-    const headers = props.manager.getHeaders();
-    const rows = props.manager.getRows();
-    return { headers, rows, typeToMeasureUnit };
-  },
 });
+const headers = props.manager.getHeaders();
+const rows = props.manager.getRows();
 </script>
 
 <style lang="stylus">
