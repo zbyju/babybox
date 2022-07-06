@@ -47,7 +47,7 @@
   const props = defineProps<{
     title: string;
     rows: TableData;
-    blocks: TableBlockData;
+    blocks?: TableBlockData;
   }>();
 </script>
 
