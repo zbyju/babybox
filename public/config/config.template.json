@@ -3,16 +3,6 @@
     "name": "Praha",
     "prependBabyboxBeforeName": true
   },
-  "fontSize": {
-    "babyboxName": 2,
-    "bigClockBigger": 26,
-    "bigClockSmaller": 21,
-    "smallClock": 1.7,
-    "tableHeading": 0.9,
-    "tableLabel": 0.75,
-    "tableValue": 0.72,
-    "message": 6
-  },
   "units": {
     "engine": {
       "ip": "10.1.1.5"
