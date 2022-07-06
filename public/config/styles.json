@@ -32,7 +32,8 @@
     },
     "border": {
       "primary": "#1B1A30",
-      "secondary": "#2d2b52"
+      "secondary": "#2d2b52",
+      "error": "#862222"
     }
   },
   "font": {
