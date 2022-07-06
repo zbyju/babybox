@@ -44,9 +44,8 @@
 
 <style lang="stylus">
   #CameraWrapper
-    aspect-ratio: 16/9
-    flex-grow 1
-    max-height 100%
+    max-width 35%
+    height 100%
 
     #DoorBars
       width 100%
