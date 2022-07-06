@@ -48,7 +48,7 @@
     height 100%
 
     #DoorBars
-      width 100%
+      width calc(100% + 5px)
       max-height 100%
       display flex
       flex-direction row
