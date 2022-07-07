@@ -1,4 +1,4 @@
-import { getDefaultAppState } from "@/defaults/appState";
+import { getDefaultAppState } from "@/defaults/appState.defaults";
 import { useConfigStore } from "@/pinia/configStore";
 import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
 import type { Connection } from "@/types/panel/connection";

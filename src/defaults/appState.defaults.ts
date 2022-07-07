@@ -2,7 +2,7 @@ import type { AppState } from "@/types/panel/main";
 
 export const getDefaultAppState = (): AppState => {
   return {
-    message: null,
+    message: undefined,
     active: false,
   };
 };
