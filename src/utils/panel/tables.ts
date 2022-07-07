@@ -30,7 +30,12 @@ export const getRowsTableTemperatures = (
     },
     {
       label: "Vnitřní teplota",
-      value: displayTemperature(thermalData?.data.temperature.inner, "Error"),
+      value: displayTwoItems(
+        engineData?.data.temperature.inner,
+        thermalData?.data.temperature.inner,
+        displayTemperature,
+        "Error",
+      ),
     },
     {
       label: "Venkovní teplota",
@@ -138,19 +143,19 @@ export const getRowsTableDoors = (
   return [
     {
       label: "Levé poloha",
-      value: displayVoltage(engineData?.data.engine.left.position, "Error"),
+      value: prettyNumber(engineData?.data.engine.left.position, "Error"),
     },
     {
       label: "Pravé poloha",
-      value: displayVoltage(engineData?.data.engine.right.position, "Error"),
+      value: prettyNumber(engineData?.data.engine.right.position, "Error"),
     },
     {
       label: "Levé zátěž",
-      value: displayVoltage(engineData?.data.engine.left.load, "Error"),
+      value: prettyNumber(engineData?.data.engine.left.load, "Error"),
     },
     {
       label: "Pravé zátěž",
-      value: displayVoltage(engineData?.data.engine.right.load, "Error"),
+      value: prettyNumber(engineData?.data.engine.right.load, "Error"),
     },
     {
       label: "Paprsek nad vaničkou",
