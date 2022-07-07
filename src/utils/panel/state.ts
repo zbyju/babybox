@@ -1,13 +1,14 @@
 import { getDefaultAppState } from "@/defaults/appState.defaults";
 import { useConfigStore } from "@/pinia/configStore";
-import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
+import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import type { Connection } from "@/types/panel/connection.types";
-import type { AppState } from "@/types/panel/main";
+import type { AppState } from "@/types/panel/main.types";
 import { storeToRefs } from "pinia";
+import type { Maybe } from "@/types/generic.types";
 
 export const getNewState = (
-  engineUnit: EngineUnit,
-  thermalUnit: ThermalUnit,
+  engineUnit: Maybe<EngineUnit>,
+  thermalUnit: Maybe<ThermalUnit>,
   connection: Connection,
 ): AppState => {
   let result = getDefaultAppState();
@@ -18,8 +19,8 @@ export const getNewState = (
   const errorThreshold = units.value.errorThreshold || 25;
 
   // X dni neprovedena zkouska
-  const inspection = parseInt(engineUnit[33].value);
-  if (inspection > 0) {
+  const inspection = engineUnit?.data.misc.inspectionNotDoneForDays;
+  if (inspection !== undefined && inspection > 0) {
     result = {
       active: false,
       message: {
@@ -30,128 +31,136 @@ export const getNewState = (
   }
 
   // Different engine blockactions
-  const engineBlock = parseInt(engineUnit[45].value);
-  if (engineBlock & 256) {
-    result = {
-      active: false,
-      message: {
-        text: "Babybox mimo provoz",
-        color: "color-text-warning",
-      },
-    };
-  }
-  if (engineBlock & 4 || engineBlock & 8) {
-    result = {
-      active: false,
-      message: {
-        text: "Teplota mimo rozsah",
-        color: "color-text-warning",
-      },
-    };
-  }
-  if (engineBlock & 128) {
-    result = {
-      active: false,
-      message: {
-        text: "Porucha dvířek, babybox blokován!",
-        color: "color-text-warning",
-      },
-    };
+  const engineBlock = engineUnit?.data.blockValue;
+  if (engineBlock !== undefined) {
+    if (engineBlock & 256) {
+      result = {
+        active: false,
+        message: {
+          text: "Babybox mimo provoz",
+          color: "color-text-warning",
+        },
+      };
+    }
+    if (engineBlock & 4 || engineBlock & 8) {
+      result = {
+        active: false,
+        message: {
+          text: "Teplota mimo rozsah",
+          color: "color-text-warning",
+        },
+      };
+    }
+    if (engineBlock & 128) {
+      result = {
+        active: false,
+        message: {
+          text: "Porucha dvířek, babybox blokován!",
+          color: "color-text-warning",
+        },
+      };
+    }
   }
 
   // Different thermal blockactions
-  const thermalBlock = parseInt(thermalUnit[46].value);
-  if (thermalBlock & 4) {
-    result = {
-      active: false,
-      message: {
-        text: "Závada v babyboxu!",
-        color: "color-text-warning",
-      },
-    };
-  }
-  if (thermalBlock & 2) {
-    result = {
-      active: false,
-      message: {
-        text: "Závada záložního zdroje!",
-        color: "color-text-warning",
-      },
-    };
-  }
-  if (thermalBlock & 1) {
-    result = {
-      active: false,
-      message: {
-        text: "Výpadek napětí!",
-        color: "color-text-warning",
-      },
-    };
+  const thermalBlock = thermalUnit?.data.blockValue;
+  if (thermalBlock !== undefined) {
+    if (thermalBlock & 4) {
+      result = {
+        active: false,
+        message: {
+          text: "Závada v babyboxu!",
+          color: "color-text-warning",
+        },
+      };
+    }
+    if (thermalBlock & 2) {
+      result = {
+        active: false,
+        message: {
+          text: "Závada záložního zdroje!",
+          color: "color-text-warning",
+        },
+      };
+    }
+    if (thermalBlock & 1) {
+      result = {
+        active: false,
+        message: {
+          text: "Výpadek napětí!",
+          color: "color-text-warning",
+        },
+      };
+    }
   }
 
   // Different engine states
-  if (engineBlock & 2 && !(engineBlock & 1)) {
-    result = {
-      active: false,
-      message: {
-        text: "Babybox byl otevřen!",
-        color: "color-text-warning",
-        sound: "BylOtevren",
-      },
-    };
-  }
-  if (engineBlock & 64) {
-    result = {
-      active: false,
-      message: {
-        text: "Servisní dveře otevřeny",
-        color: "color-text-warning",
-      },
-    };
+  if (engineBlock !== undefined) {
+    if (engineBlock & 2 && !(engineBlock & 1)) {
+      result = {
+        active: false,
+        message: {
+          text: "Babybox byl otevřen!",
+          color: "color-text-warning",
+          sound: "BylOtevren",
+        },
+      };
+    }
+    if (engineBlock & 64) {
+      result = {
+        active: false,
+        message: {
+          text: "Servisní dveře otevřeny",
+          color: "color-text-warning",
+        },
+      };
+    }
   }
 
   // Different door states
-  const doorState = parseInt(engineUnit[48].value);
-  if (doorState & 1 || doorState & 2) {
-    result = {
-      active: false,
-      message: {
-        text: "Dvířka se otevírají",
-        color: "color-text-success",
-        sound: "Otevirani",
-      },
-    };
-  }
-  if (doorState & 4 || doorState & 64) {
-    result = {
-      active: false,
-      message: {
-        text: "Překážka ve dvířkách",
-        color: "color-text-warning",
-      },
-    };
-  }
-  if (doorState & 8) {
-    result = {
-      active: false,
-      message: {
-        text: "Dvířka jsou otevřena",
-        color: "color-text-success",
-      },
-    };
-  }
-  if (doorState & 16 || doorState & 32) {
-    result = {
-      active: false,
-      message: {
-        text: "Dvířka se zavírají",
-        color: "color-text-success",
-      },
-    };
+  const doorState = engineUnit?.data.door.state;
+  if (doorState !== undefined) {
+    if (doorState & 1 || doorState & 2) {
+      result = {
+        active: false,
+        message: {
+          text: "Dvířka se otevírají",
+          color: "color-text-success",
+          sound: "Otevirani",
+        },
+      };
+    }
+    if (doorState & 4 || doorState & 64) {
+      result = {
+        active: false,
+        message: {
+          text: "Překážka ve dvířkách",
+          color: "color-text-warning",
+        },
+      };
+    }
+    if (doorState & 8) {
+      result = {
+        active: false,
+        message: {
+          text: "Dvířka jsou otevřena",
+          color: "color-text-success",
+        },
+      };
+    }
+    if (doorState & 16 || doorState & 32) {
+      result = {
+        active: false,
+        message: {
+          text: "Dvířka se zavírají",
+          color: "color-text-success",
+        },
+      };
+    }
   }
 
   // Activation
-  if (engineBlock & 1) {
+  if (engineBlock !== undefined && engineBlock & 1) {
     result = {
       active: true,
       message: {

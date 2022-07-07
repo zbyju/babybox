@@ -1,78 +1,77 @@
 import { useConfigStore } from "@/pinia/configStore";
-import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
+import type { Maybe } from "@/types/generic.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { TableBlockData, TableData } from "@/types/panel/tables.types";
+import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import { storeToRefs } from "pinia";
 import {
-  beamAboveContainer,
-  errorInnerTemperature,
-  errorVoltageBattery,
-  errorVoltageGSM,
-  errorVoltageIn,
-  errorVoltageUnits,
-  parseBoolean,
-  prettyTemperature,
-  prettyTwoNumbers,
-  prettyTwoPercentages,
-  prettyTwoTemperatures,
-  prettyVoltage,
+  displayCustomBoolean,
+  displayPercentage,
+  displayTemperature,
+  displayTwoItems,
+  displayVoltage,
+  isHigher,
+  isLower,
+  prettyNumber,
   secondsToTime,
-} from "./data";
+} from "./dataDisplay";
 
 export const getRowsTableTemperatures = (
-  engineData: EngineUnit,
-  thermalData: ThermalUnit,
+  engineData: Maybe<EngineUnit>,
+  thermalData: Maybe<ThermalUnit>,
 ): TableData => {
   return [
     {
-      label: "Cílová teplota 1|2",
-      value: prettyTemperature(thermalData[0].value),
+      label: "Cílová teplota",
+      value: displayTemperature(
+        thermalData?.settings.temperature.optimalInner,
+        "Error",
+      ),
     },
     {
       label: "Vnitřní teplota",
-      value: prettyTwoTemperatures(thermalData[29].value, engineData[28].value),
-      error: errorInnerTemperature(engineData, thermalData),
+      value: displayTemperature(thermalData?.data.temperature.inner, "Error"),
     },
     {
       label: "Venkovní teplota",
-      value: prettyTemperature(thermalData[28].value),
+      value: displayTemperature(thermalData?.data.temperature.outside, "Error"),
     },
     {
       label: "Vnitřní výměník vzduch",
-      value: prettyTemperature(thermalData[31].value),
+      value: displayTemperature(thermalData?.data.temperature.bottom, "Error"),
     },
     {
       label: "Venkovní výměník vzduch",
-      value: prettyTemperature(thermalData[32].value),
+      value: displayTemperature(thermalData?.data.temperature.top, "Error"),
     },
     {
-      label: "Vnitřní plášť teplota",
-      value: prettyTemperature(thermalData[30].value),
+      label: "Vnitřní plášť",
+      value: displayTemperature(thermalData?.data.temperature.casing, "Error"),
     },
   ];
 };
 
 export const getBlocksTableTemperature = (
-  engineData: EngineUnit,
-  thermalData: ThermalUnit,
+  engineData: Maybe<EngineUnit>,
+  thermalData: Maybe<ThermalUnit>,
 ): TableBlockData => {
   return [
     [
       {
         label: "Topí plášť",
-        active: thermalData[24].value === "255",
+        active: thermalData?.data.temperature.isHeatingCasing === true,
         colspan: 2,
         color: "color-success",
       },
       {
         label: "Topí vzduch",
-        active: thermalData[25].value === "255",
+        active: thermalData?.data.temperature.isHeatingAir === true,
         colspan: 2,
         color: "color-success",
       },
       {
         label: "Chladí vzduch",
-        active: thermalData[26].value === "255",
+        active: thermalData?.data.temperature.isCoolingAir === true,
         colspan: 2,
         color: "color-success",
       },
@@ -81,29 +80,41 @@ export const getBlocksTableTemperature = (
 };
 
 export const getRowsVoltage = (
-  engineData: EngineUnit,
-  thermalData: ThermalUnit,
+  engineData: Maybe<EngineUnit>,
+  thermalData: Maybe<ThermalUnit>,
 ): TableData => {
   return [
     {
       label: "Zdroj",
-      value: prettyVoltage(thermalData[35].value),
-      error: errorVoltageIn(engineData, thermalData),
+      value: displayVoltage(thermalData?.data.voltage.in, "Error"),
+      error: isLower(
+        thermalData?.data.voltage.in,
+        thermalData?.settings.voltage.minimal,
+      ),
     },
     {
       label: "Akumulátor",
-      value: prettyVoltage(thermalData[36].value),
-      error: errorVoltageBattery(engineData, thermalData),
+      value: displayVoltage(thermalData?.data.voltage.battery, "Error"),
+      error: isLower(
+        thermalData?.data.voltage.battery,
+        thermalData?.settings.voltage.minimal,
+      ),
     },
     {
       label: "Řídící jednotky",
-      value: prettyVoltage(thermalData[37].value),
-      error: errorVoltageUnits(engineData, thermalData),
+      value: displayVoltage(thermalData?.data.voltage.units, "Error"),
+      error: isLower(
+        thermalData?.data.voltage.units,
+        thermalData?.settings.voltage.minimal,
+      ),
     },
     {
       label: "GSM Komunikátor",
-      value: prettyVoltage(thermalData[38].value),
-      error: errorVoltageGSM(engineData, thermalData),
+      value: displayVoltage(thermalData?.data.voltage.gsm, "Error"),
+      error: isLower(
+        thermalData?.data.voltage.gsm,
+        thermalData?.settings.voltage.minimal,
+      ),
     },
     {
       label: "Zdroj cíl",
@@ -121,43 +132,48 @@ export const getRowsVoltage = (
 };
 
 export const getRowsTableDoors = (
-  engineData: EngineUnit,
-  _: ThermalUnit,
+  engineData: Maybe<EngineUnit>,
+  _: Maybe<ThermalUnit>,
 ): TableData => {
   return [
     {
       label: "Levé poloha",
-      value: engineData[37].value,
-    },
-    {
-      label: "Levé zátěž",
-      value: engineData[46].value,
+      value: displayVoltage(engineData?.data.engine.left.position, "Error"),
     },
     {
       label: "Pravé poloha",
-      value: engineData[38].value,
+      value: displayVoltage(engineData?.data.engine.right.position, "Error"),
+    },
+    {
+      label: "Levé zátěž",
+      value: displayVoltage(engineData?.data.engine.left.load, "Error"),
     },
     {
       label: "Pravé zátěž",
-      value: engineData[47].value,
+      value: displayVoltage(engineData?.data.engine.right.load, "Error"),
     },
     {
       label: "Paprsek nad vaničkou",
-      value: beamAboveContainer(engineData[17].value),
+      value: displayCustomBoolean(
+        engineData?.data.door.isBarrierInterrupted,
+        "Překážka",
+        "Volno",
+        "Error",
+      ),
     },
   ];
 };
 
 export const getBlocksTableDoors = (
-  engineData: EngineUnit,
-  _: ThermalUnit,
+  engineData: Maybe<EngineUnit>,
+  _: Maybe<ThermalUnit>,
 ): TableBlockData => {
   return [
     [
       {
         label: "Blokováno",
         nonActiveLabel: "Neblokováno",
-        active: parseBoolean(engineData[45].value),
+        active: engineData?.data.isBlocked === true,
         colspan: 6,
         color: "color-error",
       },
@@ -166,8 +182,8 @@ export const getBlocksTableDoors = (
 };
 
 export const getRowsTableConnection = (
-  engineData: EngineUnit,
-  _: ThermalUnit,
+  engineData: Maybe<EngineUnit>,
+  _: Maybe<ThermalUnit>,
   connection: Connection,
 ): TableData => {
   const configStore = useConfigStore();
@@ -175,30 +191,38 @@ export const getRowsTableConnection = (
   return [
     {
       label: "PC dotaz",
-      value: prettyTwoNumbers(
+      value: displayTwoItems(
         connection.engineUnit.requests,
         connection.thermalUnit.requests,
+        prettyNumber,
+        "Error",
       ),
     },
     {
       label: "BB odpověď",
-      value: prettyTwoNumbers(
+      value: displayTwoItems(
         connection.engineUnit.successes,
         connection.thermalUnit.successes,
+        prettyNumber,
+        "Error",
       ),
     },
     {
       label: "Ztracené odpovědi",
-      value: prettyTwoNumbers(
+      value: displayTwoItems(
         connection.engineUnit.fails,
         connection.thermalUnit.fails,
+        prettyNumber,
+        "Error",
       ),
     },
     {
       label: "Kvalita spojení",
-      value: prettyTwoPercentages(
+      value: displayTwoItems(
         connection.engineUnit.getQuality(),
         connection.thermalUnit.getQuality(),
+        displayPercentage,
+        "Error",
       ),
     },
     {
@@ -207,7 +231,7 @@ export const getRowsTableConnection = (
     },
     {
       label: "Čas do zkoušky",
-      value: secondsToTime(engineData[59].value),
+      value: secondsToTime(engineData?.data.timers.inspectionMessage, "Error"),
     },
   ];
 };

@@ -3,12 +3,13 @@ import type {
   ThermalUnit,
   RawEngineUnit,
   RawThermalUnit,
-} from "@/types/panel/units-data.types";
+} from "@/types/panel/units.types";
 import {
   partitionedTimeToMoment,
   stringBooleanToBoolean,
   stringToNumber,
   stringToNumberWithDecimals,
+  stringToVoltage,
 } from "@/utils/panel/conversions";
 
 export const rawEngineUnitToEngineUnit = (
@@ -30,12 +31,17 @@ export const rawEngineUnitToEngineUnit = (
         },
       },
       door: {
+        state: stringToNumber(rawEngineUnit[48].value),
+
         isBarrierInterrupted: stringBooleanToBoolean(rawEngineUnit[17].value),
         isServiceDoorOpened: stringBooleanToBoolean(rawEngineUnit[23].value),
       },
       timers: {
         inspectionMessage: stringToNumber(rawEngineUnit[59].value),
         serviceDoor: stringToNumber(rawEngineUnit[58].value),
+      },
+      misc: {
+        inspectionNotDoneForDays: stringToNumber(rawEngineUnit[33].value),
       },
       time: partitionedTimeToMoment(
         rawEngineUnit[39].value,
@@ -45,7 +51,8 @@ export const rawEngineUnitToEngineUnit = (
         rawEngineUnit[43].value,
         rawEngineUnit[44].value,
       ),
-      isBlocked: stringBooleanToBoolean(rawEngineUnit[36].value),
+      isBlocked: stringBooleanToBoolean(rawEngineUnit[45].value),
+      blockValue: stringToNumber(rawEngineUnit[45].value),
     },
     settings: {
       temperature: {
@@ -89,10 +96,10 @@ export const rawThermalUnitToThermalUnit = (
         isCoolingAir: stringBooleanToBoolean(rawThermalUnit[26].value),
       },
       voltage: {
-        in: stringToNumberWithDecimals(rawThermalUnit[35].value),
-        battery: stringToNumberWithDecimals(rawThermalUnit[36].value),
-        units: stringToNumberWithDecimals(rawThermalUnit[37].value),
-        gsm: stringToNumberWithDecimals(rawThermalUnit[38].value),
+        in: stringToVoltage(rawThermalUnit[35].value),
+        battery: stringToVoltage(rawThermalUnit[36].value),
+        units: stringToVoltage(rawThermalUnit[37].value),
+        gsm: stringToVoltage(rawThermalUnit[38].value),
       },
       door: {
         isServiceDoorOpened: stringBooleanToBoolean(rawThermalUnit[23].value),
@@ -106,6 +113,9 @@ export const rawThermalUnitToThermalUnit = (
         rawThermalUnit[43].value,
         rawThermalUnit[44].value,
       ),
+
+      isBlocked: stringBooleanToBoolean(rawThermalUnit[46].value),
+      blockValue: stringToNumber(rawThermalUnit[46].value),
     },
     settings: {
       temperature: {
@@ -118,7 +128,7 @@ export const rawThermalUnitToThermalUnit = (
         maximalPeltier: stringToNumberWithDecimals(rawThermalUnit[7].value),
       },
       voltage: {
-        minimal: stringToNumberWithDecimals(rawThermalUnit[6].value),
+        minimal: stringToVoltage(rawThermalUnit[6].value),
       },
       misc: {
         emailPeriodInSeconds: stringToNumber(rawThermalUnit[8].value),

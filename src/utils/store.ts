@@ -2,26 +2,23 @@ import { getData } from "@/api/units";
 import { useConfigStore, type Config } from "@/pinia/configStore";
 import { ref } from "vue";
 import type { Ref } from "vue";
-import type { AppState, UnitsConfig } from "@/types/panel/main";
+import type { AppState, UnitsConfig } from "@/types/panel/main.types";
 import _ from "lodash";
 import { storeToRefs } from "pinia";
 import { getNewState } from "./panel/state";
-import { convertSDSTimeToMoment } from "./time";
 import { useAppStateStore } from "@/pinia/appStateStore";
-import {
-  useUnitsStore,
-  type EngineUnit,
-  type ThermalUnit,
-} from "@/pinia/unitsStore";
+import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import type { Connection } from "@/types/panel/connection.types";
 import { useConnectionStore } from "@/pinia/connectionStore";
+import { useUnitsStore } from "@/pinia/unitsStore";
+import type { Maybe } from "@/types/generic.types";
 
 export class AppManager {
   private panelLoopInterval = null;
   private unitsConfig: Ref<UnitsConfig>;
   private appState: Ref<AppState>;
-  private engineUnit: Ref<EngineUnit>;
-  private thermalUnit: Ref<ThermalUnit>;
+  private engineUnit: Ref<Maybe<EngineUnit>>;
+  private thermalUnit: Ref<Maybe<ThermalUnit>>;
   private connection: Ref<Connection>;
 
   private unitsStore;
@@ -56,7 +53,7 @@ export class AppManager {
     const postfix = this.unitsConfig.value.postfix;
     try {
       const data = await getData(timeout, ip, postfix);
-      this.unitsStore.setEngineUnit(data);
+      this.unitsStore.setRawEngineUnit(data);
       this.connectionStore.incrementSuccessEngine();
     } catch (err) {
       this.connectionStore.incrementFailEngine();
@@ -67,14 +64,14 @@ export class AppManager {
     const postfix = this.unitsConfig.value.postfix;
     try {
       const data = await getData(timeout, ip, postfix);
-      this.unitsStore.setThermalUnit(data);
+      this.unitsStore.setRawThermalUnit(data);
       this.connectionStore.incrementSuccessThermal();
     } catch (err) {
       this.connectionStore.incrementFailThermal();
     }
   }
   private updateClock() {
-    const time = convertSDSTimeToMoment(this.engineUnit.value);
+    const time = this.engineUnit.value?.data.time;
     this.unitsStore.setTime(time);
   }
   private updateState() {

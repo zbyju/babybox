@@ -1,4 +1,4 @@
-import type { AppState } from "@/types/panel/main";
+import type { AppState } from "@/types/panel/main.types";
 import { Howl } from "howler";
 
 /**

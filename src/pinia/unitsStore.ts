@@ -1,24 +1,22 @@
-import {
-  DefaultEngineUnit,
-  DefaultThermalUnit,
-} from "@/types/panel/units-data.types";
+import type {
+  EngineUnit,
+  ThermalUnit,
+  RawEngineUnit,
+  RawThermalUnit,
+} from "@/types/panel/units.types";
 import type { Moment } from "moment";
 import { defineStore } from "pinia";
-
-export type UnitVariable = {
-  index: number;
-  value: string;
-  label?: string;
-};
-
-export type EngineUnit = Array<UnitVariable>;
-export type ThermalUnit = Array<UnitVariable>;
+import {
+  rawEngineUnitToEngineUnit,
+  rawThermalUnitToThermalUnit,
+} from "@/defaults/units.defaults";
+import type { Maybe } from "@/types/generic.types";
 
 export const useUnitsStore = defineStore("engineUnit", {
   state: () => ({
-    engineUnit: DefaultEngineUnit as EngineUnit,
-    thermalUnit: DefaultThermalUnit as ThermalUnit,
-    time: null as Moment,
+    engineUnit: undefined as Maybe<EngineUnit>,
+    thermalUnit: undefined as Maybe<ThermalUnit>,
+    time: undefined as Maybe<Moment>,
   }),
   getters: {}, // TODO: Add used getters
   actions: {
@@ -28,7 +26,13 @@ export const useUnitsStore = defineStore("engineUnit", {
     setThermalUnit(thermalUnit: ThermalUnit) {
       this.thermalUnit = thermalUnit;
     },
-    setTime(time: Moment) {
+    setRawEngineUnit(rawEngineUnit: RawEngineUnit) {
+      this.engineUnit = rawEngineUnitToEngineUnit(rawEngineUnit);
+    },
+    setRawThermalUnit(rawThermalUnit: RawThermalUnit) {
+      this.thermalUnit = rawThermalUnitToThermalUnit(rawThermalUnit);
+    },
+    setTime(time: Maybe<Moment>) {
       this.time = time;
     },
   },

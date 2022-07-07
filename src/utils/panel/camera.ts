@@ -1,4 +1,4 @@
-import { CameraType } from "@/types/panel/main";
+import { CameraType } from "@/types/panel/main.types";
 
 export const stringToCameraType = (s: string): CameraType => {
   if (s.toLowerCase().includes("dahua")) return CameraType.dahua;

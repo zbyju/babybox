@@ -1,4 +1,5 @@
-import type { AppState } from "@/types/panel/main";
+import type { Maybe } from "@/types/generic.types";
+import type { AppState } from "@/types/panel/main.types";
 import { defineStore } from "pinia";
 
 export interface AppStateMessage {
@@ -11,7 +12,7 @@ export type AppStateActive = boolean;
 
 export const useAppStateStore = defineStore("appState", {
   state: () => ({
-    message: null as AppStateMessage,
+    message: undefined as Maybe<AppStateMessage>,
     active: false as AppStateActive,
   }),
   actions: {

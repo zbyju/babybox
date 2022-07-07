@@ -36,10 +36,16 @@
 
   const unitsStore = useUnitsStore();
   const { engineUnit } = storeToRefs(unitsStore);
-  const minDoors = computed(() => parseInt(engineUnit.value[2].value));
-  const maxDoors = computed(() => parseInt(engineUnit.value[3].value));
-  const leftDoors = computed(() => parseInt(engineUnit.value[37].value));
-  const rightDoors = computed(() => parseInt(engineUnit.value[38].value));
+  const minDoors = computed(
+    () => engineUnit.value?.settings.engine.closedThreshold,
+  );
+  const maxDoors = computed(
+    () => engineUnit.value?.settings.engine.openedThreshold,
+  );
+  const leftDoors = computed(() => engineUnit.value?.data.engine.left.position);
+  const rightDoors = computed(
+    () => engineUnit.value?.data.engine.right.position,
+  );
 </script>
 
 <style lang="stylus">

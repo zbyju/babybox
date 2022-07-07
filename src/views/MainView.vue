@@ -16,7 +16,7 @@
   import HighlightMessage from "@/components/panel/elements/HighlightMessage.vue";
   import { useSounds } from "@/composables/useSounds";
   import { useAppStateStore } from "@/pinia/appStateStore";
-  import type { AppState } from "@/types/panel/main";
+  import type { AppState } from "@/types/panel/main.types";
   import { AppManager } from "@/utils/store";
   import { storeToRefs } from "pinia";
   import { computed, onBeforeMount, onBeforeUnmount, watch } from "vue";

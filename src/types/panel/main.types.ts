@@ -1,6 +1,6 @@
 import type { Moment } from "moment";
 import type { Connection } from "./connection.types";
-import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
+import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 
 export interface CameraConfig {
   ip: string;
