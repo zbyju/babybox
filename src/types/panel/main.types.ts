@@ -1,5 +1,5 @@
 import type { Moment } from "moment";
-import type { Connection } from "./connection";
+import type { Connection } from "./connection.types";
 import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
 
 export interface CameraConfig {

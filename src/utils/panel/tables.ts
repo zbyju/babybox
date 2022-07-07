@@ -1,7 +1,7 @@
 import { useConfigStore } from "@/pinia/configStore";
 import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
-import type { Connection } from "@/types/panel/connection";
-import type { TableBlockData, TableData } from "@/types/panel/tables";
+import type { Connection } from "@/types/panel/connection.types";
+import type { TableBlockData, TableData } from "@/types/panel/tables.types";
 import { storeToRefs } from "pinia";
 import {
   beamAboveContainer,

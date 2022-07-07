@@ -1,7 +1,7 @@
 import {
   DefaultEngineUnit,
   DefaultThermalUnit,
-} from "@/types/panel/units-data";
+} from "@/types/panel/units-data.types";
 import type { Moment } from "moment";
 import { defineStore } from "pinia";
 

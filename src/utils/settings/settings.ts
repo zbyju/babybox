@@ -1,4 +1,4 @@
-import type { SettingsTableData } from "@/types/settings/table";
+import type { SettingsTableData } from "@/types/settings/table.types";
 import _ from "lodash";
 import { ref } from "vue";
 import type { Ref } from "vue";

@@ -1,7 +1,7 @@
 import { getDefaultAppState } from "@/defaults/appState.defaults";
 import { useConfigStore } from "@/pinia/configStore";
 import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
-import type { Connection } from "@/types/panel/connection";
+import type { Connection } from "@/types/panel/connection.types";
 import type { AppState } from "@/types/panel/main";
 import { storeToRefs } from "pinia";
 

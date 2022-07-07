@@ -13,7 +13,7 @@ import {
   type EngineUnit,
   type ThermalUnit,
 } from "@/pinia/unitsStore";
-import type { Connection } from "@/types/panel/connection";
+import type { Connection } from "@/types/panel/connection.types";
 import { useConnectionStore } from "@/pinia/connectionStore";
 
 export class AppManager {

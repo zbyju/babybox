@@ -1,4 +1,7 @@
-import type { SettingsTableData, valueType } from "@/types/settings/table";
+import type {
+  SettingsTableData,
+  valueType,
+} from "@/types/settings/table.types";
 
 export const getSettingsHeaders = () => {
   return [
