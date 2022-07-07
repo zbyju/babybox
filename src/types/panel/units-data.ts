@@ -1,3 +1,102 @@
+import type { Moment } from "moment";
+
+export interface UnitValue<T> {
+  index: number;
+  label: string;
+  value: T;
+}
+
+export interface ThermalUnit {
+  data: {
+    temperature: {
+      inner: UnitValue<number>;
+      outside: UnitValue<number>;
+      casing: UnitValue<number>;
+      top: UnitValue<number>;
+      bottom: UnitValue<number>;
+
+      isHeatingCasing: UnitValue<boolean>;
+      isHeatingAir: UnitValue<boolean>;
+      isCoolingAir: UnitValue<boolean>;
+    };
+    voltage: {
+      in: UnitValue<number>;
+      battery: UnitValue<number>;
+      operating: UnitValue<number>;
+    };
+    door: {
+      isServiceDoorOpened: UnitValue<boolean>;
+    };
+
+    time: UnitValue<Moment>;
+    status: UnitValue<number>;
+  };
+  settings: {
+    temperature: {
+      hysteresisHeating: UnitValue<number>;
+      hysteresisCooling: UnitValue<number>;
+      optimalInner: UnitValue<number>;
+      minimalInner: UnitValue<number>;
+      maximalInner: UnitValue<number>;
+      maximalCasing: UnitValue<number>;
+      maximalPeltier: UnitValue<number>;
+    };
+    voltage: {
+      minimal: UnitValue<number>;
+    };
+    misc: {
+      emailPeriodInSeconds: UnitValue<number>;
+    };
+  };
+}
+
+export interface EngineUnit {
+  data: {
+    engine: {
+      left: {
+        load: UnitValue<number>;
+        position: UnitValue<number>;
+      };
+      right: {
+        load: UnitValue<number>;
+        position: UnitValue<number>;
+      };
+    };
+    door: {
+      isBarrierInterrupted: UnitValue<boolean>;
+      isServiceDoorOpened: UnitValue<boolean>;
+    };
+    timers: {
+      inspectionMessage: UnitValue<number>;
+      serviceDoor: UnitValue<number>;
+    };
+    time: UnitValue<Moment>;
+    blocked: UnitValue<number>;
+  };
+  settings: {
+    temperature: {
+      minimalInner: UnitValue<number>;
+      maximalInner: UnitValue<number>;
+    };
+    engine: {
+      allowedLoad: UnitValue<number>;
+      timeForStart: UnitValue<number>;
+
+      closedThreshold: UnitValue<number>;
+      openedThreshold: UnitValue<number>;
+      timeToBeOpenedInSeconds: UnitValue<number>;
+    };
+    misc: {
+      pcTimeoutConnection: UnitValue<number>;
+
+      emailPeriodInSeconds: UnitValue<number>;
+      criticalEmailPeriodInSeconds: UnitValue<number>;
+
+      inspectionPeriodInSeconds: UnitValue<number>;
+    };
+  };
+}
+
 export const DefaultThermalUnit = [
   {
     index: 0,
