@@ -1,4 +1,4 @@
-import type { EngineUnit, ThermalUnit } from "@/pinia/unitsStore";
+import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 export const getData = (
@@ -6,7 +6,7 @@ export const getData = (
   ip: string,
   postfix: string,
   appendTime = true,
-): Promise<EngineUnit | ThermalUnit> => {
+): Promise<RawEngineUnit | RawThermalUnit> => {
   const time = appendTime ? "&" + new Date().getTime() : "";
   const url = `http://${ip}${postfix}${time}`;
   return new Promise((resolve, reject) => {
