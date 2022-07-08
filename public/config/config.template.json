@@ -15,7 +15,12 @@
     "requestDelay": 2000,
     "requestTimeout": 5000,
     "warningThreshold": 5,
-    "errorThreshold": 25
+    "errorThreshold": 25,
+    "voltage": {
+      "divider": 63,
+      "multiplier": 100,
+      "addition": 0
+    }
   },
   "camera": {
     "ip": "10.1.1.7",
