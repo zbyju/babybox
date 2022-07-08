@@ -1,3 +1,5 @@
+require("@rushstack/eslint-patch/modern-module-resolution");
+
 module.exports = {
   env: {
     node: true,
@@ -6,6 +8,7 @@ module.exports = {
     "plugin:vue/vue3-recommended",
     "eslint:recommended",
     "@vue/typescript/recommended",
+    "@vue/eslint-config-typescript",
     "@vue/prettier",
   ],
   parserOptions: {
