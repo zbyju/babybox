@@ -1,3 +1,4 @@
+import type { VoltageConfig } from "@/types/panel/main.types";
 import type {
   EngineUnit,
   ThermalUnit,
@@ -81,6 +82,7 @@ export const rawEngineUnitToEngineUnit = (
 
 export const rawThermalUnitToThermalUnit = (
   rawThermalUnit: RawThermalUnit,
+  voltageConfig: VoltageConfig,
 ): ThermalUnit => {
   return {
     data: {
@@ -96,10 +98,10 @@ export const rawThermalUnitToThermalUnit = (
         isCoolingAir: stringBooleanToBoolean(rawThermalUnit[26].value),
       },
       voltage: {
-        in: stringToVoltage(rawThermalUnit[35].value),
-        battery: stringToVoltage(rawThermalUnit[36].value),
-        units: stringToVoltage(rawThermalUnit[37].value),
-        gsm: stringToVoltage(rawThermalUnit[38].value),
+        in: stringToVoltage(rawThermalUnit[35].value, voltageConfig),
+        battery: stringToVoltage(rawThermalUnit[36].value, voltageConfig),
+        units: stringToVoltage(rawThermalUnit[37].value, voltageConfig),
+        gsm: stringToVoltage(rawThermalUnit[38].value, voltageConfig),
       },
       door: {
         isServiceDoorOpened: stringBooleanToBoolean(rawThermalUnit[23].value),
@@ -128,7 +130,7 @@ export const rawThermalUnitToThermalUnit = (
         maximalPeltier: stringToNumberWithDecimals(rawThermalUnit[7].value),
       },
       voltage: {
-        minimal: stringToVoltage(rawThermalUnit[6].value),
+        minimal: stringToVoltage(rawThermalUnit[6].value, voltageConfig),
       },
       misc: {
         emailPeriodInSeconds: stringToNumber(rawThermalUnit[8].value),

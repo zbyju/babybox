@@ -11,6 +11,7 @@ import {
   rawThermalUnitToThermalUnit,
 } from "@/defaults/units.defaults";
 import type { Maybe } from "@/types/generic.types";
+import { useConfigStore } from "./configStore";
 
 export const useUnitsStore = defineStore("engineUnit", {
   state: () => ({
@@ -30,7 +31,11 @@ export const useUnitsStore = defineStore("engineUnit", {
       this.engineUnit = rawEngineUnitToEngineUnit(rawEngineUnit);
     },
     setRawThermalUnit(rawThermalUnit: RawThermalUnit) {
-      this.thermalUnit = rawThermalUnitToThermalUnit(rawThermalUnit);
+      const config = useConfigStore();
+      this.thermalUnit = rawThermalUnitToThermalUnit(
+        rawThermalUnit,
+        config.units.voltage,
+      );
     },
     setTime(time: Maybe<Moment>) {
       this.time = time;

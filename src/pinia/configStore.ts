@@ -1,3 +1,4 @@
+import type { VoltageConfig } from "@/types/panel/main.types";
 import { defineStore } from "pinia";
 
 export interface Config {
@@ -26,6 +27,12 @@ export interface ConfigCamera {
   cameraType: string;
 }
 
+export interface ConfigVoltage {
+  divider: number;
+  multiplier: number;
+  addition: number;
+}
+
 export interface ConfigUnits {
   engine: {
     ip: string;
@@ -39,6 +46,7 @@ export interface ConfigUnits {
   requestDelay: number;
   warningThreshold: number;
   errorThreshold: number;
+  voltage: VoltageConfig;
 }
 
 export interface ConfigFontSize {

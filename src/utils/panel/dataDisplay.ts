@@ -1,5 +1,4 @@
 import type { Maybe } from "@/types/generic.types";
-import type { RowData } from "@/types/panel/tables.types";
 
 export const prettyNumber = (
   num: Maybe<number>,

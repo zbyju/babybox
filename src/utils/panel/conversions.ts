@@ -1,4 +1,5 @@
 import type { Maybe } from "@/types/generic.types";
+import type { VoltageConfig } from "@/types/panel/main.types";
 import type { Moment } from "moment";
 import moment from "moment";
 
@@ -14,10 +15,23 @@ export const stringToNumberWithDecimals = (str: string): Maybe<number> => {
   return Number(res / 100);
 };
 
-export const stringToVoltage = (str: string): Maybe<number> => {
+export const numberToVoltage = (
+  num: number,
+  voltageConfig: VoltageConfig,
+): number => {
+  return (
+    (num * voltageConfig.multiplier) / voltageConfig.divider +
+    voltageConfig.addition
+  );
+};
+
+export const stringToVoltage = (
+  str: string,
+  voltageConfig: VoltageConfig,
+): Maybe<number> => {
   const res = parseInt(str);
   if (isNaN(res)) return undefined;
-  return Number((res / 1096) * 32);
+  return numberToVoltage(res, voltageConfig);
 };
 
 export const stringBooleanToBoolean = (str: string): Maybe<boolean> => {

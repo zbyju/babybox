@@ -20,6 +20,12 @@ export interface AppConfig {
   colonDelay: number;
 }
 
+export interface VoltageConfig {
+  divider: number;
+  multiplier: number;
+  addition: number;
+}
+
 export interface UnitsConfig {
   engine: {
     ip: string;
@@ -33,6 +39,7 @@ export interface UnitsConfig {
   requestDelay: number;
   warningThreshold: number;
   errorThreshold: number;
+  voltage: VoltageConfig;
 }
 
 export interface Config {
