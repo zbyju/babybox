@@ -14,7 +14,7 @@ import { useUnitsStore } from "@/pinia/unitsStore";
 import type { Maybe } from "@/types/generic.types";
 
 export class AppManager {
-  private panelLoopInterval = null;
+  private panelLoopInterval: Maybe<NodeJS.Timer> = undefined;
   private unitsConfig: Ref<UnitsConfig>;
   private appState: Ref<AppState>;
   private engineUnit: Ref<Maybe<EngineUnit>>;
@@ -95,8 +95,6 @@ export class AppManager {
     }
   }
 
-  private fetchConfig() {}
-
   private getConfig(): Promise<Config> {
     return new Promise((resolve) => {
       fetch("config/config.json")
@@ -130,7 +128,9 @@ export class AppManager {
   }
 
   stopPanelLoop() {
-    clearInterval(this.panelLoopInterval);
+    if (this.panelLoopInterval !== undefined) {
+      clearInterval(this.panelLoopInterval);
+    }
     return;
   }
 
