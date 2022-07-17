@@ -1,11 +1,11 @@
 <template>
   <div id="TableConnection">
-    <BaseTable :title="title" :rows="rows" :blocks="blocks" />
+    <DataTable :title="title" :rows="rows" :blocks="blocks" :values="values" />
   </div>
 </template>
 
 <script lang="ts" setup>
-  import BaseTable from "@/components/panel/HTMLElements/BaseTable.vue";
+  import { useConfigStore } from "@/pinia/configStore";
   import { useConnectionStore } from "@/pinia/connectionStore";
   import { useUnitsStore } from "@/pinia/unitsStore";
   import type { Maybe } from "@/types/generic.types";
@@ -14,15 +14,28 @@
     TableRowTemplate,
     TableConnectionValues,
   } from "@/types/panel/tables.types";
+  import { getTableConnectionValues } from "@/utils/panel/tables";
   import { storeToRefs } from "pinia";
   import { computed, type ComputedRef } from "vue";
+  import DataTable from "../table/DataTable.vue";
 
   const unitsStore = useUnitsStore();
   const connectionStore = useConnectionStore();
   const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
   // TODO: Check to refactor
   const { engineUnit: eu, thermalUnit: tu } = storeToRefs(connectionStore);
-  const values: Maybe<TableConnectionValues> = undefined;
+  const configStore = useConfigStore();
+  const { units } = storeToRefs(configStore);
+
+  const values: Maybe<TableConnectionValues> = getTableConnectionValues(
+    engineUnit.value,
+    thermalUnit.value,
+    {
+      engineUnit: eu.value,
+      thermalUnit: tu.value,
+    },
+    units,
+  );
   const blocks: TableBlockTemplate[] = [];
   const rows: TableRowTemplate[] = [
     {

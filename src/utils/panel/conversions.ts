@@ -1,5 +1,6 @@
 import type { Maybe } from "@/types/generic.types";
 import type { VoltageConfig } from "@/types/panel/main.types";
+import { TableBlockState, TableRowState } from "@/types/panel/tables.types";
 import type { Moment } from "moment";
 import moment from "moment";
 
@@ -52,3 +53,30 @@ export const partitionedTimeToMoment = (
   if (!res.isValid()) return undefined;
   return res;
 };
+
+export const booleanToTableBlockState = (
+  bool: Maybe<boolean>,
+  activeColor: TableBlockState = TableBlockState.ColorSuccess,
+): TableBlockState => {
+  if (bool === undefined) return TableBlockState.Error;
+  if (bool === true) return activeColor;
+  return TableBlockState.Inactive;
+};
+
+export function maybeValueToTableRowValue<T>(
+  val: Maybe<T>,
+  display: (value: T, ...args: any[]) => string,
+  args: any[] = [],
+  okState: TableRowState = TableRowState.Ok,
+) {
+  if (val === undefined)
+    return {
+      state: TableRowState.Error,
+    };
+  else {
+    return {
+      state: okState,
+      value: display(val, ...args),
+    };
+  }
+}

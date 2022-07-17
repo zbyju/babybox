@@ -1,23 +1,34 @@
 <template>
   <div id="TableTemperature">
     <div class="Table">
-      <BaseTable :title="title" :rows="rows" :blocks="blocks" />
+      <DataTable
+        :title="title"
+        :rows="rows"
+        :blocks="blocks"
+        :values="values"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import BaseTable from "@/components/panel/HTMLElements/BaseTable.vue";
   import { useUnitsStore } from "@/pinia/unitsStore";
   import type {
     TableBlockTemplate,
     TableRowTemplate,
   } from "@/types/panel/tables.types";
+  import { getTableTemperaturesValues } from "@/utils/panel/tables";
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
+  import DataTable from "../table/DataTable.vue";
 
   const unitsStore = useUnitsStore();
   const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
+
+  const values = getTableTemperaturesValues(
+    engineUnit.value,
+    thermalUnit.value,
+  );
   const blocks: TableBlockTemplate[] = [
     {
       field: "isHeatingCasing",

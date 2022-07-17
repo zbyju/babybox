@@ -1,22 +1,24 @@
 <template>
   <div id="TableVoltage">
-    <BaseTable :title="title" :rows="rows" :blocks="blocks" :values="values" />
+    <DataTable :title="title" :rows="rows" :blocks="blocks" :values="values" />
   </div>
 </template>
 
 <script lang="ts" setup>
-  import BaseTable from "@/components/panel/HTMLElements/BaseTable.vue";
   import { useUnitsStore } from "@/pinia/unitsStore";
   import type {
     TableBlockTemplate,
     TableRowTemplate,
   } from "@/types/panel/tables.types";
+  import { getTableVoltageValues } from "@/utils/panel/tables";
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
+  import DataTable from "../table/DataTable.vue";
 
   const unitsStore = useUnitsStore();
   const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
 
+  const values = getTableVoltageValues(engineUnit.value, thermalUnit.value);
   const blocks: TableBlockTemplate[] = [];
   const rows: TableRowTemplate[] = [
     {

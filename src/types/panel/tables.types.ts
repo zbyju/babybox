@@ -54,18 +54,25 @@ export interface TableBlockValue {
   state: TableBlockState;
 }
 
+export enum TableValuesState {
+  Ok,
+  Loading,
+  Error,
+}
+
 export interface TableValues {
-  blockData: Record<string, TableBlockValue>;
-  rowData: Record<string, TableRowValue>;
+  state: TableValuesState;
+  blockValues?: Record<string, TableBlockValue>;
+  rowValues?: Record<string, TableRowValue>;
 }
 
 export interface TableTemperaturesValues extends TableValues {
-  blockData: {
+  blockValues?: {
     isHeatingCasing: TableBlockValue;
     isHeatingAir: TableBlockValue;
     isCoolingAir: TableBlockValue;
   };
-  rowData: {
+  rowValues?: {
     optimalTemperature: TableRowValue;
     innerTemperature: TableRowValue;
     outsideTemperature: TableRowValue;
@@ -75,11 +82,11 @@ export interface TableTemperaturesValues extends TableValues {
   };
 }
 
-export interface TableDoorsValues {
-  blockData: {
+export interface TableDoorsValues extends TableValues {
+  blockValues?: {
     isBlocked: TableBlockValue;
   };
-  rowData: {
+  rowValues?: {
     leftPosition: TableRowValue;
     rightPosition: TableRowValue;
     leftLoad: TableRowValue;
@@ -88,8 +95,8 @@ export interface TableDoorsValues {
   };
 }
 
-export interface TableVoltagesValues {
-  rowData: {
+export interface TableVoltagesValues extends TableValues {
+  rowValues?: {
     inVoltage: TableRowValue;
     batteryVoltage: TableRowValue;
     unitsVoltage: TableRowValue;
@@ -100,8 +107,8 @@ export interface TableVoltagesValues {
   };
 }
 
-export interface TableConnectionValues {
-  rowData: {
+export interface TableConnectionValues extends TableValues {
+  rowValues?: {
     requests: TableRowValue;
     successfulRequests: TableRowValue;
     failedRequests: TableRowValue;
