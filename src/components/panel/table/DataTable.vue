@@ -7,34 +7,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(blockRows, i) in props.blocks" :key="i">
-          <td
-            v-for="(block, j) in blockRows"
-            :key="j"
-            class="table-block"
-            :class="[block.active ? block.color : '']"
-            :colspan="block.colspan"
-          >
-            {{
-              block.active ? block.label : block.nonActiveLabel || block.label
-            }}
-          </td>
+        <tr v-for="(block, i) in data.blocks" :key="i">
+          <DataTableBlock :block="block" />
         </tr>
-        <tr v-for="(row, index) in props.rows" :key="index">
-          <td
-            class="table-label"
-            :class="[
-              row.error ? 'color-error' : '',
-              row.success ? 'color-success' : '',
-              row.warning ? 'color-warning' : '',
-            ]"
-            colspan="3"
-          >
-            {{ row.label }}
-          </td>
-          <td class="table-value" colspan="3">
-            {{ row.value || "--" }}
-          </td>
+        <tr v-for="(row, i) in data.rows" :key="i">
+          <DataTableRow :row="row" />
         </tr>
       </tbody>
     </table>
@@ -42,13 +19,27 @@
 </template>
 
 <script lang="ts" setup>
-  import type { TableBlockData, TableData } from "@/types/panel/tables";
+  import DataTableBlock from "./DataTableBlock.vue";
+  import DataTableRow from "./DataTableRow.vue";
+  import type {
+    TableBlockTemplate,
+    TableData,
+    TableRowTemplate,
+    TableValues,
+  } from "@/types/panel/tables.types";
+  import { combineTableData } from "@/utils/panel/combineTableData";
+  import { computed } from "vue";
 
   const props = defineProps<{
     title: string;
-    rows: TableData;
-    blocks?: TableBlockData;
+    rows: TableRowTemplate[];
+    blocks: TableBlockTemplate[];
+    values: TableValues;
   }>();
+
+  const data = computed<TableData>(() =>
+    combineTableData(props.rows, props.blocks, props.values),
+  );
 </script>
 
 <style lang="stylus">
