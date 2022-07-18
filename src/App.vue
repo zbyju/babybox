@@ -7,7 +7,7 @@
 
 <script lang="ts">
   import { defineComponent, onBeforeMount } from "vue";
-  import { AppManager } from "@/utils/store";
+  import { AppManager } from "@/logic/panel/panelLoop";
   import { useConfigStore } from "./pinia/configStore";
   import { storeToRefs } from "pinia";
 

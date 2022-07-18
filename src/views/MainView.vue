@@ -17,7 +17,7 @@
   import { useSounds } from "@/composables/useSounds";
   import { useAppStateStore } from "@/pinia/appStateStore";
   import type { AppState } from "@/types/panel/main.types";
-  import { AppManager } from "@/utils/store";
+  import { AppManager } from "@/logic/panel/panelLoop";
   import { storeToRefs } from "pinia";
   import { computed, onBeforeMount, onBeforeUnmount, watch } from "vue";
 

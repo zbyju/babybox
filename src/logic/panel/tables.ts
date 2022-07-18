@@ -17,7 +17,7 @@ import { storeToRefs } from "pinia";
 import {
   booleanToTableBlockState,
   maybeValueToTableRowValue,
-} from "./conversions";
+} from "../../utils/panel/conversions";
 import {
   displayCustomBoolean,
   displayPercentage,
@@ -28,7 +28,7 @@ import {
   isLower,
   prettyNumber,
   secondsToTime,
-} from "./dataDisplay";
+} from "../../utils/panel/dataDisplay";
 
 export const getTableConnectionValues = (
   engineData: Maybe<EngineUnit>,

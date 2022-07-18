@@ -1,5 +1,5 @@
 import type { Connection } from "@/types/panel/connection.types";
-import { ConnectionResult, ConnectionTracker } from "@/utils/panel/connections";
+import { ConnectionResult, ConnectionTracker } from "@/logic/panel/connections";
 import { defineStore } from "pinia";
 
 export const useConnectionStore = defineStore("connection", {

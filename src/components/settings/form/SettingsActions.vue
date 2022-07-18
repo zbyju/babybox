@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts" setup>
-  import type { SettingsManager } from "@/utils/settings/settings";
+  import type { SettingsManager } from "@/logic/settings/manager";
 
   const props = defineProps<{
     manager: SettingsManager;

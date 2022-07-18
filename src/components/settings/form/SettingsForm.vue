@@ -16,7 +16,8 @@
   import SettingsLog from "@/components/settings/form/SettingsLog.vue";
   import SettingsResult from "@/components/settings/form/SettingsResult.vue";
   import SettingsTable from "@/components/settings/form/SettingsTable.vue";
-  import type { SettingsManager } from "@/utils/settings/settings";
+  import type { SettingsManager } from "@/logic/settings/manager";
+  1;
 
   const props = defineProps<{
     manager: SettingsManager;

@@ -10,7 +10,7 @@
 
 <script lang="ts" setup>
   import { useConfigStore } from "@/pinia/configStore";
-  import { SettingsManager } from "@/utils/settings/settings";
+  import { SettingsManager } from "@/logic/settings/manager";
   import { storeToRefs } from "pinia";
   import { onBeforeMount } from "vue";
   import TheNav from "../components/TheNav.vue";

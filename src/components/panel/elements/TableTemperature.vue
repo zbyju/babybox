@@ -17,7 +17,7 @@
     TableBlockTemplate,
     TableRowTemplate,
   } from "@/types/panel/tables.types";
-  import { getTableTemperaturesValues } from "@/utils/panel/tables";
+  import { getTableTemperaturesValues } from "@/logic/panel/tables";
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
   import DataTable from "../table/DataTable.vue";

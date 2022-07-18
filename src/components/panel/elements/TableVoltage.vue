@@ -10,7 +10,7 @@
     TableBlockTemplate,
     TableRowTemplate,
   } from "@/types/panel/tables.types";
-  import { getTableVoltageValues } from "@/utils/panel/tables";
+  import { getTableVoltageValues } from "@/logic/panel/tables";
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
   import DataTable from "../table/DataTable.vue";

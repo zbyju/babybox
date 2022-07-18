@@ -10,7 +10,7 @@
     TableBlockTemplate,
     TableRowTemplate,
   } from "@/types/panel/tables.types";
-  import { getTableDoorsValues } from "@/utils/panel/tables";
+  import { getTableDoorsValues } from "@/logic/panel/tables";
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
   import DataTable from "../table/DataTable.vue";

@@ -5,7 +5,7 @@ import type { Ref } from "vue";
 import type { AppState, UnitsConfig } from "@/types/panel/main.types";
 import _ from "lodash";
 import { storeToRefs } from "pinia";
-import { getNewState } from "./panel/state";
+import { getNewState } from "./state";
 import { useAppStateStore } from "@/pinia/appStateStore";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import type { Connection } from "@/types/panel/connection.types";

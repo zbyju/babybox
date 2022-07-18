@@ -14,7 +14,7 @@
     TableRowTemplate,
     TableConnectionValues,
   } from "@/types/panel/tables.types";
-  import { getTableConnectionValues } from "@/utils/panel/tables";
+  import { getTableConnectionValues } from "@/logic/panel/tables";
   import { storeToRefs } from "pinia";
   import { computed, type ComputedRef } from "vue";
   import DataTable from "../table/DataTable.vue";
