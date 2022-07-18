@@ -12,7 +12,7 @@
 
   const unitsStore = useUnitsStore();
   const { time } = storeToRefs(unitsStore);
-  const date = computed((): string => getFullDate(time.value)); // TODO: Change to computed without time
+  const date = computed((): string => getFullDate(time.value));
 </script>
 
 <style lang="stylus">

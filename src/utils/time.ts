@@ -14,12 +14,12 @@ export const getMinutesWithLeadingZeroes = (time: Maybe<Moment>): string => {
   return minutes.length == 2 ? minutes : "0" + minutes;
 };
 
-export const getFullTime = (time: Moment): string => {
+export const getFullTime = (time: Maybe<Moment>): string => {
   if (!time || !moment(time).isValid()) return "--";
   return time.format("HH:mm:ss");
 };
 
-export const getFullDate = (time: Moment): string => {
+export const getFullDate = (time: Maybe<Moment>): string => {
   if (!time || !moment(time).isValid()) return "--";
   return time.format("DD.MM.YYYY");
 };
