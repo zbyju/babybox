@@ -55,30 +55,20 @@ export const updateWatchdog = async (): Promise<boolean> => {
   }
 };
 
-export const openDoors = (ip: string, timeout = 10000): Promise<any> => {
-  const url = `http://${ip}/sdscep?sys141=201`;
-  return new Promise((resolve, reject) => {
-    fetchWithTimeout(url, { timeout })
-      .then((response) => response.text())
-      .then((data) => {
-        resolve(data);
-      })
-      .catch((err) => {
-        reject(err);
-      });
-  });
+export const openDoors = (): Promise<any> => {
+  const configStore = useConfigStore();
+  const { api, units } = storeToRefs(configStore);
+  const url = api.value.baseApiUrl + "/units/actions/openDoors";
+  const timeout = units.value.requestTimeout || 5000;
+
+  return axios.get(url, { timeout });
 };
 
-export const resetBabybox = (ip: string, timeout = 10000): Promise<any> => {
-  const url = `http://${ip}/sdscep?sys141=202`;
-  return new Promise((resolve, reject) => {
-    fetchWithTimeout(url, { timeout })
-      .then((response) => response.text())
-      .then((data) => {
-        resolve(data);
-      })
-      .catch((err) => {
-        reject(err);
-      });
-  });
+export const resetBabybox = (): Promise<any> => {
+  const configStore = useConfigStore();
+  const { api, units } = storeToRefs(configStore);
+  const url = api.value.baseApiUrl + "/units/actions/openServiceDoors";
+  const timeout = units.value.requestTimeout || 5000;
+
+  return axios.get(url, { timeout });
 };
