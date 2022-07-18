@@ -1,4 +1,9 @@
-import { getData } from "@/api/units";
+import {
+  getData,
+  getEngineData,
+  getThermalData,
+  updateWatchdog,
+} from "@/api/units";
 import { useConfigStore, type Config } from "@/pinia/configStore";
 import { ref } from "vue";
 import type { Ref } from "vue";
@@ -48,22 +53,18 @@ export class AppManager {
     this.appStateStore = appStateStore;
   }
 
-  private async updateEngineUnit(timeout: number) {
-    const ip = this.unitsConfig.value.engine.ip;
-    const postfix = this.unitsConfig.value.postfix;
+  private async updateEngineUnit() {
     try {
-      const data = await getData(timeout, ip, postfix);
+      const data = await getEngineData();
       this.unitsStore.setRawEngineUnit(data);
       this.connectionStore.incrementSuccessEngine();
     } catch (err) {
       this.connectionStore.incrementFailEngine();
     }
   }
-  private async updateThermalUnit(timeout: number) {
-    const ip = this.unitsConfig.value.thermal.ip;
-    const postfix = this.unitsConfig.value.postfix;
+  private async updateThermalUnit() {
     try {
-      const data = await getData(timeout, ip, postfix);
+      const data = await getThermalData();
       this.unitsStore.setRawThermalUnit(data);
       this.connectionStore.incrementSuccessThermal();
     } catch (err) {
@@ -86,10 +87,8 @@ export class AppManager {
     this.updateClock();
   }
   private async updateWatchdogEngine(timeout: number) {
-    const ip = this.unitsConfig.value.engine.ip;
-    const postfix = this.unitsConfig.value.postfixWatchdog;
     try {
-      await getData(timeout, ip, postfix, false);
+      await updateWatchdog();
     } catch (err) {
       // Dont care about the error
     }

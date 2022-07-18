@@ -2,6 +2,7 @@ import type { VoltageConfig } from "@/types/panel/main.types";
 import { defineStore } from "pinia";
 
 export interface Config {
+  api: ConfigApi;
   babybox: ConfigBabybox;
   fontSize: ConfigFontSize;
   camera: ConfigCamera;
@@ -12,6 +13,10 @@ export interface Config {
 export interface ConfigApp {
   password: string;
   colonDelay: number;
+}
+
+export interface ConfigApi {
+  baseApiUrl: string;
 }
 
 export interface ConfigBabybox {
@@ -63,6 +68,7 @@ export interface ConfigFontSize {
 export const useConfigStore = defineStore("config", {
   state: () => ({
     initialised: false as boolean,
+    api: null as ConfigApi,
     app: null as ConfigApp,
     babybox: null as ConfigBabybox,
     camera: null as ConfigCamera,
@@ -72,6 +78,7 @@ export const useConfigStore = defineStore("config", {
   actions: {
     setConfig(config: Config) {
       this.app = config.app;
+      this.api = config.api;
       this.babybox = config.babybox;
       this.camera = config.camera;
       this.units = config.units;

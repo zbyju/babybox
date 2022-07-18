@@ -10,6 +10,10 @@ export interface CameraConfig {
   cameraType: string;
 }
 
+export interface ApiConfig {
+  baseApiUrl: string;
+}
+
 export interface BabyboxConfig {
   name: string;
   prependBabyboxBeforeName: boolean;
@@ -43,6 +47,7 @@ export interface UnitsConfig {
 }
 
 export interface Config {
+  api: ApiConfig;
   babybox: BabyboxConfig;
   camera: CameraConfig;
   units: UnitsConfig;
