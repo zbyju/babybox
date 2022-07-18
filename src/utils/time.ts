@@ -1,14 +1,14 @@
-import type { EngineUnit } from "@/pinia/unitsStore";
 import moment from "moment";
 import type { Moment } from "moment";
+import type { Maybe } from "@/types/generic.types";
 
-export const getHoursWithLeadingZeroes = (time: Moment): string => {
+export const getHoursWithLeadingZeroes = (time: Maybe<Moment>): string => {
   if (!time || !moment(time).isValid()) return "--";
   const hours = time.hours().toString();
   return hours.length == 2 ? hours : "0" + hours;
 };
 
-export const getMinutesWithLeadingZeroes = (time: Moment): string => {
+export const getMinutesWithLeadingZeroes = (time: Maybe<Moment>): string => {
   if (!time || !moment(time).isValid()) return "--";
   const minutes = time.minutes().toString();
   return minutes.length == 2 ? minutes : "0" + minutes;
