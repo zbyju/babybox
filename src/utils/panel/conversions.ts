@@ -41,6 +41,11 @@ export const stringBooleanToBoolean = (str: string): Maybe<boolean> => {
   return res !== 0;
 };
 
+const makeTwoCharPartitions = (part: string): string => {
+  if (part.length >= 2) return part;
+  return "0" + part;
+};
+
 export const partitionedTimeToMoment = (
   day: string,
   month: string,
@@ -49,7 +54,13 @@ export const partitionedTimeToMoment = (
   minute: string,
   second: string,
 ): Maybe<Moment> => {
-  const res = moment(`${year}-${month}-${day} ${hour}:${minute}:${second}`);
+  const res = moment(
+    `${makeTwoCharPartitions(year)}-${makeTwoCharPartitions(
+      month,
+    )}-${makeTwoCharPartitions(day)}T${makeTwoCharPartitions(
+      hour,
+    )}:${makeTwoCharPartitions(minute)}:${makeTwoCharPartitions(second)}`,
+  );
   if (!res.isValid()) return undefined;
   return res;
 };
