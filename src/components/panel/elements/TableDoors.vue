@@ -17,7 +17,9 @@
 
   const unitsStore = useUnitsStore();
   const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
-  const values = getTableDoorsValues(engineUnit.value, thermalUnit.value);
+  const values = computed(() =>
+    getTableDoorsValues(engineUnit.value, thermalUnit.value),
+  );
   const blocks: TableBlockTemplate[] = [
     {
       field: "isHeatingCasing",

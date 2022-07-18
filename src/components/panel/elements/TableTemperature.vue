@@ -25,9 +25,8 @@
   const unitsStore = useUnitsStore();
   const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
 
-  const values = getTableTemperaturesValues(
-    engineUnit.value,
-    thermalUnit.value,
+  const values = computed(() =>
+    getTableTemperaturesValues(engineUnit.value, thermalUnit.value),
   );
   const blocks: TableBlockTemplate[] = [
     {

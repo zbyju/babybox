@@ -7,8 +7,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(block, i) in data.blocks" :key="i">
-          <DataTableBlock :block="block" />
+        <tr>
+          <DataTableBlock
+            v-for="(block, i) in data.blocks"
+            :key="i"
+            :block="block"
+          />
         </tr>
         <tr v-for="(row, i) in data.rows" :key="i">
           <DataTableRow :row="row" />

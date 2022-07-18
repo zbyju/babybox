@@ -18,7 +18,9 @@
   const unitsStore = useUnitsStore();
   const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
 
-  const values = getTableVoltageValues(engineUnit.value, thermalUnit.value);
+  const values = computed(() =>
+    getTableVoltageValues(engineUnit.value, thermalUnit.value),
+  );
   const blocks: TableBlockTemplate[] = [];
   const rows: TableRowTemplate[] = [
     {
