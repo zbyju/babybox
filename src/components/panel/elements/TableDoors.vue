@@ -22,7 +22,7 @@
   );
   const blocks: TableBlockTemplate[] = [
     {
-      field: "isHeatingCasing",
+      field: "isBlocked",
       activeLabel: "Blokováno",
       inactiveLabel: "Neblokováno",
       colspan: 6,
@@ -30,23 +30,23 @@
   ];
   const rows: TableRowTemplate[] = [
     {
-      field: "optimalTemperature",
+      field: "leftPosition",
       label: "Levé poloha",
     },
     {
-      field: "innerTemperature",
+      field: "rightPosition",
       label: "Pravé poloha",
     },
     {
-      field: "outsideTemperature",
+      field: "leftLoad",
       label: "Levé zátěž",
     },
     {
-      field: "bottomTemperature",
+      field: "rightLoad",
       label: "Pravé zátěž",
     },
     {
-      field: "topTemperature",
+      field: "beamAboveContainer",
       label: "Paprsek nad vaničkou",
     },
   ];

@@ -24,31 +24,31 @@
   const blocks: TableBlockTemplate[] = [];
   const rows: TableRowTemplate[] = [
     {
-      field: "optimalTemperature",
+      field: "inVoltage",
       label: "Zdroj",
     },
     {
-      field: "innerTemperature",
+      field: "batteryVoltage",
       label: "Akumulátor",
     },
     {
-      field: "outsideTemperature",
+      field: "unitsVoltage",
       label: "Řídící jednotky",
     },
     {
-      field: "bottomTemperature",
+      field: "gsmVoltage",
       label: "GSM komunikátor",
     },
     {
-      field: "topTemperature",
+      field: "inGoalVoltage",
       label: "Zdroj cíl",
     },
     {
-      field: "casingTemperature",
+      field: "batteryGoalVoltage",
       label: "Akumulátor cíl",
     },
     {
-      field: "casingTemperature",
+      field: "unitsGoalVoltage",
       label: "Řídící jednotky cíl",
     },
   ];

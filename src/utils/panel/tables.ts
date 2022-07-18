@@ -128,7 +128,7 @@ export const getTableDoorsValues = (
       beamAboveContainer: maybeValueToTableRowValue(
         engineData?.data.door.isBarrierInterrupted,
         displayCustomBoolean,
-        ["Překážka, Volno, Error"],
+        ["Překážka", "Volno"],
       ),
     },
   };

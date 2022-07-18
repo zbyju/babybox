@@ -41,27 +41,27 @@
   const blocks: TableBlockTemplate[] = [];
   const rows: TableRowTemplate[] = [
     {
-      field: "optimalTemperature",
+      field: "requests",
       label: "PC dotaz",
     },
     {
-      field: "innerTemperature",
+      field: "successfulRequests",
       label: "BB odpověď",
     },
     {
-      field: "outsideTemperature",
+      field: "failedRequests",
       label: "Ztracené odpovědi",
     },
     {
-      field: "bottomTemperature",
+      field: "quality",
       label: "Kvalita spojení",
     },
     {
-      field: "topTemperature",
+      field: "timeout",
       label: "Limit spojení",
     },
     {
-      field: "casingTemperature",
+      field: "timeToInspection",
       label: "Čas do zkoušky",
     },
   ];

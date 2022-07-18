@@ -18,7 +18,6 @@ export function combineTableData(
     values.blockValues !== undefined &&
     values.rowValues !== undefined
   ) {
-    console.log(values.blockValues);
     return {
       blocks: blocksTemplate.map((b) => {
         const value = values?.blockValues
