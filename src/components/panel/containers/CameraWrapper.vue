@@ -3,17 +3,17 @@
     id="CameraWrapper"
     :style="{ maxHeight: props.maxH, maxWidth: props.maxW }"
   >
-    <div v-if="displayDoors" id="DoorBars">
+    <div v-if="displayDoors === true" id="DoorBars">
       <HorizontalPositionBar
-        :max-value="maxDoors"
-        :min-value="minDoors"
-        :value="leftDoors"
+        :max-value="maxDoors!"
+        :min-value="minDoors!"
+        :value="leftDoors!"
         :direction="'row'"
       />
       <HorizontalPositionBar
-        :max-value="maxDoors"
-        :min-value="minDoors"
-        :value="rightDoors"
+        :max-value="maxDoors!"
+        :min-value="minDoors!"
+        :value="rightDoors!"
         :direction="'row-reverse'"
       />
     </div>
@@ -46,6 +46,19 @@
   const rightDoors = computed(
     () => engineUnit.value?.data.engine.right.position,
   );
+
+  const displayDoors = computed(() => {
+    if (props.displayDoors === false) return false;
+    if (
+      minDoors.value === undefined ||
+      maxDoors.value === undefined ||
+      leftDoors.value === undefined ||
+      rightDoors.value === undefined
+    ) {
+      return false;
+    }
+    return true;
+  });
 </script>
 
 <style lang="stylus">
