@@ -3,7 +3,6 @@ import { storeToRefs } from "pinia";
 
 import { useConfigStore } from "@/pinia/configStore";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
-import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 export const getData = async (
   url: string,

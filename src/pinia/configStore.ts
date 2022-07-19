@@ -8,7 +8,6 @@ import type {
   CameraConfig,
   Config,
   UnitsConfig,
-  VoltageConfig,
 } from "@/types/panel/config.types";
 
 export const useConfigStore = defineStore("config", {

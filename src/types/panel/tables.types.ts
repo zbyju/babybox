@@ -1,5 +1,3 @@
-import type { Maybe } from "../generic.types";
-
 export type TableData = {
   blocks: TableBlockData[];
   rows: TableRowData[];

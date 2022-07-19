@@ -1,12 +1,7 @@
-import { storeToRefs } from "pinia";
-
-import { useConfigStore } from "@/pinia/configStore";
 import type { Maybe } from "@/types/generic.types";
 import type { Connection } from "@/types/panel/connection.types";
 import {
-  type TableBlockData,
   type TableConnectionValues,
-  type TableData,
   type TableDoorsValues,
   type TableTemperaturesValues,
   type TableVoltagesValues,
@@ -26,7 +21,6 @@ import {
   displayTemperature,
   displayTwoItems,
   displayVoltage,
-  isHigher,
   isLower,
   prettyNumber,
   secondsToTime,

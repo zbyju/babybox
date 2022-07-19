@@ -12,7 +12,6 @@
   import { useConfigStore } from "@/pinia/configStore";
   import { useConnectionStore } from "@/pinia/connectionStore";
   import { useUnitsStore } from "@/pinia/unitsStore";
-  import type { Maybe } from "@/types/generic.types";
   import type {
     TableBlockTemplate,
     TableConnectionValues,
