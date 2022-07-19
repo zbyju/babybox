@@ -12,14 +12,16 @@
 </template>
 
 <script lang="ts" setup>
+  import { storeToRefs } from "pinia";
+  import { computed } from "vue";
+
+  import { getTableTemperaturesValues } from "@/logic/panel/tables";
   import { useUnitsStore } from "@/pinia/unitsStore";
   import type {
     TableBlockTemplate,
     TableRowTemplate,
   } from "@/types/panel/tables.types";
-  import { getTableTemperaturesValues } from "@/logic/panel/tables";
-  import { storeToRefs } from "pinia";
-  import { computed } from "vue";
+
   import DataTable from "../table/DataTable.vue";
 
   const unitsStore = useUnitsStore();

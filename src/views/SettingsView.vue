@@ -9,13 +9,15 @@
 </template>
 
 <script lang="ts" setup>
-  import { useConfigStore } from "@/pinia/configStore";
-  import { SettingsManager } from "@/logic/settings/manager";
   import { storeToRefs } from "pinia";
   import { onBeforeMount } from "vue";
-  import TheNav from "../components/TheNav.vue";
+
+  import { SettingsManager } from "@/logic/settings/manager";
+  import { useConfigStore } from "@/pinia/configStore";
+
   import SettingsForm from "../components/settings/form/SettingsForm.vue";
   import QuickActions from "../components/settings/QuickActions.vue";
+  import TheNav from "../components/TheNav.vue";
 
   const configStore = useConfigStore();
   const { units } = storeToRefs(configStore);

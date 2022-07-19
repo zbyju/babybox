@@ -5,10 +5,11 @@
 </template>
 
 <script lang="ts" setup>
-  import { useUnitsStore } from "@/pinia/unitsStore";
-  import { getFullDate } from "@/utils/time";
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
+
+  import { useUnitsStore } from "@/pinia/unitsStore";
+  import { getFullDate } from "@/utils/time";
 
   const unitsStore = useUnitsStore();
   const { time } = storeToRefs(unitsStore);

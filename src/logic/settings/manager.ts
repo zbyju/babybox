@@ -1,7 +1,9 @@
-import type { SettingsTableData } from "@/types/settings/table.types";
 import _ from "lodash";
-import { ref } from "vue";
 import type { Ref } from "vue";
+import { ref } from "vue";
+
+import type { SettingsTableData } from "@/types/settings/table.types";
+
 import {
   getSettingsHeaders,
   getSettingsTableRows,

@@ -33,6 +33,7 @@
 <script lang="ts" setup>
   import type { SettingsManager } from "@/logic/settings/manager";
   import { typeToMeasureUnit } from "@/logic/settings/table";
+
   import BaseInput from "../../panel/HTMLElements/BaseInput.vue";
 
   const props = defineProps<{

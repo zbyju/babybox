@@ -1,11 +1,11 @@
 import {
-  TableBlockState,
-  TableRowState,
-  TableValuesState,
   type TableBlockTemplate,
   type TableData,
   type TableRowTemplate,
   type TableValues,
+  TableBlockState,
+  TableRowState,
+  TableValuesState,
 } from "@/types/panel/tables.types";
 
 export function combineTableData(

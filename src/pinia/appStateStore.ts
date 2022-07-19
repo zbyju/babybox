@@ -1,6 +1,7 @@
+import { defineStore } from "pinia";
+
 import type { Maybe } from "@/types/generic.types";
 import type { AppState } from "@/types/panel/main.types";
-import { defineStore } from "pinia";
 
 export interface AppStateMessage {
   text: string;

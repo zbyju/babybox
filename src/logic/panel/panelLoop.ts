@@ -1,23 +1,25 @@
+import _ from "lodash";
+import { storeToRefs } from "pinia";
+import type { Ref } from "vue";
+import { ref } from "vue";
+
 import {
   getData,
   getEngineData,
   getThermalData,
   updateWatchdog,
 } from "@/api/units";
-import { useConfigStore } from "@/pinia/configStore";
-import { ref } from "vue";
-import type { Ref } from "vue";
-import type { AppState } from "@/types/panel/main.types";
-import _ from "lodash";
-import { storeToRefs } from "pinia";
-import { getNewState } from "./state";
 import { useAppStateStore } from "@/pinia/appStateStore";
-import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
-import type { Connection } from "@/types/panel/connection.types";
+import { useConfigStore } from "@/pinia/configStore";
 import { useConnectionStore } from "@/pinia/connectionStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import type { Maybe } from "@/types/generic.types";
 import type { UnitsConfig } from "@/types/panel/config.types";
+import type { Connection } from "@/types/panel/connection.types";
+import type { AppState } from "@/types/panel/main.types";
+import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
+
+import { getNewState } from "./state";
 
 export class AppManager {
   private panelLoopInterval: Maybe<NodeJS.Timer> = undefined;

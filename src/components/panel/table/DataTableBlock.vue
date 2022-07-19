@@ -22,8 +22,8 @@
 
 <script lang="ts" setup>
   import {
-    TableBlockState,
     type TableBlockData,
+    TableBlockState,
   } from "@/types/panel/tables.types";
 
   const props = defineProps<{

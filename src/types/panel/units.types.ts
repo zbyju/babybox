@@ -1,4 +1,5 @@
 import type { Moment } from "moment";
+
 import type { Maybe } from "../generic.types";
 
 export type RawUnitVariable = {

@@ -1,10 +1,11 @@
+import { storeToRefs } from "pinia";
+
 import { getDefaultAppState } from "@/defaults/appState.defaults";
 import { useConfigStore } from "@/pinia/configStore";
-import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
+import type { Maybe } from "@/types/generic.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { AppState } from "@/types/panel/main.types";
-import { storeToRefs } from "pinia";
-import type { Maybe } from "@/types/generic.types";
+import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 
 export const getNewState = (
   engineUnit: Maybe<EngineUnit>,

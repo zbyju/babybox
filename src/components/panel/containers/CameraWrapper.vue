@@ -22,11 +22,12 @@
 </template>
 
 <script lang="ts" setup>
+  import { storeToRefs } from "pinia";
+  import { computed, ref } from "vue";
+
   import CameraView from "@/components/panel/elements/CameraView.vue";
   import HorizontalPositionBar from "@/components/panel/elements/HorizontalPositionBar.vue";
   import { useUnitsStore } from "@/pinia/unitsStore";
-  import { storeToRefs } from "pinia";
-  import { computed, ref } from "vue";
 
   const props = defineProps<{
     maxW?: string;

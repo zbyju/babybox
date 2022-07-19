@@ -27,9 +27,11 @@
 </template>
 
 <script lang="ts" setup>
-  import { useConfigStore } from "@/pinia/configStore";
   import { storeToRefs } from "pinia";
   import { computed, ref } from "vue";
+
+  import { useConfigStore } from "@/pinia/configStore";
+
   import BaseInput from "./panel/HTMLElements/BaseInput.vue";
 
   const configStore = useConfigStore();

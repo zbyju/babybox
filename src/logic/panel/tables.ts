@@ -1,19 +1,21 @@
+import { storeToRefs } from "pinia";
+
 import { useConfigStore } from "@/pinia/configStore";
 import type { Maybe } from "@/types/generic.types";
 import type { Connection } from "@/types/panel/connection.types";
 import {
-  TableBlockState,
-  TableRowState,
-  TableValuesState,
   type TableBlockData,
   type TableConnectionValues,
   type TableData,
   type TableDoorsValues,
   type TableTemperaturesValues,
   type TableVoltagesValues,
+  TableBlockState,
+  TableRowState,
+  TableValuesState,
 } from "@/types/panel/tables.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
-import { storeToRefs } from "pinia";
+
 import {
   booleanToTableBlockState,
   maybeValueToTableRowValue,

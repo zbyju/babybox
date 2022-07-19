@@ -1,7 +1,8 @@
+import type { Ref } from "vue";
+import { ref } from "vue";
+
 import type { CameraConfig } from "@/types/panel/config.types";
 import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
-import { ref } from "vue";
-import type { Ref } from "vue";
 
 /**
  * This composable is for getting the url to the camera.

@@ -1,9 +1,9 @@
 import type { VoltageConfig } from "@/types/panel/config.types";
 import type {
   EngineUnit,
-  ThermalUnit,
   RawEngineUnit,
   RawThermalUnit,
+  ThermalUnit,
 } from "@/types/panel/units.types";
 import {
   partitionedTimeToMoment,

@@ -5,18 +5,20 @@
 </template>
 
 <script lang="ts" setup>
+  import { storeToRefs } from "pinia";
+  import { type ComputedRef, computed } from "vue";
+
+  import { getTableConnectionValues } from "@/logic/panel/tables";
   import { useConfigStore } from "@/pinia/configStore";
   import { useConnectionStore } from "@/pinia/connectionStore";
   import { useUnitsStore } from "@/pinia/unitsStore";
   import type { Maybe } from "@/types/generic.types";
   import type {
     TableBlockTemplate,
-    TableRowTemplate,
     TableConnectionValues,
+    TableRowTemplate,
   } from "@/types/panel/tables.types";
-  import { getTableConnectionValues } from "@/logic/panel/tables";
-  import { storeToRefs } from "pinia";
-  import { computed, type ComputedRef } from "vue";
+
   import DataTable from "../table/DataTable.vue";
 
   const unitsStore = useUnitsStore();

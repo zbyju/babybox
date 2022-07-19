@@ -4,6 +4,7 @@ module.exports = {
   env: {
     node: true,
   },
+  plugins: ["simple-import-sort"],
   extends: [
     "plugin:vue/vue3-recommended",
     "eslint:recommended",
@@ -24,5 +25,6 @@ module.exports = {
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/no-unused-vars": ["off", { argsIgnorePattern: "^_" }],
     "prettier/prettier": ["error", {}, { usePrettierrc: true }],
+    "simple-import-sort/imports": "error",
   },
 };

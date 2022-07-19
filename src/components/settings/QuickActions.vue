@@ -12,9 +12,11 @@
 </template>
 
 <script lang="ts" setup>
+  import { storeToRefs } from "pinia";
+
   import { openDoors, resetBabybox } from "@/api/units";
   import { useConfigStore } from "@/pinia/configStore";
-  import { storeToRefs } from "pinia";
+
   import CameraWrapper from "../panel/containers/CameraWrapper.vue";
 
   const configStore = useConfigStore();

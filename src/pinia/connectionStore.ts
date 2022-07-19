@@ -1,6 +1,7 @@
-import type { Connection } from "@/types/panel/connection.types";
-import { ConnectionResult, ConnectionTracker } from "@/logic/panel/connections";
 import { defineStore } from "pinia";
+
+import { ConnectionResult, ConnectionTracker } from "@/logic/panel/connections";
+import type { Connection } from "@/types/panel/connection.types";
 
 export const useConnectionStore = defineStore("connection", {
   state: (): Connection => ({

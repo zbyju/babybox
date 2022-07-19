@@ -29,7 +29,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { TableRowState, type TableRowData } from "@/types/panel/tables.types";
+  import { type TableRowData, TableRowState } from "@/types/panel/tables.types";
 
   const props = defineProps<{
     row: TableRowData;

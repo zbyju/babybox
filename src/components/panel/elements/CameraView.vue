@@ -20,10 +20,11 @@
 </template>
 
 <script lang="ts" setup>
+  import { storeToRefs } from "pinia";
+  import { type Ref, onMounted, ref } from "vue";
+
   import useCamera from "@/composables/useCamera";
   import { useConfigStore } from "@/pinia/configStore";
-  import { storeToRefs } from "pinia";
-  import { onMounted, ref, type Ref } from "vue";
 
   const props = defineProps<{
     displayTopBorder: boolean;

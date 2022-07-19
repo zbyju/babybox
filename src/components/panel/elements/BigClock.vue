@@ -7,6 +7,9 @@
 </template>
 
 <script lang="ts" setup>
+  import { storeToRefs } from "pinia";
+  import { computed } from "vue";
+
   import useActiveTime from "@/composables/useActiveTime";
   import useBigClockColon from "@/composables/useBigClockColon";
   import { useAppStateStore } from "@/pinia/appStateStore";
@@ -15,8 +18,6 @@
     getHoursWithLeadingZeroes,
     getMinutesWithLeadingZeroes,
   } from "@/utils/time";
-  import { storeToRefs } from "pinia";
-  import { computed } from "vue";
 
   const unitsStore = useUnitsStore();
   const appStateStore = useAppStateStore();

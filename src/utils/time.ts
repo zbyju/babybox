@@ -1,5 +1,6 @@
-import moment from "moment";
 import type { Moment } from "moment";
+import moment from "moment";
+
 import type { Maybe } from "@/types/generic.types";
 
 export const getHoursWithLeadingZeroes = (time: Maybe<Moment>): string => {

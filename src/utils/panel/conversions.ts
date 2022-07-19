@@ -1,8 +1,9 @@
+import type { Moment } from "moment";
+import moment from "moment";
+
 import type { Maybe } from "@/types/generic.types";
 import type { VoltageConfig } from "@/types/panel/config.types";
 import { TableBlockState, TableRowState } from "@/types/panel/tables.types";
-import type { Moment } from "moment";
-import moment from "moment";
 
 export const stringToNumber = (str: string): Maybe<number> => {
   const res = parseInt(str);

@@ -1,7 +1,8 @@
-import type { Message } from "@/types/panel/main.types";
-import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
+import { computed, ref, watch } from "vue";
+
 import type { Maybe } from "@/types/generic.types";
+import type { Message } from "@/types/panel/main.types";
 
 /**
  * This composable is for the animation of the message and when it should get displayed.

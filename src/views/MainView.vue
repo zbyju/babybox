@@ -10,16 +10,17 @@
 </template>
 
 <script lang="ts" setup>
-  import TheNav from "@/components/TheNav.vue";
+  import { storeToRefs } from "pinia";
+  import { computed, onBeforeMount, onBeforeUnmount, watch } from "vue";
+
   import TheContent from "@/components/panel/containers/TheContent.vue";
   import TheHeader from "@/components/panel/containers/TheHeader.vue";
   import HighlightMessage from "@/components/panel/elements/HighlightMessage.vue";
+  import TheNav from "@/components/TheNav.vue";
   import { useSounds } from "@/composables/useSounds";
+  import { AppManager } from "@/logic/panel/panelLoop";
   import { useAppStateStore } from "@/pinia/appStateStore";
   import type { AppState } from "@/types/panel/main.types";
-  import { AppManager } from "@/logic/panel/panelLoop";
-  import { storeToRefs } from "pinia";
-  import { computed, onBeforeMount, onBeforeUnmount, watch } from "vue";
 
   const appStateStore = useAppStateStore();
   const { message, active } = storeToRefs(appStateStore);

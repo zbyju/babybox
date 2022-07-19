@@ -7,9 +7,10 @@
 </template>
 
 <script lang="ts" setup>
+  import { storeToRefs } from "pinia";
+
   import useDelayedMessage from "@/composables/useDelayedMessage";
   import { useAppStateStore } from "@/pinia/appStateStore";
-  import { storeToRefs } from "pinia";
 
   const appStateStore = useAppStateStore();
   const { message: messageFromStore } = storeToRefs(appStateStore);

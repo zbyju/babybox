@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
+
 import DataView from "../views/DataView.vue";
 import MainView from "../views/MainView.vue";
 import SettingsView from "../views/SettingsView.vue";

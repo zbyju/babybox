@@ -1,3 +1,5 @@
+import { defineStore } from "pinia";
+
 import type { Maybe } from "@/types/generic.types";
 import type {
   ApiConfig,
@@ -8,7 +10,6 @@ import type {
   UnitsConfig,
   VoltageConfig,
 } from "@/types/panel/config.types";
-import { defineStore } from "pinia";
 
 export const useConfigStore = defineStore("config", {
   state: () => ({

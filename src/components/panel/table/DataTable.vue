@@ -23,8 +23,8 @@
 </template>
 
 <script lang="ts" setup>
-  import DataTableBlock from "./DataTableBlock.vue";
-  import DataTableRow from "./DataTableRow.vue";
+  import { computed } from "vue";
+
   import type {
     TableBlockTemplate,
     TableData,
@@ -32,7 +32,9 @@
     TableValues,
   } from "@/types/panel/tables.types";
   import { combineTableData } from "@/utils/panel/combineTableData";
-  import { computed } from "vue";
+
+  import DataTableBlock from "./DataTableBlock.vue";
+  import DataTableRow from "./DataTableRow.vue";
 
   const props = defineProps<{
     title: string;

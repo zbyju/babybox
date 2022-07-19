@@ -12,8 +12,9 @@
 </template>
 
 <script lang="ts" setup>
-  import type { SettingsManager } from "@/logic/settings/manager";
   import { ref } from "vue";
+
+  import type { SettingsManager } from "@/logic/settings/manager";
 
   const props = defineProps<{
     manager: SettingsManager;

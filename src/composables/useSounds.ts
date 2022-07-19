@@ -1,5 +1,6 @@
-import type { AppState } from "@/types/panel/main.types";
 import { Howl } from "howler";
+
+import type { AppState } from "@/types/panel/main.types";
 
 /**
  * This composable creates a new SoundPlayer. This class manages what sounds are being played.
