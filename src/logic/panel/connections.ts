@@ -23,6 +23,7 @@ export class ConnectionTracker {
   }
 
   calculateQuality(n: number, x: number) {
+    if (n === 0) return 100;
     return (x / n) * 100;
   }
 
