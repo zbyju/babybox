@@ -22,8 +22,7 @@
   const unitsStore = useUnitsStore();
   const connectionStore = useConnectionStore();
   const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
-  // TODO: Check to refactor
-  const { engineUnit: eu, thermalUnit: tu } = storeToRefs(connectionStore);
+  const { connection } = storeToRefs(connectionStore);
   const configStore = useConfigStore();
   const { units } = storeToRefs(configStore);
 
@@ -31,10 +30,7 @@
     getTableConnectionValues(
       engineUnit.value,
       thermalUnit.value,
-      {
-        engineUnit: eu.value,
-        thermalUnit: tu.value,
-      },
+      connection.value,
       units,
     ),
   );

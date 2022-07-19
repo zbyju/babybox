@@ -8,7 +8,7 @@ export const useConnectionStore = defineStore("connection", {
     thermalUnit: new ConnectionTracker() as ConnectionTracker,
   }),
   getters: {
-    connection: (state) => ({
+    connection: (state): Connection => ({
       engineUnit: state.engineUnit,
       thermalUnit: state.thermalUnit,
     }),
