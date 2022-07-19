@@ -1,4 +1,4 @@
-import type { CameraConfig } from "@/types/panel/main.types";
+import type { CameraConfig } from "@/types/panel/config.types";
 import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
 import { ref } from "vue";
 import type { Ref } from "vue";

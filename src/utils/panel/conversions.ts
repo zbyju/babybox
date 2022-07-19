@@ -1,5 +1,5 @@
 import type { Maybe } from "@/types/generic.types";
-import type { VoltageConfig } from "@/types/panel/main.types";
+import type { VoltageConfig } from "@/types/panel/config.types";
 import { TableBlockState, TableRowState } from "@/types/panel/tables.types";
 import type { Moment } from "moment";
 import moment from "moment";

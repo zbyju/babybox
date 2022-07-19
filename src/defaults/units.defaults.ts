@@ -1,4 +1,4 @@
-import type { VoltageConfig } from "@/types/panel/main.types";
+import type { VoltageConfig } from "@/types/panel/config.types";
 import type {
   EngineUnit,
   ThermalUnit,

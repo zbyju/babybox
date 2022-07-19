@@ -1,89 +1,32 @@
-import type { VoltageConfig } from "@/types/panel/main.types";
+import type { Maybe } from "@/types/generic.types";
+import type {
+  ApiConfig,
+  AppConfig,
+  BabyboxConfig,
+  CameraConfig,
+  Config,
+  UnitsConfig,
+  VoltageConfig,
+} from "@/types/panel/config.types";
 import { defineStore } from "pinia";
-
-export interface Config {
-  api: ConfigApi;
-  babybox: ConfigBabybox;
-  fontSize: ConfigFontSize;
-  camera: ConfigCamera;
-  units: ConfigUnits;
-  app: ConfigApp;
-}
-
-export interface ConfigApp {
-  password: string;
-  colonDelay: number;
-}
-
-export interface ConfigApi {
-  baseApiUrl: string;
-}
-
-export interface ConfigBabybox {
-  name: string;
-  prependBabyboxBeforeName: boolean;
-}
-
-export interface ConfigCamera {
-  ip: string;
-  username: string;
-  password: string;
-  updateDelay: number;
-  cameraType: string;
-}
-
-export interface ConfigVoltage {
-  divider: number;
-  multiplier: number;
-  addition: number;
-}
-
-export interface ConfigUnits {
-  engine: {
-    ip: string;
-  };
-  thermal: {
-    ip: string;
-  };
-  postfix: string;
-  postfixWatchdog: string;
-  requestTimeout: number;
-  requestDelay: number;
-  warningThreshold: number;
-  errorThreshold: number;
-  voltage: VoltageConfig;
-}
-
-export interface ConfigFontSize {
-  babyboxName: number;
-  bigClockBigger: number;
-  bigClockSmaller: number;
-  smallClock: number;
-  tableHeading: number;
-  tableLabel: number;
-  tableValue: number;
-  message: number;
-}
 
 export const useConfigStore = defineStore("config", {
   state: () => ({
     initialised: false as boolean,
-    api: null as ConfigApi,
-    app: null as ConfigApp,
-    babybox: null as ConfigBabybox,
-    camera: null as ConfigCamera,
-    units: null as ConfigUnits,
-    fontSize: null as ConfigFontSize,
+    api: undefined as Maybe<ApiConfig>,
+    app: undefined as Maybe<AppConfig>,
+    babybox: undefined as Maybe<BabyboxConfig>,
+    camera: undefined as Maybe<CameraConfig>,
+    units: undefined as Maybe<UnitsConfig>,
   }),
   actions: {
     setConfig(config: Config) {
+      this.initialised = true;
       this.app = config.app;
       this.api = config.api;
       this.babybox = config.babybox;
       this.camera = config.camera;
       this.units = config.units;
-      this.fontSize = config.fontSize;
-      this.initialised = true;
     },
   },
 });

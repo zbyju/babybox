@@ -12,6 +12,7 @@ import {
 } from "@/defaults/units.defaults";
 import type { Maybe } from "@/types/generic.types";
 import { useConfigStore } from "./configStore";
+import type { VoltageConfig } from "@/types/panel/config.types";
 
 export const useUnitsStore = defineStore("engineUnit", {
   state: () => ({
@@ -27,15 +28,26 @@ export const useUnitsStore = defineStore("engineUnit", {
     setThermalUnit(thermalUnit: ThermalUnit) {
       this.thermalUnit = thermalUnit;
     },
-    setRawEngineUnit(rawEngineUnit: RawEngineUnit) {
-      this.engineUnit = rawEngineUnitToEngineUnit(rawEngineUnit);
+    setRawEngineUnit(rawEngineUnit: Maybe<RawEngineUnit>) {
+      if (rawEngineUnit === undefined) {
+        this.engineUnit = undefined;
+      } else {
+        this.engineUnit = rawEngineUnitToEngineUnit(rawEngineUnit);
+      }
     },
-    setRawThermalUnit(rawThermalUnit: RawThermalUnit) {
-      const config = useConfigStore();
-      this.thermalUnit = rawThermalUnitToThermalUnit(
-        rawThermalUnit,
-        config.units.voltage,
-      );
+    setRawThermalUnit(rawThermalUnit: Maybe<RawThermalUnit>) {
+      if (rawThermalUnit === undefined) {
+        this.engineUnit = undefined;
+      } else {
+        const config = useConfigStore();
+        const voltageConfig: VoltageConfig = config?.units?.voltage
+          ? config.units.voltage
+          : { divider: 3400, multiplier: 100, addition: 0 };
+        this.thermalUnit = rawThermalUnitToThermalUnit(
+          rawThermalUnit,
+          voltageConfig,
+        );
+      }
     },
     setTime(time: Maybe<Moment>) {
       this.time = time;

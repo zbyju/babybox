@@ -4,10 +4,10 @@ import {
   getThermalData,
   updateWatchdog,
 } from "@/api/units";
-import { useConfigStore, type Config } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/configStore";
 import { ref } from "vue";
 import type { Ref } from "vue";
-import type { AppState, UnitsConfig } from "@/types/panel/main.types";
+import type { AppState } from "@/types/panel/main.types";
 import _ from "lodash";
 import { storeToRefs } from "pinia";
 import { getNewState } from "./state";
@@ -17,10 +17,11 @@ import type { Connection } from "@/types/panel/connection.types";
 import { useConnectionStore } from "@/pinia/connectionStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import type { Maybe } from "@/types/generic.types";
+import type { UnitsConfig } from "@/types/panel/config.types";
 
 export class AppManager {
   private panelLoopInterval: Maybe<NodeJS.Timer> = undefined;
-  private unitsConfig: Ref<UnitsConfig>;
+  private unitsConfig: Ref<Maybe<UnitsConfig>>;
   private appState: Ref<AppState>;
   private engineUnit: Ref<Maybe<EngineUnit>>;
   private thermalUnit: Ref<Maybe<ThermalUnit>>;
