@@ -12,7 +12,7 @@
 
   import useActiveTime from "@/composables/useActiveTime";
   import useBigClockColon from "@/composables/useBigClockColon";
-  import { useAppStateStore } from "@/pinia/appStateStore";
+  import { usePanelStateStore } from "@/pinia/panelStateStore";
   import { useUnitsStore } from "@/pinia/unitsStore";
   import {
     getHoursWithLeadingZeroes,
@@ -20,9 +20,9 @@
   } from "@/utils/time";
 
   const unitsStore = useUnitsStore();
-  const appStateStore = useAppStateStore();
+  const panelStateStore = usePanelStateStore();
   const { time: storeTime } = storeToRefs(unitsStore);
-  const { message, active } = storeToRefs(appStateStore);
+  const { message, active } = storeToRefs(panelStateStore);
   const time = useActiveTime(storeTime, active);
   const { showColon } = useBigClockColon(time, active);
   const hours = computed((): string => getHoursWithLeadingZeroes(time.value));

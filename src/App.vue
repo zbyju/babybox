@@ -1,8 +1,7 @@
 <template>
-  <div v-if="initialised">
+  <AppState>
     <router-view></router-view>
-  </div>
-  <div v-else>Chybí config soubor</div>
+  </AppState>
 </template>
 
 <script lang="ts">
@@ -11,10 +10,12 @@
 
   import { AppManager } from "@/logic/panel/panelLoop";
 
+  import AppState from "./components/AppState.vue";
   import { useConfigStore } from "./pinia/configStore";
 
   export default defineComponent({
     name: "App",
+    components: { AppState },
     setup() {
       const configStore = useConfigStore();
       const appManager = new AppManager();

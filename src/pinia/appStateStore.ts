@@ -1,25 +1,17 @@
 import { defineStore } from "pinia";
 
+import { type AppStateData, AppState } from "@/types/app/appState.types";
 import type { Maybe } from "@/types/generic.types";
-import type { AppState } from "@/types/panel/main.types";
-
-export interface AppStateMessage {
-  text: string;
-  color: string;
-  sound?: string;
-}
-
-export type AppStateActive = boolean;
 
 export const useAppStateStore = defineStore("appState", {
   state: () => ({
-    message: undefined as Maybe<AppStateMessage>,
-    active: false as AppStateActive,
+    state: AppState.Loading as AppState,
+    message: undefined as Maybe<string>,
   }),
   actions: {
-    setState(state: AppState) {
-      this.message = state.message;
-      this.active = state.active;
+    setState(state: AppStateData) {
+      this.state = state.state;
+      this.message = state.message || undefined;
     },
   },
 });

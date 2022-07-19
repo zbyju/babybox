@@ -1,6 +1,6 @@
 <template>
   <div id="Main">
-    <div id="MainWrapper" :class="appState.active ? 'active' : 'non-active'">
+    <div id="MainWrapper" :class="panelState.active ? 'active' : 'non-active'">
       <TheHeader />
       <HighlightMessage />
       <TheContent />
@@ -19,20 +19,20 @@
   import TheNav from "@/components/TheNav.vue";
   import { useSounds } from "@/composables/useSounds";
   import { AppManager } from "@/logic/panel/panelLoop";
-  import { useAppStateStore } from "@/pinia/appStateStore";
-  import type { AppState } from "@/types/panel/main.types";
+  import { usePanelStateStore } from "@/pinia/panelStateStore";
+  import type { PanelState } from "@/types/panel/main.types";
 
-  const appStateStore = useAppStateStore();
-  const { message, active } = storeToRefs(appStateStore);
-  const appState = computed(
-    (): AppState => ({
+  const panelStateStore = usePanelStateStore();
+  const { message, active } = storeToRefs(panelStateStore);
+  const panelState = computed(
+    (): PanelState => ({
       message: message.value,
       active: active.value,
     }),
   );
   // Sounds
   const soundPlayer = useSounds();
-  watch(appState, (newValue, prevValue) =>
+  watch(panelState, (newValue, prevValue) =>
     soundPlayer.updateSound(newValue, prevValue),
   );
   // App loop

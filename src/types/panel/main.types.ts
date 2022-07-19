@@ -4,7 +4,7 @@ export interface Message {
   sound?: string;
 }
 
-export interface AppState {
+export interface PanelState {
   message?: Message;
   active: boolean;
 }

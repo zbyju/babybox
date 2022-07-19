@@ -10,10 +10,10 @@
   import { storeToRefs } from "pinia";
 
   import useDelayedMessage from "@/composables/useDelayedMessage";
-  import { useAppStateStore } from "@/pinia/appStateStore";
+  import { usePanelStateStore } from "@/pinia/panelStateStore";
 
-  const appStateStore = useAppStateStore();
-  const { message: messageFromStore } = storeToRefs(appStateStore);
+  const panelStateStore = usePanelStateStore();
+  const { message: messageFromStore } = storeToRefs(panelStateStore);
   const { messageDelayed: message, heightStyle } =
     useDelayedMessage(messageFromStore);
 </script>

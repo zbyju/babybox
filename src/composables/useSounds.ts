@@ -1,6 +1,6 @@
 import { Howl } from "howler";
 
-import type { AppState } from "@/types/panel/main.types";
+import type { PanelState } from "@/types/panel/main.types";
 
 /**
  * This composable creates a new SoundPlayer. This class manages what sounds are being played.
@@ -26,7 +26,7 @@ class BabyboxSoundPlayer {
     });
   }
 
-  updateSound(newValue: AppState, prevValue: AppState) {
+  updateSound(newValue: PanelState, prevValue: PanelState) {
     if (
       newValue.message?.sound !== prevValue.message?.sound &&
       newValue.message?.sound != null &&

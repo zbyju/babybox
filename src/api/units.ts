@@ -4,6 +4,24 @@ import { storeToRefs } from "pinia";
 import { useConfigStore } from "@/pinia/configStore";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 
+export const getStatus = async (): Promise<boolean> => {
+  const configStore = useConfigStore();
+  const { api, units } = storeToRefs(configStore);
+  const url = api.value.baseApiUrl + "/status";
+  const timeout = units.value.requestTimeout || 5000;
+
+  try {
+    const response = await axios.head(url, { timeout });
+    if (response.status >= 200 && response.status <= 299) {
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};
+
 export const getData = async (
   url: string,
   timeout = 5000,
