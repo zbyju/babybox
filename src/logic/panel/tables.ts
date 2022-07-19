@@ -36,11 +36,6 @@ export const getTableConnectionValues = (
   connection: Connection,
   units: any,
 ): TableConnectionValues => {
-  if (engineData === undefined) {
-    return {
-      state: TableValuesState.Error,
-    };
-  }
   return {
     state: TableValuesState.Ok,
     blockValues: {},
