@@ -14,7 +14,7 @@ export class ConnectionTracker {
   failStreak: number;
 
   constructor() {
-    this.RECENT_SIZE = 1000;
+    this.RECENT_SIZE = 999;
     this.recentQueue = [];
     this.requests = 0;
     this.successes = 0;
