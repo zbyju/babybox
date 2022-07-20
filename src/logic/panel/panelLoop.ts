@@ -26,7 +26,7 @@ import { getNewState } from "./state";
 
 export class AppManager {
   private panelLoopInterval: Maybe<NodeJS.Timer> = undefined;
-  private unitsConfig: Ref<Maybe<UnitsConfig>>;
+  private unitsConfig: Ref<UnitsConfig>;
   private panelState: Ref<PanelState>;
   private engineUnit: Ref<Maybe<EngineUnit>>;
   private thermalUnit: Ref<Maybe<ThermalUnit>>;
@@ -66,7 +66,11 @@ export class AppManager {
     try {
       const data = await getEngineData();
       this.unitsStore.setRawEngineUnit(data);
-      this.connectionStore.incrementSuccessEngine();
+      if (data !== undefined) {
+        this.connectionStore.incrementSuccessEngine();
+      } else {
+        this.connectionStore.incrementFailEngine();
+      }
     } catch (err) {
       this.connectionStore.incrementFailEngine();
     }
@@ -75,7 +79,11 @@ export class AppManager {
     try {
       const data = await getThermalData();
       this.unitsStore.setRawThermalUnit(data);
-      this.connectionStore.incrementSuccessThermal();
+      if (data !== undefined) {
+        this.connectionStore.incrementSuccessThermal();
+      } else {
+        this.connectionStore.incrementFailThermal();
+      }
     } catch (err) {
       this.connectionStore.incrementFailThermal();
     }
@@ -95,7 +103,7 @@ export class AppManager {
     }
     this.updateClock();
   }
-  private async updateWatchdogEngine(timeout: number) {
+  private async updateWatchdogEngine(timeout = 5000) {
     try {
       await updateWatchdog();
     } catch (err) {
@@ -135,14 +143,13 @@ export class AppManager {
 
   async startPanelLoop() {
     const delay = this.unitsConfig.value.requestDelay || 2000;
-    const timeout = this.unitsConfig.value.requestTimeout || 5000;
     const panelState = this.panelState.value;
     this.panelLoopInterval = setInterval(
       () => {
         this.updateEngineUnit();
         this.updateThermalUnit();
         this.updateState();
-        this.updateWatchdogEngine(timeout);
+        this.updateWatchdogEngine();
       },
       panelState.message ? delay / 2 : delay,
     );

@@ -6,9 +6,9 @@ import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 
 export const getStatus = async (): Promise<boolean> => {
   const configStore = useConfigStore();
-  const { api, units } = storeToRefs(configStore);
+  const { api } = storeToRefs(configStore);
   const url = api.value.baseApiUrl + "/status";
-  const timeout = units.value.requestTimeout || 5000;
+  const timeout = api.value.requestTimeout || 5000;
 
   try {
     const response = await axios.head(url, { timeout });
@@ -17,7 +17,6 @@ export const getStatus = async (): Promise<boolean> => {
     }
     return false;
   } catch (err) {
-    console.log(err);
     return false;
   }
 };
@@ -34,34 +33,33 @@ export const getData = async (
       return { index: i, value: x };
     });
   } catch (err) {
-    // console.log(err);
-    return undefined;
+    return Promise.reject(undefined);
   }
 };
 
 export const getEngineData = (): Promise<RawEngineUnit | undefined> => {
   const configStore = useConfigStore();
-  const { api, units } = storeToRefs(configStore);
+  const { api } = storeToRefs(configStore);
   const url = api.value.baseApiUrl + "/engine/data";
-  const timeout = units.value.requestTimeout || 5000;
+  const timeout = api.value.requestTimeout || 5000;
 
   return getData(url, timeout);
 };
 
 export const getThermalData = (): Promise<RawThermalUnit | undefined> => {
   const configStore = useConfigStore();
-  const { api, units } = storeToRefs(configStore);
+  const { api } = storeToRefs(configStore);
   const url = api.value.baseApiUrl + "/thermal/data";
-  const timeout = units.value.requestTimeout || 5000;
+  const timeout = api.value.requestTimeout || 5000;
 
   return getData(url, timeout);
 };
 
 export const updateWatchdog = async (): Promise<boolean> => {
   const configStore = useConfigStore();
-  const { api, units } = storeToRefs(configStore);
+  const { api } = storeToRefs(configStore);
   const url = api.value.baseApiUrl + "/engine/watchdog";
-  const timeout = units.value.requestTimeout || 5000;
+  const timeout = api.value.requestTimeout || 5000;
 
   try {
     const response = await axios.put(url, { timeout });
@@ -75,18 +73,18 @@ export const updateWatchdog = async (): Promise<boolean> => {
 
 export const openDoors = (): Promise<any> => {
   const configStore = useConfigStore();
-  const { api, units } = storeToRefs(configStore);
+  const { api } = storeToRefs(configStore);
   const url = api.value.baseApiUrl + "/units/actions/openDoors";
-  const timeout = units.value.requestTimeout || 5000;
+  const timeout = api.value.requestTimeout || 5000;
 
   return axios.get(url, { timeout });
 };
 
 export const resetBabybox = (): Promise<any> => {
   const configStore = useConfigStore();
-  const { api, units } = storeToRefs(configStore);
+  const { api } = storeToRefs(configStore);
   const url = api.value.baseApiUrl + "/units/actions/openServiceDoors";
-  const timeout = units.value.requestTimeout || 5000;
+  const timeout = api.value.requestTimeout || 5000;
 
   return axios.get(url, { timeout });
 };
