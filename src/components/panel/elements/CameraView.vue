@@ -1,6 +1,6 @@
 <template>
   <img
-    v-show="!error"
+    v-show="state === CameraState.Ok"
     ref="imageRef"
     :src="url"
     :style="{
@@ -8,7 +8,7 @@
     }"
   />
   <div
-    v-show="error"
+    v-show="state === CameraState.Error"
     class="camera-error"
     :style="{
       borderTopWidth: props.displayTopBorder ? undefined : '0px',
@@ -16,6 +16,15 @@
   >
     <h4>Error</h4>
     <p>Chyba při načítání kamery.</p>
+  </div>
+  <div
+    v-show="state === CameraState.Loading"
+    class="camera-loading"
+    :style="{
+      borderTopWidth: props.displayTopBorder ? undefined : '0px',
+    }"
+  >
+    <h4>Načítám</h4>
   </div>
 </template>
 
@@ -34,7 +43,13 @@
     (e: "updatedImage", width: number, height: number): void;
   }>();
 
-  const error = ref(false);
+  enum CameraState {
+    Ok = 0,
+    Loading = 1,
+    Error = 2,
+  }
+
+  const state = ref(CameraState.Loading);
 
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);
@@ -43,8 +58,12 @@
   const imageRef = ref<HTMLImageElement | null>(null);
   onMounted(() => {
     if (imageRef.value) {
-      imageRef.value.onerror = () => (error.value = true);
-      imageRef.value.onload = () => (error.value = false);
+      imageRef.value.onerror = () => {
+        state.value = CameraState.Error;
+      };
+      imageRef.value.onload = () => {
+        state.value = CameraState.Ok;
+      };
     }
   });
 </script>
@@ -67,7 +86,7 @@
     max-height 100%
     width 100%
     overflow hidden
-    border 3px solid #862222
+    border 3px solid color-border-error
     border-radius 0 0 5px 5px
     align-self center
     text-align center
@@ -76,4 +95,15 @@
 
     h4
       color color-text-error
+
+  .camera-loading
+    max-height 100%
+    width 100%
+    overflow hidden
+    border 3px solid color-border-primary
+    border-radius 0 0 5px 5px
+    align-self center
+    text-align center
+    min-width 160px
+    min-height 90px
 </style>
