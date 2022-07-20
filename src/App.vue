@@ -4,26 +4,15 @@
   </AppState>
 </template>
 
-<script lang="ts">
-  import { storeToRefs } from "pinia";
-  import { defineComponent, onBeforeMount } from "vue";
+<script lang="ts" setup>
+  import { onBeforeMount } from "vue";
 
   import { AppManager } from "@/logic/panel/panelLoop";
 
   import AppState from "./components/AppState.vue";
-  import { useConfigStore } from "./pinia/configStore";
 
-  export default defineComponent({
-    name: "App",
-    components: { AppState },
-    setup() {
-      const configStore = useConfigStore();
-      const appManager = new AppManager();
-      const { initialised } = storeToRefs(configStore);
-      onBeforeMount(async () => await appManager.initializeGlobal());
-      return { initialised };
-    },
-  });
+  const appManager = new AppManager();
+  onBeforeMount(async () => await appManager.initializeGlobal());
 </script>
 
 <style lang="stylus">

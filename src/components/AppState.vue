@@ -1,5 +1,5 @@
 <template>
-  <template v-if="state === AppState.Loading">
+  <template v-if="state === AppState.Loading || !initialised">
     <div class="AppStateLoading">
       <h1 class="loadingAnimation">Načítám</h1>
     </div>
@@ -10,7 +10,7 @@
       <p>{{ message || "" }}</p>
     </div>
   </template>
-  <template v-if="state === AppState.Ok">
+  <template v-else-if="state === AppState.Ok">
     <slot></slot>
   </template>
 </template>
@@ -19,10 +19,14 @@
   import { storeToRefs } from "pinia";
 
   import { useAppStateStore } from "@/pinia/appStateStore";
+  import { useConfigStore } from "@/pinia/configStore";
   import { AppState } from "@/types/app/appState.types";
 
   const appStateStore = useAppStateStore();
   const { state, message } = storeToRefs(appStateStore);
+
+  const configStore = useConfigStore();
+  const { initialised } = storeToRefs(configStore);
 </script>
 
 <style lang="stylus">
