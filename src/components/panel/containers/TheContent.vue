@@ -22,7 +22,7 @@
     overflow hidden
 
     padding padding-y padding-x
-    margin-bottom 10px
+    padding-bottom "calc(%s + 20px)" % (padding-y)
 
     transition 1s all ease-in-out
 
@@ -30,7 +30,7 @@
     justify-content space-between
     align-items flex-start
     height 38vh
-    width calc(100% - 32px)
+    width "calc(100% - (2 * %s))" % (padding-x)
     gap 15px
     // grid-template-columns auto auto auto auto auto;
     // grid-template-rows: auto;
