@@ -33,9 +33,7 @@ export const isInstanceOfApiConfig = (object: any): object is ApiConfig => {
 };
 
 export const isInstanceOfAppConfig = (object: any): object is AppConfig => {
-  return (
-    typeof object === "object" && "password" in object && "colonDelay" in object
-  );
+  return typeof object === "object" && "password" in object;
 };
 
 export const isInstanceOfBabyboxConfig = (

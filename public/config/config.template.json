@@ -3,6 +3,10 @@
     "name": "Praha",
     "prependBabyboxBeforeName": true
   },
+  "api": {
+    "baseApiUrl": "http://localhost:5000/api/v1",
+    "requestTimeout": 5000
+  },
   "units": {
     "engine": {
       "ip": "10.1.1.5"
@@ -10,10 +14,7 @@
     "thermal": {
       "ip": "10.1.1.6"
     },
-    "postfix": "/get_ram[0]?rn=60",
-    "postfixWatchdog": "/sdscep?sys141=115",
     "requestDelay": 2000,
-    "requestTimeout": 5000,
     "warningThreshold": 5,
     "errorThreshold": 25,
     "voltage": {
@@ -30,7 +31,6 @@
     "cameraType": "dahua"
   },
   "app": {
-    "password": "password",
-    "colonDelay": 500
+    "password": "password"
   }
 }

@@ -28,7 +28,6 @@ export const getDefaultApiConfig = (): ApiConfig => {
 export const getDefaultAppConfig = (): AppConfig => {
   return {
     password: "test",
-    colonDelay: 500,
   };
 };
 

@@ -66,7 +66,6 @@ export const updateWatchdog = async (): Promise<boolean> => {
     if (response.status >= 200 && response.status <= 299) return true;
     else return false;
   } catch (err) {
-    // console.log(err);
     return false;
   }
 };

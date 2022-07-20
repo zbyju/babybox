@@ -1,5 +1,7 @@
 <template>
-  <template v-if="state === AppState.Loading || !initialised">
+  <template
+    v-if="state === AppState.Loading || (state === AppState.Ok && !initialised)"
+  >
     <div class="AppStateLoading">
       <h1 class="loadingAnimation">Načítám</h1>
     </div>

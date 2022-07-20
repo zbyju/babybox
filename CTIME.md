@@ -68,8 +68,6 @@ Pro nastavení panelu je potřeba vytvořit config soubor, který je umístěný
   "app": {
     // Heslo pro otevření navigace/menu
     "password": "test",
-    // Rychlost blikání dvojtečky
-    "colonDelay": 500
   }
 }
 ```
