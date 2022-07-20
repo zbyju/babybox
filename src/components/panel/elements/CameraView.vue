@@ -73,7 +73,7 @@
   img
     max-height 100%
     height 100%
-    width 100%
+    width calc(100% - 4px)
     object-fit contain;
     overflow hidden
     border 3px solid color-border-primary
