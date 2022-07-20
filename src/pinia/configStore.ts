@@ -1,6 +1,12 @@
 import { defineStore } from "pinia";
 
-import type { Maybe } from "@/types/generic.types";
+import {
+  getDefaultApiConfig,
+  getDefaultAppConfig,
+  getDefaultBabyboxConfig,
+  getDefaultCameraConfig,
+  getDefaultUnitsConfig,
+} from "@/defaults/config.default";
 import type {
   ApiConfig,
   AppConfig,
@@ -13,11 +19,11 @@ import type {
 export const useConfigStore = defineStore("config", {
   state: () => ({
     initialised: false as boolean,
-    api: undefined as Maybe<ApiConfig>,
-    app: undefined as Maybe<AppConfig>,
-    babybox: undefined as Maybe<BabyboxConfig>,
-    camera: undefined as Maybe<CameraConfig>,
-    units: undefined as Maybe<UnitsConfig>,
+    api: getDefaultApiConfig() as ApiConfig,
+    app: getDefaultAppConfig() as AppConfig,
+    babybox: getDefaultBabyboxConfig() as BabyboxConfig,
+    camera: getDefaultCameraConfig() as CameraConfig,
+    units: getDefaultUnitsConfig() as UnitsConfig,
   }),
   actions: {
     setConfig(config: Config) {
