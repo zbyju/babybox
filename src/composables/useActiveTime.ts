@@ -18,7 +18,7 @@ export default function useActiveTime(
 ) {
   const result = ref(time.value);
   watch(time, (newTime, _) => {
-    if (!active.value) {
+    if (!active.value || result.value === undefined) {
       result.value = newTime;
     }
   });

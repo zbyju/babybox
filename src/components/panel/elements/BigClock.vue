@@ -29,6 +29,7 @@
   const minutes = computed((): string =>
     getMinutesWithLeadingZeroes(time.value),
   );
+
   const bigger = computed((): boolean => {
     return !message.value?.text;
   });
