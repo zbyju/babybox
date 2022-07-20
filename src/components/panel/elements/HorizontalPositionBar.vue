@@ -11,7 +11,7 @@
     maxValue: number;
     minValue: number;
     value: number;
-    direction: string;
+    direction: "column" | "column-reverse";
   }>();
 
   const width = computed(() => {
