@@ -10,8 +10,8 @@
 <script lang="ts" setup>
   const props = defineProps<{
     type: string;
-    placeholder: string;
-    modelValue: string;
+    placeholder?: string;
+    modelValue?: string;
   }>();
 
   const emit = defineEmits<{
