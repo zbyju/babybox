@@ -34,6 +34,8 @@
     "border": {
       "primary": "#1b054d",
       "secondary": "#2d2b52",
+      "success": "#007B40",
+      "warning": "#8D6818",
       "error": "#862222"
     }
   },
