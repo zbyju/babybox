@@ -16,7 +16,7 @@
           <td>{{ row.thermal }}</td>
           <td>
             <div class="newvalue-wrapper">
-              <BaseInput />
+              <BaseInput type="text" />
               <span v-if="row.type !== 'string'" class="measure-unit"
                 >[{{ typeToMeasureUnit(row.type) }}]</span
               >
@@ -77,6 +77,12 @@
               align-items center
               span
                 padding-left 10px
+          td.cell-error
+            border 2px solid color-border-error
+          td.cell-success
+            border 2px solid color-border-success
+          td.cell-warning
+            border 2px solid color-border-warning
         tr:hover
           background-color color-bg-primary-hover
 
