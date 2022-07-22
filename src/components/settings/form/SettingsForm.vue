@@ -11,11 +11,11 @@
 </template>
 
 <script lang="ts" setup>
-  import SettingsActions from "@/components/settings/form/SettingsActions.vue";
-  import SettingsFilters from "@/components/settings/form/SettingsFilters.vue";
-  import SettingsLog from "@/components/settings/form/SettingsLog.vue";
-  import SettingsResult from "@/components/settings/form/SettingsResult.vue";
-  import SettingsTable from "@/components/settings/form/SettingsTable.vue";
+  import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
+  import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
+  import SettingsLog from "@/components/settings/form/SettingsFormLog.vue";
+  import SettingsResult from "@/components/settings/form/SettingsFormResult.vue";
+  import SettingsTable from "@/components/settings/form/SettingsFormTable.vue";
   import type { SettingsManager } from "@/logic/settings/manager";
 
   1;
