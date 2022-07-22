@@ -35,4 +35,16 @@ export const useConfigStore = defineStore("config", {
       this.units = config.units;
     },
   },
+
+  getters: {
+    config(): Config {
+      return {
+        api: this.api,
+        app: this.app,
+        babybox: this.babybox,
+        camera: this.camera,
+        units: this.units,
+      };
+    },
+  },
 });

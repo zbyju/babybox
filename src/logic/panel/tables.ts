@@ -1,4 +1,5 @@
 import type { Maybe } from "@/types/generic.types";
+import type { Config } from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import {
   type TableConnectionValues,
@@ -30,7 +31,7 @@ export const getTableConnectionValues = (
   engineData: Maybe<EngineUnit>,
   _: Maybe<ThermalUnit>,
   connection: Connection,
-  units: any,
+  config: Config,
 ): TableConnectionValues => {
   return {
     state: TableValuesState.Ok,
@@ -70,7 +71,7 @@ export const getTableConnectionValues = (
       },
       timeout: {
         state: TableRowState.Ok,
-        value: units.value.requestTimeout + "ms",
+        value: config.api.requestTimeout + "ms",
       },
       timeToInspection: maybeValueToTableRowValue(
         engineData?.data.timers.inspectionMessage,

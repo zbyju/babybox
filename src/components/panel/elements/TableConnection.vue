@@ -25,14 +25,14 @@
   const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
   const { connection } = storeToRefs(connectionStore);
   const configStore = useConfigStore();
-  const { units } = storeToRefs(configStore);
+  const { config } = storeToRefs(configStore);
 
   const values: ComputedRef<TableConnectionValues> = computed(() =>
     getTableConnectionValues(
       engineUnit.value,
       thermalUnit.value,
       connection.value,
-      units,
+      config.value,
     ),
   );
   const blocks: TableBlockTemplate[] = [];
