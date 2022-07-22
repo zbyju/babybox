@@ -1,7 +1,7 @@
 <template>
   <div
     id="CameraWrapper"
-    :style="{ maxHeight: props.maxH, maxWidth: props.maxW }"
+    :style="{ maxHeight: props.maxH + 'px', maxWidth: props.maxW + 'px' }"
   >
     <div v-if="displayDoors === true" id="DoorBars">
       <HorizontalPositionBar
@@ -17,7 +17,11 @@
         :direction="'row-reverse'"
       />
     </div>
-    <CameraView :display-top-border="displayDoors === false" />
+    <CameraView
+      :display-top-border="displayDoors === false"
+      :max-w="props.maxW ? props.maxW - 6 : undefined"
+      :max-h="props.maxH ? props.maxH - 6 : undefined"
+    />
   </div>
 </template>
 
@@ -30,8 +34,8 @@
   import { useUnitsStore } from "@/pinia/unitsStore";
 
   const props = defineProps<{
-    maxW?: string;
-    maxH?: string;
+    maxW?: number;
+    maxH?: number;
     displayDoors: boolean;
   }>();
 

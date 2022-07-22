@@ -5,6 +5,8 @@
     :src="url"
     :style="{
       borderTopWidth: props.displayTopBorder ? undefined : '0px',
+      maxHeight: props.maxH + 'px',
+      maxWidth: props.maxW + 'px',
     }"
   />
   <div
@@ -37,6 +39,8 @@
 
   const props = defineProps<{
     displayTopBorder: boolean;
+    maxH?: number;
+    maxW?: number;
   }>();
 
   const emit = defineEmits<{
