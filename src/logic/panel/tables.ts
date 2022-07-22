@@ -76,6 +76,7 @@ export const getTableConnectionValues = (
       timeToInspection: maybeValueToTableRowValue(
         engineData?.data.timers.inspectionMessage,
         secondsToTime,
+        [engineData?.data.misc.inspectionNotDoneForDays],
       ),
     },
   };
