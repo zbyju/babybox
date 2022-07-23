@@ -1,12 +1,12 @@
 <template>
   <div id="SettingsForm">
     <div class="settings-row">
-      <SettingsActions :manager="props.manager" />
-      <SettingsFilters :manager="props.manager" />
-      <SettingsResult :manager="props.manager" />
+      <SettingsActions />
+      <SettingsFilters />
+      <SettingsResult />
     </div>
-    <SettingsTable :manager="props.manager" />
-    <SettingsLog :manager="props.manager" />
+    <SettingsTable />
+    <SettingsLog />
   </div>
 </template>
 
@@ -16,13 +16,6 @@
   import SettingsLog from "@/components/settings/form/SettingsFormLog.vue";
   import SettingsResult from "@/components/settings/form/SettingsFormResult.vue";
   import SettingsTable from "@/components/settings/form/SettingsFormTable.vue";
-  import type { SettingsManager } from "@/logic/settings/manager";
-
-  1;
-
-  const props = defineProps<{
-    manager: SettingsManager;
-  }>();
 </script>
 
 <style lang="stylus">

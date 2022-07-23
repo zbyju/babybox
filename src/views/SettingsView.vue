@@ -3,29 +3,15 @@
     <TheNav></TheNav>
     <div id="SettingsWrapper">
       <QuickActions></QuickActions>
-      <SettingsForm :manager="settingsManager"></SettingsForm>
+      <SettingsForm></SettingsForm>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { storeToRefs } from "pinia";
-  import { onBeforeMount } from "vue";
-
-  import { SettingsManager } from "@/logic/settings/manager";
-  import { useConfigStore } from "@/pinia/configStore";
-
   import SettingsForm from "../components/settings/form/SettingsForm.vue";
   import QuickActions from "../components/settings/QuickActions.vue";
   import TheNav from "../components/TheNav.vue";
-
-  const configStore = useConfigStore();
-  const { units } = storeToRefs(configStore);
-  const settingsManager = new SettingsManager(
-    units.value.engine.ip,
-    units.value.thermal.ip,
-  );
-  onBeforeMount(() => settingsManager.loadSettings);
 </script>
 
 <style lang="stylus">

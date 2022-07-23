@@ -2,16 +2,19 @@
   <div id="Actions">
     <h2>Akce</h2>
     <div class="action-wrapper">
-      <button class="btn-primary" @click="props.manager.loadSettings">
+      <button class="btn-primary" @click="$emit('loadCurrentValuesClicked')">
         Načíst aktuální parametry
       </button>
-      <button class="btn-primary" @click="props.manager.insertDefault">
+      <button
+        class="btn-primary"
+        @click="$emit('insertRecommendedValuesClicked')"
+      >
         Doplnit doporučené parametry
       </button>
-      <button class="btn-success" @click="props.manager.saveSettings">
+      <button class="btn-success" @click="$emit('saveParametersClicked')">
         Uložit parametry
       </button>
-      <button class="btn-error" @click="props.manager.deleteChanges">
+      <button class="btn-error" @click="$emit('removeNewValues')">
         Smazat nové hodnoty
       </button>
     </div>
@@ -19,10 +22,11 @@
 </template>
 
 <script lang="ts" setup>
-  import type { SettingsManager } from "@/logic/settings/manager";
-
-  const props = defineProps<{
-    manager: SettingsManager;
+  const emit = defineEmits<{
+    (e: "loadCurrentValuesClicked"): void;
+    (e: "insertRecommendedValuesClicked"): void;
+    (e: "saveParametersClicked"): void;
+    (e: "removeNewValues"): void;
   }>();
 </script>
 

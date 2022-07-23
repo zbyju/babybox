@@ -1,27 +1,26 @@
 <template>
   <div id="SettingsLogsHeader">
     <h2>Log</h2>
-    <button class="btn-error btn-small" @click="props.manager.deleteLog">
-      Smazat log
-    </button>
+    <button class="btn-error btn-small">Smazat log</button>
   </div>
   <div id="SettingsLog">
-    <div
-      v-for="(msg, index) in props.manager.log.value"
-      :key="index"
-      class="log-message"
-    >
-      {{ msg }}
-    </div>
+    <div class="log-message">test</div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import type { SettingsManager } from "@/logic/settings/manager";
+  import { type Ref, ref } from "vue";
+
+  import type { LogEntry, LogEntryType } from "@/types/settings/manager.types";
 
   const props = defineProps<{
-    manager: SettingsManager;
+    addLogEntry?: (message: string, type: LogEntryType) => void;
   }>();
+
+  const logEntries: Ref<LogEntry[]> = ref([]);
+  function addLogEntry(message: string, type: LogEntryType): void {
+    console.log(message);
+  }
 </script>
 
 <style lang="stylus">

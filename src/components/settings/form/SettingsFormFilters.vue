@@ -13,21 +13,18 @@
 
 <script lang="ts" setup>
   import { ref } from "vue";
-
-  import type { SettingsManager } from "@/logic/settings/manager";
-
-  const props = defineProps<{
-    manager: SettingsManager;
+  const emit = defineEmits<{
+    (e: "filterChange", filter: "no" | "engine" | "thermal"): void;
   }>();
 
   const selected = ref("no");
   const filterChange = (event: Event) => {
     if ((event.target as HTMLInputElement).value === "no")
-      props.manager.removeFilterRows();
+      emit("filterChange", "no");
     if ((event.target as HTMLInputElement).value === "engine")
-      props.manager.filterEngineRows();
+      emit("filterChange", "engine");
     if ((event.target as HTMLInputElement).value === "thermal")
-      props.manager.filterThermalRows();
+      emit("filterChange", "thermal");
   };
 </script>
 

@@ -31,17 +31,31 @@
 </template>
 
 <script lang="ts" setup>
-  import type { SettingsManager } from "@/logic/settings/manager";
-  import { typeToMeasureUnit } from "@/logic/settings/table";
+  import { ref } from "vue";
+
+  import {
+    getSettingsTableHeaders,
+    getSettingsTableTemplateRows,
+  } from "@/defaults/settingsTable.defaults";
+  import type {
+    SettingsTableRow,
+    SettingsTableRowTemplate,
+  } from "@/types/settings/table.types";
+  import { typeToMeasureUnit } from "@/utils/settings/conversions";
 
   import BaseInput from "../../panel/HTMLElements/BaseInput.vue";
 
-  const props = defineProps<{
-    manager: SettingsManager;
-  }>();
+  const headers = getSettingsTableHeaders();
 
-  const headers = props.manager.getHeaders();
-  const rows = props.manager.getRows();
+  const rows: Array<SettingsTableRow> = getSettingsTableTemplateRows().map(
+    (r: SettingsTableRowTemplate) => {
+      return {
+        ...r,
+        engine: ref(r.label.includes("M") ? "" : "—"),
+        thermal: ref(r.label.includes("T") ? "" : "—"),
+      };
+    },
+  );
 </script>
 
 <style lang="stylus">
