@@ -12,7 +12,7 @@
     "active": "#F44336",
     "text": {
       "white": "#FFFFFF",
-      "white-error": "#FFDBD9",
+      "white-error": "#FCC3C0",
       "success": "#00B800",
       "warning": "#FFFC31",
       "error": "#F44336",
