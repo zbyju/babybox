@@ -11,11 +11,17 @@
       :values="values"
       @value-updated="valueUpdated"
     />
-    <SettingsLog />
+    <SettingsLog
+      :entries="logEntries"
+      @click:delete-log="() => (logEntries = [])"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
+  import moment from "moment";
+  import { type Ref, ref } from "vue";
+
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
   import SettingsLog from "@/components/settings/form/SettingsFormLog.vue";
@@ -26,6 +32,7 @@
     getSettingsTableTemplateRows,
     getSettingsTableValues,
   } from "@/defaults/settingsTable.defaults";
+  import { type LogEntry, LogEntryType } from "@/types/settings/manager.types";
   import {
     type SettingsTableRow,
     type SettingsTableRowTemplate,
@@ -50,7 +57,6 @@
     value.value.value = newValue;
     console.log(value.value.value);
     if (!isNumber(newValue)) {
-      console.log("not number", newValue);
       return (value.state.value = SettingsTableRowState.Error);
     }
 
@@ -68,6 +74,13 @@
       }
     }
   }
+  const logEntries: Ref<LogEntry[]> = ref([
+    {
+      message: "Formulář inicializován",
+      date: moment(),
+      type: LogEntryType.Info,
+    },
+  ]);
 </script>
 
 <style lang="stylus">

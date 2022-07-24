@@ -1,26 +1,33 @@
 <template>
   <div id="SettingsLogsHeader">
     <h2>Log</h2>
-    <button class="btn-error btn-small">Smazat log</button>
+    <button class="btn-error btn-small" @click="$emit('click:deleteLog')">
+      Smazat log
+    </button>
   </div>
   <div id="SettingsLog">
-    <div class="log-message">test</div>
+    <div
+      v-for="entry in props.entries"
+      :key="entry.date.toString()"
+      class="log-entry"
+      :class="entry.type"
+    >
+      <span class="log-date">{{ entry.date.format("HH:mm:ss") }}</span>
+      <span class="log-message">{{ entry.message }}</span>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { type Ref, ref } from "vue";
-
-  import type { LogEntry, LogEntryType } from "@/types/settings/manager.types";
+  import type { LogEntry } from "@/types/settings/manager.types";
 
   const props = defineProps<{
-    addLogEntry?: (message: string, type: LogEntryType) => void;
+    entries: LogEntry[];
   }>();
 
-  const logEntries: Ref<LogEntry[]> = ref([]);
-  function addLogEntry(message: string, type: LogEntryType): void {
-    console.log(message);
-  }
+  const emit = defineEmits<{
+    (e: "click:deleteLog"): void;
+  }>();
 </script>
 
 <style lang="stylus">
@@ -33,13 +40,29 @@
     border 1px solid color-border-primary
     border-radius 8px
     margin-top 12px
-    .log-message
+    .log-entry
       border-bottom 1px solid color-border-secondary
       border-radius 8px
-      padding 5px 10px 4px 10px
       transition all 0.5s
-    .log-message:hover
+      display flex
+      flex-direction row
+      gap 15px
+
+      .log-date, .log-message
+        padding 7px 10px
+
+    .log-entry:hover
       background-color color-bg-primary-hover
+
+    .log-entry.info .log-date
+      background-color color-bg-info
+    .log-entry.success .log-date
+      background-color color-bg-success
+    .log-entry.warning .log-date
+      background-color color-bg-warning
+    .log-entry.error .log-date
+      background-color color-bg-error
+
   #SettingsLogsHeader
     display flex
     flex-direction row

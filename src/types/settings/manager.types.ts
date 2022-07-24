@@ -1,6 +1,11 @@
 import type { Moment } from "moment";
 
-export type LogEntryType = "info" | "success" | "warning" | "error";
+export enum LogEntryType {
+  Info = "info",
+  Success = "success",
+  Warning = "warning",
+  Error = "error",
+}
 
 export interface LogEntry {
   message: string;

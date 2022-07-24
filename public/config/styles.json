@@ -28,7 +28,10 @@
       "primary-hover": "#020024",
       "primary-gradient": "linear-gradient(216deg, rgba(2,0,43,1) 0%, rgba(0,48,119,1) 40%, rgba(66,0,116,1) 100%)",
       "secondary-gradient": "linear-gradient(216deg, rgba(2,1,34,1) 0%, rgba(27,2,62,1) 33%, rgba(6,4,41,1) 100%)",
-      "success": "orange",
+      "info": "#227CB3",
+      "success": "#11A03F",
+      "warning": "#EA9400",
+      "error": "#DC2222",
       "active": "#F44336"
     },
     "border": {
