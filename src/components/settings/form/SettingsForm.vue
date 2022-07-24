@@ -5,6 +5,7 @@
         @click:remove="onRemoveAction"
         @click:insert-recommended="onInsertRecommendedAction"
         @click:load="onLoadAction"
+        @click:save="onSaveAction"
       />
       <SettingsFilters />
       <SettingsResult />
@@ -26,7 +27,7 @@
   import moment from "moment";
   import { type Ref, ref, watch } from "vue";
 
-  import { getSettings } from "@/api/units";
+  import { getSettings, sendSettings } from "@/api/units";
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
   import SettingsLog from "@/components/settings/form/SettingsFormLog.vue";
@@ -43,6 +44,7 @@
     type SettingsTableRowTemplate,
     type SettingsTableRowValue,
     SettingsTableRowState,
+    SettingsTableRowValueType,
   } from "@/types/settings/table.types";
   import { isNumber } from "@/utils/number";
 
@@ -61,9 +63,14 @@
   );
 
   watch(values, () =>
-    values.value.forEach((v: SettingsTableRowValue, i: number) =>
-      valueUpdated(v.value, i),
-    ),
+    values.value.forEach((v: SettingsTableRowValue, i: number) => {
+      if (
+        v.state === SettingsTableRowState.Changed ||
+        v.state === SettingsTableRowState.Neutral
+      ) {
+        valueUpdated(v.value, i);
+      }
+    }),
   );
 
   function valueUpdated(newValue: string, index: number) {
@@ -155,6 +162,78 @@
       console.log(err);
     }
   }
+
+  async function onSaveAction() {
+    const changedValues = [];
+    let i = 0;
+    for (const v of values.value) {
+      if (v.state !== SettingsTableRowState.Changed || v.value === null) {
+        ++i;
+        continue;
+      }
+      const row = rows[i];
+      let val = v.value;
+      if (
+        row.type === SettingsTableRowValueType.Temperature ||
+        row.type === SettingsTableRowValueType.Voltage
+      ) {
+        val = String(parseInt(v.value) * 100);
+      }
+      if (row.engine !== null) {
+        changedValues.push({
+          unit: "engine",
+          index: row.engine,
+          value: parseInt(val),
+        });
+      }
+      if (row.thermal !== null) {
+        changedValues.push({
+          unit: "thermal",
+          index: row.thermal,
+          value: parseInt(val),
+        });
+      }
+      ++i;
+    }
+    if (changedValues === [])
+      return addLogMessage(
+        "Nebyly provedeny žádné změny, žádné nové parametry!",
+        LogEntryType.Error,
+      );
+    try {
+      addLogMessage(
+        `Odesílám změnu ${changedValues.length} parametrů`,
+        LogEntryType.Info,
+      );
+      const response = await sendSettings(changedValues);
+      if (response.status >= 200 && response.status <= 299) {
+        addLogMessage(`Parametry úspěšně uloženy`, LogEntryType.Success);
+        onLoadAction();
+        values.value = values.value.map((v) => {
+          if (v.state === SettingsTableRowState.Changed) {
+            return {
+              ...v,
+              state: SettingsTableRowState.Success,
+            };
+          }
+          return v;
+        });
+      } else {
+        throw { msg: "Status code is not OK" };
+      }
+    } catch (err) {
+      addLogMessage("Chyba při ukládání parametrů");
+      onLoadAction();
+      values.value = values.value.map((v) => {
+        return {
+          ...v,
+          state: SettingsTableRowState.Error,
+        };
+      });
+    }
+  }
+
+  onLoadAction();
 </script>
 
 <style lang="stylus">

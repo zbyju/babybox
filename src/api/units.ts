@@ -96,3 +96,22 @@ export const getSettings = (): Promise<any> => {
 
   return axios.get(url, { timeout });
 };
+
+export const sendSettings = (data: any[]): Promise<any> => {
+  const configStore = useConfigStore();
+  const { api } = storeToRefs(configStore);
+  const url = api.value.baseApiUrl + "/units/settings";
+  const timeout = api.value.requestTimeout || 5000;
+
+  console.log("Sending: ", {
+    settings: data,
+  });
+
+  return axios.put(
+    url,
+    {
+      settings: data,
+    },
+    { timeout },
+  );
+};

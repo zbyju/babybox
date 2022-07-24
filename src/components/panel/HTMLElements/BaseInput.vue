@@ -53,7 +53,7 @@
 
   input.border-accent
     border 1px solid color-border-accent
-  input.border-sucess
+  input.border-success
     border 1px solid color-border-success
   input.border-warning
     border 1px solid color-border-warning
