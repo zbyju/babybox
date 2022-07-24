@@ -11,13 +11,13 @@
       <tbody>
         <template v-for="(row, index) in rows" :key="row.label">
           <SettingsFormTableRow
-            v-model="values[index].value.value"
-            :engine="values[index].engine.value"
+            :value="props.values[index].value.value"
+            :engine="props.values[index].engine.value"
             :thermal="values[index].thermal.value"
             :state="values[index].state.value"
             :row="row"
-            @update:model-value="
-              (value) => valueUpdated(value, index, row.label)
+            @update:value="
+              (value: string) => emit('valueUpdated', value, index, row.label)
             "
           />
         </template>
@@ -27,52 +27,22 @@
 </template>
 
 <script lang="ts" setup>
-  import {
-    getSettingsTableHeaders,
-    getSettingsTableTemplateRows,
-    getSettingsTableValues,
-  } from "@/defaults/settingsTable.defaults";
-  import {
-    type SettingsTableRow,
-    type SettingsTableRowTemplate,
-    SettingsTableRowState,
+  import type {
+    SettingsTableRow,
+    SettingsTableRowValue,
   } from "@/types/settings/table.types";
-  import { isNumber } from "@/utils/number";
 
   import SettingsFormTableRow from "./SettingsFormTableRow.vue";
 
-  const headers = getSettingsTableHeaders();
-  const rows: Array<SettingsTableRow> = getSettingsTableTemplateRows().map(
-    (r: SettingsTableRowTemplate, i: number): SettingsTableRow => {
-      return {
-        ...r,
-        index: i,
-      };
-    },
-  );
+  const props = defineProps<{
+    headers: Array<string>;
+    rows: SettingsTableRow[];
+    values: SettingsTableRowValue[];
+  }>();
 
-  const values = getSettingsTableValues(rows);
-
-  function valueUpdated(newValue: string, index: number, label: string) {
-    const value = values[index];
-    if (!isNumber(newValue)) {
-      return (value.state.value = SettingsTableRowState.Error);
-    }
-
-    if (label.includes("M")) {
-      if (newValue === value.engine.value) {
-        value.state.value = SettingsTableRowState.Neutral;
-      } else {
-        value.state.value = SettingsTableRowState.Changed;
-      }
-    } else if (label.includes("T")) {
-      if (newValue === value.thermal.value) {
-        value.state.value = SettingsTableRowState.Neutral;
-      } else {
-        value.state.value = SettingsTableRowState.Changed;
-      }
-    }
-  }
+  const emit = defineEmits<{
+    (e: "valueUpdated", newValue: string, index: number, label: string): void;
+  }>();
 </script>
 
 <style lang="stylus">

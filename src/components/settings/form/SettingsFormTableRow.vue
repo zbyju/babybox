@@ -8,7 +8,7 @@
       <div class="newvalue-wrapper">
         <BaseInput
           type="text"
-          :value="props.modelValue"
+          :value="props.value"
           :state="inputState"
           @input="inputChange"
         />
@@ -37,7 +37,7 @@
     row: SettingsTableRow;
     engine: string;
     thermal: string;
-    modelValue: string;
+    value: string;
     state: SettingsTableRowState;
   }>();
 
@@ -55,10 +55,10 @@
   );
 
   const emit = defineEmits<{
-    (e: "update:modelValue", value: string): void;
+    (e: "update:value", value: string): void;
   }>();
 
   function inputChange(event: Event) {
-    emit("update:modelValue", (event.target as HTMLInputElement).value);
+    emit("update:value", (event.target as HTMLInputElement).value);
   }
 </script>
