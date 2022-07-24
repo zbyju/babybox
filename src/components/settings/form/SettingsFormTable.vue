@@ -9,53 +9,70 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row.label">
-          <td>{{ row.label }}</td>
-          <td>{{ row.name }}</td>
-          <td>{{ row.engine }}</td>
-          <td>{{ row.thermal }}</td>
-          <td>
-            <div class="newvalue-wrapper">
-              <BaseInput type="text" />
-              <span v-if="row.type !== 'string'" class="measure-unit"
-                >[{{ typeToMeasureUnit(row.type) }}]</span
-              >
-            </div>
-          </td>
-          <td>{{ row.recommended }}</td>
-          <td>{{ row.note }}</td>
-        </tr>
+        <template v-for="(row, index) in rows" :key="row.label">
+          <SettingsFormTableRow
+            v-model="values[index].value.value"
+            :engine="values[index].engine.value"
+            :thermal="values[index].thermal.value"
+            :state="values[index].state.value"
+            :row="row"
+            @update:model-value="
+              (value) => valueUpdated(value, index, row.label)
+            "
+          />
+        </template>
       </tbody>
     </table>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { ref } from "vue";
-
   import {
     getSettingsTableHeaders,
     getSettingsTableTemplateRows,
+    getSettingsTableValues,
   } from "@/defaults/settingsTable.defaults";
-  import type {
-    SettingsTableRow,
-    SettingsTableRowTemplate,
+  import {
+    type SettingsTableRow,
+    type SettingsTableRowTemplate,
+    SettingsTableRowState,
   } from "@/types/settings/table.types";
-  import { typeToMeasureUnit } from "@/utils/settings/conversions";
+  import { isNumber } from "@/utils/number";
 
-  import BaseInput from "../../panel/HTMLElements/BaseInput.vue";
+  import SettingsFormTableRow from "./SettingsFormTableRow.vue";
 
   const headers = getSettingsTableHeaders();
-
   const rows: Array<SettingsTableRow> = getSettingsTableTemplateRows().map(
-    (r: SettingsTableRowTemplate) => {
+    (r: SettingsTableRowTemplate, i: number): SettingsTableRow => {
       return {
         ...r,
-        engine: ref(r.label.includes("M") ? "" : "—"),
-        thermal: ref(r.label.includes("T") ? "" : "—"),
+        index: i,
       };
     },
   );
+
+  const values = getSettingsTableValues(rows);
+
+  function valueUpdated(newValue: string, index: number, label: string) {
+    const value = values[index];
+    if (!isNumber(newValue)) {
+      return (value.state.value = SettingsTableRowState.Error);
+    }
+
+    if (label.includes("M")) {
+      if (newValue === value.engine.value) {
+        value.state.value = SettingsTableRowState.Neutral;
+      } else {
+        value.state.value = SettingsTableRowState.Changed;
+      }
+    } else if (label.includes("T")) {
+      if (newValue === value.thermal.value) {
+        value.state.value = SettingsTableRowState.Neutral;
+      } else {
+        value.state.value = SettingsTableRowState.Changed;
+      }
+    }
+  }
 </script>
 
 <style lang="stylus">
@@ -91,12 +108,6 @@
               align-items center
               span
                 padding-left 10px
-          td.cell-error
-            border 2px solid color-border-error
-          td.cell-success
-            border 2px solid color-border-success
-          td.cell-warning
-            border 2px solid color-border-warning
         tr:hover
           background-color color-bg-primary-hover
 

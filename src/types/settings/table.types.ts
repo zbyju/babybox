@@ -1,11 +1,12 @@
 import type { Ref } from "vue";
 
-export type SettingsTableRowValueType =
-  | "string"
-  | "temperature"
-  | "voltage"
-  | "seconds"
-  | "days";
+export enum SettingsTableRowValueType {
+  String = "string",
+  Temperature = "temperature",
+  Voltage = "voltage",
+  Seconds = "seconds",
+  Days = "days",
+}
 
 export interface SettingsTableRowTemplate {
   label: string;
@@ -17,9 +18,14 @@ export interface SettingsTableRowTemplate {
 }
 
 export interface SettingsTableRow extends SettingsTableRowTemplate {
+  index: number;
+}
+
+export interface SettingsTableRowValue {
   engine: Ref<string>;
   thermal: Ref<string>;
-  // state: SettingsTableRowState;
+  value: Ref<string>;
+  state: Ref<SettingsTableRowState>;
 }
 
 export enum SettingsTableRowState {
