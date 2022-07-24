@@ -137,9 +137,9 @@
             const thermalData = response.data.data.thermal.split("|");
             const row = rows[i];
             const engine =
-              row.engine !== null ? engineData[row.engine - 100] : "—";
+              row.engine !== null ? engineData[row.engine - 100] : null;
             const thermal =
-              row.thermal !== null ? thermalData[row.thermal - 100] : "—";
+              row.thermal !== null ? thermalData[row.thermal - 100] : null;
             return {
               ...v,
               engine,
@@ -147,7 +147,7 @@
             };
           },
         );
-        addLogMessage("Parametry úspěšně načteny");
+        addLogMessage("Parametry úspěšně načteny", LogEntryType.Success);
       } else {
         throw { msg: "Status code not OK" };
       }

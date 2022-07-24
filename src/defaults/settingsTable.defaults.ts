@@ -179,8 +179,8 @@ export const getSettingsTableValues = (
 ): SettingsTableRowValue[] => {
   return template.map(
     (t: SettingsTableRowTemplate): SettingsTableRowValue => ({
-      engine: t.engine ? "" : "—",
-      thermal: t.thermal ? "" : "—",
+      engine: t.engine ? "" : null,
+      thermal: t.thermal ? "" : null,
       value: "",
       state: SettingsTableRowState.Neutral,
     }),

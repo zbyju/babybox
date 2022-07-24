@@ -4,8 +4,8 @@ export const prettyNumber = (num: number): string => {
   return String(Math.round(num).toFixed(0));
 };
 
-export const prettyFloat = (num: number): string => {
-  return num.toFixed(2);
+export const prettyFloat = (num: number, fractionDigits = 2): string => {
+  return num.toFixed(fractionDigits);
 };
 
 export const prettyBoolean = (bool: boolean): string => {

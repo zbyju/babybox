@@ -2,8 +2,8 @@
   <tr>
     <td>{{ label }}</td>
     <td>{{ props.row.name }}</td>
-    <td>{{ props.engine }}</td>
-    <td>{{ props.thermal }}</td>
+    <td>{{ engineString }}</td>
+    <td>{{ thermalString }}</td>
     <td>
       <div class="newvalue-wrapper">
         <BaseInput
@@ -30,13 +30,19 @@
   import {
     type SettingsTableRow,
     SettingsTableRowState,
+    SettingsTableRowValueType,
   } from "@/types/settings/table.types";
+  import {
+    displayTemperature,
+    displayVoltage,
+    prettyFloat,
+  } from "@/utils/panel/dataDisplay";
   import { typeToMeasureUnit } from "@/utils/settings/conversions";
 
   const props = defineProps<{
     row: SettingsTableRow;
-    engine: string;
-    thermal: string;
+    engine: string | null;
+    thermal: string | null;
     value: string;
     state: SettingsTableRowState;
   }>();
@@ -52,6 +58,36 @@
     } else {
       return "error";
     }
+  });
+
+  function dataToString(
+    data: string | null,
+    type: SettingsTableRowValueType,
+  ): string {
+    if (data === null) return "—";
+    if (data === "") return "";
+    switch (type) {
+      case SettingsTableRowValueType.Temperature:
+        return displayTemperature(parseInt(data) / 100);
+      case SettingsTableRowValueType.Voltage:
+        return displayVoltage(parseInt(data) / 100);
+      case SettingsTableRowValueType.Seconds:
+        return data + " sekund";
+      case SettingsTableRowValueType.Days:
+        return prettyFloat(parseInt(data) / 86400, 0) + " dní";
+      default:
+        return data;
+    }
+  }
+
+  const engineString = computed(() => {
+    if (props.engine === null) return "—";
+    return dataToString(props.engine, props.row.type);
+  });
+
+  const thermalString = computed(() => {
+    if (props.thermal === null) return "—";
+    return dataToString(props.thermal, props.row.type);
   });
 
   const inputState = computed(
