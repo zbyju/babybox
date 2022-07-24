@@ -22,7 +22,7 @@ export const getSettingsTableTemplateRows = (): SettingsTableRowTemplate[] => {
     {
       label: "M108",
       name: "Blokování babyboxu",
-      recommended: "0/1",
+      recommended: "0",
       note: "1 = Babybox mimo provoz",
       type: SettingsTableRowValueType.String,
     },

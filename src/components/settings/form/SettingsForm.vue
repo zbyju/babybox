@@ -1,7 +1,10 @@
 <template>
   <div id="SettingsForm">
     <div class="settings-row">
-      <SettingsActions @click:remove="() => onRemoveAction()" />
+      <SettingsActions
+        @click:remove="onRemoveAction"
+        @click:insert-recommended="onInsertRecommendedAction"
+      />
       <SettingsFilters />
       <SettingsResult />
     </div>
@@ -20,7 +23,7 @@
 
 <script lang="ts" setup>
   import moment from "moment";
-  import { type Ref, ref } from "vue";
+  import { type Ref, ref, watch } from "vue";
 
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
@@ -55,6 +58,12 @@
     getSettingsTableValues(rows),
   );
 
+  watch(values, () =>
+    values.value.forEach((v: SettingsTableRowValue, i: number) =>
+      valueUpdated(v.value, i, rows[i].label),
+    ),
+  );
+
   function valueUpdated(newValue: string, index: number, label: string) {
     const value = values.value[index];
     value.value = newValue;
@@ -86,6 +95,15 @@
 
   function onRemoveAction() {
     values.value = getSettingsTableValues(rows);
+  }
+
+  function onInsertRecommendedAction() {
+    values.value = values.value.map((v: SettingsTableRowValue, i: number) => {
+      return {
+        ...v,
+        value: rows[i].recommended,
+      };
+    });
   }
 </script>
 
