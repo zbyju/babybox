@@ -46,7 +46,6 @@
       transition all 0.5s
       display flex
       flex-direction row
-      gap 15px
 
       .log-date, .log-message
         padding 7px 10px
