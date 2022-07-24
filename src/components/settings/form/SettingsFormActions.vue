@@ -2,19 +2,16 @@
   <div id="Actions">
     <h2>Akce</h2>
     <div class="action-wrapper">
-      <button class="btn-primary" @click="$emit('loadCurrentValuesClicked')">
+      <button class="btn-primary" @click="$emit('click:load')">
         Načíst aktuální parametry
       </button>
-      <button
-        class="btn-primary"
-        @click="$emit('insertRecommendedValuesClicked')"
-      >
+      <button class="btn-primary" @click="$emit('click:insertRecommended')">
         Doplnit doporučené parametry
       </button>
-      <button class="btn-success" @click="$emit('saveParametersClicked')">
+      <button class="btn-success" @click="$emit('click:save')">
         Uložit parametry
       </button>
-      <button class="btn-error" @click="$emit('removeNewValues')">
+      <button class="btn-error" @click="$emit('click:remove')">
         Smazat nové hodnoty
       </button>
     </div>
@@ -23,10 +20,10 @@
 
 <script lang="ts" setup>
   const emit = defineEmits<{
-    (e: "loadCurrentValuesClicked"): void;
-    (e: "insertRecommendedValuesClicked"): void;
-    (e: "saveParametersClicked"): void;
-    (e: "removeNewValues"): void;
+    (e: "click:load"): void;
+    (e: "click:insertRecommended"): void;
+    (e: "click:save"): void;
+    (e: "click:remove"): void;
   }>();
 </script>
 

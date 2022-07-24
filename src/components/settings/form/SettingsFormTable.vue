@@ -11,10 +11,10 @@
       <tbody>
         <template v-for="(row, index) in rows" :key="row.label">
           <SettingsFormTableRow
-            :value="props.values[index].value.value"
-            :engine="props.values[index].engine.value"
-            :thermal="values[index].thermal.value"
-            :state="values[index].state.value"
+            :value="props.values[index].value"
+            :engine="props.values[index].engine"
+            :thermal="values[index].thermal"
+            :state="values[index].state"
             :row="row"
             @update:value="
               (value: string) => emit('valueUpdated', value, index, row.label)

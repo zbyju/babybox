@@ -1,5 +1,3 @@
-import { ref } from "vue";
-
 import {
   type SettingsTableRowTemplate,
   type SettingsTableRowValue,
@@ -165,10 +163,10 @@ export const getSettingsTableValues = (
     const thermal: string = t.label.includes("T") ? "" : "—";
 
     return {
-      engine: ref(engine),
-      thermal: ref(thermal),
-      value: ref(""),
-      state: ref(SettingsTableRowState.Neutral),
+      engine: engine,
+      thermal: thermal,
+      value: "",
+      state: SettingsTableRowState.Neutral,
     };
   });
 };

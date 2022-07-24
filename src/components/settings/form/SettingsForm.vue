@@ -1,7 +1,7 @@
 <template>
   <div id="SettingsForm">
     <div class="settings-row">
-      <SettingsActions />
+      <SettingsActions @click:remove="() => onRemoveAction()" />
       <SettingsFilters />
       <SettingsResult />
     </div>
@@ -36,6 +36,7 @@
   import {
     type SettingsTableRow,
     type SettingsTableRowTemplate,
+    type SettingsTableRowValue,
     SettingsTableRowState,
   } from "@/types/settings/table.types";
   import { isNumber } from "@/utils/number";
@@ -50,27 +51,28 @@
     },
   );
 
-  const values = getSettingsTableValues(rows);
+  const values: Ref<SettingsTableRowValue[]> = ref(
+    getSettingsTableValues(rows),
+  );
 
   function valueUpdated(newValue: string, index: number, label: string) {
-    const value = values[index];
-    value.value.value = newValue;
-    console.log(value.value.value);
+    const value = values.value[index];
+    value.value = newValue;
     if (!isNumber(newValue)) {
-      return (value.state.value = SettingsTableRowState.Error);
+      return (value.state = SettingsTableRowState.Error);
     }
 
     if (label.includes("M")) {
-      if (newValue === value.engine.value) {
-        value.state.value = SettingsTableRowState.Neutral;
+      if (newValue === value.engine) {
+        value.state = SettingsTableRowState.Neutral;
       } else {
-        value.state.value = SettingsTableRowState.Changed;
+        value.state = SettingsTableRowState.Changed;
       }
     } else if (label.includes("T")) {
-      if (newValue === value.thermal.value) {
-        value.state.value = SettingsTableRowState.Neutral;
+      if (newValue === value.thermal) {
+        value.state = SettingsTableRowState.Neutral;
       } else {
-        value.state.value = SettingsTableRowState.Changed;
+        value.state = SettingsTableRowState.Changed;
       }
     }
   }
@@ -81,6 +83,10 @@
       type: LogEntryType.Info,
     },
   ]);
+
+  function onRemoveAction() {
+    values.value = getSettingsTableValues(rows);
+  }
 </script>
 
 <style lang="stylus">

@@ -1,5 +1,3 @@
-import type { Ref } from "vue";
-
 export enum SettingsTableRowValueType {
   String = "string",
   Temperature = "temperature",
@@ -22,10 +20,10 @@ export interface SettingsTableRow extends SettingsTableRowTemplate {
 }
 
 export interface SettingsTableRowValue {
-  engine: Ref<string>;
-  thermal: Ref<string>;
-  value: Ref<string>;
-  state: Ref<SettingsTableRowState>;
+  engine: string;
+  thermal: string;
+  value: string;
+  state: SettingsTableRowState;
 }
 
 export enum SettingsTableRowState {
