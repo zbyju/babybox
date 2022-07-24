@@ -87,3 +87,12 @@ export const resetBabybox = (): Promise<any> => {
 
   return axios.get(url, { timeout });
 };
+
+export const getSettings = (): Promise<any> => {
+  const configStore = useConfigStore();
+  const { api } = storeToRefs(configStore);
+  const url = api.value.baseApiUrl + "/units/settings";
+  const timeout = api.value.requestTimeout || 5000;
+
+  return axios.get(url, { timeout });
+};

@@ -17,7 +17,7 @@
             :state="values[index].state"
             :row="row"
             @update:value="
-              (value: string) => emit('valueUpdated', value, index, row.label)
+              (value: string) => emit('valueUpdated', value, index)
             "
           />
         </template>
@@ -41,7 +41,7 @@
   }>();
 
   const emit = defineEmits<{
-    (e: "valueUpdated", newValue: string, index: number, label: string): void;
+    (e: "valueUpdated", newValue: string, index: number): void;
   }>();
 </script>
 

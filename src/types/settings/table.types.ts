@@ -7,9 +7,10 @@ export enum SettingsTableRowValueType {
 }
 
 export interface SettingsTableRowTemplate {
-  label: string;
-  type: SettingsTableRowValueType;
   name: string;
+  engine: number | null;
+  thermal: number | null;
+  type: SettingsTableRowValueType;
   recommended: string;
   note: string;
   placeholder?: string;

@@ -1,6 +1,6 @@
 <template>
   <tr>
-    <td>{{ props.row.label }}</td>
+    <td>{{ label }}</td>
     <td>{{ props.row.name }}</td>
     <td>{{ props.engine }}</td>
     <td>{{ props.thermal }}</td>
@@ -40,6 +40,19 @@
     value: string;
     state: SettingsTableRowState;
   }>();
+
+  const label = computed(() => {
+    if (props.row.engine) {
+      if (props.row.thermal) {
+        return `M${props.row.engine}, T${props.row.thermal}`;
+      }
+      return "M" + props.row.engine;
+    } else if (props.row.thermal) {
+      return "T" + props.row.thermal;
+    } else {
+      return "error";
+    }
+  });
 
   const inputState = computed(
     (): BaseInputState =>
