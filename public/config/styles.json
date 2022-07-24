@@ -1,22 +1,22 @@
 {
   "color": {
     "white": "#FFFFFF",
+    "primary": "#283593",
+    "primary-hover": "#1A237E",
+    "success": "#00C03D",
+    "success-hover": "#00A233",
     "warning": "#FFFF00",
     "warning-hover": "#e3e307",
     "error": "#F44336",
     "error-hover": "#c23329",
-    "success": "#009E00",
-    "success-hover": "#018701",
-    "primary": "#283593",
-    "primary-hover": "#1A237E",
     "active": "#F44336",
     "text": {
       "white": "#FFFFFF",
       "white-error": "#FFDBD9",
+      "success": "#00B800",
       "warning": "#FFFC31",
       "error": "#F44336",
       "active": "#F44336",
-      "success": "#00B800",
       "primary": "#0D47A1",
       "secondary": "#F5F9E9",
       "brand": "#D8003D"
