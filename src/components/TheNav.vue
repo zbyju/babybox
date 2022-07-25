@@ -23,6 +23,10 @@
       </div>
     </div>
     <BaseInput v-model="password" type="password" placeholder="Heslo" />
+    <VersionText
+      :version-frontend="app.version"
+      :version-backend="versionBackend || 'unknown'"
+    />
   </div>
 </template>
 
@@ -30,12 +34,17 @@
   import { storeToRefs } from "pinia";
   import { computed, ref } from "vue";
 
+  import { useAppStateStore } from "@/pinia/appStateStore";
   import { useConfigStore } from "@/pinia/configStore";
 
+  import VersionText from "./panel/elements/VersionText.vue";
   import BaseInput from "./panel/HTMLElements/BaseInput.vue";
 
   const configStore = useConfigStore();
   const { app, units, camera } = storeToRefs(configStore);
+
+  const appStateStore = useAppStateStore();
+  const { versionBackend } = storeToRefs(appStateStore);
 
   const isUnlocked = computed(() => {
     return password.value === app.value.password;
@@ -141,5 +150,4 @@
       flex-grow 0
       padding 3px
       font-size 0.8em
-      margin-right 30px
 </style>

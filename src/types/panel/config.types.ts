@@ -13,6 +13,7 @@ export interface ApiConfig {
 
 export interface AppConfig {
   password: string;
+  version: string;
 }
 
 export interface BabyboxConfig {

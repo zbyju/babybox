@@ -7,4 +7,5 @@ export enum AppState {
 export interface AppStateData {
   state: AppState;
   message?: string;
+  versionBackend?: string;
 }
