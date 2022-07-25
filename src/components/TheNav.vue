@@ -44,7 +44,7 @@
   const { app, units, camera } = storeToRefs(configStore);
 
   const appStateStore = useAppStateStore();
-  const { versionBackend } = storeToRefs(appStateStore);
+  const { versionBackend, engineIP, thermalIP } = storeToRefs(appStateStore);
 
   const isUnlocked = computed(() => {
     return password.value === app.value.password;
@@ -77,13 +77,13 @@
       secured: true,
     },
     {
-      link: `http://${units.value.engine.ip}/`,
+      link: `http://${engineIP.value}/`,
       label: "SDS Motory",
       external: true,
       secured: true,
     },
     {
-      link: `http://${units.value.thermal.ip}/`,
+      link: `http://${thermalIP.value}/`,
       label: "SDS Topení",
       external: true,
       secured: true,

@@ -127,11 +127,13 @@ export class AppManager {
     const config = await this.getConfig();
     if (isInstanceOfConfig(config)) {
       this.configStore.setConfig(config);
-      const { status, version } = await getStatus();
+      const { status, version, engineIP, thermalIP } = await getStatus();
       if (status === true) {
         this.appStateStore.setState({
           state: AppState.Ok,
           versionBackend: version,
+          engineIP,
+          thermalIP,
         });
       }
     } else {

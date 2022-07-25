@@ -8,12 +8,16 @@ export const useAppStateStore = defineStore("appState", {
     state: AppState.Loading as AppState,
     message: undefined as Maybe<string>,
     versionBackend: undefined as Maybe<string>,
+    engineIP: undefined as Maybe<string>,
+    thermalIP: undefined as Maybe<string>,
   }),
   actions: {
     setState(state: AppStateData) {
       this.state = state.state;
       this.message = state.message || undefined;
       this.versionBackend = state.versionBackend || undefined;
+      this.engineIP = state.engineIP || undefined;
+      this.thermalIP = state.thermalIP || undefined;
     },
   },
 });

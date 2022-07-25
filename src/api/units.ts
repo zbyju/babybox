@@ -12,11 +12,21 @@ export const getStatus = async (): Promise<any> => {
   try {
     const response = await axios.get(url, { timeout });
     if (response.status >= 200 && response.status <= 299) {
-      return { status: true, version: response.data.version };
+      return {
+        status: true,
+        version: response.data.version || undefined,
+        engineIP: response.data.engineIP || undefined,
+        thermalIP: response.data.thermalIP || undefined,
+      };
     }
-    return { status: false, version: undefined };
+    throw { msg: "Status code not OK" };
   } catch (err) {
-    return { status: false, version: undefined };
+    return {
+      status: false,
+      version: undefined,
+      engineIP: undefined,
+      thermalIP: undefined,
+    };
   }
 };
 
