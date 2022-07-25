@@ -14,7 +14,6 @@ import { useConfigStore } from "@/pinia/configStore";
 import { useConnectionStore } from "@/pinia/connectionStore";
 import { usePanelStateStore } from "@/pinia/panelStateStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
-import { AppState } from "@/types/app/appState.types";
 import type { Maybe } from "@/types/generic.types";
 import type { Config, UnitsConfig } from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
@@ -127,21 +126,53 @@ export class AppManager {
     const config = await this.getConfig();
     if (isInstanceOfConfig(config)) {
       this.configStore.setConfig(config);
+      return "Ok";
+    } else {
+      throw "Config file error";
+    }
+  }
+
+  private async initializeBackend() {
+    try {
       const { status, version, engineIP, thermalIP } = await getStatus();
       if (status === true) {
-        this.appStateStore.setState({
-          state: AppState.Ok,
-          versionBackend: version,
-          engineIP,
-          thermalIP,
-        });
+        return [version, engineIP, thermalIP];
       }
-    } else {
-      this.appStateStore.setState({
-        state: AppState.Error,
-        message: "Config soubor je v neplatném formátu.",
-      });
+      throw "Wrong status";
+    } catch (err) {
+      if (typeof err === "string") {
+        throw err;
+      } else {
+        throw "Error when fetching backend status";
+      }
     }
+  }
+
+  async initializeGlobal(): Promise<any> {
+    let intervalTime = 5000;
+    const interval = setInterval(async () => {
+      console.log("interval starting");
+
+      this.initializeConfig()
+        .then((res) => {
+          console.log(res);
+          this.appStateStore.setConfigSuccess();
+        })
+        .catch((err) => {
+          clearInterval(interval);
+          this.appStateStore.setConfigError();
+        });
+      this.initializeBackend()
+        .then((res) => {
+          console.log(res);
+          clearInterval(interval);
+          this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
+        })
+        .catch((err) => {
+          this.appStateStore.setBackendError();
+        });
+      intervalTime = 20000;
+    }, intervalTime);
   }
 
   async startPanelLoop() {
@@ -163,9 +194,5 @@ export class AppManager {
       clearInterval(this.panelLoopInterval);
     }
     return;
-  }
-
-  initializeGlobal(): Promise<any> {
-    return this.initializeConfig();
   }
 }

@@ -2,6 +2,7 @@ export enum AppState {
   Ok,
   Loading,
   Error,
+  Trying,
 }
 
 export interface AppStateData {
