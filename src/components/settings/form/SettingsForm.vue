@@ -24,6 +24,7 @@
 </template>
 
 <script lang="ts" setup>
+  import { AxiosError } from "axios";
   import moment from "moment";
   import { type Ref, ref, watch } from "vue";
 
@@ -137,6 +138,7 @@
 
     try {
       const response = await getSettings();
+      console.log(response);
       if (response.status >= 200 && response.status <= 299) {
         values.value = values.value.map(
           (v: SettingsTableRowValue, i: number) => {
@@ -158,8 +160,26 @@
       } else {
         throw { msg: "Status code not OK" };
       }
-    } catch (err) {
-      console.log(err);
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        console.log(err?.response?.status);
+        if (err.response?.status === 0) {
+          addLogMessage(
+            "Parametry nemohly být načteny - problém s backend serverem",
+            LogEntryType.Error,
+          );
+        } else if (err.response?.status === 500) {
+          addLogMessage(
+            "Parametry nemohly být načteny - problém s připojením k jednotkám",
+            LogEntryType.Error,
+          );
+        }
+      } else {
+        addLogMessage(
+          "Parametry nemohly být načteny - neznámý error",
+          LogEntryType.Error,
+        );
+      }
     }
   }
 
