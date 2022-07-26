@@ -54,7 +54,9 @@ export const useAppStateStore = defineStore("appState", {
     },
     checkState() {
       if (this.done.every((d) => d === true)) {
-        this.state = AppState.Ok;
+        setTimeout(() => {
+          this.state = AppState.Ok;
+        }, 500);
       }
     },
   },
