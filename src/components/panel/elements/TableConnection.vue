@@ -62,7 +62,7 @@
       label: "Čas do zkoušky",
     },
   ];
-  const title = "Spojení PC ↔ BB";
+  const title = "Spojení PC ↔ ŘJ1 | ŘJ2";
 </script>
 
 <style lang="stylus">
