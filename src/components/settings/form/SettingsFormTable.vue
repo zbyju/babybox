@@ -82,7 +82,7 @@
           background-color color-bg-primary-hover
 
       tr:last-child td:first-child
-      border-bottom-left-radius 10px
+        border-bottom-left-radius 10px
 
 
       tr:last-child td:last-child
