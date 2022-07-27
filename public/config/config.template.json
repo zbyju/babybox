@@ -31,6 +31,7 @@
     "cameraType": "dahua"
   },
   "app": {
-    "password": "password"
+    "password": "password",
+    "version": "1.0.0"
   }
 }
