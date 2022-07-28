@@ -15,7 +15,8 @@
     "start": "pnpm build && node './dist/index.js'",
     "build:win": "pnpm update && rmdir /s ./dist && tsc && pnpm -C ../babybox/ run build",
     "update:win": "git restore . && git pull && pnpm install && pnpm -C ../babybox/ run update",
-    "start:win": "pnpm build && node './dist/index.js'"
+    "start:win": "pnpm build && node './dist/index.js'",
+    "echo": "echo 'Hello from babybox panel backend'"
   },
   "keywords": [],
   "author": "",

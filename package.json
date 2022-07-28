@@ -6,6 +6,6 @@
   "keywords": [],
   "scripts": {
     "clean": "rm -rf ./dist",
-    "echo": "echo test; pnpm --filter babybox-panel echo"
+    "echo": "echo test; pnpm -F babybox-panel echo ; pnpm -F babybox-panel-backend echo"
   }
 }
