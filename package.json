@@ -1,0 +1,11 @@
+{
+  "name": "babybox-mono",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "keywords": [],
+  "scripts": {
+    "clean": "rm -rf ./dist",
+    "echo": "echo test; pnpm --filter babybox-panel echo"
+  }
+}
