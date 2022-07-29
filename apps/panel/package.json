@@ -3,11 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build && cp -r ./dist ../babybox-panel-backend/dist/public/",
-    "update": "git restore . && git pull && pnpm install",
-    "build:win": "vue-tsc --noEmit && vite build && robocopy \"./dist\" \"../babybox-panel-backend/dist/public/\" /s /e *.*;",
-    "asdf": "echo test",
-    "update:win": "git restore . && git pull && pnpm install",
+    "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --port 5050",
     "test:unit": "vitest --environment jsdom",
     "typecheck": "vue-tsc --noEmit -p tsconfig.vitest.json --composite false",
