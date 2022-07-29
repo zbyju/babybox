@@ -90,18 +90,18 @@
     return dataToString(props.thermal, props.row.type);
   });
 
-  const inputState = computed(
-    (): BaseInputState =>
-      props.state === SettingsTableRowState.Changed
-        ? BaseInputState.Accent
-        : props.state === SettingsTableRowState.Success
-        ? BaseInputState.Success
-        : props.state === SettingsTableRowState.Warning
-        ? BaseInputState.Warning
-        : props.state === SettingsTableRowState.Error
-        ? BaseInputState.Error
-        : BaseInputState.Neutral,
-  );
+  const inputState = computed((): BaseInputState => {
+    console.log(props.state);
+    return props.state === SettingsTableRowState.Changed
+      ? BaseInputState.Accent
+      : props.state === SettingsTableRowState.Success
+      ? BaseInputState.Success
+      : props.state === SettingsTableRowState.Warning
+      ? BaseInputState.Warning
+      : props.state === SettingsTableRowState.Error
+      ? BaseInputState.Error
+      : BaseInputState.Neutral;
+  });
 
   const emit = defineEmits<{
     (e: "update:value", value: string): void;

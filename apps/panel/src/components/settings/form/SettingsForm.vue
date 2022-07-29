@@ -200,7 +200,11 @@
       }
       if (row.type === SettingsTableRowValueType.Voltage) {
         val = String(
-          parseInt(v.value) * useConfigStore()?.units?.voltage?.divider || 63,
+          Math.round(
+            (parseInt(v.value) *
+              (useConfigStore()?.units?.voltage?.divider || 63)) /
+              (useConfigStore()?.units?.voltage?.multiplier || 100),
+          ),
         );
       }
       if (row.engine !== null) {
