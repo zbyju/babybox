@@ -39,6 +39,7 @@
     getSettingsTableTemplateRows,
     getSettingsTableValues,
   } from "@/defaults/settingsTable.defaults";
+  import { useConfigStore } from "@/pinia/configStore";
   import { type LogEntry, LogEntryType } from "@/types/settings/manager.types";
   import {
     type SettingsTableRow,
@@ -82,6 +83,7 @@
       return (value.state = SettingsTableRowState.Neutral);
     }
     if (!isNumber(newValue)) {
+      console.log("not number", newValue);
       return (value.state = SettingsTableRowState.Error);
     }
 
@@ -193,11 +195,13 @@
       }
       const row = rows[i];
       let val = v.value;
-      if (
-        row.type === SettingsTableRowValueType.Temperature ||
-        row.type === SettingsTableRowValueType.Voltage
-      ) {
+      if (row.type === SettingsTableRowValueType.Temperature) {
         val = String(parseInt(v.value) * 100);
+      }
+      if (row.type === SettingsTableRowValueType.Voltage) {
+        val = String(
+          parseInt(v.value) * useConfigStore()?.units?.voltage?.divider || 63,
+        );
       }
       if (row.engine !== null) {
         changedValues.push({
