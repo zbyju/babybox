@@ -72,7 +72,8 @@
         return displayTemperature(parseInt(data) / 100);
       case SettingsTableRowValueType.Voltage:
         return displayVoltage(
-          parseInt(data) / useConfigStore()?.units?.voltage?.divider || 63,
+          (parseInt(data) / useConfigStore()?.units?.voltage?.divider || 63) *
+            useConfigStore()?.units?.voltage?.multiplier || 100,
         );
       case SettingsTableRowValueType.Seconds:
         return data + " sekund";
