@@ -26,6 +26,7 @@
   import { computed } from "vue";
 
   import BaseInput from "@/components/panel/HTMLElements/BaseInput.vue";
+  import { useConfigStore } from "@/pinia/configStore";
   import { BaseInputState } from "@/types/base/baseInput.types";
   import {
     type SettingsTableRow,
@@ -70,7 +71,9 @@
       case SettingsTableRowValueType.Temperature:
         return displayTemperature(parseInt(data) / 100);
       case SettingsTableRowValueType.Voltage:
-        return displayVoltage(parseInt(data) / 100);
+        return displayVoltage(
+          parseInt(data) / useConfigStore()?.units?.voltage?.divider || 63,
+        );
       case SettingsTableRowValueType.Seconds:
         return data + " sekund";
       case SettingsTableRowValueType.Days:
