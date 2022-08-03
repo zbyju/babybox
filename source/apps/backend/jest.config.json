@@ -1,0 +1,12 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "collectCoverage": true,
+  "collectCoverageFrom": [
+    "**/*.ts",
+    "!/node_modules/",
+    "!src/index.ts",
+    "!src/routes/*",
+    "!src/fetch/*"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "babybox-mono",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "keywords": [],
+  "scripts": {
+    "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm run clean:dist && pnpm run move",
+    "clean": "pnpm run clean:backend && pnpm run clean:panel && pnpm run clean:dist",
+    "clean:dist": "rm -rf ../dist",
+    "clean:backend": "rm -rf ./apps/backend/dist",
+    "clean:panel": "rm -rf ./apps/panel/dist",
+    "move": "cp -r './apps/backend/dist' '..' && cp './apps/backend/package.json' '../dist/' && cp './apps/backend/.env' '../dist/' && pnpm install --prod --dir '../dist' && cp -r './apps/panel/dist' '../dist/public'",
+    "update": "git pull && pnpm install",
+    "start": "pnpm run update && pnpm run build && cd '../dist' && node '../dist/index.js'",
+    "echo": "echo test; pnpm -F babybox-panel echo ; pnpm -F babybox-panel-backend echo"
+  },
+  "dependencies": {
+    "babybox-panel-backend": "link:../dist"
+  }
+}
