@@ -2,6 +2,7 @@ import * as cors from "cors";
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as morgan from "morgan";
+import open = require("open");
 
 import { router as engineRoute } from "./routes/engineRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
@@ -57,6 +58,8 @@ async function main() {
     app.get("/", (req, res) => {
       res.sendFile(__dirname + "/public/index.html");
     });
+
+    open("http://localhost:" + (process.env.PORT || 5000));
   }
 
   app.listen(port, () => {
