@@ -3,10 +3,7 @@ lockfileVersion: 5.4
 importers:
 
   .:
-    specifiers:
-      babybox-panel-backend: link:../dist
-    dependencies:
-      babybox-panel-backend: link:../dist
+    specifiers: {}
 
   apps/backend:
     specifiers:

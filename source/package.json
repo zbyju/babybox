@@ -23,8 +23,5 @@
     "win:start": "pnpm run update && pnpm run win:build && cd \"../dist\" && node \"index.js\"",
     "echo": "echo test; pnpm -F babybox-panel echo ; pnpm -F babybox-panel-backend echo",
     "win:install": "npm install -g pnpm@latest && pnpm run update"
-  },
-  "dependencies": {
-    "babybox-panel-backend": "link:../dist"
   }
 }
