@@ -12,7 +12,8 @@
     "test": "jest",
     "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls",
     "test:postman": "newman run ./src/routes/__postman__/babybox-panel.postman_collection.json -e ./src/routes/__postman__/BabyboxPanel.postman_environment.json",
-    "build": "tsc && cp -r './node_modules/' './dist/node_modules/' ",
+    "build": "tsc",
+    "win:build": "tsc",
     "echo": "echo 'Hello from babybox panel backend'"
   },
   "devDependencies": {
@@ -42,6 +43,7 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "lowdb": "^3.0.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "open": "^8.4.0"
   }
 }

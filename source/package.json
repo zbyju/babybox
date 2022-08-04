@@ -4,6 +4,7 @@
   "description": "",
   "author": "",
   "keywords": [],
+  "packageManager": "pnpm@7.5.0",
   "scripts": {
     "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm run clean:dist && pnpm run move",
     "clean": "pnpm run clean:backend && pnpm run clean:panel && pnpm run clean:dist",
@@ -11,11 +12,16 @@
     "clean:backend": "rm -rf ./apps/backend/dist",
     "clean:panel": "rm -rf ./apps/panel/dist",
     "move": "cp -r './apps/backend/dist' '..' && cp './apps/backend/package.json' '../dist/' && cp './apps/backend/.env' '../dist/' && pnpm install --prod --dir '../dist' && cp -r './apps/panel/dist' '../dist/public'",
-    "update": "git pull && pnpm install",
+    "win:build": "pnpm install && pnpm -F babybox-panel win:build && pnpm -F babybox-panel-backend win:build && pnpm run win:clean:dist && pnpm run win:move",
+    "win:clean": "pnpm run win:clean:backend && pnpm run win:clean:panel && pnpm run win:clean:dist",
+    "win:clean:dist": "(if exist \"../dist\" rmdir /s /q \"../dist\")",
+    "win:clean:backend": "(if exist \"./apps/backend/dist\" rmdir /s /q \"./apps/backend/dist\")",
+    "win:clean:panel": "(if exist \"./apps/panel/dist\" rmdir /s /q \"./apps/panel/dist\")",
+    "win:move": "mkdir \"../dist\" && cd \"./apps/backend/\" && xcopy \"./dist\" \"../../../dist\" /s/h/e/k/f/c/y && copy \"package.json\" \"../../../dist/package.json\" && copy \".env\" \"../../../dist/.env\" && cd \"../../\" && pnpm install --prod --dir \"../dist\" && mkdir \"../dist/public\" && xcopy \"./apps/panel/dist\" \"../dist/public\" /s/h/e/k/f/c/y",
+    "update": "pnpm install -g pnpm@latest && git pull && pnpm install",
     "start": "pnpm run update && pnpm run build && cd '../dist' && node '../dist/index.js'",
-    "echo": "echo test; pnpm -F babybox-panel echo ; pnpm -F babybox-panel-backend echo"
-  },
-  "dependencies": {
-    "babybox-panel-backend": "link:../dist"
+    "win:start": "pnpm run update && pnpm run win:build && cd \"../dist\" && node \"index.js\"",
+    "echo": "echo test; pnpm -F babybox-panel echo ; pnpm -F babybox-panel-backend echo",
+    "win:install": "npm install -g pnpm@latest && pnpm run update"
   }
 }
