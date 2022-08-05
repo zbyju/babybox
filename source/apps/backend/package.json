@@ -6,7 +6,7 @@
   "author": "",
   "main": "./src/index.ts",
   "scripts": {
-    "dev": "nodemon ",
+    "dev": "nodemon",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
     "test": "jest",
