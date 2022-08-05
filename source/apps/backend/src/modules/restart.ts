@@ -4,9 +4,20 @@ import moment = require("moment");
 import { exec } from "child_process";
 
 import { RestartRepository } from "../types/restart.types";
-import { getTimeDifferenceInSeconds } from "../utils/time";
+import {
+  getFullTimeFormatted,
+  getTimeDifferenceInSeconds,
+} from "../utils/time";
+import winston = require("winston");
 
 export const restartRepository = function (): RestartRepository {
+  const logger = winston.createLogger({
+    level: "info",
+    format: winston.format.json(),
+    defaultMeta: { module: "restart" },
+    transports: [new winston.transports.File({ filename: "logs/restart.log" })],
+  });
+
   let lastRequest = null as Moment;
   let errorStreak = 0;
   let isRestarting = false;
@@ -18,11 +29,13 @@ export const restartRepository = function (): RestartRepository {
   }
 
   function stopRestart() {
+    logger.info(`${getFullTimeFormatted()} - Restart stopped`);
     isRestarting = false;
     exec("shutdown -a");
   }
 
   function startRestart() {
+    logger.info(`${getFullTimeFormatted()} - Starting to restart`);
     isRestarting = true;
     exec("shutdown -r -t 60");
   }
