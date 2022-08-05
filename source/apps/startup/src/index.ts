@@ -1,5 +1,18 @@
+import { start as winStart } from "./logic/windows";
+import winston = require("winston");
+import { getFulltimeFormatted } from "./utils/time";
+
 function main() {
-  console.log("test");
+  const logger = winston.createLogger({
+    level: "info",
+    format: winston.format.json(),
+    defaultMeta: { module: "startup" },
+    transports: [
+      new winston.transports.File({ filename: "../../logs/startup.log" }),
+    ],
+  });
+  logger.info(`${getFulltimeFormatted()} - Starting babybox panel`);
+  winStart();
 }
 
 main();
