@@ -6,6 +6,7 @@
   "keywords": [],
   "packageManager": "pnpm@7.5.0",
   "scripts": {
+    "dev": "pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev",
     "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm run clean:dist && pnpm run move",
     "clean": "pnpm run clean:backend && pnpm run clean:panel && pnpm run clean:dist",
     "clean:dist": "rm -rf ../dist",

@@ -3,7 +3,6 @@ import * as dotenv from "dotenv";
 import * as express from "express";
 import * as morgan from "morgan";
 import open = require("open");
-
 import { router as engineRoute } from "./routes/engineRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
@@ -31,7 +30,11 @@ async function main() {
   }
 
   // Allow cors
-  app.use(cors());
+  app.use(
+    cors({
+      maxAge: 60 * 60 * 24 * 7,
+    })
+  );
 
   // Parse JSON in POST requests
   app.use(express.json());
