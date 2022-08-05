@@ -3,10 +3,13 @@ import * as dotenv from "dotenv";
 import * as express from "express";
 import * as morgan from "morgan";
 import open = require("open");
+import { modulesObject } from "./modules/init";
 import { router as engineRoute } from "./routes/engineRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
 import { checkInit } from "./utils/checkInit";
+
+export const modules = modulesObject();
 
 async function main() {
   // .env file load
