@@ -1,5 +1,6 @@
+import winston from "winston";
+
 import { start as winStart } from "./logic/windows";
-import winston = require("winston");
 import { getFulltimeFormatted } from "./utils/time";
 
 function main() {
