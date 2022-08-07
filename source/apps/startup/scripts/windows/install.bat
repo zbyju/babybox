@@ -1,0 +1,2 @@
+pnpm run install
+pause

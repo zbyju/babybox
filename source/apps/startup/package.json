@@ -4,7 +4,10 @@
   "description": "Small app to update and startup the app",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon"
+    "dev": "nodemon src/index.js",
+    "dev:install": "nodemon src/index.js --install",
+    "start": "node src/index.js",
+    "install": "node src/index.js --install"
   },
   "author": "",
   "license": "ISC",
@@ -19,6 +22,7 @@
   "dependencies": {
     "fs-extra": "^10.1.0",
     "moment": "^2.29.3",
+    "sudo-prompt": "^9.2.1",
     "winston": "^3.8.1"
   }
 }
