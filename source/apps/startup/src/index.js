@@ -1,11 +1,10 @@
 const winston = require("winston");
 
-const winStart = require("./logic/windows");
+const winStart = require("./logic/start/windows");
 const { getFulltimeFormatted } = require("./utils/time");
 
-function main() {
+async function main() {
   const logger = winston.createLogger({
-    level: "info",
     format: winston.format.json(),
     defaultMeta: { module: "startup" },
     transports: [
@@ -13,7 +12,17 @@ function main() {
     ],
   });
   logger.info(`${getFulltimeFormatted()} - Starting babybox panel`);
-  winStart();
+  const res = await winStart();
+  console.log("test");
+  if (res === true) {
+    logger.info(
+      `${getFulltimeFormatted()} - Successfully started babybox panel`
+    );
+  } else {
+    logger.error(
+      `${getFulltimeFormatted()} - Error when starting babybox panel`
+    );
+  }
 }
 
 main();
