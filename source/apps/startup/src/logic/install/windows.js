@@ -1,6 +1,7 @@
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 const path = require("path");
+// eslint-disable-next-line no-unused-vars
 const fs = require("fs-extra");
 const sudo = require("sudo-prompt");
 const winston = require("winston");
@@ -41,6 +42,7 @@ async function installDeps() {
   await exec("npm install -g typescript");
 }
 
+// eslint-disable-next-line no-unused-vars
 async function copyStartup(logger) {
   const pathToScript = path.resolve("./scripts/windows/startup.bat");
   const pathToLink = path.resolve(
