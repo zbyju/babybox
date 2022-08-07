@@ -1,2 +1,3 @@
-pnpm run install
+cd ../../
+node src/index.js --install
 pause
