@@ -95,4 +95,5 @@ module.exports = async function install() {
   ) {
     copyStartup(installLogger);
   }
+  return true;
 };
