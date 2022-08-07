@@ -59,7 +59,7 @@ async function update() {
     const { stdout, stderr } = await exec("git pull", { cwd: "../../" });
     if (!stdout) {
       updateLogger.error(
-        `${getFulltimeFormatted()} - StdError when updating (${stderr})`
+        `${getFulltimeFormatted()} - stderror when updating (${stderr})`
       );
       return UpdateResult.Error;
     }
