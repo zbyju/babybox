@@ -93,6 +93,6 @@ module.exports = async function install() {
       "C:/ProgramData/Microsoft/Windows/Start Menu/Programs/StartUp/babybox.bat"
     )
   ) {
-    copyStartup();
+    copyStartup(installLogger);
   }
 };
