@@ -180,7 +180,11 @@ async function start() {
       });
 
       pnpm.on("close", (code) => {
-        return resolve(code);
+        if (code === 0) {
+          return resolve(code);
+        } else {
+          return reject(code);
+        }
       });
     });
   }
