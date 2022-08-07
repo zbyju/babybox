@@ -88,13 +88,5 @@ module.exports = async function install() {
   }
 
   await installDeps();
-
-  if (
-    !fs.existsSync(
-      "C:/ProgramData/Microsoft/Windows/Start Menu/Programs/StartUp/babybox.bat"
-    )
-  ) {
-    copyStartup(installLogger);
-  }
   return true;
 };
