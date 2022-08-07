@@ -1,5 +1,7 @@
-import { moment } from "moment";
+const moment = require("moment");
 
-export const getFulltimeFormatted = () => {
-  return moment().format("DD.MM.YYYY HH:mm:ss");
+module.exports = {
+  getFulltimeFormatted: () => {
+    return moment().format("DD.MM.YYYY HH:mm:ss");
+  },
 };

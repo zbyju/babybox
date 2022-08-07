@@ -1,7 +1,7 @@
-import winston from "winston";
+const winston = require("winston");
 
-import { start as winStart } from "./logic/windows";
-import { getFulltimeFormatted } from "./utils/time";
+const winStart = require("./logic/windows");
+const { getFulltimeFormatted } = require("./utils/time");
 
 function main() {
   const logger = winston.createLogger({

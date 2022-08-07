@@ -2,7 +2,7 @@
   "name": "startup",
   "version": "1.0.0",
   "description": "Small app to update and startup the app",
-  "main": "src/index.ts",
+  "main": "src/index.js",
   "scripts": {
     "dev": "nodemon"
   },
