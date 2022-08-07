@@ -57,7 +57,7 @@ const startLogger = winston.createLogger({
 async function update() {
   try {
     const { stdout, stderr } = await exec("git pull", { cwd: "../../" });
-    if (stderr) {
+    if (!stdout) {
       updateLogger.error(
         `${getFulltimeFormatted()} - StdError when updating (${stderr})`
       );
