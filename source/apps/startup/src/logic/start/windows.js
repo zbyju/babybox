@@ -189,7 +189,7 @@ async function start() {
 module.exports = async function onStartup() {
   // Update
   const updateRes = await update();
-  if (updateRes === UpdateResult.Updated) {
+  if (updateRes === UpdateResult.Updated || !fs.existsSync("../../../dist")) {
     // Build new
     const buildRes = await build();
     if (buildRes === Result.Success) {
