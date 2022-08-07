@@ -17,7 +17,7 @@ export const displayTemperature = (num: number): string => {
 };
 
 export const displayVoltage = (num: number): string => {
-  return `${prettyFloat(num)}V`;
+  return `${prettyFloat(num / 100)}V`;
 };
 
 export const displayPercentage = (num: number): string => {
