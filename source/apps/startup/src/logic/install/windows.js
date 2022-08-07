@@ -24,7 +24,7 @@ async function checkInstalled(logger) {
     return false;
   }
   try {
-    await exec("git -v");
+    await exec("git --version");
   } catch (err) {
     logger.error(
       `${getFulltimeFormatted()} - Failed installation - missing git (${err})`
