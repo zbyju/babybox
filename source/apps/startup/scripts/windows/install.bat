@@ -1,5 +1,5 @@
-cd ../../
-npm install -g pnpm
-pnpm install
-node src/index.js --install
+CALL cd ../../
+CALL npm install -g pnpm
+CALL pnpm install
+CALL node src/index.js --install
 pause
