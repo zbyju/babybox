@@ -1,1 +1,0 @@
-D:/Projects/babybox/source/apps/startup/scripts/windows/startup.bat

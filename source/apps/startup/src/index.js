@@ -20,7 +20,13 @@ async function main() {
     });
     installLogger.info(`${getFulltimeFormatted()} - Starting the installation`);
     const res = await winInstall();
-    canStartup = res;
+    if (res === true) {
+      installLogger.info(`${getFulltimeFormatted()} - Installation successful`);
+      canStartup = true;
+    } else {
+      installLogger.error(`${getFulltimeFormatted()} - Installation failed`);
+      canStartup = false;
+    }
   }
   if (canStartup) {
     const logger = winston.createLogger({
