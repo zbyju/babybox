@@ -175,21 +175,11 @@ async function start() {
         detached: true,
       });
 
-      pnpm.stdout.on("data", (data) => {
-        console.log("stdout: " + data);
-      });
-
-      pnpm.stderr.on("data", (data) => {
-        console.log("stderr: " + data);
-      });
-
       pnpm.on("error", (err) => {
-        console.log("error: " + err);
         return reject(err);
       });
 
       pnpm.on("close", (code) => {
-        console.log("exited with code: " + code);
         return resolve(code);
       });
     });
