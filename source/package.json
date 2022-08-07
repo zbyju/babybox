@@ -9,7 +9,7 @@
     "dev": "pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev",
     "dev:backend": "pnpm -F babybox-panel-backend dev",
     "dev:panel": "pnpm -F babybox-panel dev",
-    "start": "cd \"../dist\" && pm2 start \"index.js\"",
+    "start": "pnpm -F startup start",
     "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build",
     "old:build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm run clean:dist && pnpm run move",
     "old:clean": "pnpm run clean:backend && pnpm run clean:panel && pnpm run clean:dist",

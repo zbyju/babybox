@@ -20,6 +20,7 @@ const updateLogger = winston.createLogger({
   format: winston.format.json(),
   defaultMeta: { module: "startup/update" },
   transports: [
+    new winston.transports.Console(),
     new winston.transports.File({ filename: "../../logs/startup.update.log" }),
   ],
 });
@@ -28,6 +29,7 @@ const buildLogger = winston.createLogger({
   format: winston.format.json(),
   defaultMeta: { module: "startup/build" },
   transports: [
+    new winston.transports.Console(),
     new winston.transports.File({ filename: "../../logs/startup.build.log" }),
   ],
 });
@@ -36,6 +38,7 @@ const overrideLogger = winston.createLogger({
   format: winston.format.json(),
   defaultMeta: { module: "startup/override" },
   transports: [
+    new winston.transports.Console(),
     new winston.transports.File({
       filename: "../../logs/startup.override.log",
     }),
@@ -46,6 +49,7 @@ const startLogger = winston.createLogger({
   format: winston.format.json(),
   defaultMeta: { module: "startup/start" },
   transports: [
+    new winston.transports.Console(),
     new winston.transports.File({ filename: "../../logs/startup.start.log" }),
   ],
 });

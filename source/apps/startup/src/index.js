@@ -13,6 +13,7 @@ async function main() {
       format: winston.format.json(),
       defaultMeta: { module: "startup/install" },
       transports: [
+        new winston.transports.Console(),
         new winston.transports.File({
           filename: "../../logs/startup.install.log",
         }),
@@ -33,6 +34,7 @@ async function main() {
       format: winston.format.json(),
       defaultMeta: { module: "startup" },
       transports: [
+        new winston.transports.Console(),
         new winston.transports.File({ filename: "../../logs/startup.log" }),
       ],
     });
