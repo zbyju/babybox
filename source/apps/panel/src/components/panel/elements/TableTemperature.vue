@@ -75,6 +75,14 @@
       field: "casingTemperature",
       label: "Vnitřní plášť",
     },
+    {
+      field: "hystersionHeating",
+      label: "Hysterze topení",
+    },
+    {
+      field: "hystersionCooling",
+      label: "Hysterze chlazení",
+    },
   ];
   const title = "Topení/chlazení";
 </script>

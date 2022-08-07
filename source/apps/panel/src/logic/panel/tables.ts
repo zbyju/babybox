@@ -180,6 +180,14 @@ export const getTableTemperaturesValues = (
         thermalData?.data.temperature.casing,
         displayTemperature,
       ),
+      hystersionHeating: maybeValueToTableRowValue(
+        thermalData?.settings.temperature.hysteresisHeating,
+        displayTemperature,
+      ),
+      hystersionCooling: maybeValueToTableRowValue(
+        thermalData?.settings.temperature.hysteresisCooling,
+        displayTemperature,
+      ),
     },
   };
 };

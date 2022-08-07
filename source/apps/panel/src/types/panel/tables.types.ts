@@ -77,6 +77,8 @@ export interface TableTemperaturesValues extends TableValues {
     bottomTemperature: TableRowValue;
     topTemperature: TableRowValue;
     casingTemperature: TableRowValue;
+    hystersionHeating: TableRowValue;
+    hystersionCooling: TableRowValue;
   };
 }
 
