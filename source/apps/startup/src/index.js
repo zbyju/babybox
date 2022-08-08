@@ -38,7 +38,7 @@ async function main() {
         new winston.transports.File({ filename: "../../logs/startup.log" }),
       ],
     });
-    logger.info(`${getFulltimeFormatted()} - Starting babybox panel`);
+    logger.info(`${getFulltimeFormatted()} - Starting babybox panel!`);
     const res = await winStart();
     if (res === true) {
       logger.info(
