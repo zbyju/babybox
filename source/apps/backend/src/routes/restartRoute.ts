@@ -5,7 +5,7 @@ import { modules } from "..";
 
 export const router = express.Router();
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/refresh", async (req: Request, res: Response) => {
   modules.onIncomingData();
   res.status(200).send({ msg: "Ok" });
 });
