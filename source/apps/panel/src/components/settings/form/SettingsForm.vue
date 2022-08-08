@@ -83,7 +83,6 @@
       return (value.state = SettingsTableRowState.Neutral);
     }
     if (!isNumber(newValue)) {
-      console.log("not number", newValue);
       return (value.state = SettingsTableRowState.Error);
     }
 
@@ -140,7 +139,6 @@
 
     try {
       const response = await getSettings();
-      console.log(response);
       if (response.status >= 200 && response.status <= 299) {
         values.value = values.value.map(
           (v: SettingsTableRowValue, i: number) => {
@@ -164,7 +162,6 @@
       }
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
-        console.log(err?.response?.status);
         if (err.response?.status === 0) {
           addLogMessage(
             "Parametry nemohly být načteny - problém s backend serverem",

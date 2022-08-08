@@ -95,7 +95,6 @@
   });
 
   const inputState = computed((): BaseInputState => {
-    console.log(props.state);
     return props.state === SettingsTableRowState.Changed
       ? BaseInputState.Accent
       : props.state === SettingsTableRowState.Success
