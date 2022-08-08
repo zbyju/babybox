@@ -16,7 +16,11 @@
   onBeforeMount(async () => await appManager.initializeGlobal());
 
   setInterval(async () => {
-    await refreshRestartCooldown();
+    try {
+      await refreshRestartCooldown();
+    } catch (err) {
+      console.log(err);
+    }
   }, 5000);
 </script>
 

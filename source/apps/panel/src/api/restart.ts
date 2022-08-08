@@ -1,8 +1,7 @@
+import axios from "axios";
 import { storeToRefs } from "pinia";
 
 import { useConfigStore } from "@/pinia/configStore";
-
-import { getData } from "./units";
 
 export const refreshRestartCooldown = () => {
   const configStore = useConfigStore();
@@ -10,5 +9,5 @@ export const refreshRestartCooldown = () => {
   const url = api.value.baseApiUrl + "/restart/refresh";
   const timeout = api.value.requestTimeout || 5000;
 
-  return getData(url, timeout);
+  return axios.get(url);
 };
