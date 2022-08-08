@@ -6,6 +6,7 @@ import type { Maybe } from "@/types/generic.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
+import { daysToString } from "@/utils/panel/dataDisplay";
 
 export const getNewState = (
   engineUnit: Maybe<EngineUnit>,
@@ -25,7 +26,7 @@ export const getNewState = (
     result = {
       active: false,
       message: {
-        text: `${inspection} dní neprovedena zkouška!`,
+        text: `${inspection} ${daysToString(inspection)} neprovedena zkouška!`,
         color: "color-text-white",
       },
     };

@@ -75,9 +75,13 @@ export const secondsToTime = (
   const h = Math.floor((seconds % (3600 * 24)) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  const dl = d > 1 ? "dnů" : d == 0 ? "den" : "";
+  const dl = daysToString(d);
   return `${d} ${dl} ${zeroFilled(h, 2)}:${zeroFilled(m, 2)}:${zeroFilled(
     s,
     2,
   )}`;
+};
+
+export const daysToString = (days: number): string => {
+  return days > 1 ? "dní" : days === 0 ? "den" : "";
 };
