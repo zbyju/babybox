@@ -7,7 +7,7 @@
     "dev": "nodemon src/index.js",
     "dev:install": "nodemon src/index.js --install",
     "start": "node src/index.js",
-    "install": "node src/index.js --install"
+    "start:install": "node src/index.js --install"
   },
   "author": "",
   "license": "ISC",
