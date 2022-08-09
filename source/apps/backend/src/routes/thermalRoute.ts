@@ -1,7 +1,6 @@
 import * as express from "express";
 import { Request, Response } from "express";
 
-import { modules } from "..";
 import { fetchDataCommon } from "../fetch/fetchFromUnits";
 import { Unit } from "../types/units.types";
 import { transformThermalData } from "../utils/transformData";
@@ -9,8 +8,6 @@ import { transformThermalData } from "../utils/transformData";
 export const router = express.Router();
 
 router.get("/data", async (req: Request, res: Response) => {
-  modules.onIncomingData();
-
   const response = await fetchDataCommon(Unit.Thermal, req.query);
 
   const raw = req.query?.raw ? parseInt(req.query.raw.toString()) > 0 : false;

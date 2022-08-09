@@ -5,6 +5,7 @@ import * as morgan from "morgan";
 import open = require("open");
 import { modulesObject } from "./modules/init";
 import { router as engineRoute } from "./routes/engineRoute";
+import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
 import { checkInit } from "./utils/checkInit";
@@ -56,6 +57,7 @@ async function main() {
   app.use(process.env.API_PREFIX + "/units", unitsRoute);
   app.use(process.env.API_PREFIX + "/engine", engineRoute);
   app.use(process.env.API_PREFIX + "/thermal", thermalRoute);
+  app.use(process.env.API_PREFIX + "/restart", restartRoute);
 
   // Serve Frontend app if running in production
   if (process.env.NODE_ENV === "production") {

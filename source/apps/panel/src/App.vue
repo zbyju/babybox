@@ -9,10 +9,19 @@
 
   import { AppManager } from "@/logic/panel/panelLoop";
 
+  import { refreshRestartCooldown } from "./api/restart";
   import AppState from "./components/AppState.vue";
 
   const appManager = new AppManager();
   onBeforeMount(async () => await appManager.initializeGlobal());
+
+  setInterval(async () => {
+    try {
+      await refreshRestartCooldown();
+    } catch (err) {
+      console.log(err);
+    }
+  }, 5000);
 </script>
 
 <style lang="stylus">

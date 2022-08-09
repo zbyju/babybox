@@ -9,9 +9,15 @@
 </template>
 
 <script lang="ts" setup>
+  import router from "@/router";
+
   import SettingsForm from "../components/settings/form/SettingsForm.vue";
   import QuickActions from "../components/settings/QuickActions.vue";
   import TheNav from "../components/TheNav.vue";
+
+  setTimeout(() => {
+    router.push({ path: "/" });
+  }, 5000);
 </script>
 
 <style lang="stylus">

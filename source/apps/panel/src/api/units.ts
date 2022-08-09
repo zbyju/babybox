@@ -112,10 +112,6 @@ export const sendSettings = (data: any[]): Promise<any> => {
   const url = api.value.baseApiUrl + "/units/settings";
   const timeout = api.value.requestTimeout || 5000;
 
-  console.log("Sending: ", {
-    settings: data,
-  });
-
   return axios.put(
     url,
     {

@@ -151,11 +151,8 @@ export class AppManager {
   async initializeGlobal(): Promise<any> {
     let intervalTime = 5000;
     const interval = setInterval(async () => {
-      console.log("interval starting");
-
       this.initializeConfig()
         .then((res) => {
-          console.log(res);
           this.appStateStore.setConfigSuccess();
         })
         .catch((err) => {
@@ -164,7 +161,6 @@ export class AppManager {
         });
       this.initializeBackend()
         .then((res) => {
-          console.log(res);
           clearInterval(interval);
           this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
         })
