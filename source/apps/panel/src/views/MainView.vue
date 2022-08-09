@@ -22,6 +22,8 @@
   import { usePanelStateStore } from "@/pinia/panelStateStore";
   import type { PanelState } from "@/types/panel/main.types";
 
+  document.body.scrollTop = document.documentElement.scrollTop = 0;
+
   const panelStateStore = usePanelStateStore();
   const { message, active } = storeToRefs(panelStateStore);
   const panelState = computed(
