@@ -17,7 +17,7 @@
 
   setTimeout(() => {
     router.push({ path: "/" });
-  }, 5000);
+  }, 1000 * 60 * 10);
 </script>
 
 <style lang="stylus">
