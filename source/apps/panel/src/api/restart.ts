@@ -9,5 +9,5 @@ export const refreshRestartCooldown = () => {
   const url = api.value.baseApiUrl + "/restart/refresh";
   const timeout = api.value.requestTimeout || 5000;
 
-  return axios.get(url);
+  return axios.get(url, { timeout: timeout });
 };
