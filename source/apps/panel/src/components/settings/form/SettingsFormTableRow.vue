@@ -62,11 +62,11 @@
   });
 
   function dataToString(
-    data: string | null,
+    data: string | null | undefined,
     type: SettingsTableRowValueType,
   ): string {
     if (data === null) return "—";
-    if (data === "") return "";
+    if (data === "" || data === undefined) return "";
     switch (type) {
       case SettingsTableRowValueType.Temperature:
         return displayTemperature(parseInt(data) / 100);
