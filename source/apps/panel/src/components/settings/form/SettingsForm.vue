@@ -56,6 +56,7 @@
     getChangedSettings,
     isSettingChanged,
     settingsSendToStates,
+    settingsSendToStatesError,
   } from "@/utils/settings/settings";
 
   const headers = getSettingsTableHeaders();
@@ -224,14 +225,13 @@
         throw { msg: "Status code is not OK" };
       }
     } catch (err) {
-      addLogMessage("Chyba při ukládání parametrů");
+      addLogMessage("Chyba při ukládání parametrů", LogEntryType.Error);
       onLoadAction();
-      values.value = values.value.map((v) => {
-        return {
-          ...v,
-          state: SettingsTableRowState.Error,
-        };
-      });
+      values.value = values.value = settingsSendToStatesError(
+        changedValues,
+        values.value,
+        rows,
+      );
     }
   }
 

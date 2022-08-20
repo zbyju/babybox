@@ -2,9 +2,10 @@ import type {
   SettingsSendResult,
   SettingsToSend,
 } from "@/types/settings/manager.types";
-import type {
-  SettingsTableRow,
-  SettingsTableRowValue,
+import {
+  type SettingsTableRow,
+  type SettingsTableRowValue,
+  SettingsTableRowState,
   SettingsTableRowValueType,
 } from "@/types/settings/table.types";
 
@@ -125,5 +126,28 @@ export const settingsSendToStates = (
       : null;
 
     return updateValueBasedOnResult(resultEngine, resultThermal, value);
+  });
+};
+
+export const settingsSendToStatesError = (
+  changedValues: SettingsToSend[],
+  values: SettingsTableRowValue[],
+  rows: SettingsTableRow[],
+): SettingsTableRowValue[] => {
+  return values.map((value: SettingsTableRowValue, index: number) => {
+    const row = rows[index];
+    const data = changedValues;
+    const resultEngine = row.engine
+      ? data.find((d: any) => d.index === row.engine && d.unit === "engine")
+      : null;
+    const resultThermal = row.thermal
+      ? data.find((d: any) => d.index === row.thermal && d.unit === "thermal")
+      : null;
+
+    if (resultEngine || resultThermal) {
+      return { ...value, state: SettingsTableRowState.Error };
+    } else {
+      return value;
+    }
   });
 };
