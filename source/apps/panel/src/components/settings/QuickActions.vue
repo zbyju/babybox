@@ -12,25 +12,20 @@
 </template>
 
 <script lang="ts" setup>
-  import { storeToRefs } from "pinia";
-
   import { openDoors, resetBabybox } from "@/api/units";
-  import { useConfigStore } from "@/pinia/configStore";
 
   import CameraWrapper from "../panel/containers/CameraWrapper.vue";
 
-  const configStore = useConfigStore();
-  const { units } = storeToRefs(configStore);
   const openBabybox = async () => {
     try {
-      await openDoors(units.value.engine.ip);
+      await openDoors();
     } catch (err) {
       console.log(err);
     }
   };
   const openServiceDoors = async () => {
     try {
-      await resetBabybox(units.value.engine.ip);
+      await resetBabybox();
     } catch (err) {
       console.log(err);
     }
