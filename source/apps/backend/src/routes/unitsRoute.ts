@@ -42,7 +42,6 @@ router.put("/settings", async (req, res) => {
 
   const results: SettingResult[] = await updateSettings(
     req.body.settings,
-    5,
     req.body.options?.timeout || 5000
   );
   const response: CommonSettingsResponse = results.every((r) => r.result)

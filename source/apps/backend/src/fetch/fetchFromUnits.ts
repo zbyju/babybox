@@ -133,42 +133,70 @@ export async function updateWatchdog(): Promise<CommonResponse> {
   }
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function updateSettings(
   settings: Setting[],
-  tryNumber = 5,
-  timeout = 5000
+  timeout = 5000,
+  tryNumber = 10
 ): Promise<SettingResult[]> {
-  const results = settings.map(async (s: Setting) => {
-    const ip = unitToIp(s.unit);
-    const timestamp = new Date().getTime();
-    let result = false;
+  const results = settings.reduce(
+    async (previous: Promise<SettingResult[]>, s: Setting) => {
+      const prevResult = await previous;
+      const ip = unitToIp(s.unit);
+      const timestamp = new Date().getTime();
+      let result = false;
+      let i = tryNumber;
 
-    // Try to override settings tryNumber of times
-    while (!result && tryNumber > 0) {
-      result = await updateSetting(
-        `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
-        `http://${ip}/sdscep?sys140=${s.value}&${timestamp}`,
-        `http://${ip}/get_sys[100]?rn=16&${timestamp}`,
-        s.index,
-        s.value,
-        timeout
-      );
-      --tryNumber;
-    }
-    return { ...s, result };
-  });
+      // Try to override settings tryNumber of times
+      while (!result && i > 0) {
+        result = await updateSetting(
+          `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
+          `http://${ip}/sdscep?sys140=${s.value}&${timestamp}`,
+          `http://${ip}/get_sys[141]`,
+          `http://${ip}/get_sys[100]?rn=16&${timestamp}`,
+          s.index,
+          s.value,
+          timeout
+        );
+        if (result === false) {
+          await wait(75);
+        }
+        --i;
+      }
+      i = tryNumber;
+      return [...prevResult, { ...s, result }];
+    },
+    Promise.resolve([])
+  );
 
-  return Promise.all(results);
+  return results;
+}
+
+async function isReady(url: string, timeout = 5000) {
+  try {
+    const res = await fetchFromUrl(url, timeout);
+    return res.data === 0;
+  } catch (err) {
+    return false;
+  }
 }
 
 async function updateSetting(
   urlIndex: string,
   urlValue: string,
+  urlReady: string,
   urlVerification: string,
   index: number,
   value: number,
   timeout = 5000
 ): Promise<boolean> {
+  // If unit is not ready then don't send
+  const ready = await isReady(urlReady, timeout);
+  if (!ready) return false;
+
   // Send value first; then index
   const valueFetch = fetchFromUrl(urlValue, timeout);
   const indexFetch = fetchFromUrl(urlIndex, timeout);
