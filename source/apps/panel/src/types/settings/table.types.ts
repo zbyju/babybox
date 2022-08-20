@@ -21,8 +21,8 @@ export interface SettingsTableRow extends SettingsTableRowTemplate {
 }
 
 export interface SettingsTableRowValue {
-  engine: string | null;
-  thermal: string | null;
+  engine: string | null | undefined;
+  thermal: string | null | undefined;
   value: string;
   state: SettingsTableRowState;
 }

@@ -51,6 +51,7 @@
     type SettingsTableRowValue,
     SettingsTableRowState,
   } from "@/types/settings/table.types";
+  import { whenNotNullish } from "@/utils/general";
   import { isNumber } from "@/utils/number";
   import {
     getChangedSettings,
@@ -95,8 +96,8 @@
     }
 
     const isChanged = isSettingChanged(
-      value.engine ? Number(value.engine) : null,
-      value.thermal ? Number(value.thermal) : null,
+      whenNotNullish(value.engine, Number(value.engine)),
+      whenNotNullish(value.thermal, Number(value.thermal)),
       newValue,
       row.type,
     );

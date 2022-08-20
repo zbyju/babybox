@@ -9,7 +9,7 @@ import {
   SettingsTableRowValueType,
 } from "@/types/settings/table.types";
 
-import { isNullish } from "../general";
+import { isNullish, whenNotNullish } from "../general";
 import { isNumber } from "../number";
 import { settingsResultsToState, settingsRowValueToValue } from "./conversions";
 
@@ -20,6 +20,7 @@ export const isSettingChanged = (
   type: SettingsTableRowValueType,
 ): boolean => {
   const value = settingsRowValueToValue(rowValue, type);
+
   if (!isNullish(engineValue) && !isNullish(thermalValue)) {
     return engineValue !== value || thermalValue !== value;
   } else if (!isNullish(engineValue)) {
@@ -40,8 +41,9 @@ export const getChangedSettings = (
       curr: SettingsTableRowValue,
       index: number,
     ): SettingsToSend[] => {
-      const engineValue = curr.engine !== null ? Number(curr.engine) : null;
-      const thermalValue = curr.thermal !== null ? Number(curr.thermal) : null;
+      const engineValue = whenNotNullish(curr.engine, Number(curr.engine));
+      const thermalValue = whenNotNullish(curr.thermal, Number(curr.thermal));
+
       if (curr.value === null || !isNumber(curr.value)) return res;
       const row = rows[index];
 
