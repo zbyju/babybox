@@ -14,7 +14,7 @@
       :headers="headers"
       :rows="rows"
       :values="values"
-      @value-updated="valueUpdated"
+      @value-updated="onValueUpdated"
     />
     <SettingsLog
       :entries="logEntries"
@@ -39,10 +39,10 @@
     getSettingsTableTemplateRows,
     getSettingsTableValues,
   } from "@/defaults/settingsTable.defaults";
-  import { useConfigStore } from "@/pinia/configStore";
   import {
     type LogEntry,
     type SettingsResult,
+    type SettingsToSend,
     LogEntryType,
   } from "@/types/settings/manager.types";
   import {
@@ -50,9 +50,13 @@
     type SettingsTableRowTemplate,
     type SettingsTableRowValue,
     SettingsTableRowState,
-    SettingsTableRowValueType,
   } from "@/types/settings/table.types";
   import { isNumber } from "@/utils/number";
+  import {
+    getChangedSettings,
+    isSettingChanged,
+    settingsSendToStates,
+  } from "@/utils/settings/settings";
 
   const headers = getSettingsTableHeaders();
   const rows: Array<SettingsTableRow> = getSettingsTableTemplateRows().map(
@@ -73,13 +77,12 @@
       if (
         v.state === SettingsTableRowState.Changed ||
         v.state === SettingsTableRowState.Neutral
-      ) {
-        valueUpdated(v.value, i);
-      }
+      )
+        onValueUpdated(v.value, i);
     }),
   );
 
-  function valueUpdated(newValue: string, index: number) {
+  function onValueUpdated(newValue: string, index: number) {
     const value = values.value[index];
     const row = rows[index];
     value.value = newValue;
@@ -90,18 +93,16 @@
       return (value.state = SettingsTableRowState.Error);
     }
 
-    if (row.engine !== null) {
-      if (newValue === value.engine) {
-        value.state = SettingsTableRowState.Neutral;
-      } else {
-        value.state = SettingsTableRowState.Changed;
-      }
-    } else if (row.thermal !== null) {
-      if (newValue === value.thermal) {
-        value.state = SettingsTableRowState.Neutral;
-      } else {
-        value.state = SettingsTableRowState.Changed;
-      }
+    const isChanged = isSettingChanged(
+      value.engine ? Number(value.engine) : null,
+      value.thermal ? Number(value.thermal) : null,
+      newValue,
+      row.type,
+    );
+    if (isChanged) {
+      return (value.state = SettingsTableRowState.Changed);
+    } else {
+      return (value.state = SettingsTableRowState.Neutral);
     }
   }
   const logEntries: Ref<LogEntry[]> = ref([
@@ -199,43 +200,10 @@
   }
 
   async function onSaveAction() {
-    const changedValues = [];
-    let i = 0;
-    for (const v of values.value) {
-      if (v.state !== SettingsTableRowState.Changed || v.value === null) {
-        ++i;
-        continue;
-      }
-      const row = rows[i];
-      let val = v.value;
-      if (row.type === SettingsTableRowValueType.Temperature) {
-        val = String(parseInt(v.value) * 100);
-      }
-      if (row.type === SettingsTableRowValueType.Voltage) {
-        val = String(
-          Math.round(
-            (parseInt(v.value) *
-              (useConfigStore()?.units?.voltage?.divider || 63)) /
-              (useConfigStore()?.units?.voltage?.multiplier || 100),
-          ),
-        );
-      }
-      if (row.engine !== null) {
-        changedValues.push({
-          unit: "engine",
-          index: row.engine,
-          value: parseInt(val),
-        });
-      }
-      if (row.thermal !== null) {
-        changedValues.push({
-          unit: "thermal",
-          index: row.thermal,
-          value: parseInt(val),
-        });
-      }
-      ++i;
-    }
+    const changedValues: SettingsToSend[] = getChangedSettings(
+      values.value,
+      rows,
+    );
     if (changedValues.length === 0)
       return addLogMessage(
         "Nebyly provedeny žádné změny, žádné nové parametry!",
@@ -250,15 +218,8 @@
       if (response.status >= 200 && response.status <= 299) {
         addLogMessage(`Parametry úspěšně uloženy`, LogEntryType.Success);
         onLoadAction();
-        values.value = values.value.map((v) => {
-          if (v.state === SettingsTableRowState.Changed) {
-            return {
-              ...v,
-              state: SettingsTableRowState.Success,
-            };
-          }
-          return v;
-        });
+
+        values.value = settingsSendToStates(response, values.value, rows);
       } else {
         throw { msg: "Status code is not OK" };
       }
