@@ -8,7 +8,7 @@
         @click:save="onSaveAction"
       />
       <SettingsFilters />
-      <SettingsResult />
+      <SettingsFormResult :result="settingsResult" />
     </div>
     <SettingsTable
       :headers="headers"
@@ -32,7 +32,7 @@
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
   import SettingsLog from "@/components/settings/form/SettingsFormLog.vue";
-  import SettingsResult from "@/components/settings/form/SettingsFormResult.vue";
+  import SettingsFormResult from "@/components/settings/form/SettingsFormResult.vue";
   import SettingsTable from "@/components/settings/form/SettingsFormTable.vue";
   import {
     getSettingsTableHeaders,
@@ -40,7 +40,11 @@
     getSettingsTableValues,
   } from "@/defaults/settingsTable.defaults";
   import { useConfigStore } from "@/pinia/configStore";
-  import { type LogEntry, LogEntryType } from "@/types/settings/manager.types";
+  import {
+    type LogEntry,
+    type SettingsResult,
+    LogEntryType,
+  } from "@/types/settings/manager.types";
   import {
     type SettingsTableRow,
     type SettingsTableRowTemplate,
@@ -108,6 +112,11 @@
     },
   ]);
 
+  const settingsResult: Ref<SettingsResult> = ref({
+    type: LogEntryType.Info,
+    message: "Formulář inicializován",
+  });
+
   function addLogMessage(
     message: string,
     type: LogEntryType = LogEntryType.Info,
@@ -117,11 +126,18 @@
       type,
       date: moment(),
     });
+    settingsResult.value = {
+      type,
+      message,
+    };
   }
 
   function onRemoveAction() {
     addLogMessage("Smazány hodnoty z formuláře");
-    values.value = getSettingsTableValues(rows);
+    values.value = values.value.map((v) => ({
+      ...v,
+      value: "",
+    }));
   }
 
   function onInsertRecommendedAction() {
@@ -220,7 +236,7 @@
       }
       ++i;
     }
-    if (changedValues === [])
+    if (changedValues.length === 0)
       return addLogMessage(
         "Nebyly provedeny žádné změny, žádné nové parametry!",
         LogEntryType.Error,

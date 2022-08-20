@@ -12,3 +12,8 @@ export interface LogEntry {
   type: LogEntryType;
   date: Moment;
 }
+
+export interface SettingsResult {
+  type: LogEntryType;
+  message?: string;
+}
