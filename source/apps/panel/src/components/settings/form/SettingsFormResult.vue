@@ -14,8 +14,6 @@
   const props = defineProps<{
     result: SettingsResult;
   }>();
-
-  console.log(props);
 </script>
 
 <style lang="stylus">
