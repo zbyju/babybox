@@ -4,18 +4,12 @@ import * as dotenv from "dotenv";
 import { JSONFile, Low } from "lowdb";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { mainConfig } from "../services/db/main.js";
+import { DbFactory } from "../services/db/factory.js";
 
 async function main() {
   // Load .env
   dotenv.config();
-
-  // Init lowdb
-  const __dirname = dirname(fileURLToPath(import.meta.url));
-  const file = join(__dirname, "../configs/main.json");
-  const adapter = new JSONFile(file);
-  const db = new Low(adapter);
-
-  await db.read();
 
   const app = express();
   const port = process.env.PORT || 6000;
