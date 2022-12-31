@@ -1,8 +1,8 @@
 {
   "babybox": {
-    "name": "Praha"
+    "name": "Nenastaveno"
   },
-  "api": {
+  "backend": {
     "url": "/api/v1",
     "port": 5000,
     "requestTimeout": 5000
@@ -12,6 +12,7 @@
     "port": 6000,
     "requestTimeout": 10000
   },
+  "startup": {},
   "units": {
     "engine": {
       "ip": "10.1.1.5"
