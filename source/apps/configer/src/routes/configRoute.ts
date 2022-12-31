@@ -9,6 +9,11 @@ router.get("/main", async (req: Request, res: Response) => {
   res.json(main.data());
 });
 
+router.get(["/version", "/versions"], async (req: Request, res: Response) => {
+  const version = await DbFactory.getVersionDb();
+  res.json(version.data());
+});
+
 router.put("/main", async (req: Request, res: Response) => {
   const c = req.body;
   if (!isInstanceOfMainConfig(c)) {

@@ -1,5 +1,5 @@
 import { mainConfig, MainDb } from "./main.js";
-import { VersionDb } from "./version.js";
+import { versionConfig, VersionDb } from "./version.js";
 
 export class DbFactory {
   constructor() {
@@ -20,7 +20,7 @@ export class DbFactory {
   // Always call with await!!!
   static async getVersionDb(): VersionDb {
     if (!DbFactory.versionDb) {
-      DbFactory.versionDb = await mainConfig();
+      DbFactory.versionDb = await versionConfig();
     }
     return DbFactory.versionDb;
   }
