@@ -1,0 +1,42 @@
+{
+  "babybox": {
+    "name": "Nenastaveno"
+  },
+  "backend": {
+    "url": "/api/v1",
+    "port": 5000,
+    "requestTimeout": 5000
+  },
+  "configer": {
+    "url": "/api/v1",
+    "port": 6000,
+    "requestTimeout": 10000
+  },
+  "startup": {},
+  "units": {
+    "engine": {
+      "ip": "10.1.1.5"
+    },
+    "thermal": {
+      "ip": "10.1.1.6"
+    },
+    "requestDelay": 2000,
+    "warningThreshold": 5,
+    "errorThreshold": 25,
+    "voltage": {
+      "divider": 63,
+      "multiplier": 100,
+      "addition": 0
+    }
+  },
+  "camera": {
+    "ip": "10.1.1.7",
+    "username": "username",
+    "password": "password",
+    "updateDelay": 1000,
+    "cameraType": "dahua"
+  },
+  "app": {
+    "password": "password"
+  }
+}
