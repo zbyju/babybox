@@ -11,6 +11,9 @@ async function main() {
   // Load .env
   dotenv.config();
 
+  const main = await DbFactory.getMainDb();
+  console.log(main.data());
+
   const app = express();
   const port = process.env.PORT || 6000;
   app.listen(port, () => {
