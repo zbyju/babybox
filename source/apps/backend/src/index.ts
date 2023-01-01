@@ -23,7 +23,7 @@ async function main() {
   config = c.data;
 
   const app = express();
-  const port = config.backend.port || process.env.PORT || 5000;
+  const port = config?.backend.port || process.env.PORT || 5000;
 
   // Setup logger - morgan
   if (process.env.NODE_ENV === "development") {

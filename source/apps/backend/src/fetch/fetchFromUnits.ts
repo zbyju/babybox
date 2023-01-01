@@ -10,6 +10,7 @@ import {
 } from "../types/request.types";
 import { Action, Unit } from "../types/units.types";
 import { actionToUrl, unitToIp } from "../utils/url";
+import { wait } from "../utils/wait";
 import { fetchFromUrl } from "./fetch";
 
 export async function fetchDataCommon(
@@ -128,10 +129,6 @@ export async function updateWatchdog(): Promise<CommonResponse> {
       msg: "Watchdog update was not successful.",
     };
   }
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function updateSettings(
