@@ -1,16 +1,19 @@
 <template>
   <div class="version">
     <span class="version-text"
-      >F-{{ versionFrontend }} / B-{{ versionBackend }}</span
+      >F-{{ versions.frontend }} / B-{{ versions.backend }} / C-{{
+        versions.configer
+      }}
+      / S-{{ versions.startup }}</span
     >
   </div>
 </template>
 
 <script lang="ts" setup>
-  const props = defineProps<{
-    versionFrontend: string;
-    versionBackend: string;
-  }>();
+  import { useVersionsStore } from "@/pinia/versions";
+
+  const versionStore = useVersionsStore();
+  const versions = versionStore.versions;
 </script>
 
 <style lang="stylus">

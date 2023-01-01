@@ -33,7 +33,6 @@
 
     .message
       font-size 6vw
-      line-height 1em
       font-weight 700
       text-align center
       padding 5px 0 5px 0

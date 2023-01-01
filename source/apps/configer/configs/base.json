@@ -9,7 +9,7 @@
   },
   "configer": {
     "url": "/api/v1",
-    "port": 6000,
+    "port": 5001,
     "requestTimeout": 10000
   },
   "startup": {},
@@ -35,6 +35,9 @@
     "password": "password",
     "updateDelay": 1000,
     "cameraType": "dahua"
+  },
+  "pc": {
+    "os": "windows"
   },
   "app": {
     "password": "password"

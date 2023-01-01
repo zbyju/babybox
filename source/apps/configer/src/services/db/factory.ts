@@ -1,15 +1,16 @@
-import { mainConfig } from "./main.js";
+import { mainConfig, MainDb } from "./main.js";
+import { versionConfig, VersionDb } from "./version.js";
 
 export class DbFactory {
   constructor() {
     throw new Error("Don't call constructor, use static `getInstance` method");
   }
 
-  static mainDb: Object | undefined;
-  static versionDb: Object | undefined;
+  static mainDb: any | undefined;
+  static versionDb: any | undefined;
 
   // Always call with await!!!
-  static async getMainDb() {
+  static async getMainDb(): MainDb {
     if (!DbFactory.mainDb) {
       DbFactory.mainDb = await mainConfig();
     }
@@ -17,9 +18,9 @@ export class DbFactory {
   }
 
   // Always call with await!!!
-  static async getVersionDb() {
+  static async getVersionDb(): VersionDb {
     if (!DbFactory.versionDb) {
-      DbFactory.versionDb = await mainConfig();
+      DbFactory.versionDb = await versionConfig();
     }
     return DbFactory.versionDb;
   }
