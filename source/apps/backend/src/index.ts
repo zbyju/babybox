@@ -3,30 +3,27 @@ import * as dotenv from "dotenv";
 import * as express from "express";
 import * as morgan from "morgan";
 import open = require("open");
+import { fetchConfig } from "./fetch/fetchConfig";
 import { modulesObject } from "./modules/init";
 import { router as engineRoute } from "./routes/engineRoute";
 import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
-import { checkInit } from "./utils/checkInit";
+import { MainConfig } from "./types/config.types";
 
 export const modules = modulesObject();
+
+export let config: MainConfig | null = null;
 
 async function main() {
   // .env file load
   dotenv.config();
 
-  // Check if .env file is ok, and server can run
-  if (!checkInit()) {
-    console.error(
-      "Application did not start with correct env variables!",
-      process.env
-    );
-    return 1;
-  }
+  const c = await fetchConfig();
+  config = c.data;
 
   const app = express();
-  const port = process.env.PORT || 5000;
+  const port = config.backend.port || process.env.PORT || 5000;
 
   // Setup logger - morgan
   if (process.env.NODE_ENV === "development") {
@@ -51,10 +48,11 @@ async function main() {
   });
 
   //Routes
-  app.use(process.env.API_PREFIX + "/units", unitsRoute);
-  app.use(process.env.API_PREFIX + "/engine", engineRoute);
-  app.use(process.env.API_PREFIX + "/thermal", thermalRoute);
-  app.use(process.env.API_PREFIX + "/restart", restartRoute);
+  const prefix = config.backend.url || process.env.API_PREFIX;
+  app.use(prefix + "/units", unitsRoute);
+  app.use(prefix + "/engine", engineRoute);
+  app.use(prefix + "/thermal", thermalRoute);
+  app.use(prefix + "/restart", restartRoute);
 
   // Serve Frontend app if running in production
   if (process.env.NODE_ENV === "production") {
@@ -64,7 +62,7 @@ async function main() {
       res.sendFile(__dirname + "/public/index.html");
     });
 
-    open("http://localhost:" + (process.env.PORT || 5000));
+    open("http://localhost:" + port);
   }
 
   app.listen(port, () => {

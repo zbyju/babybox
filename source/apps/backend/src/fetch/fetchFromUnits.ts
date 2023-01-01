@@ -1,3 +1,4 @@
+import { config } from "..";
 import {
   CommonDataRequestQuery,
   CommonDataResponse,
@@ -19,9 +20,7 @@ export async function fetchDataCommon(
     query as CommonDataRequestQuery;
 
   const url = `http://${
-    unit === Unit.Engine
-      ? process.env.ENGINE_UNIT_IP
-      : process.env.THERMAL_UNIT_IP
+    unit === Unit.Engine ? config.units.engine.ip : config.units.thermal.ip
   }/get_ram[0]?rn=60`;
 
   try {
@@ -118,9 +117,7 @@ export async function fetchAction(action: Action): Promise<CommonDataResponse> {
 
 export async function updateWatchdog(): Promise<CommonResponse> {
   try {
-    const _ = await fetchFromUrl(
-      `http://${process.env.ENGINE_UNIT_IP}/sdscep?sys141=115`
-    );
+    await fetchFromUrl(`http://${config.units.engine.ip}/sdscep?sys141=115`);
     return {
       status: 200,
       msg: "Successfully updated Watchdog.",
