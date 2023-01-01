@@ -6,9 +6,10 @@
   "keywords": [],
   "packageManager": "pnpm@7.5.0",
   "scripts": {
-    "dev": "pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev",
+    "dev": "pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev & pnpm -F babybox-panel-configer dev",
     "dev:backend": "pnpm -F babybox-panel-backend dev",
     "dev:panel": "pnpm -F babybox-panel dev",
+    "dev:configer": "pnpm -F babybox-panel-configer dev",
     "start": "cd \"../dist\" && pnpm install && pm2 start \"index.js\"",
     "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build",
     "old:build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm run clean:dist && pnpm run move",
