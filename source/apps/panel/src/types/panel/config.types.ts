@@ -1,13 +1,14 @@
 export interface Config {
-  api: ApiConfig;
   app: AppConfig;
+  backend: BackendConfig;
   babybox: BabyboxConfig;
   camera: CameraConfig;
   units: UnitsConfig;
 }
 
-export interface ApiConfig {
-  baseApiUrl: string;
+export interface BackendConfig {
+  url: string;
+  port: number;
   requestTimeout: number;
 }
 
@@ -18,7 +19,6 @@ export interface AppConfig {
 
 export interface BabyboxConfig {
   name: string;
-  prependBabyboxBeforeName: boolean;
 }
 
 export interface CameraConfig {
@@ -35,10 +35,16 @@ export enum CameraType {
 }
 
 export interface UnitsConfig {
+  engine: UnitConfig;
+  thermal: UnitConfig;
   requestDelay: number;
   warningThreshold: number;
   errorThreshold: number;
   voltage: VoltageConfig;
+}
+
+export interface UnitConfig {
+  ip: string;
 }
 
 export interface VoltageConfig {

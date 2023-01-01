@@ -1,9 +1,10 @@
 import type {
-  ApiConfig,
   AppConfig,
   BabyboxConfig,
+  BackendConfig,
   CameraConfig,
   Config,
+  UnitConfig,
   UnitsConfig,
   VoltageConfig,
 } from "@/types/panel/config.types";
@@ -11,8 +12,8 @@ import type {
 export const isInstanceOfConfig = (object: any): object is Config => {
   return (
     typeof object === "object" &&
-    "api" in object &&
-    isInstanceOfApiConfig(object.api) &&
+    "backend" in object &&
+    isInstanceOfBackendConfig(object.backend) &&
     "app" in object &&
     isInstanceOfAppConfig(object.app) &&
     "babybox" in object &&
@@ -24,28 +25,25 @@ export const isInstanceOfConfig = (object: any): object is Config => {
   );
 };
 
-export const isInstanceOfApiConfig = (object: any): object is ApiConfig => {
+export const isInstanceOfBackendConfig = (
+  object: any,
+): object is BackendConfig => {
   return (
     typeof object === "object" &&
-    "baseApiUrl" in object &&
-    "requestTimeout" in object
+    "url" in object &&
+    "requestTimeout" in object &&
+    "port" in object
   );
 };
 
 export const isInstanceOfAppConfig = (object: any): object is AppConfig => {
-  return (
-    typeof object === "object" && "password" in object && "version" in object
-  );
+  return typeof object === "object" && "password" in object;
 };
 
 export const isInstanceOfBabyboxConfig = (
   object: any,
 ): object is BabyboxConfig => {
-  return (
-    typeof object === "object" &&
-    "name" in object &&
-    "prependBabyboxBeforeName" in object
-  );
+  return typeof object === "object" && "name" in object;
 };
 
 export const isInstanceOfCameraConfig = (
@@ -64,12 +62,20 @@ export const isInstanceOfCameraConfig = (
 export const isInstanceOfUnitsConfig = (object: any): object is UnitsConfig => {
   return (
     typeof object === "object" &&
+    "engine" in object &&
+    isInstanceOfUnitConfig(object.engine) &&
+    "thermal" in object &&
+    isInstanceOfUnitConfig(object.thermal) &&
     "requestDelay" in object &&
     "warningThreshold" in object &&
     "errorThreshold" in object &&
     "voltage" in object &&
     isInstanceOfVoltageConfig(object.voltage)
   );
+};
+
+export const isInstanceOfUnitConfig = (object: any): object is UnitConfig => {
+  return typeof object === "object" && "ip" in object;
 };
 
 export const isInstanceOfVoltageConfig = (

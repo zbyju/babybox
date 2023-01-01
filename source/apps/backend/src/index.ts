@@ -47,9 +47,6 @@ async function main() {
   app.get(process.env.API_PREFIX + "/status", (req, res) => {
     res.status(200).send({
       msg: "Alive.",
-      version: process.env.VERSION || "Unknown",
-      engineIP: process.env.ENGINE_UNIT_IP || undefined,
-      thermalIP: process.env.THERMAL_UNIT_IP || undefined,
     });
   });
 

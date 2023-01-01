@@ -14,11 +14,13 @@ import { useConfigStore } from "@/pinia/configStore";
 import { useConnectionStore } from "@/pinia/connectionStore";
 import { usePanelStateStore } from "@/pinia/panelStateStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
+import { useVersionsStore } from "@/pinia/versions";
 import type { Maybe } from "@/types/generic.types";
 import type { Config, UnitsConfig } from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
+import type { Versions } from "@/types/panel/versions.types";
 import { isInstanceOfConfig } from "@/utils/panel/instanceCheck";
 
 import { getNewState } from "./state";
@@ -32,6 +34,7 @@ export class AppManager {
   private connection: Ref<Connection>;
 
   private unitsStore;
+  private versionsStore;
   private connectionStore;
   private configStore;
   private panelStateStore;
@@ -40,6 +43,7 @@ export class AppManager {
   constructor() {
     // TODO: Refactor
     const configStore = useConfigStore();
+    const versionsStore = useVersionsStore();
     const panelStateStore = usePanelStateStore();
     const unitsStore = useUnitsStore();
     const connectionStore = useConnectionStore();
@@ -55,6 +59,7 @@ export class AppManager {
     this.connection = ref({ engineUnit: euc, thermalUnit: tuc });
 
     this.unitsStore = unitsStore;
+    this.versionsStore = versionsStore;
     this.connectionStore = connectionStore;
     this.configStore = configStore;
     this.panelStateStore = panelStateStore;
@@ -112,7 +117,19 @@ export class AppManager {
 
   private getConfig(): Promise<Config> {
     return new Promise((resolve) => {
-      fetch("config/config.json")
+      fetch("http://localhost:5001/api/v1/config/main")
+        .then((response) => {
+          return response.json();
+        })
+        .then((config) => {
+          resolve(config);
+        });
+    });
+  }
+
+  private getVersions(): Promise<Versions> {
+    return new Promise((resolve) => {
+      fetch("http://localhost:5001/api/v1/config/version")
         .then((response) => {
           return response.json();
         })
@@ -124,8 +141,10 @@ export class AppManager {
 
   private async initializeConfig() {
     const config = await this.getConfig();
+    const versions = await this.getVersions();
     if (isInstanceOfConfig(config)) {
       this.configStore.setConfig(config);
+      this.versionsStore.setVersions(versions);
       return "Ok";
     } else {
       throw "Config file error";
@@ -134,11 +153,12 @@ export class AppManager {
 
   private async initializeBackend() {
     try {
-      const { status, version, engineIP, thermalIP } = await getStatus();
-      if (status === true) {
-        return [version, engineIP, thermalIP];
+      const status = await getStatus();
+      if (status) {
+        return "OK";
+      } else {
+        throw "Status not ok";
       }
-      throw "Wrong status";
     } catch (err) {
       if (typeof err === "string") {
         throw err;
@@ -151,7 +171,7 @@ export class AppManager {
   async initializeGlobal(): Promise<any> {
     let intervalTime = 5000;
     const interval = setInterval(async () => {
-      this.initializeConfig()
+      await this.initializeConfig()
         .then((res) => {
           this.appStateStore.setConfigSuccess();
         })
