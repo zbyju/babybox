@@ -12,8 +12,8 @@
     "dev:configer": "pnpm -F babybox-panel-configer dev",
     "stop": "pm2 delete configer && pm2 delete babybox",
     "start:configer": "pnpm -F babybox-panel-configer start",
-    "start:main": "cd \"../dist\" && pnpm install --production && pm2 start ../dist/index.js -n babybox",
-    "build": "pnpm install --production && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build",
+    "start:main": "cd \"../dist\" && pnpm install && pm2 start ../dist/index.js -n babybox",
+    "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build",
     "echo": "echo test"
   },
   "devDependencies": {
