@@ -1,12 +1,18 @@
 {
   "babybox": {
-    "name": "Praha",
-    "prependBabyboxBeforeName": true
+    "name": "Nenastaveno"
   },
-  "api": {
-    "baseApiUrl": "http://localhost:5000/api/v1",
+  "backend": {
+    "url": "/api/v1",
+    "port": 5000,
     "requestTimeout": 5000
   },
+  "configer": {
+    "url": "/api/v1",
+    "port": 5001,
+    "requestTimeout": 10000
+  },
+  "startup": {},
   "units": {
     "engine": {
       "ip": "10.1.1.5"
@@ -30,8 +36,10 @@
     "updateDelay": 1000,
     "cameraType": "dahua"
   },
+  "pc": {
+    "os": "windows"
+  },
   "app": {
-    "password": "password",
-    "version": "1.0.0"
+    "password": "password"
   }
 }

@@ -8,9 +8,9 @@ import {
   getDefaultUnitsConfig,
 } from "@/defaults/config.default";
 import type {
-  ApiConfig,
   AppConfig,
   BabyboxConfig,
+  BackendConfig,
   CameraConfig,
   Config,
   UnitsConfig,
@@ -19,7 +19,7 @@ import type {
 export const useConfigStore = defineStore("config", {
   state: () => ({
     initialised: false as boolean,
-    api: getDefaultApiConfig() as ApiConfig,
+    backend: getDefaultApiConfig() as BackendConfig,
     app: getDefaultAppConfig() as AppConfig,
     babybox: getDefaultBabyboxConfig() as BabyboxConfig,
     camera: getDefaultCameraConfig() as CameraConfig,
@@ -29,7 +29,7 @@ export const useConfigStore = defineStore("config", {
     setConfig(config: Config) {
       this.initialised = true;
       this.app = config.app;
-      this.api = config.api;
+      this.backend = config.backend;
       this.babybox = config.babybox;
       this.camera = config.camera;
       this.units = config.units;
@@ -39,7 +39,7 @@ export const useConfigStore = defineStore("config", {
   getters: {
     config(): Config {
       return {
-        api: this.api,
+        backend: this.backend,
         app: this.app,
         babybox: this.babybox,
         camera: this.camera,

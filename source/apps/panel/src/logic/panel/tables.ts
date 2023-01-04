@@ -71,7 +71,7 @@ export const getTableConnectionValues = (
       },
       timeout: {
         state: TableRowState.Ok,
-        value: config.api.requestTimeout + "ms",
+        value: config.backend.requestTimeout + "ms",
       },
       timeToInspection: maybeValueToTableRowValue(
         engineData?.data.timers.inspectionMessage,
