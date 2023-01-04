@@ -1,13 +1,16 @@
 const winston = require("winston");
 
 const winStart = require("./logic/start/windows");
+const ubuntuStart = require("./logic/start/ubuntu");
 const winInstall = require("./logic/install/windows");
+const ubuntuInstall = require("./logic/install/ubuntu");
 const { getFulltimeFormatted } = require("./utils/time");
 
 async function main() {
   let canStartup = true;
   const args = process.argv.slice(2);
   const shouldInstall = args.find((a) => a.toLowerCase() === "--install");
+  const isUbuntu = args.find((a) => a.toLowerCase() === "--ubuntu");
 
   // Do install
   if (shouldInstall !== undefined) {
@@ -22,7 +25,8 @@ async function main() {
       ],
     });
     installLogger.info(`${getFulltimeFormatted()} - Starting the installation`);
-    const res = await winInstall();
+    const res =
+      isUbuntu !== undefined ? await ubuntuInstall() : await winInstall();
     if (res === true) {
       installLogger.info(`${getFulltimeFormatted()} - Installation successful`);
       canStartup = true;
@@ -41,7 +45,7 @@ async function main() {
       ],
     });
     logger.info(`${getFulltimeFormatted()} - Starting babybox panel!`);
-    const res = await winStart();
+    const res = isUbuntu !== undefined ? await ubuntuStart() : await winStart();
     if (res === true) {
       logger.info(
         `${getFulltimeFormatted()} - Successfully started babybox panel`

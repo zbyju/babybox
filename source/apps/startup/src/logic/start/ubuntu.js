@@ -127,7 +127,9 @@ async function override() {
   }
   // Check if build is ready
   const doesExistBuild =
-    fs.existsSync("../backend/dist") && fs.existsSync("../panel/dist");
+    fs.existsSync("../backend/dist") &&
+    fs.existsSync("../panel/dist") &&
+    fs.existsSync("../configer/dist");
   if (!doesExistBuild) {
     await build();
   }
@@ -175,7 +177,7 @@ async function startConfiger() {
   } catch (err) {}
 
   return new Promise((resolve, reject) => {
-    const pnpm = spawn("pnpm.cmd", ["start:configer"], {
+    const pnpm = spawn("pnpm", ["start:configer"], {
       cwd: "../../",
       detached: true,
     });
@@ -201,7 +203,7 @@ async function start() {
   } catch (err) {}
 
   return new Promise((resolve, reject) => {
-    const pnpm = spawn("pnpm.cmd", ["start:main"], {
+    const pnpm = spawn("pnpm", ["start:main"], {
       cwd: "../../",
       detached: true,
     });
@@ -223,7 +225,11 @@ async function start() {
 module.exports = async function onStartup() {
   // Update
   const updateRes = await update();
-  if (updateRes === UpdateResult.Updated || !fs.existsSync("../../../dist")) {
+  if (
+    updateRes === UpdateResult.Updated ||
+    !fs.existsSync("../../../dist") ||
+    !fs.existsSync("../configer/dist")
+  ) {
     // Build new
     const buildRes = await build();
     if (buildRes === Result.Success) {
