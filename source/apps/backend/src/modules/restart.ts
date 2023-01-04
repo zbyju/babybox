@@ -9,6 +9,7 @@ import {
   getTimeDifferenceInSeconds,
 } from "../utils/time";
 import winston = require("winston");
+import { config } from "..";
 
 export const restartRepository = function (): RestartRepository {
   const logger = winston.createLogger({
@@ -31,13 +32,21 @@ export const restartRepository = function (): RestartRepository {
   function stopRestart() {
     logger.info(`${getFullTimeFormatted()} - Restart stopped`);
     isRestarting = false;
-    exec("shutdown -a");
+    if (config?.pc.os === "ubuntu") {
+      exec("shutdown -c");
+    } else {
+      exec("shutdown -a");
+    }
   }
 
   function startRestart() {
     logger.info(`${getFullTimeFormatted()} - Starting to restart`);
     isRestarting = true;
-    exec("shutdown -r -t 60");
+    if (config?.pc.os === "ubuntu") {
+      exec("shutdown -r -t 60");
+    } else {
+      exec("shutdown -r +1");
+    }
   }
 
   setInterval(() => {
