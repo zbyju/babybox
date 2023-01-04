@@ -79,10 +79,10 @@ async function update() {
 
 async function build() {
   try {
-    const { stderr } = await exec("pnpm run build", { cwd: "../../" });
+    const { stderr, stdout } = await exec("pnpm run build", { cwd: "../../" });
     if (stderr) {
       buildLogger.error(
-        `${getFulltimeFormatted()} - Build stderror - ${stderr}`
+        `${getFulltimeFormatted()} - Build stderror - ${stderr}, stdout - ${stdout}`
       );
       return Result.Error;
     }
@@ -182,6 +182,8 @@ async function startConfiger() {
       detached: true,
     });
 
+    pnpm.stderr.on("data", (data) => console.log(data));
+
     pnpm.on("error", (err) => {
       return reject("configer err - " + err);
     });
@@ -207,6 +209,7 @@ async function start() {
       cwd: "../../",
       detached: true,
     });
+    pnpm.stderr.on("data", (data) => console.log(data));
 
     pnpm.on("error", (err) => {
       return reject(err);
