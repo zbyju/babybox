@@ -40,6 +40,7 @@ async function installDeps() {
   await exec("npm install -g pm2@latest");
   await exec("npm install -g nodemon");
   await exec("npm install -g typescript");
+  await exec("npm install -g ts-node");
 }
 
 // eslint-disable-next-line no-unused-vars

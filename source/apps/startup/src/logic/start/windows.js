@@ -4,6 +4,7 @@ const spawn = require("child_process").spawn;
 const fs = require("fs-extra");
 const winston = require("winston");
 const { getFulltimeFormatted } = require("../../utils/time");
+const path = require("path");
 
 const Result = {
   Error: "ResultError",
@@ -168,30 +169,56 @@ async function override() {
   }
 }
 
+async function startConfiger() {
+  try {
+    await exec("pm2 delete configer");
+    // eslint-disable-next-line no-empty
+  } catch (err) {}
+
+  return new Promise((resolve, reject) => {
+    const pnpm = spawn("pnpm.cmd", ["start:configer"], {
+      cwd: "../../",
+      detached: true,
+    });
+
+    pnpm.on("error", (err) => {
+      return reject("configer err - " + err);
+    });
+
+    pnpm.on("close", (code) => {
+      if (code === 0) {
+        return resolve(code);
+      } else {
+        return reject("configer err - " + code);
+      }
+    });
+  });
+}
+
 async function start() {
   try {
-    await exec("pm2 delete index");
-  } finally {
-    // eslint-disable-next-line no-unsafe-finally
-    return new Promise((resolve, reject) => {
-      const pnpm = spawn("pnpm.cmd", ["start"], {
-        cwd: "../../",
-        detached: true,
-      });
+    await exec("pm2 delete babybox");
+    // eslint-disable-next-line no-empty
+  } catch (err) {}
 
-      pnpm.on("error", (err) => {
-        return reject(err);
-      });
-
-      pnpm.on("close", (code) => {
-        if (code === 0) {
-          return resolve(code);
-        } else {
-          return reject(code);
-        }
-      });
+  return new Promise((resolve, reject) => {
+    const pnpm = spawn("pnpm.cmd", ["start:main"], {
+      cwd: "../../",
+      detached: true,
     });
-  }
+
+    pnpm.on("error", (err) => {
+      return reject(err);
+    });
+
+    pnpm.on("close", (code) => {
+      if (code === 0) {
+        return resolve(code);
+      } else {
+        return reject(code);
+      }
+    });
+  });
 }
 
 module.exports = async function onStartup() {
@@ -212,9 +239,10 @@ module.exports = async function onStartup() {
   }
   // Start application in production
   try {
-    const code = await start();
+    const configerCode = await startConfiger();
+    const mainCode = await start();
     startLogger.info(
-      `${getFulltimeFormatted()} - Start success (code ${code})`
+      `${getFulltimeFormatted()} - Start success (code ${mainCode}, ${configerCode})`
     );
     return true;
   } catch (err) {

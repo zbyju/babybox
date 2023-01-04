@@ -8,6 +8,8 @@ async function main() {
   let canStartup = true;
   const args = process.argv.slice(2);
   const shouldInstall = args.find((a) => a.toLowerCase() === "--install");
+
+  // Do install
   if (shouldInstall !== undefined) {
     const installLogger = winston.createLogger({
       format: winston.format.json(),
