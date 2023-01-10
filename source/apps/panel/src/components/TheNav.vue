@@ -23,10 +23,7 @@
       </div>
     </div>
     <BaseInput v-model="password" type="password" placeholder="Heslo" />
-    <VersionText
-      :version-frontend="app.version"
-      :version-backend="versionBackend || 'unknown'"
-    />
+    <VersionText />
   </div>
 </template>
 
@@ -34,7 +31,6 @@
   import { storeToRefs } from "pinia";
   import { computed, ref } from "vue";
 
-  import { useAppStateStore } from "@/pinia/appStateStore";
   import { useConfigStore } from "@/pinia/configStore";
 
   import VersionText from "./panel/elements/VersionText.vue";
@@ -42,9 +38,6 @@
 
   const configStore = useConfigStore();
   const { app, units, camera } = storeToRefs(configStore);
-
-  const appStateStore = useAppStateStore();
-  const { versionBackend, engineIP, thermalIP } = storeToRefs(appStateStore);
 
   const isUnlocked = computed(() => {
     return password.value === app.value.password;
@@ -65,25 +58,13 @@
       secured: true,
     },
     {
-      link: "http://localhost:3000/",
-      label: "BB-Util",
-      external: true,
-      secured: true,
-    },
-    {
-      link: "Data",
-      label: "Data",
-      external: false,
-      secured: true,
-    },
-    {
-      link: `http://${engineIP.value}/`,
+      link: `http://${units.value.engine.ip}/`,
       label: "SDS Motory",
       external: true,
       secured: true,
     },
     {
-      link: `http://${thermalIP.value}/`,
+      link: `http://${units.value.thermal.ip}/`,
       label: "SDS Topení",
       external: true,
       secured: true,

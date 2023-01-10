@@ -1,9 +1,9 @@
 import { defineStore } from "pinia";
 
 import {
-  getDefaultApiConfig,
   getDefaultAppConfig,
   getDefaultBabyboxConfig,
+  getDefaultBackendConfig,
   getDefaultCameraConfig,
   getDefaultUnitsConfig,
 } from "@/defaults/config.default";
@@ -19,7 +19,7 @@ import type {
 export const useConfigStore = defineStore("config", {
   state: () => ({
     initialised: false as boolean,
-    backend: getDefaultApiConfig() as BackendConfig,
+    backend: getDefaultBackendConfig() as BackendConfig,
     app: getDefaultAppConfig() as AppConfig,
     babybox: getDefaultBabyboxConfig() as BabyboxConfig,
     camera: getDefaultCameraConfig() as CameraConfig,

@@ -8,9 +8,6 @@ export const useAppStateStore = defineStore("appState", {
     state: AppState.Loading as AppState,
     done: [undefined, undefined] as Maybe<boolean>[],
     message: undefined as Maybe<string>,
-    versionBackend: undefined as Maybe<string>,
-    engineIP: undefined as Maybe<string>,
-    thermalIP: undefined as Maybe<string>,
   }),
   actions: {
     setConfigSuccess() {
@@ -45,10 +42,6 @@ export const useAppStateStore = defineStore("appState", {
       this.done[1] = success;
       if (!success) {
         this.state = AppState.Trying;
-      } else {
-        this.versionBackend = versionBackend;
-        this.engineIP = engineIP;
-        this.thermalIP = thermalIP;
       }
       this.checkState();
     },

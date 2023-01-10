@@ -1,16 +1,17 @@
 import type {
-  ApiConfig,
   AppConfig,
   BabyboxConfig,
+  BackendConfig,
   CameraConfig,
   Config,
+  UnitConfig,
   UnitsConfig,
   VoltageConfig,
 } from "@/types/panel/config.types";
 
 export const getDefaultConfig = (): Config => {
   return {
-    api: getDefaultApiConfig(),
+    backend: getDefaultBackendConfig(),
     app: getDefaultAppConfig(),
     babybox: getDefaultBabyboxConfig(),
     camera: getDefaultCameraConfig(),
@@ -18,15 +19,17 @@ export const getDefaultConfig = (): Config => {
   };
 };
 
-export const getDefaultApiConfig = (): ApiConfig => {
+export const getDefaultBackendConfig = (): BackendConfig => {
   return {
-    baseApiUrl: "http://localhost:5000/api/v1",
+    url: "/api/v1",
+    port: 5000,
     requestTimeout: 5000,
   };
 };
 
 export const getDefaultAppConfig = (): AppConfig => {
   return {
+    version: "unknown",
     password: "test",
   };
 };
@@ -34,7 +37,6 @@ export const getDefaultAppConfig = (): AppConfig => {
 export const getDefaultBabyboxConfig = (): BabyboxConfig => {
   return {
     name: "BABYBOX_NAME",
-    prependBabyboxBeforeName: true,
   };
 };
 
@@ -50,10 +52,20 @@ export const getDefaultCameraConfig = (): CameraConfig => {
 
 export const getDefaultUnitsConfig = (): UnitsConfig => {
   return {
+    engine: getDefaultUnitConfig("engine"),
+    thermal: getDefaultUnitConfig("thermal"),
     requestDelay: 2000,
     warningThreshold: 5,
     errorThreshold: 25,
     voltage: getDefaultVoltageConfig(),
+  };
+};
+
+export const getDefaultUnitConfig = (
+  unit: "engine" | "thermal",
+): UnitConfig => {
+  return {
+    ip: unit === "engine" ? "10.1.1.5" : "10.1.1.6",
   };
 };
 
