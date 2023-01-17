@@ -1,15 +1,17 @@
 <template>
-  <iframe
-    v-show="state === CameraState.Ok"
-    ref="imageRef"
-    name="vivotek"
-    scrolling="no"
-    :style="{
-      borderTopWidth: props.displayTopBorder ? undefined : '0px',
-      maxHeight: props.maxH + 'px',
-      maxWidth: props.maxW + 'px',
-    }"
-  />
+  <div id="container">
+    <iframe
+      v-show="state === CameraState.Ok"
+      ref="imageRef"
+      name="vivotek"
+      scrolling="no"
+      :style="{
+        borderTopWidth: props.displayTopBorder ? undefined : '0px',
+        maxHeight: props.maxH + 'px',
+        maxWidth: props.maxW + 'px',
+      }"
+    />
+  </div>
   <div
     v-show="state === CameraState.Error"
     class="camera-error"
@@ -72,41 +74,14 @@
 </script>
 
 <style lang="stylus">
-  border-width = 5px
-  img
-    max-height 100%
-    height 100%
-    width calc(100% - 4px)
-    object-fit contain;
-    overflow hidden
-    border 3px solid color-border-primary
-    border-radius 0 0 5px 5px
-    align-self center
-    min-width 160px
-    min-height 90px
-
-  .camera-error
-    max-height 100%
-    width 100%
-    overflow hidden
-    border 3px solid color-border-error
-    border-radius 0 0 5px 5px
-    align-self center
-    text-align center
-    min-width 160px
-    min-height 90px
-
-    h4
-      color color-text-error
-
-  .camera-loading
-    max-height 100%
-    width 100%
-    overflow hidden
-    border 3px solid color-border-primary
-    border-radius 0 0 5px 5px
-    align-self center
-    text-align center
-    min-width 160px
-    min-height 90px
+  #container {
+      overflow:hidden;
+      margin:auto;
+  }
+  #container iframe {
+      width:900px;
+      height:700px;
+      margin-left:-234px;
+      margin-top:-126px;
+  }
 </style>
