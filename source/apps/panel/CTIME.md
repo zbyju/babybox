@@ -61,7 +61,7 @@ Pro nastavení panelu je potřeba vytvořit config soubor, který je umístěný
     "password": string,
     // Rychlost refreshování snímků v ms
     "updateDelay": number,
-    // Typ kamery - povolené hodnoty: "dahua", "avtech"
+    // Typ kamery - povolené hodnoty: "dahua", "avtech", "vivotek"
     "cameraType": string
   },
   // Nastavení aplikace

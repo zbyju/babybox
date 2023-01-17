@@ -1,7 +1,7 @@
 import type { Ref } from "vue";
 import { ref } from "vue";
 
-import type { CameraConfig } from "@/types/panel/config.types";
+import { type CameraConfig, CameraType } from "@/types/panel/config.types";
 import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
 
 /**
@@ -22,7 +22,10 @@ export default function useCamera(
   // } else {
   // Update camera URL (timestamp) every @config.updateDelay miliseconds - resulting in updating the image
   setInterval(() => {
-    const time = new Date().getTime().toString();
+    const time =
+      config.cameraType === CameraType.vivotek
+        ? ""
+        : new Date().getTime().toString();
     url.value = `http://${config.username}:${config.password}@${
       config.ip
     }${getURLPostfix(stringToCameraType(config.cameraType))}${time}`;
