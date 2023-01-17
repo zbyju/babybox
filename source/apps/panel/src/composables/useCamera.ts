@@ -22,13 +22,12 @@ export default function useCamera(
   // } else {
   // Update camera URL (timestamp) every @config.updateDelay miliseconds - resulting in updating the image
   setInterval(() => {
+    const cameraType = stringToCameraType(config.cameraType);
     const time =
-      config.cameraType === CameraType.vivotek
-        ? ""
-        : new Date().getTime().toString();
+      cameraType === CameraType.vivotek ? "" : new Date().getTime().toString();
     url.value = `http://${config.username}:${config.password}@${
       config.ip
-    }${getURLPostfix(stringToCameraType(config.cameraType))}${time}`;
+    }${getURLPostfix(cameraType)}${time}`;
 
     if (onUpdate) {
       onUpdate();
