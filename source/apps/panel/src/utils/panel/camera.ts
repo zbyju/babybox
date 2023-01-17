@@ -13,6 +13,6 @@ export const getURLPostfix = (type: CameraType): string => {
   if (type === CameraType.dahua) return "/cgi-bin/snapshot.cgi?Channel=0/";
   if (type === CameraType.avtech)
     return "/cgi-bin/guest/Video.cgi?media=JPEG&channel=0/";
-  if (type === CameraType.vivotek) return "/cgi-bin/viewer/video.jpg";
+  if (type === CameraType.vivotek) return "/cgi-bin/viewer/video.jpg/";
   return "ERROR";
 };
