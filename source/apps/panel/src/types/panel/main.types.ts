@@ -12,4 +12,5 @@ export interface PanelState {
 export enum CameraType {
   dahua = "DAHUA",
   avtech = "AVTECH",
+  vivotek = "VIVOTEK",
 }
