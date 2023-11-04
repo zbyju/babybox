@@ -66,7 +66,7 @@ source ~/.bashrc
 source /etc/profile
 
 # ----- Enable starting panel on PC startup -----
-chmod a+x /home/babybox/babybox/source/apps/startup/scripts/ubuntu/startup.sh
+sudo chmod 777 /home/babybox/babybox/source/apps/startup/scripts/ubuntu/startup.sh
 mkdir -p ~/.config/autostart
 touch ~/.config/autostart/babybox.desktop
 echo "[Desktop Entry]
@@ -77,10 +77,12 @@ Comment=BabyboxPanel
 X-GNOME-Autostart-enabled=true" > ~/.config/autostart/babybox.desktop
 
 # ----- Enable restart on connection loss cron job -----
-chmod a+x /home/babybox/babybox/source/apps/startup/scripts/ubuntu/internet_check.sh
+sudo chmod 777 /home/babybox/babybox/source/apps/startup/scripts/ubuntu/internet_check.sh
 # Create the necessary files
 sudo touch /var/restart_lock
+sudo chmod 777 /var/restart_lock
 sudo touch /var/log/internet_check.log
+sudo chmod 777 /var/log/internet_check.log
 # Add * * * * * /home/babybox/babybox/source/apps/startup/scripts/ubuntu/internet_check.sh to crontab
 (sudo crontab -l ; echo "* * * * * /home/babybox/babybox/source/apps/startup/scripts/ubuntu/internet_check.sh") | sudo crontab -
 

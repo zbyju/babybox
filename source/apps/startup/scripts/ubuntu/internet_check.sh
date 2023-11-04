@@ -30,7 +30,7 @@ ping -c 1 -W 2 $GW_IP > /dev/null 2>&1
 # If ping to gateway failed, restart the computer
 if [ $? -ne 0 ]; then
     log_message "Couldn't connect to the default gateway. Restarting the computer..."
-    touch "$LOCK_FILE"  # Create or update the timestamp of the lock file
+    sudo touch "$LOCK_FILE"  # Create or update the timestamp of the lock file
     sudo shutdown -r now
     exit 0
 fi
@@ -44,6 +44,6 @@ ping -c 1 -W 2 $HOST_TO_PING > /dev/null 2>&1
 # If ping command failed, restart the computer
 if [ $? -ne 0 ]; then
     log_message "No internet connection detected. Restarting the computer..."
-    touch "$LOCK_FILE"  # Create or update the timestamp of the lock file
+    sudo touch "$LOCK_FILE"  # Create or update the timestamp of the lock file
     sudo shutdown -r now
 fi
