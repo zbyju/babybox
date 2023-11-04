@@ -66,7 +66,7 @@ source ~/.bashrc
 source /etc/profile
 
 # ----- Enable starting panel on PC startup -----
-chmod +x /home/babybox/source/apps/startup/scripts/ubuntu/startup.sh
+chmod a+x /home/babybox/babybox/source/apps/startup/scripts/ubuntu/startup.sh
 mkdir -p ~/.config/autostart
 touch ~/.config/autostart/babybox.desktop
 echo "[Desktop Entry]
@@ -75,6 +75,14 @@ Name=Babybox
 Exec=/home/babybox/source/apps/startup/scripts/ubuntu/startup.sh
 Comment=BabyboxPanel
 X-GNOME-Autostart-enabled=true" > ~/.config/autostart/babybox.desktop
+
+# ----- Enable restart on connection loss cron job -----
+chmod a+x /home/babybox/babybox/source/apps/startup/scripts/ubuntu/internet_check.sh
+# Create the necessary files
+sudo touch /var/restart_lock
+sudo touch /var/log/internet_check.log
+# Add * * * * * /home/babybox/babybox/source/apps/startup/scripts/ubuntu/internet_check.sh to crontab
+(sudo crontab -l ; echo "* * * * * /home/babybox/babybox/source/apps/startup/scripts/ubuntu/internet_check.sh") | sudo crontab -
 
 sudo apt-get install -y fonts-open-sans
 
