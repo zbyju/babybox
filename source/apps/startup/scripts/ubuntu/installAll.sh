@@ -1,9 +1,9 @@
 #!/bin/bash
 
 cd ~
-sudo apt update
-sudo apt upgrade
-sudo apt update
+sudo apt update -y
+sudo apt upgrade -y
+sudo apt update -y
 
 # ----- Install teamviewer -----
 
