@@ -67,6 +67,7 @@ source /etc/profile
 
 # ----- Enable starting panel on PC startup -----
 sudo chmod 777 /home/babybox/babybox/source/apps/startup/scripts/ubuntu/startup.sh
+sudo chmod 777 /home/babybox/babybox/source/apps/startup/scripts/ubuntu/install.sh
 mkdir -p ~/.config/autostart
 touch ~/.config/autostart/babybox.desktop
 echo "[Desktop Entry]
@@ -88,6 +89,7 @@ sudo chmod 777 /var/log/internet_check.log
 
 sudo apt-get install -y fonts-open-sans
 
+cd /home/babybox/babybox/source/apps/startup/scripts/ubuntu/
 ./install.sh
 
 
