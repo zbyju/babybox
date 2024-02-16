@@ -24,26 +24,24 @@ if [ -f "$LOCK_FILE" ]; then
     fi
 fi
 
-# First, ping the default gateway
-ping -c 1 -W 2 $GW_IP > /dev/null 2>&1
+# Initialize a counter for successful ping attempts
+SUCCESS_COUNT=0
 
-# If ping to gateway failed, restart the computer
-if [ $? -ne 0 ]; then
-    log_message "Couldn't connect to the default gateway. Restarting the computer..."
+# Loop to check connection 5 times with 5 seconds delay
+for i in {1..5}; do
+    ping -c 1 -W 2 $GW_IP > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        SUCCESS_COUNT=$(($SUCCESS_COUNT + 1))
+        break # Exit the loop if there's a successful ping
+    else
+        sleep 5 # Wait for 5 seconds before next attempt
+    fi
+done
+
+# If all pings failed (SUCCESS_COUNT is 0), restart the computer
+if [ $SUCCESS_COUNT -eq 0 ]; then
+    log_message "Couldn't connect to the default gateway after 5 attempts. Restarting the computer..."
     sudo touch "$LOCK_FILE"  # Create or update the timestamp of the lock file
     sudo shutdown -r now
     exit 0
-fi
-
-# Host to ping for internet connectivity check (for example, Google's public DNS server)
-HOST_TO_PING="8.8.8.8"
-
-# Next, ping the host to check for internet connectivity
-ping -c 1 -W 2 $HOST_TO_PING > /dev/null 2>&1
-
-# If ping command failed, restart the computer
-if [ $? -ne 0 ]; then
-    log_message "No internet connection detected. Restarting the computer..."
-    sudo touch "$LOCK_FILE"  # Create or update the timestamp of the lock file
-    sudo shutdown -r now
 fi
