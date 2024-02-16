@@ -18,8 +18,8 @@ if [ -f "$LOCK_FILE" ]; then
     CURRENT_TIME=$(date +%s)
     FILE_TIME=$(stat -c %Y "$LOCK_FILE")
 
-    # If less than 10 minutes (600 seconds) passed since last restart, just exit
-    if [ $(($CURRENT_TIME - $FILE_TIME)) -lt 600 ]; then
+    # If less than 60 minutes passed since last restart, just exit
+    if [ $(($CURRENT_TIME - $FILE_TIME)) -lt 3600 ]; then
         exit 0
     fi
 fi
