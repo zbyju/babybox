@@ -56,10 +56,14 @@ source /etc/profile
 echo "          ----- REMOVING UPDATE MANAGER -----"
 sudo apt-get remove update-manager
 
+# ----- Install wine -----
+sudo apt install wine
+
 # ----- Install the babybox monitoring program -----
 cd ~
 git config --global credential.helper store
 git clone https://github.com/zbyju/babybox.git
+git clone https://github.com/zbyju/BB.git
 cd ~/babybox/source/apps/startup/scripts/ubuntu
 source ~/.profile
 source ~/.bashrc
@@ -73,7 +77,7 @@ touch ~/.config/autostart/babybox.desktop
 echo "[Desktop Entry]
 Type=Application
 Name=Babybox
-Exec=/home/babybox/source/apps/startup/scripts/ubuntu/startup.sh
+Exec=/home/babybox/babybox/source/apps/startup/scripts/ubuntu/startup.sh
 Comment=BabyboxPanel
 X-GNOME-Autostart-enabled=true" > ~/.config/autostart/babybox.desktop
 
