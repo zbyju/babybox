@@ -47,7 +47,7 @@ source /etc/profile
 
 # ----- Install Node.js (dependency: n, npm)
 echo "          ----- INSTALLING NODE.JS -----"
-n lts
+n 18.12.1
 source ~/.profile
 source ~/.bashrc
 source /etc/profile

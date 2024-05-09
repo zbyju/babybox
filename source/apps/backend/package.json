@@ -12,8 +12,8 @@
     "test": "jest",
     "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls",
     "test:postman": "newman run ./src/routes/__postman__/babybox-panel.postman_collection.json -e ./src/routes/__postman__/BabyboxPanel.postman_environment.json",
-    "build": "tsc",
-    "win:build": "tsc",
+    "build": "tsc --build",
+    "win:build": "tsc --build",
     "echo": "echo 'Hello from babybox panel backend'"
   },
   "devDependencies": {
