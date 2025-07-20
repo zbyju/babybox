@@ -9,6 +9,19 @@ log_message() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
+# Check if this is Monday at 12:00 PM (scheduled weekly restart)
+CURRENT_HOUR=$(date +%H)
+CURRENT_MINUTE=$(date +%M)
+CURRENT_DAY=$(date +%u)  # 1=Monday, 7=Sunday
+
+# If it's Monday at 12:00 PM, force restart regardless of connectivity
+if [ "$CURRENT_DAY" -eq 1 ] && [ "$CURRENT_HOUR" -eq 12 ] && [ "$CURRENT_MINUTE" -eq 0 ]; then
+    log_message "Weekly scheduled restart - Monday 12:00 PM. Restarting the computer..."
+    sudo touch "$LOCK_FILE"  # Create or update the timestamp of the lock file
+    sudo shutdown -r now
+    exit 0
+fi
+
 # Get the default gateway
 GW_IP=$(ip route | grep default | awk '{print $3}')
 
