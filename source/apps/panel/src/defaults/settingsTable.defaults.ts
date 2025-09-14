@@ -171,6 +171,14 @@ export const getSettingsTableTemplateRows = (): SettingsTableRowTemplate[] => {
       note: "Doporučená perioda zkoušek",
       type: SettingsTableRowValueType.Days,
     },
+    {
+      engine: 113,
+      thermal: null,
+      name: "Ignorovat zavoru",
+      recommended: "0",
+      note: "0 = zavora funguje, 1 = zavora ignorována",
+      type: SettingsTableRowValueType.String,
+    },
   ];
 };
 
