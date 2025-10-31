@@ -3,6 +3,7 @@ import { CameraType } from "@/types/panel/config.types";
 export const stringToCameraType = (s: string): CameraType => {
   if (s.toLowerCase().includes("dahua")) return CameraType.dahua;
   if (s.toLowerCase().includes("dahua-image")) return CameraType.dahua;
+  if (s.toLowerCase().includes("hikvision")) return CameraType.hikvision;
   if (s.toLowerCase().includes("avtech") || s.toLowerCase().includes("avm"))
     return CameraType.avtech;
   if (s.toLowerCase().includes("vivotek")) return CameraType.vivotek;
@@ -11,6 +12,7 @@ export const stringToCameraType = (s: string): CameraType => {
 
 export const getURLPostfix = (type: CameraType): string => {
   if (type === CameraType.dahua) return "/cgi-bin/snapshot.cgi?Channel=0/";
+  if (type === CameraType.hikvision) return "/ISAPI/Streaming/channels/101/picture?snapShotImageType=JPEG";
   if (type === CameraType.avtech)
     return "/cgi-bin/guest/Video.cgi?media=JPEG&channel=0/";
   if (type === CameraType.vivotek) return "/cgi-bin/viewer/video.jpg/";

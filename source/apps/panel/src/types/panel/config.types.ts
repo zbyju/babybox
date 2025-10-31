@@ -33,6 +33,7 @@ export enum CameraType {
   dahua = "DAHUA",
   avtech = "AVTECH",
   vivotek = "VIVOTEK",
+  hikvision = "HIKVISION"
 }
 
 export interface UnitsConfig {
