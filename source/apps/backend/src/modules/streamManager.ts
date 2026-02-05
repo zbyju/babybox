@@ -104,7 +104,7 @@ export function createStreamManager(
     ];
 
     status = "starting";
-    logger.info("Starting ffmpeg stream");
+    logger.info(`Starting ffmpeg stream — rtsp=${rtspUrl} outputDir=${outputDir} playlist=${playlistPath}`);
 
     const child = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
     process = child;
@@ -114,7 +114,7 @@ export function createStreamManager(
     child.stderr?.on("data", (data: Buffer) => {
       const msg = data.toString().trim();
       if (msg) {
-        logger.debug(`ffmpeg: ${msg}`);
+        logger.warn(`ffmpeg: ${msg}`);
       }
     });
 

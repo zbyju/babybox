@@ -65,6 +65,7 @@ async function main() {
 
   // Video stream setup
   if (config.camera?.video === true) {
+    console.log(`Video streaming enabled — cameraType=${config.camera.cameraType} ip=${config.camera.ip}`);
     let ffmpegAvailable = false;
     try {
       execSync("ffmpeg -version", { stdio: "ignore" });
@@ -77,16 +78,19 @@ async function main() {
       const rtspUrl = cameraToRtspUrl(config.camera);
       if (rtspUrl) {
         const outputDir = path.resolve(__dirname, "streams");
+        console.log(`Stream output directory: ${outputDir}`);
         streamManager = createStreamManager(rtspUrl, outputDir);
         initCameraRoute(streamManager);
         streamManager.start();
-        console.log("Video stream started");
+        console.log(`Video stream started — serving HLS at ${prefix}/camera/stream/stream.m3u8`);
       } else {
         console.error(
           `Unknown camera type "${config.camera.cameraType}" — video streaming disabled`
         );
       }
     }
+  } else {
+    console.log("Video streaming disabled (camera.video is not true)");
   }
 
   // Serve Frontend app if running in production
