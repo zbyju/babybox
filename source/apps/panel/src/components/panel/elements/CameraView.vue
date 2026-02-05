@@ -40,14 +40,16 @@
 
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
-  import { type Ref, onMounted, ref } from "vue";
+  import { type Ref, defineAsyncComponent, onMounted, ref } from "vue";
 
   import useCamera from "@/composables/useCamera";
   import { useConfigStore } from "@/pinia/configStore";
   import { CameraType } from "@/types/panel/config.types";
   import { stringToCameraType } from "@/utils/panel/camera";
 
-  import HlsCameraView from "./HlsCameraView.vue";
+  const HlsCameraView = defineAsyncComponent(
+    () => import("./HlsCameraView.vue")
+  );
   import VivotekCameraView from "./VivotekCameraView.vue";
 
   const props = defineProps<{
