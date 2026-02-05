@@ -119,6 +119,7 @@ importers:
       eslint-plugin-simple-import-sort: ^7.0.0
       eslint-plugin-unused-imports: ^2.0.0
       eslint-plugin-vue: ^9.1.1
+      hls.js: ^1.6.15
       howler: ^2.2.3
       lodash: ^4.17.21
       moment: ^2.29.3
@@ -133,6 +134,7 @@ importers:
       vue-tsc: ^0.38.2
     dependencies:
       axios: 0.27.2
+      hls.js: 1.6.15
       howler: 2.2.3
       lodash: 4.17.21
       moment: 2.29.4
@@ -1303,9 +1305,11 @@ packages:
     resolution: {integrity: sha512-n6LClucfA+37rQeskvh9vDoZV1VvCVNy++MAPKj2dT4FT+Fbmty/SDQqnsEBtdEe6E3OQctFvA/IcKsx3Mns0A==}
     dependencies:
       '@volar/source-map': 0.38.9
+    dev: false
 
   /@volar/source-map/0.38.9:
     resolution: {integrity: sha512-ba0UFoHDYry+vwKdgkWJ6xlQT+8TFtZg1zj9tSjj4PykW1JZDuM0xplMotLun4h3YOoYfY9K1huY5gvxmrNLIw==}
+    dev: false
 
   /@volar/vue-code-gen/0.38.9:
     resolution: {integrity: sha512-tzj7AoarFBKl7e41MR006ncrEmNPHALuk8aG4WdDIaG387X5//5KhWC5Ff3ZfB2InGSeNT+CVUd74M0gS20rjA==}
@@ -1315,6 +1319,7 @@ packages:
       '@vue/compiler-core': 3.2.37
       '@vue/compiler-dom': 3.2.37
       '@vue/shared': 3.2.37
+    dev: false
 
   /@volar/vue-typescript/0.38.9:
     resolution: {integrity: sha512-iJMQGU91ADi98u8V1vXd2UBmELDAaeSP0ZJaFjwosClQdKlJQYc6MlxxKfXBZisHqfbhdtrGRyaryulnYtliZw==}
@@ -3149,6 +3154,10 @@ packages:
     engines: {node: '>= 0.4.0'}
     dependencies:
       function-bind: 1.1.1
+
+  /hls.js/1.6.15:
+    resolution: {integrity: sha512-E3a5VwgXimGHwpRGV+WxRTKeSp2DW5DI5MWv34ulL3t5UNmyJWCQ1KmLEHbYzcfThfXG8amBL+fCYPneGHC4VA==}
+    dev: false
 
   /howler/2.2.3:
     resolution: {integrity: sha512-QM0FFkw0LRX1PR8pNzJVAY25JhIWvbKMBFM4gqk+QdV+kPXOhleWGCB6AiAF/goGjIHK2e/nIElplvjQwhr0jg==}
