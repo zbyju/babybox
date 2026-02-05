@@ -5,10 +5,11 @@ import * as morgan from "morgan";
 import open = require("open");
 import { execSync } from "child_process";
 import * as path from "path";
+
 import { fetchConfig } from "./fetch/fetchConfig";
 import { modulesObject } from "./modules/init";
 import { createStreamManager } from "./modules/streamManager";
-import { router as cameraRoute, initCameraRoute } from "./routes/cameraRoute";
+import { initCameraRoute, router as cameraRoute } from "./routes/cameraRoute";
 import { router as engineRoute } from "./routes/engineRoute";
 import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
@@ -75,7 +76,7 @@ async function main() {
     if (ffmpegAvailable) {
       const rtspUrl = cameraToRtspUrl(config.camera);
       if (rtspUrl) {
-        const outputDir = path.resolve("streams");
+        const outputDir = path.resolve(__dirname, "streams");
         streamManager = createStreamManager(rtspUrl, outputDir);
         initCameraRoute(streamManager);
         streamManager.start();

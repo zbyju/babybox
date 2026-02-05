@@ -4,7 +4,6 @@
   "description": "",
   "keywords": [],
   "author": "",
-  "main": "./src/index.ts",
   "scripts": {
     "dev": "nodemon",
     "lint": "eslint --fix --ext .js,.ts .",
