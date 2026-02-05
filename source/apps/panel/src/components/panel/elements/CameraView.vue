@@ -1,5 +1,8 @@
 <template>
-  <template v-if="cameraType === CameraType.vivotek">
+  <template v-if="camera.video === true">
+    <HlsCameraView v-bind="props" />
+  </template>
+  <template v-else-if="cameraType === CameraType.vivotek">
     <VivotekCameraView v-bind="props" />
   </template>
   <template v-else>
@@ -44,6 +47,7 @@
   import { CameraType } from "@/types/panel/config.types";
   import { stringToCameraType } from "@/utils/panel/camera";
 
+  import HlsCameraView from "./HlsCameraView.vue";
   import VivotekCameraView from "./VivotekCameraView.vue";
 
   const props = defineProps<{

@@ -53,6 +53,7 @@ export interface MainConfigCamera {
   password: string;
   updateDelay: number;
   cameraType: string;
+  video?: boolean;
 }
 
 export interface MainConfigPc {

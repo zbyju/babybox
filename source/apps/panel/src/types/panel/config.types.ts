@@ -27,6 +27,7 @@ export interface CameraConfig {
   password: string;
   updateDelay: number;
   cameraType: string;
+  video?: boolean;
 }
 
 export enum CameraType {

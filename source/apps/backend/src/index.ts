@@ -3,17 +3,24 @@ import * as dotenv from "dotenv";
 import * as express from "express";
 import * as morgan from "morgan";
 import open = require("open");
+import { execSync } from "child_process";
+import * as path from "path";
 import { fetchConfig } from "./fetch/fetchConfig";
 import { modulesObject } from "./modules/init";
+import { createStreamManager } from "./modules/streamManager";
+import { router as cameraRoute, initCameraRoute } from "./routes/cameraRoute";
 import { router as engineRoute } from "./routes/engineRoute";
 import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
 import { MainConfig } from "./types/config.types";
+import { StreamManager } from "./types/stream.types";
+import { cameraToRtspUrl } from "./utils/camera";
 
 export const modules = modulesObject();
 
 export let config: MainConfig | null = null;
+let streamManager: StreamManager | null = null;
 
 async function main() {
   // .env file load
@@ -53,6 +60,33 @@ async function main() {
   app.use(prefix + "/engine", engineRoute);
   app.use(prefix + "/thermal", thermalRoute);
   app.use(prefix + "/restart", restartRoute);
+  app.use(prefix + "/camera", cameraRoute);
+
+  // Video stream setup
+  if (config.camera?.video === true) {
+    let ffmpegAvailable = false;
+    try {
+      execSync("ffmpeg -version", { stdio: "ignore" });
+      ffmpegAvailable = true;
+    } catch {
+      console.error("ffmpeg not found — video streaming disabled");
+    }
+
+    if (ffmpegAvailable) {
+      const rtspUrl = cameraToRtspUrl(config.camera);
+      if (rtspUrl) {
+        const outputDir = path.resolve("streams");
+        streamManager = createStreamManager(rtspUrl, outputDir);
+        initCameraRoute(streamManager);
+        streamManager.start();
+        console.log("Video stream started");
+      } else {
+        console.error(
+          `Unknown camera type "${config.camera.cameraType}" — video streaming disabled`
+        );
+      }
+    }
+  }
 
   // Serve Frontend app if running in production
   if (process.env.NODE_ENV === "production") {
@@ -76,5 +110,16 @@ async function main() {
     );
   });
 }
+
+function shutdown() {
+  if (streamManager) {
+    console.log("Shutting down video stream...");
+    streamManager.stop();
+  }
+  process.exit(0);
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
 
 main();
