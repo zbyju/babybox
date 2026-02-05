@@ -91,7 +91,7 @@ export function createStreamManager(
 
     const args = [
       "-rtsp_transport", "tcp",
-      "-stimeout", "5000000",
+      "-timeout", "5000000",
       "-i", rtspUrl,
       "-c:v", "copy",
       "-an",
