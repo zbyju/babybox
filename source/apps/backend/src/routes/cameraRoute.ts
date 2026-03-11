@@ -1,5 +1,6 @@
 import * as express from "express";
 import { Request, Response } from "express";
+import * as fs from "fs";
 import * as path from "path";
 
 import { StreamManager } from "../types/stream.types";
@@ -38,9 +39,12 @@ router.get("/status", (req: Request, res: Response) => {
   }
 
   const state = manager.getState();
+  const playlistPath = path.join(manager.getOutputDir(), "stream.m3u8");
+  const streamReady = state.status === "running" && fs.existsSync(playlistPath);
   return res.status(200).send({
     enabled: true,
     status: state.status,
+    streamReady,
     pid: state.pid,
     lastError: state.lastError,
     startedAt: state.startedAt,

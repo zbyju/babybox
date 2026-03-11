@@ -13,7 +13,7 @@ const logger = winston.createLogger({
 });
 
 const MIN_RESTART_DELAY = 5000;
-const MAX_RESTART_DELAY = 60000;
+const MAX_RESTART_DELAY = 120000;
 const SIGKILL_TIMEOUT = 3000;
 const M3U8_CHECK_INTERVAL = 1000;
 
@@ -47,7 +47,8 @@ export function createStreamManager(
     m3u8CheckTimer = setInterval(() => {
       if (status === "starting" && fs.existsSync(playlistPath)) {
         status = "running";
-        logger.info("Stream is running — playlist file detected");
+        restartCount = 0;
+        logger.info("Stream is running — playlist file detected, restart count reset");
         clearM3u8Check();
       }
     }, M3U8_CHECK_INTERVAL);
