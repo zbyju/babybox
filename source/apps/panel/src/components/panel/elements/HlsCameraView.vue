@@ -406,4 +406,10 @@
     align-self center
     min-width 160px
     min-height 90px
+
+  .camera-error
+    padding 0 16px
+
+  .camera-loading
+    padding 0 16px
 </style>
