@@ -12,6 +12,9 @@ let manager: StreamManager | null = null;
 export function initCameraRoute(streamManager: StreamManager): void {
   manager = streamManager;
 
+  const staticDir = path.resolve(streamManager.getOutputDir());
+  console.log(`[camera] Serving HLS stream files from: ${staticDir}`);
+
   // Serve HLS files (playlist + segments)
   router.use(
     "/stream",
@@ -25,7 +28,7 @@ export function initCameraRoute(streamManager: StreamManager): void {
       }
       next();
     },
-    express.static(path.resolve(streamManager.getOutputDir()))
+    express.static(staticDir)
   );
 }
 

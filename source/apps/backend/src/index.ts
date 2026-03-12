@@ -77,12 +77,18 @@ async function main() {
     if (ffmpegAvailable) {
       const rtspUrl = cameraToRtspUrl(config.camera);
       if (rtspUrl) {
+        // Log RTSP URL with password masked for security
+        const maskedUrl = rtspUrl.replace(
+          /\/\/([^:]+):([^@]+)@/,
+          "//$1:***@"
+        );
+        console.log(`RTSP URL: ${maskedUrl}`);
         const outputDir = path.resolve(__dirname, "streams");
         console.log(`Stream output directory: ${outputDir}`);
         streamManager = createStreamManager(rtspUrl, outputDir);
         initCameraRoute(streamManager);
         streamManager.start();
-        console.log(`Video stream started — serving HLS at ${prefix}/camera/stream/stream.m3u8`);
+        console.log(`Video stream starting — serving HLS at ${prefix}/camera/stream/stream.m3u8`);
       } else {
         console.error(
           `Unknown camera type "${config.camera.cameraType}" — video streaming disabled`

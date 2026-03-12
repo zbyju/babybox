@@ -7,9 +7,17 @@ import { StreamManager, StreamState, StreamStatus } from "../types/stream.types"
 
 const logger = winston.createLogger({
   level: "info",
-  format: winston.format.json(),
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(({ timestamp, level, message }) => {
+      return `${timestamp} [stream] ${level}: ${message}`;
+    })
+  ),
   defaultMeta: { module: "stream" },
-  transports: [new winston.transports.File({ filename: "logs/stream.log" })],
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: "logs/stream.log" }),
+  ],
 });
 
 const MIN_RESTART_DELAY = 5000;
@@ -31,19 +39,25 @@ export function createStreamManager(
   let m3u8CheckTimer: NodeJS.Timeout | null = null;
   let stopping = false;
 
+  logger.info(`Stream manager created — rtspUrl=${rtspUrl} outputDir=${outputDir}`);
+
   function cleanOutputDir(): void {
+    logger.info(`Cleaning output directory: ${outputDir}`);
     if (fs.existsSync(outputDir)) {
       const files = fs.readdirSync(outputDir);
+      logger.info(`Removing ${files.length} existing file(s) from output directory`);
       for (const file of files) {
         fs.unlinkSync(path.join(outputDir, file));
       }
     } else {
+      logger.info(`Output directory does not exist, creating: ${outputDir}`);
       fs.mkdirSync(outputDir, { recursive: true });
     }
   }
 
   function startM3u8Check(): void {
     const playlistPath = path.join(outputDir, "stream.m3u8");
+    logger.info(`Waiting for playlist file: ${playlistPath}`);
     m3u8CheckTimer = setInterval(() => {
       if (status === "starting" && fs.existsSync(playlistPath)) {
         status = "running";
@@ -69,7 +83,10 @@ export function createStreamManager(
   }
 
   function scheduleRestart(): void {
-    if (stopping) return;
+    if (stopping) {
+      logger.info("Not scheduling restart — stop was requested");
+      return;
+    }
     const delay = Math.min(
       MIN_RESTART_DELAY * Math.pow(2, restartCount),
       MAX_RESTART_DELAY
@@ -82,7 +99,10 @@ export function createStreamManager(
   }
 
   function start(): void {
-    if (status === "running" || status === "starting") return;
+    if (status === "running" || status === "starting") {
+      logger.info(`Start called but status is already "${status}" — skipping`);
+      return;
+    }
 
     stopping = false;
     cleanOutputDir();
@@ -105,17 +125,41 @@ export function createStreamManager(
     ];
 
     status = "starting";
-    logger.info(`Starting ffmpeg stream — rtsp=${rtspUrl} outputDir=${outputDir} playlist=${playlistPath}`);
+    logger.info(`Starting ffmpeg with command: ffmpeg ${args.join(" ")}`);
 
-    const child = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
+    let child: ChildProcess;
+    try {
+      child = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error(`Failed to spawn ffmpeg process: ${msg}`);
+      lastError = msg;
+      status = "error";
+      scheduleRestart();
+      return;
+    }
+
     process = child;
     pid = child.pid ?? null;
     startedAt = new Date();
 
+    if (pid) {
+      logger.info(`ffmpeg process spawned with PID ${pid}`);
+    } else {
+      logger.warn("ffmpeg process spawned but PID is unavailable");
+    }
+
+    child.stdout?.on("data", (data: Buffer) => {
+      const msg = data.toString().trim();
+      if (msg) {
+        logger.info(`ffmpeg stdout: ${msg}`);
+      }
+    });
+
     child.stderr?.on("data", (data: Buffer) => {
       const msg = data.toString().trim();
       if (msg) {
-        logger.warn(`ffmpeg: ${msg}`);
+        logger.warn(`ffmpeg stderr: ${msg}`);
       }
     });
 
@@ -129,7 +173,7 @@ export function createStreamManager(
       scheduleRestart();
     });
 
-    child.on("close", (code) => {
+    child.on("close", (code, signal) => {
       clearM3u8Check();
       if (stopping) {
         status = "stopped";
@@ -138,7 +182,7 @@ export function createStreamManager(
         logger.info("ffmpeg stopped gracefully");
         return;
       }
-      logger.warn(`ffmpeg exited with code ${code}`);
+      logger.warn(`ffmpeg exited with code=${code} signal=${signal}`);
       lastError = `ffmpeg exited with code ${code}`;
       status = "error";
       pid = null;
@@ -155,11 +199,12 @@ export function createStreamManager(
     clearM3u8Check();
 
     if (!process) {
+      logger.info("Stop called but no process is running");
       status = "stopped";
       return;
     }
 
-    logger.info("Stopping ffmpeg stream");
+    logger.info("Stopping ffmpeg stream (sending SIGTERM)");
     process.kill("SIGTERM");
 
     const killTimer = setTimeout(() => {
@@ -175,6 +220,7 @@ export function createStreamManager(
   }
 
   function restart(): void {
+    logger.info("Manual restart requested — resetting restart count");
     restartCount = 0;
     stop();
     // Wait a tick for the process to clean up before restarting
