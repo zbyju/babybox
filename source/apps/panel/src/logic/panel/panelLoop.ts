@@ -119,17 +119,31 @@ export class AppManager {
 
   private checkRefreshLimit() {
     const DEFAULT_REFRESH_LIMIT = 50000;
-    const limit = this.appConfig.value.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
-
-    // Disable refresh if limit is invalid (0, negative, NaN, etc.)
-    if (limit <= 0 || !Number.isFinite(limit)) {
-      return;
-    }
+    const configValue = this.appConfig.value.refreshRequestLimit;
+    const limit = configValue ?? DEFAULT_REFRESH_LIMIT;
 
     const engineRequests = this.connectionStore.engineUnit.requests;
     const thermalRequests = this.connectionStore.thermalUnit.requests;
 
+    // Log every 100 requests to avoid console spam
+    if (engineRequests % 100 === 0 || thermalRequests % 100 === 0) {
+      console.log('[checkRefreshLimit]', {
+        configValue,
+        limit,
+        engineRequests,
+        thermalRequests,
+        appConfig: this.appConfig.value,
+      });
+    }
+
+    // Disable refresh if limit is invalid (0, negative, NaN, etc.)
+    if (limit <= 0 || !Number.isFinite(limit)) {
+      console.log('[checkRefreshLimit] Disabled - invalid limit:', limit);
+      return;
+    }
+
     if (engineRequests >= limit || thermalRequests >= limit) {
+      console.log('[checkRefreshLimit] Triggering reload!', { engineRequests, thermalRequests, limit });
       window.location.reload();
     }
   }
@@ -161,11 +175,19 @@ export class AppManager {
   private async initializeConfig() {
     const config = await this.getConfig();
     const versions = await this.getVersions();
+
+    console.log('[initializeConfig] Loaded config:', {
+      config,
+      app: config?.app,
+      refreshRequestLimit: config?.app?.refreshRequestLimit,
+    });
+
     if (isInstanceOfConfig(config)) {
       this.configStore.setConfig(config);
       this.versionsStore.setVersions(versions);
       return "Ok";
     } else {
+      console.log('[initializeConfig] Config validation failed:', config);
       throw "Config file error";
     }
   }
@@ -213,6 +235,13 @@ export class AppManager {
   async startPanelLoop() {
     const delay = this.unitsConfig.value.requestDelay || 2000;
     const panelState = this.panelState.value;
+
+    console.log('[startPanelLoop] Starting with config:', {
+      appConfig: this.appConfig.value,
+      refreshRequestLimit: this.appConfig.value.refreshRequestLimit,
+      delay,
+    });
+
     this.panelLoopInterval = setInterval(
       () => {
         this.updateEngineUnit();
