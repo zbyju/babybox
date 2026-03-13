@@ -2,7 +2,7 @@ import { wait } from "../utils/wait";
 import { fetchFromUrl } from "./fetch";
 
 export async function fetchConfig(): Promise<any> {
-  const url = "http://localhost:5001/api/v1/config/main";
+  const url = "http://localhost:3001/api/v1/config/main";
 
   try {
     await wait(2000);
