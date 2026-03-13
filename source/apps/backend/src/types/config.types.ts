@@ -61,4 +61,5 @@ export interface MainConfigPc {
 
 export interface MainConfigApp {
   password: string;
+  refreshRequestLimit?: number;
 }

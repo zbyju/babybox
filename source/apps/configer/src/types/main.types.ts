@@ -174,6 +174,7 @@ export function isInstanceOfMainConfigPc(obj: any): obj is MainConfigPc {
 
 export interface MainConfigApp {
   password: string;
+  refreshRequestLimit?: number;
 }
 
 export function isInstanceOfMainConfigApp(obj: any): obj is MainConfigApp {
