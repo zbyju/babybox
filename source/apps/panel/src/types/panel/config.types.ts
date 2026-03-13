@@ -15,6 +15,7 @@ export interface BackendConfig {
 export interface AppConfig {
   password: string;
   version: string;
+  refreshRequestLimit?: number;
 }
 
 export interface BabyboxConfig {

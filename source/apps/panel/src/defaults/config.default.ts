@@ -31,6 +31,7 @@ export const getDefaultAppConfig = (): AppConfig => {
   return {
     version: "unknown",
     password: "test",
+    refreshRequestLimit: 50000,
   };
 };
 

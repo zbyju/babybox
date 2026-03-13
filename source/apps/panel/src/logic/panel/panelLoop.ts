@@ -16,7 +16,7 @@ import { usePanelStateStore } from "@/pinia/panelStateStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { useVersionsStore } from "@/pinia/versions";
 import type { Maybe } from "@/types/generic.types";
-import type { Config, UnitsConfig } from "@/types/panel/config.types";
+import type { AppConfig, Config, UnitsConfig } from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
@@ -28,6 +28,7 @@ import { getNewState } from "./state";
 export class AppManager {
   private panelLoopInterval: Maybe<NodeJS.Timer> = undefined;
   private unitsConfig: Ref<UnitsConfig>;
+  private appConfig: Ref<AppConfig>;
   private panelState: Ref<PanelState>;
   private engineUnit: Ref<Maybe<EngineUnit>>;
   private thermalUnit: Ref<Maybe<ThermalUnit>>;
@@ -48,11 +49,12 @@ export class AppManager {
     const unitsStore = useUnitsStore();
     const connectionStore = useConnectionStore();
     const appStateStore = useAppStateStore();
-    const { units } = storeToRefs(configStore);
+    const { units, app } = storeToRefs(configStore);
     const { message, active } = storeToRefs(panelStateStore);
     const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
     const { engineUnit: euc, thermalUnit: tuc } = storeToRefs(connectionStore);
     this.unitsConfig = units;
+    this.appConfig = app;
     this.panelState = ref({ message, active });
     this.engineUnit = engineUnit;
     this.thermalUnit = thermalUnit;
@@ -112,6 +114,23 @@ export class AppManager {
       await updateWatchdog();
     } catch (err) {
       // Dont care about the error
+    }
+  }
+
+  private checkRefreshLimit() {
+    const DEFAULT_REFRESH_LIMIT = 50000;
+    const limit = this.appConfig.value.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
+
+    // Disable refresh if limit is invalid (0, negative, NaN, etc.)
+    if (limit <= 0 || !Number.isFinite(limit)) {
+      return;
+    }
+
+    const engineRequests = this.connectionStore.engineUnit.requests;
+    const thermalRequests = this.connectionStore.thermalUnit.requests;
+
+    if (engineRequests >= limit || thermalRequests >= limit) {
+      window.location.reload();
     }
   }
 
@@ -200,6 +219,7 @@ export class AppManager {
         this.updateThermalUnit();
         this.updateState();
         this.updateWatchdogEngine();
+        this.checkRefreshLimit();
       },
       panelState.message ? delay / 2 : delay,
     );
