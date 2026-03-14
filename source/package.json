@@ -14,6 +14,8 @@
     "start:configer": "pnpm -F babybox-panel-configer start",
     "start:main": "cd \"../dist\" && pnpm install && pm2 start ../dist/index.js -n babybox",
     "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
     "echo": "echo test"
   },
   "devDependencies": {
