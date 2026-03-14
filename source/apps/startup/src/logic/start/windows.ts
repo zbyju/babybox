@@ -1,20 +1,16 @@
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
-const spawn = require("child_process").spawn;
-const fs = require("fs-extra");
-const winston = require("winston");
-const { getFulltimeFormatted } = require("../../utils/time");
+import { promisify } from "util";
+import { exec as execCallback, spawn, ChildProcess } from "child_process";
+import fs from "fs-extra";
+import winston from "winston";
+import { getFulltimeFormatted } from "../../utils/time";
+import { Result, ResultType, UpdateResult, UpdateResultType } from "../../types/results";
 
-const Result = {
-  Error: "ResultError",
-  Success: "ResultSuccess",
-};
+const exec = promisify(execCallback);
 
-const UpdateResult = {
-  Error: "UpdateError",
-  Updated: "UpdateSuccess",
-  Unchanged: "UpdateUnchanged",
-};
+interface ExecResult {
+  stdout: string;
+  stderr: string;
+}
 
 const updateLogger = winston.createLogger({
   format: winston.format.json(),
@@ -54,9 +50,9 @@ const startLogger = winston.createLogger({
   ],
 });
 
-async function update() {
+async function update(): Promise<UpdateResultType> {
   try {
-    const { stdout, stderr } = await exec("git pull", { cwd: "../../" });
+    const { stdout, stderr }: ExecResult = await exec("git pull", { cwd: "../../" });
     if (!stdout) {
       updateLogger.error(
         `${getFulltimeFormatted()} - stderror when updating (${stderr})`
@@ -69,7 +65,7 @@ async function update() {
     }
     updateLogger.info(`${getFulltimeFormatted()} - Update successful!`);
     return UpdateResult.Updated;
-  } catch (err) {
+  } catch (err: unknown) {
     updateLogger.error(
       `${getFulltimeFormatted()} - Error when updating (${err})`
     );
@@ -77,9 +73,9 @@ async function update() {
   }
 }
 
-async function build() {
+async function build(): Promise<ResultType> {
   try {
-    const { stderr } = await exec("pnpm run build", { cwd: "../../" });
+    const { stderr }: ExecResult = await exec("pnpm run build", { cwd: "../../" });
     // Log stderr as warning if present (npm/pnpm often write warnings to stderr even on success)
     if (stderr) {
       buildLogger.warn(
@@ -88,14 +84,14 @@ async function build() {
     }
     buildLogger.info(`${getFulltimeFormatted()} - Build successful!`);
     return Result.Success;
-  } catch (err) {
+  } catch (err: unknown) {
     // Only treat as error if the command actually failed (exec throws on non-zero exit code)
     buildLogger.error(`${getFulltimeFormatted()} - Build error - ${err}`);
     return Result.Error;
   }
 }
 
-async function override() {
+async function override(): Promise<ResultType> {
   // Rename dist to old
   const doesExistDist = fs.existsSync("../../../dist");
   if (doesExistDist) {
@@ -103,7 +99,7 @@ async function override() {
     if (doesExistDist2) {
       try {
         fs.rmSync("../../../dist2", { recursive: true, force: true });
-      } catch (err) {
+      } catch (err: unknown) {
         overrideLogger.error(
           `${getFulltimeFormatted()} - Error when pre-removing dist2 - ${err}`
         );
@@ -119,7 +115,7 @@ async function override() {
         });
       }
       fs.renameSync("../../../dist", "../../../dist2");
-    } catch (err) {
+    } catch (err: unknown) {
       overrideLogger.error(
         `${getFulltimeFormatted()} - Error when renaming dist to dist2 - ${err}`
       );
@@ -144,7 +140,7 @@ async function override() {
     overrideLogger.info(`${getFulltimeFormatted()} - Override successful!`);
 
     return Result.Success;
-  } catch (err) {
+  } catch (err: unknown) {
     overrideLogger.error(
       `${getFulltimeFormatted()} - Error when moving built files - ${err}`
     );
@@ -159,9 +155,9 @@ async function override() {
       );
 
       return Result.Success;
-    } catch (err) {
+    } catch (rollbackErr: unknown) {
       overrideLogger.error(
-        `${getFulltimeFormatted()} - Error when rollbacking - ${err}`
+        `${getFulltimeFormatted()} - Error when rollbacking - ${rollbackErr}`
       );
 
       return Result.Error;
@@ -169,23 +165,25 @@ async function override() {
   }
 }
 
-async function startConfiger() {
+async function startConfiger(): Promise<number> {
   try {
     await exec("pm2 delete configer");
     // eslint-disable-next-line no-empty
-  } catch (err) {}
+  } catch (_err: unknown) {
+    // Ignore - PM2 process may not exist
+  }
 
-  return new Promise((resolve, reject) => {
-    const pnpm = spawn("pnpm.cmd", ["start:configer"], {
+  return new Promise<number>((resolve, reject) => {
+    const pnpm: ChildProcess = spawn("pnpm.cmd", ["start:configer"], {
       cwd: "../../",
       detached: true,
     });
 
-    pnpm.on("error", (err) => {
+    pnpm.on("error", (err: Error) => {
       return reject("configer err - " + err);
     });
 
-    pnpm.on("close", (code) => {
+    pnpm.on("close", (code: number | null) => {
       if (code === 0) {
         return resolve(code);
       } else {
@@ -195,23 +193,25 @@ async function startConfiger() {
   });
 }
 
-async function start() {
+async function start(): Promise<number> {
   try {
     await exec("pm2 delete babybox");
     // eslint-disable-next-line no-empty
-  } catch (err) {}
+  } catch (_err: unknown) {
+    // Ignore - PM2 process may not exist
+  }
 
-  return new Promise((resolve, reject) => {
-    const pnpm = spawn("pnpm.cmd", ["start:main"], {
+  return new Promise<number>((resolve, reject) => {
+    const pnpm: ChildProcess = spawn("pnpm.cmd", ["start:main"], {
       cwd: "../../",
       detached: true,
     });
 
-    pnpm.on("error", (err) => {
+    pnpm.on("error", (err: Error) => {
       return reject(err);
     });
 
-    pnpm.on("close", (code) => {
+    pnpm.on("close", (code: number | null) => {
       if (code === 0) {
         return resolve(code);
       } else {
@@ -221,7 +221,7 @@ async function start() {
   });
 }
 
-module.exports = async function onStartup() {
+export default async function onStartup(): Promise<boolean> {
   // Update
   const updateRes = await update();
   if (updateRes === UpdateResult.Updated || !fs.existsSync("../../../dist")) {
@@ -245,7 +245,7 @@ module.exports = async function onStartup() {
       `${getFulltimeFormatted()} - Start success (code ${mainCode}, ${configerCode})`
     );
     return true;
-  } catch (err) {
+  } catch (err: unknown) {
     startLogger.error(`${getFulltimeFormatted()} - Start error - ${err}`);
     for (let i = 0; i < 5; ++i) {
       try {
@@ -253,15 +253,15 @@ module.exports = async function onStartup() {
         startLogger.info(
           `${getFulltimeFormatted()} - Start success on try number #${i}`
         );
-        setTimeout(5000);
+        await new Promise(resolve => setTimeout(resolve, 5000));
         return true;
-      } catch (err) {
+      } catch (retryErr: unknown) {
         // Do nothing, try again
         startLogger.error(
-          `${getFulltimeFormatted()} - Start error on try number #${i} - ${err}`
+          `${getFulltimeFormatted()} - Start error on try number #${i} - ${retryErr}`
         );
       }
     }
     return false;
   }
-};
+}

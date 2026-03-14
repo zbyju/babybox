@@ -1,16 +1,17 @@
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
-const path = require("path");
-// eslint-disable-next-line no-unused-vars
-const fs = require("fs-extra");
-const sudo = require("sudo-prompt");
-const winston = require("winston");
-const { getFulltimeFormatted } = require("../../utils/time");
+import { promisify } from "util";
+import { exec as execCallback } from "child_process";
+import path from "path";
+import fs from "fs-extra";
+import sudo from "sudo-prompt";
+import winston from "winston";
+import { getFulltimeFormatted } from "../../utils/time";
 
-async function checkInstalled(logger) {
+const exec = promisify(execCallback);
+
+async function checkInstalled(logger: winston.Logger): Promise<boolean> {
   try {
     await exec("node -v");
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error(
       `${getFulltimeFormatted()} - Failed installation - missing node (${err})`
     );
@@ -18,7 +19,7 @@ async function checkInstalled(logger) {
   }
   try {
     await exec("npm -v");
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error(
       `${getFulltimeFormatted()} - Failed installation - missing npm (${err})`
     );
@@ -26,7 +27,7 @@ async function checkInstalled(logger) {
   }
   try {
     await exec("git --version");
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error(
       `${getFulltimeFormatted()} - Failed installation - missing git (${err})`
     );
@@ -35,7 +36,7 @@ async function checkInstalled(logger) {
   return true;
 }
 
-async function installDeps() {
+async function installDeps(): Promise<void> {
   await exec("npm install -g pnpm@9");
   await exec("npm install -g pm2@latest");
   await exec("npm install -g nodemon");
@@ -43,8 +44,8 @@ async function installDeps() {
   await exec("npm install -g ts-node@10");
 }
 
-// eslint-disable-next-line no-unused-vars
-async function copyStartup(logger) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function copyStartup(logger: winston.Logger): void {
   const pathToScript = path.resolve("./scripts/windows/startup.bat");
   const pathToLink = path.resolve(
     "C:/ProgramData/Microsoft/Windows/Start Menu/Programs/StartUp/babybox.bat"
@@ -52,25 +53,24 @@ async function copyStartup(logger) {
   const sudoOptions = {
     name: "Babybox Startup",
   };
-  return sudo.exec(
+  sudo.exec(
     `mklink "${pathToLink}" "${pathToScript}"`,
     sudoOptions,
-    (error, stdout, stderr) => {
+    (error, _stdout, stderr) => {
       if (error || stderr) {
         logger.error(
           `${getFulltimeFormatted()} - Copying startup script failed (Error: ${error}\nStdErr: ${stderr})`
         );
-        return false;
+        return;
       }
       logger.info(
         `${getFulltimeFormatted()} - Copying startup script successful)`
       );
-      return true;
     }
   );
 }
 
-module.exports = async function install() {
+export default async function install(): Promise<boolean> {
   const installLogger = winston.createLogger({
     format: winston.format.json(),
     defaultMeta: { module: "startup/install" },
@@ -82,7 +82,7 @@ module.exports = async function install() {
     ],
   });
   // Check if node, npm, git are installed
-  const isInstalled = checkInstalled(installLogger);
+  const isInstalled = await checkInstalled(installLogger);
   if (!isInstalled) {
     installLogger.error(
       `${getFulltimeFormatted()} - Installation failed - dependencies missing`
@@ -92,4 +92,8 @@ module.exports = async function install() {
 
   await installDeps();
   return true;
-};
+}
+
+// Keep fs and path imports to avoid unused variable warnings (they may be used in future)
+void fs;
+void path;

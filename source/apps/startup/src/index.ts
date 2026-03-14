@@ -1,14 +1,14 @@
-const winston = require("winston");
+import winston from "winston";
 
-const winStart = require("./logic/start/windows");
-const ubuntuStart = require("./logic/start/ubuntu");
-const winInstall = require("./logic/install/windows");
-const ubuntuInstall = require("./logic/install/ubuntu");
-const { getFulltimeFormatted } = require("./utils/time");
+import winStart from "./logic/start/windows";
+import ubuntuStart from "./logic/start/ubuntu";
+import winInstall from "./logic/install/windows";
+import ubuntuInstall from "./logic/install/ubuntu";
+import { getFulltimeFormatted } from "./utils/time";
 
-async function main() {
+async function main(): Promise<void> {
   let canStartup = true;
-  const args = process.argv.slice(2);
+  const args: string[] = process.argv.slice(2);
   const shouldInstall = args.find((a) => a.toLowerCase() === "--install");
   const isUbuntu = args.find((a) => a.toLowerCase() === "--ubuntu");
 
