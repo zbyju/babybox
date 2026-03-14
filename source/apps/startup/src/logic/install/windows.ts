@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs-extra";
 import sudo from "sudo-prompt";
 import winston from "winston";
-import { getFulltimeFormatted } from "../../utils/time";
+import { getFulltimeFormatted } from "../../utils/time.js";
 
 const exec = promisify(execCallback);
 

@@ -1,5 +1,5 @@
 import { Moment } from "moment";
-import moment = require("moment");
+import moment from "moment";
 
 export const getTimeDifferenceInSeconds = (t1: Moment, t2: Moment): number => {
   if (!t1 || !t2 || !t1.isValid() || !t2.isValid)

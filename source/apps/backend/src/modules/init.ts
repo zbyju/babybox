@@ -1,4 +1,4 @@
-import { restartRepository } from "./restart";
+import { restartRepository } from "./restart.js";
 
 export function modulesObject() {
   const restartEnabled = process.env.RESTART_ENABLED || true;

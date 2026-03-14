@@ -1,5 +1,5 @@
-import { Action } from "../../types/units.types";
-import { actionToUrl } from "../url";
+import { Action } from "../../types/units.types.js";
+import { actionToUrl } from "../url.js";
 
 describe("url.ts", () => {
   describe("actionToUrl", () => {
@@ -10,8 +10,8 @@ describe("url.ts", () => {
     });
 
     it("should return undefined for non-existent actions", () => {
-      expect(actionToUrl(null)).toBe(undefined);
-      expect(actionToUrl(undefined)).toBe(undefined);
+      expect(actionToUrl(null as unknown as Action)).toBe(undefined);
+      expect(actionToUrl(undefined as unknown as Action)).toBe(undefined);
     });
   });
 });

@@ -1,7 +1,7 @@
-import { wait } from "../utils/wait";
-import { fetchFromUrl } from "./fetch";
+import { wait } from "../utils/wait.js";
+import { fetchFromUrl } from "./fetch.js";
 
-export async function fetchConfig(): Promise<any> {
+export async function fetchConfig(): Promise<{ status: number; msg: string; data?: unknown }> {
   const url = "http://localhost:3001/api/v1/config/main";
 
   try {

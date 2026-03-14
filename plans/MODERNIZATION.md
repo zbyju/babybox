@@ -25,7 +25,7 @@ Projects are ordered by recommended execution sequence. Earlier projects unlock 
 | 0 | [Local Dev Setup](./modernization/00-local-dev-setup.md) | **Complete** | None | Build & dev mode working |
 | 1 | [Cleanup & Dead Code](./modernization/01-cleanup.md) | **Complete** | None | Dead code removed, bugs fixed |
 | 2 | [TypeScript Completion](./modernization/02-typescript-completion.md) | **Complete** | None | Better tooling, catches bugs |
-| 3 | [ESM Migration](./modernization/03-esm-migration.md) | Not Started | #2 recommended | Required for Bun |
+| 3 | [ESM Migration](./modernization/03-esm-migration.md) | **Complete** | #2 recommended | Required for Bun |
 | 4 | [Testing Foundation](./modernization/04-testing-foundation.md) | Not Started | #1, #2, #3 | Safety net for future changes |
 | 5 | [Dependency Updates](./modernization/05-dependency-updates.md) | Not Started | #3, #4 recommended | Modern tooling |
 | 6 | [Zod Validation](./modernization/06-zod-validation.md) | Not Started | #2, #5 | Runtime type safety |
@@ -82,6 +82,7 @@ Before merging any project:
 
 | Date | Project | Change |
 |------|---------|--------|
+| 2026-03-15 | #3 | ESM migration - migrated backend and startup to ESM with NodeNext module resolution |
 | 2026-03-15 | #2 | TypeScript completion - migrated startup app from JS to TS |
 | 2026-03-15 | #1 | Cleanup complete - removed dead code, fixed bugs, migrated ConnectionTracker |
 | 2026-03-14 | #0 | Local dev setup complete - fixed ports to 3xxx |

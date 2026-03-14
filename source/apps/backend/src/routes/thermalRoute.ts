@@ -1,10 +1,9 @@
-import * as express from "express";
-import { Request, Response } from "express";
+import express, { Request, Response, Router } from "express";
 
-import { fetchDataCommon } from "../fetch/fetchFromUnits";
-import { Unit } from "../types/units.types";
+import { fetchDataCommon } from "../fetch/fetchFromUnits.js";
+import { Unit } from "../types/units.types.js";
 
-export const router = express.Router();
+export const router: Router = express.Router();
 
 router.get("/data", async (req: Request, res: Response) => {
   const response = await fetchDataCommon(Unit.Thermal, req.query);

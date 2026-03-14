@@ -1,15 +1,15 @@
 {
   "name": "startup",
   "version": "1.0.0",
+  "type": "module",
   "description": "Small app to update and startup the app",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon --exec ts-node src/index.ts",
-    "dev:install": "nodemon --exec ts-node src/index.ts -- --install",
+    "dev": "nodemon --loader ts-node/esm src/index.ts",
+    "dev:install": "nodemon --loader ts-node/esm src/index.ts -- --install",
     "start": "node dist/index.js",
     "start:install": "node dist/index.js --install",
-    "start:ts": "ts-node src/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "author": "",

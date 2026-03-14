@@ -1,10 +1,10 @@
 import winston from "winston";
 
-import winStart from "./logic/start/windows";
-import ubuntuStart from "./logic/start/ubuntu";
-import winInstall from "./logic/install/windows";
-import ubuntuInstall from "./logic/install/ubuntu";
-import { getFulltimeFormatted } from "./utils/time";
+import winStart from "./logic/start/windows.js";
+import ubuntuStart from "./logic/start/ubuntu.js";
+import winInstall from "./logic/install/windows.js";
+import ubuntuInstall from "./logic/install/ubuntu.js";
+import { getFulltimeFormatted } from "./utils/time.js";
 
 async function main(): Promise<void> {
   let canStartup = true;

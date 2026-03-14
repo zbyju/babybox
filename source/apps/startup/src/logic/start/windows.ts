@@ -2,8 +2,8 @@ import { promisify } from "util";
 import { exec as execCallback, spawn, ChildProcess } from "child_process";
 import fs from "fs-extra";
 import winston from "winston";
-import { getFulltimeFormatted } from "../../utils/time";
-import { Result, ResultType, UpdateResult, UpdateResultType } from "../../types/results";
+import { getFulltimeFormatted } from "../../utils/time.js";
+import { Result, ResultType, UpdateResult, UpdateResultType } from "../../types/results.js";
 
 const exec = promisify(execCallback);
 

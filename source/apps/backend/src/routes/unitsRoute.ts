@@ -1,18 +1,18 @@
-import * as express from "express";
+import express, { Router } from "express";
 
 import {
   fetchAction,
   fetchSettings,
   updateSettings,
-} from "../fetch/fetchFromUnits";
+} from "../fetch/fetchFromUnits.js";
 import {
   CommonSettingsResponse,
   isInstanceOfPostUnitSettingsRequestBody,
   SettingResult,
-} from "../types/request.types";
-import { stringToAction } from "../utils/actions";
+} from "../types/request.types.js";
+import { stringToAction } from "../utils/actions.js";
 
-export const router = express.Router();
+export const router: Router = express.Router();
 
 router.get("/actions/:action", async (req, res) => {
   const action = stringToAction(req.params.action);

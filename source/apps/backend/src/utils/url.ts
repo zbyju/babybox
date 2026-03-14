@@ -1,7 +1,8 @@
-import { config } from "..";
-import { Action, Unit } from "../types/units.types";
+import { getConfig } from "../state/config.js";
+import { Action, Unit } from "../types/units.types.js";
 
 export function actionToUrl(action: Action): string | undefined {
+  const config = getConfig();
   switch (action) {
     case Action.OpenDoors:
       return `http://${config.units.engine.ip}/sdscep?sys141=201`;
@@ -13,6 +14,7 @@ export function actionToUrl(action: Action): string | undefined {
 }
 
 export function unitToIp(unit: Unit): string {
+  const config = getConfig();
   return unit === Unit.Engine
     ? config.units.engine.ip
     : config.units.thermal.ip;
