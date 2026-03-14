@@ -29,7 +29,6 @@ import {
 
 export const getTableConnectionValues = (
   engineData: Maybe<EngineUnit>,
-  _: Maybe<ThermalUnit>,
   connection: Connection,
   config: Config,
 ): TableConnectionValues => {
@@ -84,7 +83,6 @@ export const getTableConnectionValues = (
 
 export const getTableDoorsValues = (
   engineData: Maybe<EngineUnit>,
-  _: Maybe<ThermalUnit>,
 ): TableDoorsValues => {
   if (engineData === undefined) {
     return {
@@ -128,7 +126,6 @@ export const getTableDoorsValues = (
 };
 
 export const getTableTemperaturesValues = (
-  _: Maybe<EngineUnit>,
   thermalData: Maybe<ThermalUnit>,
 ): TableTemperaturesValues => {
   if (thermalData === undefined) {
@@ -193,7 +190,6 @@ export const getTableTemperaturesValues = (
 };
 
 export const getTableVoltageValues = (
-  _: Maybe<EngineUnit>,
   thermalData: Maybe<ThermalUnit>,
 ): TableVoltagesValues => {
   if (thermalData === undefined) {

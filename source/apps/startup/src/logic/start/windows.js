@@ -80,15 +80,16 @@ async function update() {
 async function build() {
   try {
     const { stderr } = await exec("pnpm run build", { cwd: "../../" });
+    // Log stderr as warning if present (npm/pnpm often write warnings to stderr even on success)
     if (stderr) {
-      buildLogger.error(
-        `${getFulltimeFormatted()} - Build stderror - ${stderr}`
+      buildLogger.warn(
+        `${getFulltimeFormatted()} - Build warnings - ${stderr}`
       );
-      return Result.Error;
     }
     buildLogger.info(`${getFulltimeFormatted()} - Build successful!`);
     return Result.Success;
   } catch (err) {
+    // Only treat as error if the command actually failed (exec throws on non-zero exit code)
     buildLogger.error(`${getFulltimeFormatted()} - Build error - ${err}`);
     return Result.Error;
   }

@@ -18,10 +18,10 @@
   import DataTable from "../table/DataTable.vue";
 
   const unitsStore = useUnitsStore();
-  const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
+  const { thermalUnit } = storeToRefs(unitsStore);
 
   const values = computed(() =>
-    getTableVoltageValues(engineUnit.value, thermalUnit.value),
+    getTableVoltageValues(thermalUnit.value),
   );
   const blocks: TableBlockTemplate[] = [];
   const rows: TableRowTemplate[] = [

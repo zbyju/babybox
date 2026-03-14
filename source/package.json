@@ -4,7 +4,7 @@
   "description": "",
   "author": "",
   "keywords": [],
-  "packageManager": "pnpm@7.5.0",
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "pnpm -F babybox-panel-configer dev & pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev",
     "dev:backend": "pnpm -F babybox-panel-backend dev",

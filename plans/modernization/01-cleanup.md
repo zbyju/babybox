@@ -25,11 +25,11 @@ This project has zero risk and immediate benefits:
 ### 1.1 Remove Unused Dependencies
 
 #### Backend `package.json`
-- [ ] Remove `lowdb` - Listed but never imported (config comes from configer via HTTP)
+- [x] Remove `lowdb` - Listed but never imported (config comes from configer via HTTP)
 
 #### Root Level
-- [ ] Delete `source/yarn.lock` - Project uses pnpm, this is legacy
-- [ ] Delete `source/apps/panel/pnpm-lock.yaml` - Duplicate, should use root lock file only
+- [x] Delete `source/yarn.lock` - Project uses pnpm, this is legacy
+- [x] Delete `source/apps/panel/pnpm-lock.yaml` - Duplicate, should use root lock file only
 
 ### 1.2 Delete Dead Files
 
@@ -81,16 +81,16 @@ if (stderr) {
 ```typescript
 // TODO: Remove this file - move to connection store
 ```
-- [ ] Move `ConnectionTracker` class logic into `connectionStore.ts`
-- [ ] Delete `connections.ts` after migration
-- [ ] Update imports in `panelLoop.ts`
+- [x] Move `ConnectionTracker` class logic into `connectionStore.ts`
+- [x] Delete `connections.ts` after migration
+- [x] Update imports in `connection.types.ts`
 
 #### Panel - Units Store Getters  
 **File**: `src/pinia/unitsStore.ts:25`
 ```typescript
 // TODO: Add used getters
 ```
-- [ ] Add commonly computed getters (or document why none needed)
+- [x] Add commonly computed getters (or document why none needed)
 
 ### 1.5 Remove Unused Code
 

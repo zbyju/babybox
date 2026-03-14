@@ -18,9 +18,9 @@
   import DataTable from "../table/DataTable.vue";
 
   const unitsStore = useUnitsStore();
-  const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
+  const { engineUnit } = storeToRefs(unitsStore);
   const values = computed(() =>
-    getTableDoorsValues(engineUnit.value, thermalUnit.value),
+    getTableDoorsValues(engineUnit.value),
   );
   const blocks: TableBlockTemplate[] = [
     {

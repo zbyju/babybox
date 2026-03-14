@@ -78,7 +78,7 @@ export function isInstanceOfSetting(object: any): object is Setting {
 }
 
 export function isInstanceOfArraySetting(object: any): object is Setting[] {
-  if (!object && object !== []) return false;
+  if (!object) return false;
   return (
     Array.isArray(object) && object.every((o: any) => isInstanceOfSetting(o))
   );

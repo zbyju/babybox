@@ -36,11 +36,11 @@ async function checkInstalled(logger) {
 }
 
 async function installDeps() {
-  await exec("npm install -g pnpm@7.5.0");
+  await exec("npm install -g pnpm@9");
   await exec("npm install -g pm2@latest");
   await exec("npm install -g nodemon");
-  await exec("npm install -g typescript@4.7.4");
-  await exec("npm install -g ts-node@10.9.1");
+  await exec("npm install -g typescript@5");
+  await exec("npm install -g ts-node@10");
 }
 
 // eslint-disable-next-line no-unused-vars
