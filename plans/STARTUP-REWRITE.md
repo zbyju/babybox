@@ -38,7 +38,7 @@ This document tracks the progress of rewriting the startup application from scra
 | 3 | [Infrastructure Layer](./startup-rewrite/03-infrastructure.md) | **Complete** | #1, #2 | 2 days |
 | 4 | [Domain Logic](./startup-rewrite/04-domain-logic.md) | **Complete** | #1, #2 | 2 days |
 | 5 | [Application Layer](./startup-rewrite/05-application-layer.md) | **Complete** | #3, #4 | 2 days |
-| 6 | [CLI Presentation](./startup-rewrite/06-presentation.md) | Not Started | #5 | 1 day |
+| 6 | [CLI Presentation](./startup-rewrite/06-presentation.md) | **Complete** | #5 | 1 day |
 | 7 | [Build & Distribution](./startup-rewrite/07-build-distribution.md) | Not Started | #6 | 1 day |
 | 8 | [Testing & Verification](./startup-rewrite/08-testing.md) | Not Started | #7 | 2 days |
 | 9 | [Migration & Deployment](./startup-rewrite/09-migration.md) | Not Started | #8 | 1 day |
@@ -293,6 +293,8 @@ type AbsolutePath = string & { readonly __brand: "AbsolutePath" };
 
 | Date | Project | Change |
 |------|---------|--------|
+| 2026-03-15 | #6 | CLI presentation complete - OS detection, adapters factory, config loader, CLI entry point |
+| 2026-03-15 | #5 | Application layer complete - context, orchestrators (startup, update, build, override, process) |
 | 2026-03-15 | #4 | Domain logic complete - strategy, retry, suggestion, git parsing functions |
 | 2026-03-15 | #3 | Infrastructure layer complete - shell, fs, pm2 wrappers, ports, git adapter |
 | 2026-03-15 | #2 | Logging system complete - console, file, combined loggers with Czech messages |

@@ -11,6 +11,7 @@
 | **Effort** | 1 day |
 | **Dependencies** | #5 Application Layer |
 | **Unlocks** | Build & Distribution |
+| **Status** | **Complete** |
 
 ## Design Principles
 
@@ -757,13 +758,13 @@ export function createUbuntuPackageManagerAdapter(): PackageManagerPort {
 
 ## Verification Checklist
 
-- [ ] CLI parses all arguments correctly
-- [ ] OS detection works on all platforms
-- [ ] Help message displays in Czech
-- [ ] Config loading finds repo root
-- [ ] Adapters are created for each OS
-- [ ] Exit codes are correct (0 success, 1 failure)
-- [ ] Logs are flushed before exit
+- [x] CLI parses all arguments correctly
+- [x] OS detection works on all platforms
+- [x] Help message displays in Czech
+- [x] Config loading finds repo root
+- [x] Adapters are created for each OS
+- [x] Exit codes are correct (0 success, 1 failure)
+- [x] Logs are flushed before exit
 
 ## Test File
 
