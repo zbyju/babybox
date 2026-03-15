@@ -530,13 +530,13 @@ export { createCombinedLogger } from "./combined";
 
 ## Verification Checklist
 
-- [ ] Console logger displays colored output
-- [ ] File logger creates log files in correct location
-- [ ] Combined logger writes to both
-- [ ] Log files are valid JSON (one entry per line)
-- [ ] Suggestions are properly formatted
-- [ ] Czech messages display correctly (UTF-8)
-- [ ] Logging never throws errors
+- [x] Console logger displays colored output
+- [x] File logger creates log files in correct location
+- [x] Combined logger writes to both
+- [x] Log files are valid JSON (one entry per line)
+- [x] Suggestions are properly formatted
+- [x] Czech messages display correctly (UTF-8)
+- [x] Logging never throws errors
 
 ## Test File
 
