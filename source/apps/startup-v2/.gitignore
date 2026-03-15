@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build outputs (except committed binaries)
+dist/*.js
+dist/*.map
+coverage/
+
+# Logs
+*.log
+
+# Environment
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

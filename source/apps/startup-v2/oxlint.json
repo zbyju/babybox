@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "no-explicit-any": "error",
+    "no-unsafe-argument": "error",
+    "no-unsafe-assignment": "error",
+    "no-unsafe-call": "error",
+    "no-unsafe-member-access": "error",
+    "no-unsafe-return": "error",
+    "no-throw-literal": "error",
+    "no-unused-vars": "error",
+    "prefer-const": "error",
+    "eqeqeq": "error"
+  },
+  "ignorePatterns": ["dist", "node_modules"]
+}

@@ -1,0 +1,6 @@
+[install]
+auto = "auto"
+
+[test]
+coverage = true
+coverageDir = "./coverage"
