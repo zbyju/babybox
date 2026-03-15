@@ -1,5 +1,5 @@
 import { getConfig } from "../state/config.js";
-import { Action, Unit } from "../types/units.types.js";
+import { Action } from "../types/units.types.js";
 
 export function actionToUrl(action: Action): string | undefined {
   const config = getConfig();
@@ -13,9 +13,9 @@ export function actionToUrl(action: Action): string | undefined {
   }
 }
 
-export function unitToIp(unit: Unit): string {
+export function unitToIp(unit: "engine" | "thermal"): string {
   const config = getConfig();
-  return unit === Unit.Engine
+  return unit === "engine"
     ? config.units.engine.ip
     : config.units.thermal.ip;
 }

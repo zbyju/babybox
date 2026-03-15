@@ -1,183 +1,79 @@
-export interface MainConfig {
-  babybox: MainConfigBabybox;
-  backend: MainConfigBackend;
-  configer: MainConfigConfiger;
-  startup: MainConfigStartup;
-  units: MainConfigUnits;
-  camera: MainConfigCamera;
-  pc: MainConfigPc;
-  app: MainConfigApp;
+import {
+  MainConfigSchema,
+  BabyboxConfigSchema,
+  BackendConfigSchema,
+  ConfigerConfigSchema,
+  UnitsConfigSchema,
+  VoltageConfigSchema,
+  CameraConfigSchema,
+  PcConfigSchema,
+  AppConfigSchema,
+} from "../schemas/config.schema.js";
+
+// Re-export types from schema
+export type {
+  MainConfig,
+  BabyboxConfig,
+  BackendConfig,
+  ConfigerConfig,
+  VoltageConfig,
+  UnitsConfig,
+  CameraType,
+  CameraConfig,
+  PcConfig,
+  AppConfig,
+} from "../schemas/config.schema.js";
+
+// Legacy interface aliases for backward compatibility
+export type MainConfigBabybox = import("../schemas/config.schema.js").BabyboxConfig;
+export type MainConfigBackend = import("../schemas/config.schema.js").BackendConfig;
+export type MainConfigConfiger = import("../schemas/config.schema.js").ConfigerConfig;
+export type MainConfigUnits = import("../schemas/config.schema.js").UnitsConfig;
+export type MainConfigVoltage = import("../schemas/config.schema.js").VoltageConfig;
+export type MainConfigCamera = import("../schemas/config.schema.js").CameraConfig;
+export type MainConfigPc = import("../schemas/config.schema.js").PcConfig;
+export type MainConfigApp = import("../schemas/config.schema.js").AppConfig;
+export type MainConfigStartup = Record<string, unknown>;
+export type MainConfigUnit = { ip: string };
+
+// Type guard functions using Zod schemas
+export function isInstanceOfMainConfig(obj: unknown): obj is import("../schemas/config.schema.js").MainConfig {
+  return MainConfigSchema.safeParse(obj).success;
 }
 
-export function isInstanceOfMainConfig(obj: any): obj is MainConfig {
+export function isInstanceOfMainConfigBabybox(obj: unknown): obj is MainConfigBabybox {
+  return BabyboxConfigSchema.safeParse(obj).success;
+}
+
+export function isInstanceOfMainConfigBackend(obj: unknown): obj is MainConfigBackend {
+  return BackendConfigSchema.safeParse(obj).success;
+}
+
+export function isInstanceOfMainConfigConfiger(obj: unknown): obj is MainConfigConfiger {
+  return ConfigerConfigSchema.safeParse(obj).success;
+}
+
+export function isInstanceOfMainConfigUnits(obj: unknown): obj is MainConfigUnits {
+  return UnitsConfigSchema.safeParse(obj).success;
+}
+
+export function isInstanceOfMainConfigVoltage(obj: unknown): obj is MainConfigVoltage {
+  return VoltageConfigSchema.safeParse(obj).success;
+}
+
+export function isInstanceOfMainConfigCamera(obj: unknown): obj is MainConfigCamera {
+  return CameraConfigSchema.safeParse(obj).success;
+}
+
+export function isInstanceOfMainConfigPc(obj: unknown): obj is MainConfigPc {
+  return PcConfigSchema.safeParse(obj).success;
+}
+
+export function isInstanceOfMainConfigApp(obj: unknown): obj is MainConfigApp {
+  return AppConfigSchema.safeParse(obj).success;
+}
+
+export function isInstanceOfMainConfigUnit(obj: unknown): obj is MainConfigUnit {
   if (!obj || typeof obj !== "object") return false;
-  return (
-    "babybox" in obj &&
-    "backend" in obj &&
-    "configer" in obj &&
-    "units" in obj &&
-    "camera" in obj &&
-    "pc" in obj &&
-    "app" in obj &&
-    isInstanceOfMainConfigApp(obj.app) &&
-    isInstanceOfMainConfigBabybox(obj.babybox) &&
-    isInstanceOfMainConfigBackend(obj.backend) &&
-    isInstanceOfMainConfigConfiger(obj.configer) &&
-    isInstanceOfMainConfigUnits(obj.units) &&
-    isInstanceOfMainConfigCamera(obj.camera) &&
-    isInstanceOfMainConfigPc(obj.pc)
-  );
-}
-
-export interface MainConfigBabybox {
-  name: string;
-}
-
-export function isInstanceOfMainConfigBabybox(
-  obj: any
-): obj is MainConfigBabybox {
-  if (!obj || typeof obj !== "object") return false;
-  return "name" in obj && typeof obj.name === "string";
-}
-
-export interface MainConfigBackend {
-  url: string;
-  port: number;
-  requestTimeout: number;
-}
-
-export function isInstanceOfMainConfigBackend(
-  obj: any
-): obj is MainConfigBackend {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "url" in obj &&
-    "port" in obj &&
-    "requestTimeout" in obj &&
-    typeof obj.url === "string" &&
-    Number.isInteger(obj.port) &&
-    Number.isInteger(obj.requestTimeout)
-  );
-}
-
-export interface MainConfigConfiger {
-  url: string;
-  port: number;
-  requestTimeout: number;
-}
-
-export function isInstanceOfMainConfigConfiger(
-  obj: any
-): obj is MainConfigConfiger {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "url" in obj &&
-    "port" in obj &&
-    "requestTimeout" in obj &&
-    typeof obj.url === "string" &&
-    Number.isInteger(obj.port) &&
-    Number.isInteger(obj.requestTimeout)
-  );
-}
-
-export interface MainConfigStartup {}
-
-export interface MainConfigUnits {
-  requestDelay: number;
-  warningThreshold: number;
-  errorThreshold: number;
-  voltage: MainConfigVoltage;
-}
-
-export function isInstanceOfMainConfigUnits(obj: any): obj is MainConfigUnits {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "requestDelay" in obj &&
-    "warningThreshold" in obj &&
-    "errorThreshold" in obj &&
-    "voltage" in obj &&
-    Number.isInteger(obj.requestDelay) &&
-    Number.isInteger(obj.warningThreshold) &&
-    Number.isInteger(obj.errorThreshold) &&
-    isInstanceOfMainConfigVoltage(obj.voltage)
-  );
-}
-
-export interface MainConfigVoltage {
-  divider: number;
-  multiplier: number;
-  addition: number;
-}
-
-export function isInstanceOfMainConfigVoltage(
-  obj: any
-): obj is MainConfigVoltage {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "divider" in obj &&
-    "multiplier" in obj &&
-    "addition" in obj &&
-    Number.isInteger(obj.divider) &&
-    Number.isInteger(obj.multiplier) &&
-    Number.isInteger(obj.addition)
-  );
-}
-
-export interface MainConfigUnit {
-  ip: string;
-}
-
-export function isInstanceOfMainConfigUnit(obj: any): obj is MainConfigUnit {
-  if (!obj || typeof obj !== "object") return false;
-  return "ip" in obj && typeof obj.ip === "string";
-}
-
-export interface MainConfigCamera {
-  ip: string;
-  username: string;
-  password: string;
-  updateDelay: number;
-  cameraType: string;
-}
-
-export function isInstanceOfMainConfigCamera(
-  obj: any
-): obj is MainConfigCamera {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "ip" in obj &&
-    "username" in obj &&
-    "password" in obj &&
-    "updateDelay" in obj &&
-    "cameraType" in obj &&
-    typeof obj.ip === "string" &&
-    typeof obj.username === "string" &&
-    typeof obj.password === "string" &&
-    typeof obj.cameraType === "string" &&
-    ["dahua", "avtech", "vivotek"].includes(obj.cameraType) &&
-    Number.isInteger(obj.updateDelay)
-  );
-}
-
-export interface MainConfigPc {
-  os: "windows" | "ubuntu";
-}
-
-export function isInstanceOfMainConfigPc(obj: any): obj is MainConfigPc {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "os" in obj &&
-    typeof obj.os === "string" &&
-    ["windows", "ubuntu"].includes(obj.os)
-  );
-}
-
-export interface MainConfigApp {
-  password: string;
-  refreshRequestLimit?: number;
-}
-
-export function isInstanceOfMainConfigApp(obj: any): obj is MainConfigApp {
-  if (!obj || typeof obj !== "object") return false;
-  return "password" in obj && typeof obj.password === "string";
+  return "ip" in obj && typeof (obj as Record<string, unknown>).ip === "string";
 }
