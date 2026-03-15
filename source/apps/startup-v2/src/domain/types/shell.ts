@@ -8,9 +8,9 @@ import type { DurationMs, DirectoryPath } from "./branded.js";
  * Options for executing a shell command.
  */
 export type ShellOptions = {
-  readonly cwd?: DirectoryPath;
-  readonly timeoutMs?: DurationMs;
-  readonly env?: Readonly<Record<string, string>>;
+  readonly cwd?: DirectoryPath | undefined;
+  readonly timeoutMs?: DurationMs | undefined;
+  readonly env?: Readonly<Record<string, string>> | undefined;
 };
 
 /**
