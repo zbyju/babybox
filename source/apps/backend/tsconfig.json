@@ -1,13 +1,17 @@
-// tsconfig.json
 {
   "compilerOptions": {
-    "outDir": "dist", // where to put the compiled JS files
-    "target": "ES2020", // which level of JS support to target
-    "module": "CommonJS", // which system for the program AMD, UMD, System, CommonJS
-
-    // Recommended: Compiler complains about expressions implicitly typed as 'any'
+    "outDir": "dist",
+    "rootDir": "src",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
     "noImplicitAny": true
   },
-  "include": ["src"], // which files to compile
-  "exclude": ["node_modules"] // which files to skip
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

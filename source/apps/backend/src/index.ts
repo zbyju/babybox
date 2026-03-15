@@ -1,26 +1,32 @@
-import * as cors from "cors";
-import * as dotenv from "dotenv";
-import * as express from "express";
-import * as morgan from "morgan";
-import open = require("open");
-import { fetchConfig } from "./fetch/fetchConfig";
-import { modulesObject } from "./modules/init";
-import { router as engineRoute } from "./routes/engineRoute";
-import { router as restartRoute } from "./routes/restartRoute";
-import { router as thermalRoute } from "./routes/thermalRoute";
-import { router as unitsRoute } from "./routes/unitsRoute";
-import { MainConfig } from "./types/config.types";
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import morgan from "morgan";
+import open from "open";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+import { fetchConfig } from "./fetch/fetchConfig.js";
+import { modulesObject } from "./modules/init.js";
+import { router as engineRoute } from "./routes/engineRoute.js";
+import { router as restartRoute } from "./routes/restartRoute.js";
+import { router as thermalRoute } from "./routes/thermalRoute.js";
+import { router as unitsRoute } from "./routes/unitsRoute.js";
+import { setConfig, getConfig } from "./state/config.js";
+import { MainConfig } from "./types/config.types.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export const modules = modulesObject();
-
-export let config: MainConfig | null = null;
 
 async function main() {
   // .env file load
   dotenv.config();
 
   const c = await fetchConfig();
-  config = c.data;
+  setConfig(c.data as MainConfig);
+  const config = getConfig();
 
   const app = express();
   const port = config?.backend.port || process.env.PORT || 5000;
@@ -56,10 +62,10 @@ async function main() {
 
   // Serve Frontend app if running in production
   if (process.env.NODE_ENV === "production") {
-    app.use(express.static(__dirname + "/public/"));
+    app.use(express.static(join(__dirname, "public")));
 
     app.get("/", (req, res) => {
-      res.sendFile(__dirname + "/public/index.html");
+      res.sendFile(join(__dirname, "public", "index.html"));
     });
 
     open("http://localhost:" + port);

@@ -1,5 +1,5 @@
-import { Action } from "../../types/units.types";
-import { stringToAction } from "../actions";
+import { Action } from "../../types/units.types.js";
+import { stringToAction } from "../actions.js";
 
 describe("actions.ts", () => {
   describe("stringToAction", () => {
@@ -30,8 +30,8 @@ describe("actions.ts", () => {
     });
 
     it("should return undefined for null cases", () => {
-      expect(stringToAction(null)).toBe(undefined);
-      expect(stringToAction(undefined)).toBe(undefined);
+      expect(stringToAction(null as unknown as string)).toBe(undefined);
+      expect(stringToAction(undefined as unknown as string)).toBe(undefined);
       expect(stringToAction("")).toBe(undefined);
     });
   });

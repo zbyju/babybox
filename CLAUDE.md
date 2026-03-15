@@ -8,9 +8,9 @@ pnpm monorepo with 4 apps in `source/apps/`:
 
 | App | Port | Purpose |
 |-----|------|---------|
-| `panel` | 4000 | Vue 3 frontend - realtime monitoring dashboard |
-| `backend` | 5000 | Express API - communicates with hardware units |
-| `configer` | 5001 | Configuration service - manages JSON configs |
+| `panel` | 3002 | Vue 3 frontend - realtime monitoring dashboard |
+| `backend` | 3000 | Express API - communicates with hardware units |
+| `configer` | 3001 | Configuration service - manages JSON configs |
 | `startup` | - | Deployment utility - auto-update and process management |
 
 ## Key Commands
