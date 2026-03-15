@@ -37,7 +37,7 @@ This document tracks the progress of rewriting the startup application from scra
 | 2 | [Logging System](./startup-rewrite/02-logging-system.md) | **Complete** | #1 | 1 day |
 | 3 | [Infrastructure Layer](./startup-rewrite/03-infrastructure.md) | **Complete** | #1, #2 | 2 days |
 | 4 | [Domain Logic](./startup-rewrite/04-domain-logic.md) | **Complete** | #1, #2 | 2 days |
-| 5 | [Application Layer](./startup-rewrite/05-application-layer.md) | Not Started | #3, #4 | 2 days |
+| 5 | [Application Layer](./startup-rewrite/05-application-layer.md) | **Complete** | #3, #4 | 2 days |
 | 6 | [CLI Presentation](./startup-rewrite/06-presentation.md) | Not Started | #5 | 1 day |
 | 7 | [Build & Distribution](./startup-rewrite/07-build-distribution.md) | Not Started | #6 | 1 day |
 | 8 | [Testing & Verification](./startup-rewrite/08-testing.md) | Not Started | #7 | 2 days |
