@@ -11,6 +11,7 @@
 | **Effort** | 3-5 days |
 | **Dependencies** | #3 ESM, #4 Testing (recommended) |
 | **Unlocks** | Modern tooling, security fixes, Bun compatibility |
+| **Status** | **COMPLETE** |
 
 ## Why After ESM & Tests?
 

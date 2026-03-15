@@ -27,7 +27,7 @@ Projects are ordered by recommended execution sequence. Earlier projects unlock 
 | 2 | [TypeScript Completion](./modernization/02-typescript-completion.md) | **Complete** | None | Better tooling, catches bugs |
 | 3 | [ESM Migration](./modernization/03-esm-migration.md) | **Complete** | #2 recommended | Required for Bun |
 | 4 | [Testing Foundation](./modernization/04-testing-foundation.md) | **Complete** | #1, #2, #3 | Safety net for future changes |
-| 5 | [Dependency Updates](./modernization/05-dependency-updates.md) | Not Started | #3, #4 recommended | Modern tooling |
+| 5 | [Dependency Updates](./modernization/05-dependency-updates.md) | **Complete** | #3, #4 recommended | Modern tooling |
 | 6 | [Zod Validation](./modernization/06-zod-validation.md) | Not Started | #2, #5 | Runtime type safety |
 | 7 | [Bun Migration](./modernization/07-bun-migration.md) | Not Started | #3, #5 | New runtime |
 | 8 | [Turborepo Integration](./modernization/08-turborepo.md) | Not Started | #7 | Better DX |
@@ -82,6 +82,7 @@ Before merging any project:
 
 | Date | Project | Change |
 |------|---------|--------|
+| 2026-03-15 | #5 | Dependency updates complete - TypeScript 5, Vite 5, axios 1.x, open 10.x, prettier 3, vitest 2 |
 | 2026-03-15 | #4 | Testing foundation complete - added 69 panel tests, 30 configer tests, unified test setup across apps |
 | 2026-03-15 | #4 | Testing foundation - migrated backend from Jest to Vitest, all 33 tests passing |
 | 2026-03-15 | #3 | ESM migration - migrated backend and startup to ESM with NodeNext module resolution |
