@@ -6,7 +6,12 @@ dist/*.js
 dist/*.map
 coverage/
 
+# Keep compiled binaries in git for easy deployment
+!dist/startup-*
+!dist/checksums.sha256
+
 # Logs
+logs/
 *.log
 
 # Environment

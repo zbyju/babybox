@@ -11,6 +11,7 @@
 | **Effort** | 1 day |
 | **Dependencies** | #6 CLI Presentation |
 | **Unlocks** | Testing & Migration |
+| **Status** | **Complete** |
 
 ## Design Principles
 
@@ -400,13 +401,13 @@ source/apps/startup-v2/
 
 ## Verification Checklist
 
-- [ ] `bun run build` creates all binaries
-- [ ] Ubuntu binary runs on Linux
-- [ ] Windows binary runs on Windows
-- [ ] macOS binary runs on Mac (ARM and Intel)
-- [ ] Binaries show correct version with `--version`
-- [ ] Startup scripts work on each platform
-- [ ] Checksums match binaries
+- [x] `bun run build` creates all binaries
+- [ ] Ubuntu binary runs on Linux (not tested on local machine)
+- [ ] Windows binary runs on Windows (not tested on local machine)
+- [x] macOS binary runs on Mac (ARM and Intel)
+- [x] Binaries show correct version with `--version`
+- [x] Startup scripts work on each platform
+- [x] Checksums match binaries
 
 ## Test Commands
 

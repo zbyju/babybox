@@ -9,11 +9,10 @@ import { parseArgs } from "node:util";
 import { createAppContext } from "../application/context.js";
 import { startup } from "../application/orchestrators/index.js";
 import { createCombinedLogger } from "../infrastructure/logging/index.js";
+import { VERSION, getVersionInfo } from "../version.js";
 import { resolveOS } from "./os-detection.js";
 import { createAdapters } from "./adapter-factory.js";
 import { loadConfig, getLogLevel } from "./config-loader.js";
-
-const VERSION = "2.0.0";
 
 const HELP_TEXT = `
 Babybox Startup v${VERSION}
@@ -93,7 +92,7 @@ async function main(): Promise<number> {
 
   // Handle --version
   if (args.version) {
-    console.log(`Babybox Startup v${VERSION}`);
+    console.log(`Babybox Startup ${getVersionInfo()}`);
     return 0;
   }
 
