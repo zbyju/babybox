@@ -33,7 +33,7 @@ This document tracks the progress of rewriting the startup application from scra
 | # | Project | Status | Dependencies | Effort |
 |---|---------|--------|--------------|--------|
 | 0 | [Project Setup](./startup-rewrite/00-project-setup.md) | **Complete** | None | 1 day |
-| 1 | [Domain Types](./startup-rewrite/01-domain-types.md) | Not Started | #0 | 2 days |
+| 1 | [Domain Types](./startup-rewrite/01-domain-types.md) | **Complete** | #0 | 2 days |
 | 2 | [Logging System](./startup-rewrite/02-logging-system.md) | Not Started | #1 | 1 day |
 | 3 | [Infrastructure Layer](./startup-rewrite/03-infrastructure.md) | Not Started | #1, #2 | 2 days |
 | 4 | [Domain Logic](./startup-rewrite/04-domain-logic.md) | Not Started | #1, #2 | 2 days |
@@ -293,6 +293,7 @@ type AbsolutePath = string & { readonly __brand: "AbsolutePath" };
 
 | Date | Project | Change |
 |------|---------|--------|
+| 2026-03-15 | #1 | Domain types complete - branded types, sum types, Zod schemas, logging types |
 | 2026-03-15 | #0 | Project setup complete - created startup-v2 with Bun, TypeScript, oxlint, Biome |
 | 2026-03-14 | - | Initial plan created |
 
