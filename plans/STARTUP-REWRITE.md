@@ -36,7 +36,7 @@ This document tracks the progress of rewriting the startup application from scra
 | 1 | [Domain Types](./startup-rewrite/01-domain-types.md) | **Complete** | #0 | 2 days |
 | 2 | [Logging System](./startup-rewrite/02-logging-system.md) | **Complete** | #1 | 1 day |
 | 3 | [Infrastructure Layer](./startup-rewrite/03-infrastructure.md) | **Complete** | #1, #2 | 2 days |
-| 4 | [Domain Logic](./startup-rewrite/04-domain-logic.md) | Not Started | #1, #2 | 2 days |
+| 4 | [Domain Logic](./startup-rewrite/04-domain-logic.md) | **Complete** | #1, #2 | 2 days |
 | 5 | [Application Layer](./startup-rewrite/05-application-layer.md) | Not Started | #3, #4 | 2 days |
 | 6 | [CLI Presentation](./startup-rewrite/06-presentation.md) | Not Started | #5 | 1 day |
 | 7 | [Build & Distribution](./startup-rewrite/07-build-distribution.md) | Not Started | #6 | 1 day |
@@ -293,6 +293,7 @@ type AbsolutePath = string & { readonly __brand: "AbsolutePath" };
 
 | Date | Project | Change |
 |------|---------|--------|
+| 2026-03-15 | #4 | Domain logic complete - strategy, retry, suggestion, git parsing functions |
 | 2026-03-15 | #3 | Infrastructure layer complete - shell, fs, pm2 wrappers, ports, git adapter |
 | 2026-03-15 | #2 | Logging system complete - console, file, combined loggers with Czech messages |
 | 2026-03-15 | #1 | Domain types complete - branded types, sum types, Zod schemas, logging types |
