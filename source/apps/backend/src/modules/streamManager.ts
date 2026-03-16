@@ -3,7 +3,11 @@ import * as fs from "fs";
 import * as path from "path";
 import winston = require("winston");
 
-import { StreamManager, StreamState, StreamStatus } from "../types/stream.types";
+import {
+  StreamManager,
+  StreamState,
+  StreamStatus,
+} from "../types/stream.types";
 
 const logger = winston.createLogger({
   level: "info",
@@ -11,7 +15,7 @@ const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.printf(({ timestamp, level, message }) => {
       return `${timestamp} [stream] ${level}: ${message}`;
-    })
+    }),
   ),
   defaultMeta: { module: "stream" },
   transports: [
@@ -27,7 +31,7 @@ const M3U8_CHECK_INTERVAL = 1000;
 
 export function createStreamManager(
   rtspUrl: string,
-  outputDir: string
+  outputDir: string,
 ): StreamManager {
   let process: ChildProcess | null = null;
   let status: StreamStatus = "stopped";
@@ -39,13 +43,17 @@ export function createStreamManager(
   let m3u8CheckTimer: NodeJS.Timeout | null = null;
   let stopping = false;
 
-  logger.info(`Stream manager created — rtspUrl=${rtspUrl} outputDir=${outputDir}`);
+  logger.info(
+    `Stream manager created — rtspUrl=${rtspUrl} outputDir=${outputDir}`,
+  );
 
   function cleanOutputDir(): void {
     logger.info(`Cleaning output directory: ${outputDir}`);
     if (fs.existsSync(outputDir)) {
       const files = fs.readdirSync(outputDir);
-      logger.info(`Removing ${files.length} existing file(s) from output directory`);
+      logger.info(
+        `Removing ${files.length} existing file(s) from output directory`,
+      );
       for (const file of files) {
         fs.unlinkSync(path.join(outputDir, file));
       }
@@ -62,7 +70,9 @@ export function createStreamManager(
       if (status === "starting" && fs.existsSync(playlistPath)) {
         status = "running";
         restartCount = 0;
-        logger.info("Stream is running — playlist file detected, restart count reset");
+        logger.info(
+          "Stream is running — playlist file detected, restart count reset",
+        );
         clearM3u8Check();
       }
     }, M3U8_CHECK_INTERVAL);
@@ -89,9 +99,11 @@ export function createStreamManager(
     }
     const delay = Math.min(
       MIN_RESTART_DELAY * Math.pow(2, restartCount),
-      MAX_RESTART_DELAY
+      MAX_RESTART_DELAY,
     );
-    logger.info(`Scheduling restart in ${delay}ms (attempt ${restartCount + 1})`);
+    logger.info(
+      `Scheduling restart in ${delay}ms (attempt ${restartCount + 1})`,
+    );
     restartTimer = setTimeout(() => {
       restartCount++;
       start();
@@ -111,16 +123,25 @@ export function createStreamManager(
     const playlistPath = path.join(outputDir, "stream.m3u8");
 
     const args = [
-      "-rtsp_transport", "tcp",
-      "-stimeout", "5000000",
-      "-i", rtspUrl,
-      "-c:v", "copy",
+      "-rtsp_transport",
+      "tcp",
+      "-timeout",
+      "5000000",
+      "-i",
+      rtspUrl,
+      "-c:v",
+      "copy",
       "-an",
-      "-f", "hls",
-      "-hls_time", "2",
-      "-hls_list_size", "5",
-      "-hls_flags", "delete_segments+append_list",
-      "-hls_segment_filename", segmentPattern,
+      "-f",
+      "hls",
+      "-hls_time",
+      "2",
+      "-hls_list_size",
+      "5",
+      "-hls_flags",
+      "delete_segments+append_list",
+      "-hls_segment_filename",
+      segmentPattern,
       playlistPath,
     ];
 
