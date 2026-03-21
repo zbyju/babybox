@@ -136,7 +136,7 @@ export class AppManager {
 
   private getConfig(): Promise<Config> {
     return new Promise((resolve) => {
-      fetch("http://localhost:5001/api/v1/config/main")
+      fetch("http://localhost:3000/api/v1/config/main")
         .then((response) => {
           return response.json();
         })
@@ -148,7 +148,7 @@ export class AppManager {
 
   private getVersions(): Promise<Versions> {
     return new Promise((resolve) => {
-      fetch("http://localhost:5001/api/v1/config/version")
+      fetch("http://localhost:3000/api/v1/config/version")
         .then((response) => {
           return response.json();
         })

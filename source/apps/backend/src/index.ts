@@ -6,14 +6,14 @@ import open from "open";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
-import { fetchConfig } from "./fetch/fetchConfig.js";
 import { modulesObject } from "./modules/init.js";
+import { configRoute } from "./routes/configRoute.js";
 import { router as engineRoute } from "./routes/engineRoute.js";
 import { router as restartRoute } from "./routes/restartRoute.js";
 import { router as thermalRoute } from "./routes/thermalRoute.js";
 import { router as unitsRoute } from "./routes/unitsRoute.js";
+import { loadConfig } from "./services/config/loader.js";
 import { setConfig, getConfig } from "./state/config.js";
-import { MainConfig } from "./types/config.types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,12 +24,11 @@ async function main() {
   // .env file load
   dotenv.config();
 
-  const c = await fetchConfig();
-  setConfig(c.data as MainConfig);
-  const config = getConfig();
+  const config = await loadConfig();
+  setConfig(config);
 
   const app = express();
-  const port = config?.backend.port || process.env.PORT || 5000;
+  const port = config.backend.port || process.env.PORT || 3000;
 
   // Setup logger - morgan
   if (process.env.NODE_ENV === "development") {
@@ -55,6 +54,7 @@ async function main() {
 
   //Routes
   const prefix = config.backend.url || process.env.API_PREFIX;
+  app.use(prefix + "/config", configRoute);
   app.use(prefix + "/units", unitsRoute);
   app.use(prefix + "/engine", engineRoute);
   app.use(prefix + "/thermal", thermalRoute);

@@ -10,16 +10,17 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "bun run --filter babybox-panel-configer dev & bun run --filter babybox-panel dev & bun run --filter babybox-panel-backend dev",
-    "dev:backend": "bun run --filter babybox-panel-backend dev",
-    "dev:panel": "bun run --filter babybox-panel dev",
-    "dev:configer": "bun run --filter babybox-panel-configer dev",
-    "stop": "pm2 delete configer && pm2 delete babybox",
-    "start:configer": "bun run --filter babybox-panel-configer start",
+    "dev": "turbo dev",
+    "dev:backend": "turbo dev --filter=babybox-panel-backend",
+    "dev:panel": "turbo dev --filter=babybox-panel",
+    "stop": "pm2 delete babybox",
     "start:main": "pm2 start bun --name babybox -- apps/backend/src/index.ts",
-    "build": "bun install && bun run --filter babybox-panel build && bun run --filter babybox-panel-backend build && bun run --filter babybox-panel-configer build",
-    "test": "bun run --filter '*' test",
+    "build": "turbo build",
+    "test": "turbo test",
     "test:coverage": "bun run --filter '*' test:coverage",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "clean": "turbo clean && rm -rf node_modules",
     "echo": "echo test"
   },
   "devDependencies": {
@@ -28,6 +29,7 @@
     "@types/lodash.merge": "^4.6.7",
     "@types/node": "^20.19.37",
     "ts-node": "^10.9.1",
+    "turbo": "^2.8.20",
     "typescript": "^5.9.3"
   }
 }

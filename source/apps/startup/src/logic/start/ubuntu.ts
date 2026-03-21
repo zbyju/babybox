@@ -125,8 +125,7 @@ async function override(): Promise<ResultType> {
   // Check if build is ready
   const doesExistBuild =
     fs.existsSync("../backend/dist") &&
-    fs.existsSync("../panel/dist") &&
-    fs.existsSync("../configer/dist");
+    fs.existsSync("../panel/dist");
   if (!doesExistBuild) {
     await build();
   }
@@ -167,36 +166,6 @@ async function override(): Promise<ResultType> {
   }
 }
 
-async function startConfiger(): Promise<number> {
-  try {
-    await exec("pm2 delete configer");
-    // eslint-disable-next-line no-empty
-  } catch (_err: unknown) {
-    // Ignore - PM2 process may not exist
-  }
-
-  return new Promise<number>((resolve, reject) => {
-    const pnpm: ChildProcess = spawn("pnpm", ["start:configer"], {
-      cwd: "../../",
-      detached: true,
-    });
-
-    pnpm.stderr?.on("data", (data: Buffer) => console.log(data.toString()));
-
-    pnpm.on("error", (err: Error) => {
-      return reject("configer err - " + err);
-    });
-
-    pnpm.on("close", (code: number | null) => {
-      if (code === 0) {
-        return resolve(code);
-      } else {
-        return reject("configer err - " + code);
-      }
-    });
-  });
-}
-
 async function start(): Promise<number> {
   try {
     await exec("pm2 delete babybox");
@@ -231,8 +200,7 @@ export default async function onStartup(): Promise<boolean> {
   const updateRes = await update();
   if (
     updateRes === UpdateResult.Updated ||
-    !fs.existsSync("../../../dist") ||
-    !fs.existsSync("../configer/dist")
+    !fs.existsSync("../../../dist")
   ) {
     // Build new
     const buildRes = await build();
@@ -248,10 +216,9 @@ export default async function onStartup(): Promise<boolean> {
   }
   // Start application in production
   try {
-    const configerCode = await startConfiger();
     const mainCode = await start();
     startLogger.info(
-      `${getFulltimeFormatted()} - Start success (code ${mainCode}, ${configerCode})`
+      `${getFulltimeFormatted()} - Start success (code ${mainCode})`
     );
     return true;
   } catch (err: unknown) {
