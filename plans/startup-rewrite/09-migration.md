@@ -36,7 +36,7 @@ Before starting migration:
 - [x] Manual testing on development machine
 - [x] Backup of production configs documented (rollback-startup.sh restores from backup)
 - [x] Rollback procedure documented and tested (rollback-startup.sh created)
-- [ ] Team notified of migration window
+- [x] Team notified of migration window
 
 ### 9.2 Directory Structure During Migration
 
