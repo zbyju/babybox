@@ -1,0 +1,13 @@
+{
+  "active": true,
+  "iteration": 25,
+  "minIterations": 1,
+  "maxIterations": 25,
+  "completionPromise": "COMPLETE",
+  "tasksMode": false,
+  "taskPromise": "READY_FOR_NEXT_TASK",
+  "prompt": "This project has a directory with  your job is to complete all the todos in all the plans, each time pick the one from the top and mark them as Done as you finish them. Make sure to commit your changes to a project branch or stash.",
+  "startedAt": "2026-03-21T16:26:46.857Z",
+  "model": "",
+  "agent": "claude-code"
+}

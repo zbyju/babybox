@@ -1,9 +1,8 @@
-import * as express from "express";
-import { Request, Response } from "express";
+import express, { Request, Response, Router } from "express";
 
-import { modules } from "..";
+import { modules } from "../index.js";
 
-export const router = express.Router();
+export const router: Router = express.Router();
 
 router.get("/refresh", async (req: Request, res: Response) => {
   modules.onIncomingData();

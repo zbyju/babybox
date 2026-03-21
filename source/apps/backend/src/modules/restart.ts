@@ -1,15 +1,14 @@
 import { Moment } from "moment";
-import moment = require("moment");
-
+import moment from "moment";
 import { exec } from "child_process";
+import winston from "winston";
 
-import { RestartRepository } from "../types/restart.types";
+import { RestartRepository } from "../types/restart.types.js";
 import {
   getFullTimeFormatted,
   getTimeDifferenceInSeconds,
-} from "../utils/time";
-import winston = require("winston");
-import { config } from "..";
+} from "../utils/time.js";
+import { getConfig } from "../state/config.js";
 
 export const restartRepository = function (): RestartRepository {
   const logger = winston.createLogger({
@@ -19,11 +18,11 @@ export const restartRepository = function (): RestartRepository {
     transports: [new winston.transports.File({ filename: "logs/restart.log" })],
   });
 
-  let lastRequest = null as Moment;
+  let lastRequest = null as Moment | null;
   let errorStreak = 0;
   let isRestarting = false;
-  const errorThreshold = parseInt(process.env.RESTART_ERROR_THRESHOLD) || 9;
-  const interval: number = parseInt(process.env.RESTART_INTEVAL) || 20000;
+  const errorThreshold = parseInt(process.env.RESTART_ERROR_THRESHOLD || "") || 9;
+  const interval: number = parseInt(process.env.RESTART_INTERVAL || "") || 20000;
 
   function onIncomingRequest(): void {
     lastRequest = moment();
@@ -32,6 +31,7 @@ export const restartRepository = function (): RestartRepository {
   function stopRestart() {
     logger.info(`${getFullTimeFormatted()} - Restart stopped`);
     isRestarting = false;
+    const config = getConfig();
     if (config?.pc.os === "ubuntu") {
       exec("shutdown -c");
     } else {
@@ -42,6 +42,7 @@ export const restartRepository = function (): RestartRepository {
   function startRestart() {
     logger.info(`${getFullTimeFormatted()} - Starting to restart`);
     isRestarting = true;
+    const config = getConfig();
     if (config?.pc.os === "ubuntu") {
       exec("shutdown -r -t 60");
     } else {
