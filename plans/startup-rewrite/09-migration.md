@@ -436,7 +436,7 @@ After migration, monitor for:
 - [ ] First production deployment successful
 - [ ] All production machines migrated
 - [ ] Old startup code removed
-- [ ] Documentation updated
+- [x] Documentation updated
 
 ## Risk Mitigation
 
