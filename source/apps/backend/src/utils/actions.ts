@@ -1,4 +1,4 @@
-import { Action } from "../types/units.types";
+import { Action } from "../types/units.types.js";
 
 function enumFromStringValue<T>(
   enm: { [s: string]: T },

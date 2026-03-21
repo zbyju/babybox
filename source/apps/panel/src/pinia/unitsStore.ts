@@ -22,7 +22,10 @@ export const useUnitsStore = defineStore("engineUnit", {
     thermalUnit: undefined as Maybe<ThermalUnit>,
     time: undefined as Maybe<Moment>,
   }),
-  getters: {}, // TODO: Add used getters
+  getters: {
+    // Units are accessed directly via state - no computed values needed
+    // If derived values are needed in the future, add them here
+  },
   actions: {
     setEngineUnit(engineUnit: EngineUnit) {
       this.engineUnit = engineUnit;

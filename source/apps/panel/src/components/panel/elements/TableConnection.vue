@@ -22,7 +22,7 @@
 
   const unitsStore = useUnitsStore();
   const connectionStore = useConnectionStore();
-  const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
+  const { engineUnit } = storeToRefs(unitsStore);
   const { connection } = storeToRefs(connectionStore);
   const configStore = useConfigStore();
   const { config } = storeToRefs(configStore);
@@ -30,7 +30,6 @@
   const values: ComputedRef<TableConnectionValues> = computed(() =>
     getTableConnectionValues(
       engineUnit.value,
-      thermalUnit.value,
       connection.value,
       config.value,
     ),

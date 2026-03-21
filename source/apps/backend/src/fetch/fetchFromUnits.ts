@@ -1,4 +1,4 @@
-import { config } from "..";
+import { getConfig } from "../state/config.js";
 import {
   CommonDataRequestQuery,
   CommonDataResponse,
@@ -7,17 +7,18 @@ import {
   isInstanceOfGetUnitSettingsRequest,
   Setting,
   SettingResult,
-} from "../types/request.types";
-import { Action, Unit } from "../types/units.types";
-import { actionToUrl, unitToIp } from "../utils/url";
-import { wait } from "../utils/wait";
-import { fetchFromUrl } from "./fetch";
+} from "../types/request.types.js";
+import { Action, Unit } from "../types/units.types.js";
+import { actionToUrl, unitToIp } from "../utils/url.js";
+import { wait } from "../utils/wait.js";
+import { fetchFromUrl } from "./fetch.js";
 
 export async function fetchDataCommon(
   unit: Unit,
   query: unknown
 ): Promise<CommonDataResponse> {
-  const { timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT) || 5000 } =
+  const config = getConfig();
+  const { timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT || "") || 5000 } =
     query as CommonDataRequestQuery;
 
   const url = `http://${
@@ -50,12 +51,12 @@ export async function fetchSettings(
   }
   const {
     unit = "both",
-    timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT) || 5000,
+    timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT || "") || 5000,
   } = query as GetUnitSettingsRequest;
 
   const timestamp = new Date().getTime();
 
-  const res: any = { engine: null, thermal: null };
+  const res: { engine: unknown; thermal: unknown } = { engine: null, thermal: null };
 
   if (unit === "engine" || unit === "both") {
     const url = `http://${unitToIp(
@@ -97,12 +98,12 @@ export async function fetchSettings(
 }
 
 export async function fetchAction(action: Action): Promise<CommonDataResponse> {
-  const timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT) || 5000;
+  const timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT || "") || 5000;
 
   const url = actionToUrl(action);
 
   try {
-    const data = await fetchFromUrl(url, timeout);
+    const data = await fetchFromUrl(url!, timeout);
     return {
       status: 200,
       msg: "Action sent successfully.",
@@ -117,6 +118,7 @@ export async function fetchAction(action: Action): Promise<CommonDataResponse> {
 }
 
 export async function updateWatchdog(): Promise<CommonResponse> {
+  const config = getConfig();
   try {
     await fetchFromUrl(`http://${config.units.engine.ip}/sdscep?sys141=115`);
     return {
@@ -160,7 +162,6 @@ export async function updateSettings(
         }
         --i;
       }
-      i = tryNumber;
       return [...prevResult, { ...s, result }];
     },
     Promise.resolve([])

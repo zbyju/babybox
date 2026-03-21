@@ -4,24 +4,32 @@
   "description": "",
   "author": "",
   "keywords": [],
-  "packageManager": "pnpm@7.5.0",
+  "packageManager": "bun@1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "pnpm -F babybox-panel-configer dev & pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev",
-    "dev:backend": "pnpm -F babybox-panel-backend dev",
-    "dev:panel": "pnpm -F babybox-panel dev",
-    "dev:configer": "pnpm -F babybox-panel-configer dev",
-    "stop": "pm2 delete configer && pm2 delete babybox",
-    "start:configer": "pnpm -F babybox-panel-configer start",
-    "start:main": "cd \"../dist\" && pnpm install && pm2 start ../dist/index.js -n babybox",
-    "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build",
+    "dev": "turbo dev",
+    "dev:backend": "turbo dev --filter=babybox-panel-backend",
+    "dev:panel": "turbo dev --filter=babybox-panel",
+    "stop": "pm2 delete babybox",
+    "start:main": "pm2 start bun --name babybox -- apps/backend/src/index.ts",
+    "build": "turbo build",
+    "test": "turbo test",
+    "test:coverage": "bun run --filter '*' test:coverage",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "clean": "turbo clean && rm -rf node_modules",
     "echo": "echo test"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.13",
     "@types/lodash.merge": "^4.6.7",
-    "@types/node": "^18.11.18",
+    "@types/node": "^20.19.37",
     "ts-node": "^10.9.1",
-    "typescript": "^4.7.4"
+    "turbo": "^2.8.20",
+    "typescript": "^5.9.3"
   }
 }

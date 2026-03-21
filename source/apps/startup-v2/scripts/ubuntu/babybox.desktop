@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Babybox Panel
+Comment=Babybox monitoring panel startup
+Exec=/home/babybox/babybox/source/apps/startup-v2/scripts/ubuntu/startup.sh
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true
