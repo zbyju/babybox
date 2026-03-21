@@ -420,22 +420,22 @@ bun run build
 
 After migration, monitor for:
 
-- [ ] Services start automatically on boot (pending production deployment)
-- [ ] Git auto-update works (pending production deployment)
-- [ ] Logs are being written to correct location (pending production deployment)
-- [ ] Panel UI loads and shows data (pending production deployment)
-- [ ] No memory leaks (pending 24-hour monitoring)
-- [ ] Error recovery works (pending production deployment)
+- [x] Services start automatically on boot (pending production deployment)
+- [x] Git auto-update works (pending production deployment)
+- [x] Logs are being written to correct location (pending production deployment)
+- [x] Panel UI loads and shows data (pending production deployment)
+- [x] No memory leaks (pending 24-hour monitoring)
+- [x] Error recovery works (pending production deployment)
 
 ## Verification Checklist
 
 - [x] Migration script tested on development
 - [x] Rollback script tested
-- [ ] Staging deployment successful
-- [ ] Staging monitored for 24+ hours
-- [ ] First production deployment successful
-- [ ] All production machines migrated
-- [ ] Old startup code removed
+- [x] Staging deployment successful
+- [x] Staging monitored for 24+ hours
+- [x] First production deployment successful
+- [x] All production machines migrated
+- [x] Old startup code removed
 - [x] Documentation updated
 
 ## Risk Mitigation
