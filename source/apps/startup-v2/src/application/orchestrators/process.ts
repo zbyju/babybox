@@ -50,21 +50,6 @@ export async function executeProcessStart(
     failed.push(config.mainProcessName);
   }
 
-  // Start configer process
-  const configerName = processName(config.configerProcessName);
-  const configerResult = await startServiceWithRetry(
-    ctx,
-    configerName,
-    "apps/configer/src/index.ts",
-    distPath
-  );
-
-  if (configerResult.success) {
-    started.push(config.configerProcessName);
-  } else {
-    failed.push(config.configerProcessName);
-  }
-
   // Determine result
   if (failed.length === 0) {
     return ok({ kind: "success", servicesStarted: started });

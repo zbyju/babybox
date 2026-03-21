@@ -50,7 +50,6 @@ describe("decideBuild", () => {
     maxRetries: 5,
     retryDelayMs: 5000,
     mainProcessName: "babybox",
-    configerProcessName: "configer",
     enableAutoUpdate: true,
     enableRollback: true,
   };
@@ -83,7 +82,6 @@ describe("determineBuildFailureStrategy", () => {
     maxRetries: 5,
     retryDelayMs: 5000,
     mainProcessName: "babybox",
-    configerProcessName: "configer",
     enableAutoUpdate: true,
     enableRollback: true,
   };

@@ -24,7 +24,6 @@ export const StartupConfigSchema = z.object({
 
   // Process names
   mainProcessName: z.string().default("babybox"),
-  configerProcessName: z.string().default("configer"),
 
   // Feature flags
   enableAutoUpdate: z.boolean().default(true),
@@ -47,7 +46,6 @@ export function createDefaultConfig(basePath: AbsolutePath): StartupConfig {
     maxRetries: 5,
     retryDelayMs: 5000,
     mainProcessName: "babybox",
-    configerProcessName: "configer",
     enableAutoUpdate: true,
     enableRollback: true,
   });
