@@ -10,7 +10,7 @@ describe("Suggestion.terminalGlobal", () => {
     );
     expect(suggestion.kind).toBe("terminal");
     expect(suggestion.scope.kind).toBe("global");
-    expect(suggestion.command).toBe("git stash");
+    expect(suggestion.command as string).toBe("git stash");
     expect(suggestion.message).toBe("Ulozte zmeny do stashe");
   });
 });
@@ -25,7 +25,7 @@ describe("Suggestion.terminalInDirectory", () => {
     expect(suggestion.kind).toBe("terminal");
     expect(suggestion.scope.kind).toBe("directory");
     if (suggestion.scope.kind === "directory") {
-      expect(suggestion.scope.path).toBe("/home/babybox");
+      expect(suggestion.scope.path as string).toBe("/home/babybox");
     }
     expect(suggestion.message).toBe("Nainstalujte zavislosti");
   });

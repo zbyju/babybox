@@ -32,8 +32,8 @@ Projects are ordered by recommended execution sequence. Earlier projects unlock 
 | 7 | [Bun Migration](./modernization/07-bun-migration.md) | **Complete** | #3, #5 | New runtime |
 | 8 | [Turborepo Integration](./modernization/08-turborepo.md) | **Complete** | #7 | Better DX |
 | 9 | [Configer Merge](./modernization/09-configer-merge.md) | **Complete** | #3 | Simplify architecture |
-| 10 | [Backend Logic Migration](./modernization/10-backend-logic.md) | Not Started | #6, #9 | Better separation |
-| 11 | [Automation & Monitoring](./modernization/11-automation.md) | Not Started | #10 | Reduce maintenance |
+| 10 | [Backend Logic Migration](./modernization/10-backend-logic.md) | **Complete** | #6, #9 | Better separation |
+| 11 | [Automation & Monitoring](./modernization/11-automation.md) | **Complete** | #10 | Reduce maintenance |
 
 ### Status Legend
 - **Not Started** - Work has not begun
@@ -82,6 +82,8 @@ Before merging any project:
 
 | Date | Project | Change |
 |------|---------|--------|
+| 2026-03-21 | #11 | Automation & monitoring complete - health endpoint at /api/v1/health, richer status endpoint |
+| 2026-03-21 | #10 | Backend logic migration complete - removed dead fetchConfig.ts, Zod middleware in routes, standardized response format |
 | 2026-03-21 | #9 | Configer merge complete - config service moved into backend, panel updated to use backend port, startup app simplified |
 | 2026-03-21 | #8 | Turborepo integration complete - turbo.json, root scripts updated to use turbo, .gitignore updated |
 | 2026-03-21 | #7 | Bun migration complete - updated dev/build scripts for backend, configer, panel; root package.json uses bun workspaces |

@@ -5,12 +5,16 @@ import {
   fetchSettings,
   updateSettings,
 } from "../fetch/fetchFromUnits.js";
+import { validateBody, validateQuery } from "../middleware/validate.js";
 import {
-  CommonSettingsResponse,
-  isInstanceOfPostUnitSettingsRequestBody,
-  SettingResult,
-} from "../types/request.types.js";
+  PostUnitSettingsRequestBodySchema,
+  GetUnitSettingsRequestSchema,
+  type SettingResult,
+  type CommonSettingsResponse,
+  type PostUnitSettingsRequestBody,
+} from "../schemas/request.schema.js";
 import { stringToAction } from "../utils/actions.js";
+import { successResponse, errorResponse } from "../utils/response.js";
 
 export const router: Router = express.Router();
 
@@ -18,50 +22,56 @@ router.get("/actions/:action", async (req, res) => {
   const action = stringToAction(req.params.action);
 
   if (action === undefined) {
-    return res.status(400).send({ msg: "Unknown action" });
+    return res.status(400).json(errorResponse("Unknown action", { action: req.params.action }));
   }
 
   const response = await fetchAction(action);
-  return res.status(response.status).send({ msg: response.msg });
-});
-
-router.get("/settings", async (req, res) => {
-  const response = await fetchSettings(req.query);
-
-  return res
-    .status(response.status)
-    .send({ msg: response.msg, data: response.data });
-});
-
-router.put("/settings", async (req, res) => {
-  if (!isInstanceOfPostUnitSettingsRequestBody(req.body)) {
-    return res.status(400).send({
-      msg: "The body needs to be an array of settings ({index: number, value: number, unit: 'engine' | 'thermal'}).",
-    });
+  if (response.status >= 400) {
+    return res.status(response.status).json(errorResponse(response.msg));
   }
-
-  const results: SettingResult[] = await updateSettings(
-    req.body.settings,
-    req.body.options?.timeout || 5000
-  );
-  const response: CommonSettingsResponse = results.every((r) => r.result)
-    ? {
-        status: 200,
-        msg: "All setting changes have been applied.",
-        results,
-      }
-    : results.every((r) => !r.result)
-    ? {
-        status: 500,
-        msg: "All setting changes failed.",
-        results,
-      }
-    : {
-        status: 206,
-        msg: "Some setting changes failed, some were successful.",
-        results,
-      };
-  return res
-    .status(response.status)
-    .send({ msg: response.msg, results: response.results });
+  return res.status(response.status).json(successResponse(response.data));
 });
+
+router.get(
+  "/settings",
+  validateQuery(GetUnitSettingsRequestSchema),
+  async (req, res) => {
+    const response = await fetchSettings(req.query);
+    if (response.status >= 400) {
+      return res.status(response.status).json(errorResponse(response.msg));
+    }
+    return res.status(response.status).json(successResponse(response.data));
+  }
+);
+
+router.put(
+  "/settings",
+  validateBody(PostUnitSettingsRequestBodySchema),
+  async (req, res) => {
+    const body = req.body as PostUnitSettingsRequestBody;
+    const results: SettingResult[] = await updateSettings(
+      body.settings,
+      body.options?.timeout ?? 5000
+    );
+    const response: CommonSettingsResponse = results.every((r) => r.result)
+      ? {
+          status: 200,
+          msg: "All setting changes have been applied.",
+          results,
+        }
+      : results.every((r) => !r.result)
+      ? {
+          status: 500,
+          msg: "All setting changes failed.",
+          results,
+        }
+      : {
+          status: 206,
+          msg: "Some setting changes failed, some were successful.",
+          results,
+        };
+    return res
+      .status(response.status)
+      .json(successResponse({ msg: response.msg, results: response.results }));
+  }
+);

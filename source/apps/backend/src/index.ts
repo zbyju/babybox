@@ -9,6 +9,7 @@ import { dirname, join } from "path";
 import { modulesObject } from "./modules/init.js";
 import { configRoute } from "./routes/configRoute.js";
 import { router as engineRoute } from "./routes/engineRoute.js";
+import { router as healthRoute } from "./routes/healthRoute.js";
 import { router as restartRoute } from "./routes/restartRoute.js";
 import { router as thermalRoute } from "./routes/thermalRoute.js";
 import { router as unitsRoute } from "./routes/unitsRoute.js";
@@ -46,9 +47,12 @@ async function main() {
   app.use(express.json());
 
   // Status route
+  const startedAt = Date.now();
   app.get(process.env.API_PREFIX + "/status", (req, res) => {
-    res.status(200).send({
+    res.status(200).json({
       msg: "Alive.",
+      uptimeMs: Date.now() - startedAt,
+      environment: process.env.NODE_ENV ?? "unknown",
     });
   });
 
@@ -59,6 +63,7 @@ async function main() {
   app.use(prefix + "/engine", engineRoute);
   app.use(prefix + "/thermal", thermalRoute);
   app.use(prefix + "/restart", restartRoute);
+  app.use(prefix + "/health", healthRoute);
 
   // Serve Frontend app if running in production
   if (process.env.NODE_ENV === "production") {

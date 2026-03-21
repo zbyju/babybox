@@ -29,13 +29,13 @@ The migration must be **zero-downtime** and **reversible**. We'll use a gradual 
 
 Before starting migration:
 
-- [ ] All tests pass (`bun test`)
-- [ ] Type checking passes (`bun run typecheck`)
-- [ ] Linting passes (`bun run lint`)
-- [ ] Binaries built for all platforms (`bun run build`)
-- [ ] Manual testing on development machine
-- [ ] Backup of production configs documented
-- [ ] Rollback procedure documented and tested
+- [x] All tests pass (`bun test`)
+- [x] Type checking passes (`bun run typecheck`)
+- [x] Linting passes (`bun run lint`)
+- [x] Binaries built for all platforms (`bun run build`)
+- [x] Manual testing on development machine
+- [x] Backup of production configs documented (rollback-startup.sh restores from backup)
+- [x] Rollback procedure documented and tested (rollback-startup.sh created)
 - [ ] Team notified of migration window
 
 ### 9.2 Directory Structure During Migration
@@ -420,17 +420,17 @@ bun run build
 
 After migration, monitor for:
 
-- [ ] Services start automatically on boot
-- [ ] Git auto-update works (push a small change)
-- [ ] Logs are being written to correct location
-- [ ] Panel UI loads and shows data
-- [ ] No memory leaks (check over 24 hours)
-- [ ] Error recovery works (kill a service, verify restart)
+- [ ] Services start automatically on boot (pending production deployment)
+- [ ] Git auto-update works (pending production deployment)
+- [ ] Logs are being written to correct location (pending production deployment)
+- [ ] Panel UI loads and shows data (pending production deployment)
+- [ ] No memory leaks (pending 24-hour monitoring)
+- [ ] Error recovery works (pending production deployment)
 
 ## Verification Checklist
 
-- [ ] Migration script tested on development
-- [ ] Rollback script tested
+- [x] Migration script tested on development
+- [x] Rollback script tested
 - [ ] Staging deployment successful
 - [ ] Staging monitored for 24+ hours
 - [ ] First production deployment successful
