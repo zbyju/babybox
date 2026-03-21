@@ -29,7 +29,7 @@ Projects are ordered by recommended execution sequence. Earlier projects unlock 
 | 4 | [Testing Foundation](./modernization/04-testing-foundation.md) | **Complete** | #1, #2, #3 | Safety net for future changes |
 | 5 | [Dependency Updates](./modernization/05-dependency-updates.md) | **Complete** | #3, #4 recommended | Modern tooling |
 | 6 | [Zod Validation](./modernization/06-zod-validation.md) | **Complete** | #2, #5 | Runtime type safety |
-| 7 | [Bun Migration](./modernization/07-bun-migration.md) | Not Started | #3, #5 | New runtime |
+| 7 | [Bun Migration](./modernization/07-bun-migration.md) | **Complete** | #3, #5 | New runtime |
 | 8 | [Turborepo Integration](./modernization/08-turborepo.md) | Not Started | #7 | Better DX |
 | 9 | [Configer Merge](./modernization/09-configer-merge.md) | Not Started | #3 | Simplify architecture |
 | 10 | [Backend Logic Migration](./modernization/10-backend-logic.md) | Not Started | #6, #9 | Better separation |
@@ -82,6 +82,7 @@ Before merging any project:
 
 | Date | Project | Change |
 |------|---------|--------|
+| 2026-03-21 | #7 | Bun migration complete - updated dev/build scripts for backend, configer, panel; root package.json uses bun workspaces |
 | 2026-03-15 | #6 | Zod validation complete - config schemas, request schemas, validation middleware, replaced manual type guards |
 | 2026-03-15 | #5 | Dependency updates complete - TypeScript 5, Vite 5, axios 1.x, open 10.x, prettier 3, vitest 2 |
 | 2026-03-15 | #4 | Testing foundation complete - added 69 panel tests, 30 configer tests, unified test setup across apps |

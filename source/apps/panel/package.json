@@ -2,9 +2,9 @@
   "name": "babybox-panel",
   "version": "1.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview --port 5050",
+    "dev": "bunx --bun vite",
+    "build": "bunx vue-tsc --noEmit && bunx --bun vite build",
+    "preview": "bunx --bun vite preview --port 5050",
     "test": "vitest run",
     "test:unit": "vitest --environment jsdom",
     "test:watch": "vitest",

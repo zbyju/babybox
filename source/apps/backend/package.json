@@ -7,15 +7,16 @@
   "author": "",
   "main": "./src/index.ts",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "bun --watch src/index.ts",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:postman": "newman run ./src/routes/__postman__/babybox-panel.postman_collection.json -e ./src/routes/__postman__/BabyboxPanel.postman_environment.json",
-    "build": "tsc --build",
-    "win:build": "tsc --build",
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "typecheck": "tsc --noEmit",
+    "win:build": "bun build src/index.ts --outdir dist --target node",
     "echo": "echo 'Hello from babybox panel backend'"
   },
   "devDependencies": {

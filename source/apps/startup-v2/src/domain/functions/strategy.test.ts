@@ -1,10 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import {
   determinePullStrategy,
+  determineLocalChangesStrategy,
   decideBuild,
   determineBuildFailureStrategy,
+  determineOverrideFailureStrategy,
 } from "./strategy.js";
-import { GitPullResult, BuildResult } from "../types/index.js";
+import { GitPullResult, BuildResult, OverrideResult } from "../types/index.js";
+import type { GitStatusResult } from "../types/index.js";
 
 describe("determinePullStrategy", () => {
   it("returns proceed_with_build for updated", () => {
@@ -101,5 +104,65 @@ describe("determineBuildFailureStrategy", () => {
       configWithRollback
     );
     expect(result.kind).toBe("use_existing");
+  });
+
+  it("returns use_existing when rollback disabled", () => {
+    const configNoRollback = { ...configWithRollback, enableRollback: false };
+    const result = determineBuildFailureStrategy(
+      BuildResult.compilationFailed("error", []),
+      true, // backup exists but rollback disabled
+      configNoRollback
+    );
+    expect(result.kind).toBe("use_existing");
+  });
+});
+
+describe("determineLocalChangesStrategy", () => {
+  it("always returns stash for clean status", () => {
+    const status: GitStatusResult = { kind: "clean" };
+    const result = determineLocalChangesStrategy(status);
+    expect(result.kind).toBe("stash");
+  });
+
+  it("always returns stash for dirty status", () => {
+    const status: GitStatusResult = {
+      kind: "dirty",
+      modifiedFiles: ["file.ts"],
+      untrackedFiles: [],
+    };
+    const result = determineLocalChangesStrategy(status);
+    expect(result.kind).toBe("stash");
+  });
+
+  it("always returns stash for error status", () => {
+    const status: GitStatusResult = { kind: "error", message: "error" };
+    const result = determineLocalChangesStrategy(status);
+    expect(result.kind).toBe("stash");
+  });
+});
+
+describe("determineOverrideFailureStrategy", () => {
+  it("returns rollback when backup exists", () => {
+    const result = determineOverrideFailureStrategy(
+      OverrideResult.copyFailed("disk error"),
+      true
+    );
+    expect(result.kind).toBe("rollback");
+  });
+
+  it("returns abort when no backup", () => {
+    const result = determineOverrideFailureStrategy(
+      OverrideResult.copyFailed("disk error"),
+      false
+    );
+    expect(result.kind).toBe("abort");
+  });
+
+  it("returns rollback for backup_failed with backup available", () => {
+    const result = determineOverrideFailureStrategy(
+      OverrideResult.backupFailed("no space"),
+      true
+    );
+    expect(result.kind).toBe("rollback");
   });
 });

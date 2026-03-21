@@ -40,8 +40,8 @@ This document tracks the progress of rewriting the startup application from scra
 | 5 | [Application Layer](./startup-rewrite/05-application-layer.md) | **Complete** | #3, #4 | 2 days |
 | 6 | [CLI Presentation](./startup-rewrite/06-presentation.md) | **Complete** | #5 | 1 day |
 | 7 | [Build & Distribution](./startup-rewrite/07-build-distribution.md) | **Complete** | #6 | 1 day |
-| 8 | [Testing & Verification](./startup-rewrite/08-testing.md) | Not Started | #7 | 2 days |
-| 9 | [Migration & Deployment](./startup-rewrite/09-migration.md) | Not Started | #8 | 1 day |
+| 8 | [Testing & Verification](./startup-rewrite/08-testing.md) | **Complete** | #7 | 2 days |
+| 9 | [Migration & Deployment](./startup-rewrite/09-migration.md) | **Complete** | #8 | 1 day |
 
 **Total estimated effort: 15 days**
 
@@ -293,6 +293,8 @@ type AbsolutePath = string & { readonly __brand: "AbsolutePath" };
 
 | Date | Project | Change |
 |------|---------|--------|
+| 2026-03-21 | #9 | Migration scripts complete - migrate-startup.sh and rollback-startup.sh created |
+| 2026-03-21 | #8 | Testing complete - 121 tests across domain, application, infrastructure, presentation layers |
 | 2026-03-15 | #7 | Build & distribution complete - build scripts, version module, platform startup scripts, binaries |
 | 2026-03-15 | #6 | CLI presentation complete - OS detection, adapters factory, config loader, CLI entry point |
 | 2026-03-15 | #5 | Application layer complete - context, orchestrators (startup, update, build, override, process) |

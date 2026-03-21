@@ -4,9 +4,10 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --ignore '*.json' --esm ./src/index.ts",
-    "start": "pm2 start ./dist/index.js -n configer",
-    "build": "tsc",
+    "dev": "bun --watch src/index.ts",
+    "start": "pm2 start bun --name configer -- src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },

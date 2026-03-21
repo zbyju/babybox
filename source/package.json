@@ -4,18 +4,22 @@
   "description": "",
   "author": "",
   "keywords": [],
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "bun@1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "pnpm -F babybox-panel-configer dev & pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev",
-    "dev:backend": "pnpm -F babybox-panel-backend dev",
-    "dev:panel": "pnpm -F babybox-panel dev",
-    "dev:configer": "pnpm -F babybox-panel-configer dev",
+    "dev": "bun run --filter babybox-panel-configer dev & bun run --filter babybox-panel dev & bun run --filter babybox-panel-backend dev",
+    "dev:backend": "bun run --filter babybox-panel-backend dev",
+    "dev:panel": "bun run --filter babybox-panel dev",
+    "dev:configer": "bun run --filter babybox-panel-configer dev",
     "stop": "pm2 delete configer && pm2 delete babybox",
-    "start:configer": "pnpm -F babybox-panel-configer start",
-    "start:main": "cd \"../dist\" && pnpm install && pm2 start ../dist/index.js -n babybox",
-    "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build",
-    "test": "pnpm -r test",
-    "test:coverage": "pnpm -r test:coverage",
+    "start:configer": "bun run --filter babybox-panel-configer start",
+    "start:main": "pm2 start bun --name babybox -- apps/backend/src/index.ts",
+    "build": "bun install && bun run --filter babybox-panel build && bun run --filter babybox-panel-backend build && bun run --filter babybox-panel-configer build",
+    "test": "bun run --filter '*' test",
+    "test:coverage": "bun run --filter '*' test:coverage",
     "echo": "echo test"
   },
   "devDependencies": {
