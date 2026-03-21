@@ -4,20 +4,24 @@ Hospital monitoring system for babybox devices. Runs 24/7 autonomously without u
 
 ## Architecture
 
-pnpm monorepo with 4 apps in `source/apps/`:
+Bun monorepo with Turborepo, 3 apps in `source/apps/`:
 
 | App | Port | Purpose |
 |-----|------|---------|
-| `panel` | 4000 | Vue 3 frontend - realtime monitoring dashboard |
-| `backend` | 5000 | Express API - communicates with hardware units |
-| `configer` | 5001 | Configuration service - manages JSON configs |
-| `startup` | - | Deployment utility - auto-update and process management |
+| `panel` | 3002 | Vue 3 frontend - realtime monitoring dashboard |
+| `backend` | 3000 | Express API - communicates with hardware units + config service |
+| `startup-v2` | - | Deployment utility - auto-update and process management (Bun binary) |
+
+> Note: `startup` (old JS version) coexists during migration. `configer` was merged into `backend`.
 
 ## Key Commands
 
 ```bash
-pnpm dev           # Start all services
-pnpm build         # Build for production
+bun dev            # Start all services (via Turborepo)
+bun run build      # Build for production
+bun run test       # Run all tests
+bun run typecheck  # Type check all apps
+bun run lint       # Lint all apps
 ```
 
 ## Hardware Units
@@ -30,7 +34,8 @@ The system monitors two physical units via IP:
 
 ## Configuration
 
-Main config: `source/apps/configer/configs/main.json`
+Main config: `source/apps/backend/configs/main.json`
+Default values: `source/apps/backend/configs/base.json`
 
 Key configurable values:
 - `app.password` - UI access password
@@ -49,8 +54,11 @@ Key configurable values:
 
 ## Backend (`apps/backend/src/`)
 
-- `routes/` - API endpoints (engine, thermal, units, restart)
+- `routes/` - API endpoints (engine, thermal, units, restart, config, health)
 - `fetch/` - Hardware communication functions
+- `middleware/` - Zod validation middleware, error handling
+- `modules/config/` - Merged config service (replaces configer app)
+- `schemas/` - Zod schemas for request/response validation
 - Serves static panel files in production
 
 ### API Routes
@@ -59,12 +67,8 @@ Key configurable values:
 - `GET /api/v1/thermal/data` - Thermal unit readings
 - `GET/PUT /api/v1/units/settings` - Unit configuration
 - `GET /api/v1/units/actions/:action` - Trigger actions (e.g., open doors)
-
-## Configer (`apps/configer/src/`)
-
-- `routes/config.ts` - Config CRUD endpoints
-- `configs/main.json` - Runtime configuration
-- `configs/base.json` - Default values
+- `GET/PUT /api/v1/config` - Config read/write (merged from configer)
+- `GET /api/v1/health` - Health check endpoint
 
 ## Domain Notes
 
