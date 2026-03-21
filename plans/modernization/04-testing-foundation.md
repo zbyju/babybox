@@ -369,21 +369,27 @@ cd source/apps/panel && pnpm test
 ## Files to Create
 
 ```
-backend/src/fetch/__tests__/fetchFromUnits.test.ts
-backend/src/routes/__tests__/engineRoute.test.ts
-backend/src/routes/__tests__/thermalRoute.test.ts
-backend/vitest.config.ts (if migrating from Jest)
+backend/src/fetch/__tests__/fetchFromUnits.test.ts        ✅ Created
+backend/src/routes/__tests__/engineRoute.test.ts          ✅ Created
+backend/src/routes/__tests__/thermalRoute.test.ts         ✅ Created
+backend/src/routes/__tests__/configRoute.test.ts          ✅ Created (configer merged into backend)
+backend/vitest.config.ts                                  ✅ Created
 
-panel/src/utils/__tests__/conversions.test.ts
-panel/src/defaults/__tests__/units.defaults.test.ts
-panel/src/logic/panel/__tests__/state.test.ts
-panel/src/logic/panel/__tests__/tables.test.ts
-panel/src/pinia/__tests__/unitsStore.test.ts
-panel/vitest.config.ts (update existing)
-
-configer/src/routes/__tests__/configRoute.test.ts
-configer/vitest.config.ts
+panel/src/utils/__tests__/conversions.test.ts             ✅ Created
+panel/src/defaults/__tests__/units.defaults.test.ts       ✅ Created
+panel/src/logic/panel/__tests__/state.test.ts             ✅ Created
+panel/src/logic/panel/__tests__/tables.test.ts            ✅ Created
+panel/src/pinia/__tests__/unitsStore.test.ts              ✅ Created
+panel/vitest.config.ts                                    ✅ Created
 ```
+
+## Test Summary (as of 2026-03-21)
+
+| App | Tests | Status |
+|-----|-------|--------|
+| Backend | 48 | ✅ All pass |
+| Panel | 85 | ✅ All pass |
+| startup-v2 | 121 | ✅ All pass |
 
 ## Rollback
 
