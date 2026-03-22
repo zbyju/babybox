@@ -32,5 +32,5 @@
     "vue/v-on-event-hyphenation": "off",
     "performance/no-accumulating-spread": "warn"
   },
-  "ignorePatterns": ["dist", "node_modules"]
+  "ignorePatterns": ["dist", "node_modules", "vite.config.ts", "vitest.config.ts"]
 }
