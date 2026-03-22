@@ -8,19 +8,22 @@
     "source/packages/*"
   ],
   "scripts": {
-    "dev": "cd source && bun run dev",
-    "dev:backend": "cd source && bun run dev:backend",
-    "dev:panel": "cd source && bun run dev:panel",
+    "dev": "turbo dev",
+    "dev:backend": "turbo dev --filter=babybox-panel-backend",
+    "dev:panel": "turbo dev --filter=babybox-panel",
     "stop": "cd source && bun run stop",
     "start:main": "cd source && bun run start:main",
-    "build": "cd source && bun run build",
-    "test": "cd source && bun run test",
-    "test:coverage": "cd source && bun run test:coverage",
-    "typecheck": "cd source && bun run typecheck",
-    "lint": "cd source && bun run lint",
-    "lint:fix": "cd source && bun run lint:fix",
-    "format": "cd source && bun run format",
-    "format:check": "cd source && bun run format:check",
-    "clean": "cd source && bun run clean"
+    "build": "turbo build",
+    "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "format": "turbo format",
+    "format:check": "turbo format:check",
+    "clean": "turbo clean && rm -rf node_modules bun.lock"
+  },
+  "devDependencies": {
+    "turbo": "2.8.20"
   }
 }
