@@ -9,7 +9,7 @@ router.get("/main", async (_req: Request, res: Response) => {
   try {
     const db = await DbFactory.getMainDb();
     res.json(db.data());
-  } catch (error) {
+  } catch {
     res.status(500).json({ success: false, error: "Failed to load config" });
   }
 });
@@ -31,7 +31,7 @@ router.put("/main", async (req: Request, res: Response) => {
     const db = await DbFactory.getMainDb();
     const updated = await db.update(result.data);
     res.json(updated);
-  } catch (error) {
+  } catch {
     res.status(500).json({ success: false, error: "Failed to update config" });
   }
 });
@@ -41,7 +41,7 @@ router.get(["/version", "/versions"], async (_req: Request, res: Response) => {
   try {
     const db = await DbFactory.getVersionDb();
     res.json(db.data());
-  } catch (error) {
+  } catch {
     res.status(500).json({ success: false, error: "Failed to load versions" });
   }
 });

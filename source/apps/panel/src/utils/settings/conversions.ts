@@ -21,7 +21,7 @@ export const settingsRowValueToValue = (
 
   if (type === SettingsTableRowValueType.Voltage) {
     const divider = useConfigStore()?.units?.voltage?.divider || 63;
-    const multiplier = useConfigStore()?.units?.voltage?.multiplier || 100;
+    const _multiplier = useConfigStore()?.units?.voltage?.multiplier || 100;
     return Math.round(Number(value) * divider);
   }
 

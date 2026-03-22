@@ -72,7 +72,7 @@ export class AppManager {
       } else {
         this.connectionStore.incrementFailEngine();
       }
-    } catch (err) {
+    } catch {
       this.connectionStore.incrementFailEngine();
     }
   }
@@ -85,7 +85,7 @@ export class AppManager {
       } else {
         this.connectionStore.incrementFailThermal();
       }
-    } catch (err) {
+    } catch {
       this.connectionStore.incrementFailThermal();
     }
   }
@@ -104,10 +104,10 @@ export class AppManager {
     }
     this.updateClock();
   }
-  private async updateWatchdogEngine(timeout = 5000) {
+  private async updateWatchdogEngine(_timeout = 5000) {
     try {
       await updateWatchdog();
-    } catch (err) {
+    } catch {
       // Dont care about the error
     }
   }
@@ -186,10 +186,10 @@ export class AppManager {
     let intervalTime = 5000;
     const interval = setInterval(async () => {
       await this.initializeConfig()
-        .then((res) => {
+        .then(() => {
           this.appStateStore.setConfigSuccess();
         })
-        .catch((err) => {
+        .catch(() => {
           clearInterval(interval);
           this.appStateStore.setConfigError();
         });
@@ -198,7 +198,7 @@ export class AppManager {
           clearInterval(interval);
           this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
         })
-        .catch((err) => {
+        .catch(() => {
           this.appStateStore.setBackendError();
         });
       intervalTime = 20000;

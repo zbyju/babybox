@@ -53,7 +53,7 @@ export const isHigher = (val: Maybe<number>, min: Maybe<number>): boolean => {
 
 const zeroFilled = (num: number, padlen: number): string => {
   const pad_char = "0";
-  const pad = new Array(1 + padlen).join(pad_char);
+  const pad = Array.from({ length: 1 + padlen }).join(pad_char);
   return (pad + num).slice(-pad.length);
 };
 

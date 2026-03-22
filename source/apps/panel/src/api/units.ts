@@ -15,7 +15,7 @@ export const getStatus = async (): Promise<boolean> => {
       return true;
     }
     throw { msg: "Status code not OK" };
-  } catch (err) {
+  } catch {
     return false;
   }
 };
@@ -31,7 +31,7 @@ export const getData = async (
     return response.data.data.split("|").map((x: string, i: number) => {
       return { index: i, value: x };
     });
-  } catch (err) {
+  } catch {
     return Promise.reject(undefined);
   }
 };
@@ -64,7 +64,7 @@ export const updateWatchdog = async (): Promise<boolean> => {
     const response = await axios.put(url, { timeout });
     if (response.status >= 200 && response.status <= 299) return true;
     else return false;
-  } catch (err) {
+  } catch {
     return false;
   }
 };

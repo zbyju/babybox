@@ -29,7 +29,7 @@ export async function fetchDataCommon(unit: Unit, query: unknown): Promise<Commo
       msg: "Data fetched successfully.",
       data: data.data,
     };
-  } catch (err) {
+  } catch {
     return {
       status: 408,
       msg: "Request timedout. The URL/IP might be wrong, check the config.",
@@ -57,7 +57,7 @@ export async function fetchSettings(query: unknown): Promise<CommonDataResponse>
     try {
       const result = await fetchFromUrl(url, timeout);
       res.engine = result.data;
-    } catch (err) {
+    } catch {
       return {
         status: 500,
         msg: "There was an error when fetching settings from engine unit.",
@@ -71,7 +71,7 @@ export async function fetchSettings(query: unknown): Promise<CommonDataResponse>
     try {
       const result = await fetchFromUrl(url, timeout);
       res.thermal = result.data;
-    } catch (err) {
+    } catch {
       return {
         status: 500,
         msg: "There was an error when fetching settings from thermal unit.",
@@ -98,7 +98,7 @@ export async function fetchAction(action: Action): Promise<CommonDataResponse> {
       msg: "Action sent successfully.",
       data: data.data,
     };
-  } catch (err) {
+  } catch {
     return {
       status: 408,
       msg: "Request timedout. The URL/IP might be wrong, check the config.",
@@ -114,7 +114,7 @@ export async function updateWatchdog(): Promise<CommonResponse> {
       status: 200,
       msg: "Successfully updated Watchdog.",
     };
-  } catch (err) {
+  } catch {
     return {
       status: 500,
       msg: "Watchdog update was not successful.",
@@ -160,7 +160,7 @@ async function isReady(url: string, timeout = 5000) {
   try {
     const res = await fetchFromUrl(url, timeout);
     return res.data === 0;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -192,7 +192,7 @@ async function updateSetting(
       results[1].data === value &&
       verificationArray[index - 100] === value.toString()
     );
-  } catch (err) {
+  } catch {
     return false;
   }
 }
