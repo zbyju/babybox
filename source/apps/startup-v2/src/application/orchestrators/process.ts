@@ -3,12 +3,12 @@
  */
 
 import { type Result, ok } from "neverthrow";
-import type { AppContext } from "../context.js";
-import type { DirectoryPath, ProcessName } from "../../domain/types/index.js";
-import { processName } from "../../domain/types/index.js";
-import { shouldRetryProcessStart } from "../../domain/functions/index.js";
-import { suggestionsForProcessStart } from "../../domain/functions/index.js";
-import { Messages } from "../../presentation/messages.js";
+import type { AppContext } from "../context";
+import type { DirectoryPath, ProcessName } from "../../domain/types/index";
+import { processName } from "../../domain/types/index";
+import { shouldRetryProcessStart } from "../../domain/functions/index";
+import { suggestionsForProcessStart } from "../../domain/functions/index";
+import { Messages } from "../../presentation/messages";
 
 export type ProcessPhaseResult =
   | { readonly kind: "success"; readonly servicesStarted: readonly string[] }

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import express from "express";
-import { setConfig } from "../../state/config.js";
-import type { MainConfig } from "../../types/config.types.js";
+import { setConfig } from "../../state/config";
+import type { MainConfig } from "../../types/config.types";
 
 // Mock the fetch module
 vi.mock("../../fetch/fetchFromUnits.js", () => ({
@@ -9,8 +9,8 @@ vi.mock("../../fetch/fetchFromUnits.js", () => ({
   updateWatchdog: vi.fn(),
 }));
 
-import { fetchDataCommon, updateWatchdog } from "../../fetch/fetchFromUnits.js";
-import { router } from "../engineRoute.js";
+import { fetchDataCommon, updateWatchdog } from "../../fetch/fetchFromUnits";
+import { router } from "../engineRoute";
 
 const mockFetchDataCommon = vi.mocked(fetchDataCommon);
 const mockUpdateWatchdog = vi.mocked(updateWatchdog);
@@ -49,11 +49,14 @@ async function makeRequest(
   const port = (server.address() as { port: number }).port;
 
   try {
-    const response = await fetch(`http://localhost:${port}${path}`, {
+    const fetchOptions: RequestInit = {
       method,
       headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    };
+    if (body) {
+      fetchOptions.body = JSON.stringify(body);
+    }
+    const response = await fetch(`http://localhost:${port}${path}`, fetchOptions);
     const responseBody = await response.json();
     return { status: response.status, body: responseBody };
   } finally {

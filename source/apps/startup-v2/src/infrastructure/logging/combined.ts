@@ -2,10 +2,10 @@
  * Combined logger - writes to both console and file.
  */
 
-import type { LogLevel } from "../../domain/types/index.js";
-import type { LoggerPort } from "../../application/ports/logger.port.js";
-import { createConsoleLogger } from "./console.js";
-import { createFileLogger } from "./file.js";
+import type { LogLevel } from "../../domain/types/index";
+import type { LoggerPort } from "../../application/ports/logger.port";
+import { createConsoleLogger } from "./console";
+import { createFileLogger } from "./file";
 
 type CombinedLoggerConfig = {
   readonly logDir: string;

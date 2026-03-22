@@ -3,8 +3,8 @@
  */
 
 import { ok, err } from "neverthrow";
-import type { ProcessPort } from "../../../application/ports/process.port.js";
-import * as pm2 from "../../wrappers/pm2.js";
+import type { ProcessPort } from "../../../application/ports/process.port";
+import * as pm2 from "../../wrappers/pm2";
 
 export function createUbuntuProcessAdapter(): ProcessPort {
   return {

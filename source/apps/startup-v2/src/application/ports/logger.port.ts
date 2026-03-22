@@ -8,7 +8,7 @@ import type {
   LogModule,
   LogContext,
   Suggestion,
-} from "../../domain/types/index.js";
+} from "../../domain/types/index";
 
 /**
  * Port interface for logging.

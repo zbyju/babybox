@@ -3,10 +3,10 @@
  */
 
 import { ok } from "neverthrow";
-import type { PackageManagerPort } from "../../../application/ports/package-manager.port.js";
-import type { DirectoryPath } from "../../../domain/types/index.js";
-import { BuildResult as BR, durationMs, shellCommand } from "../../../domain/types/index.js";
-import { executeInDirectory } from "../../wrappers/shell.js";
+import type { PackageManagerPort } from "../../../application/ports/package-manager.port";
+import type { DirectoryPath } from "../../../domain/types/index";
+import { BuildResult as BR, durationMs, shellCommand } from "../../../domain/types/index";
+import { executeInDirectory } from "../../wrappers/shell";
 
 export function createUbuntuPackageManagerAdapter(): PackageManagerPort {
   return {

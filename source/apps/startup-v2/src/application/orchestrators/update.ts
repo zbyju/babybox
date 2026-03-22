@@ -3,14 +3,14 @@
  */
 
 import { type Result, ok, err } from "neverthrow";
-import type { AppContext } from "../context.js";
-import type { GitPullResult, DirectoryPath } from "../../domain/types/index.js";
+import type { AppContext } from "../context";
+import type { GitPullResult, DirectoryPath } from "../../domain/types/index";
 import {
   determinePullStrategy,
   shouldRetryGitPull,
-} from "../../domain/functions/index.js";
-import { suggestionsForGitPull } from "../../domain/functions/index.js";
-import { Messages } from "../../presentation/messages.js";
+} from "../../domain/functions/index";
+import { suggestionsForGitPull } from "../../domain/functions/index";
+import { Messages } from "../../presentation/messages";
 
 export type UpdateResult =
   | { readonly kind: "updated"; readonly commitsBehind: number }

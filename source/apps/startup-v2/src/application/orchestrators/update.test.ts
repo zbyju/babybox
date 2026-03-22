@@ -1,11 +1,11 @@
 import { describe, expect, it, mock } from "bun:test";
 import { ok, err } from "neverthrow";
-import { executeUpdate } from "./update.js";
-import type { AppContext } from "../context.js";
-import type { GitPort } from "../ports/git.port.js";
-import type { LoggerPort } from "../ports/logger.port.js";
-import type { StartupConfig } from "../../domain/types/index.js";
-import { GitPullResult } from "../../domain/types/index.js";
+import { executeUpdate } from "./update";
+import type { AppContext } from "../context";
+import type { GitPort } from "../ports/git.port";
+import type { LoggerPort } from "../ports/logger.port";
+import type { StartupConfig } from "../../domain/types/index";
+import { GitPullResult } from "../../domain/types/index";
 
 // Helper to create a mock logger
 function createMockLogger(): LoggerPort {

@@ -1,4 +1,4 @@
-import type { MainConfig } from "../types/config.types.js";
+import type { MainConfig } from "../types/config.types";
 
 let _config: MainConfig | null = null;
 

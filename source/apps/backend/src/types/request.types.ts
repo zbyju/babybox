@@ -2,7 +2,7 @@ import {
   SettingSchema,
   PostUnitSettingsRequestBodySchema,
   GetUnitSettingsRequestSchema,
-} from "../schemas/request.schema.js";
+} from "../schemas/request.schema";
 
 // Re-export types from schema
 export type {
@@ -18,7 +18,7 @@ export type {
   CommonResponse,
   CommonDataResponse,
   CommonSettingsResponse,
-} from "../schemas/request.schema.js";
+} from "../schemas/request.schema";
 
 // Legacy type guards using Zod schemas
 export function isInstanceOfPostUnitSettingsRequestBody(

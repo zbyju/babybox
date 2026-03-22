@@ -2,29 +2,29 @@
  * Factory for creating OS-specific adapters.
  */
 
-import type { OperatingSystem, StartupConfig, DirectoryPath } from "../domain/types/index.js";
-import type { GitPort } from "../application/ports/git.port.js";
-import type { FileSystemPort } from "../application/ports/fs.port.js";
-import type { ProcessPort } from "../application/ports/process.port.js";
-import type { PackageManagerPort } from "../application/ports/package-manager.port.js";
+import type { OperatingSystem, StartupConfig, DirectoryPath } from "../domain/types/index";
+import type { GitPort } from "../application/ports/git.port";
+import type { FileSystemPort } from "../application/ports/fs.port";
+import type { ProcessPort } from "../application/ports/process.port";
+import type { PackageManagerPort } from "../application/ports/package-manager.port";
 
 // Ubuntu adapters
-import { createUbuntuGitAdapter } from "../infrastructure/adapters/ubuntu/git.adapter.js";
-import { createUbuntuFsAdapter } from "../infrastructure/adapters/ubuntu/fs.adapter.js";
-import { createUbuntuProcessAdapter } from "../infrastructure/adapters/ubuntu/process.adapter.js";
-import { createUbuntuPackageManagerAdapter } from "../infrastructure/adapters/ubuntu/package-manager.adapter.js";
+import { createUbuntuGitAdapter } from "../infrastructure/adapters/ubuntu/git.adapter";
+import { createUbuntuFsAdapter } from "../infrastructure/adapters/ubuntu/fs.adapter";
+import { createUbuntuProcessAdapter } from "../infrastructure/adapters/ubuntu/process.adapter";
+import { createUbuntuPackageManagerAdapter } from "../infrastructure/adapters/ubuntu/package-manager.adapter";
 
 // Windows adapters (stub implementations)
-import { createWindowsGitAdapter } from "../infrastructure/adapters/windows/git.adapter.js";
-import { createWindowsFsAdapter } from "../infrastructure/adapters/windows/fs.adapter.js";
-import { createWindowsProcessAdapter } from "../infrastructure/adapters/windows/process.adapter.js";
-import { createWindowsPackageManagerAdapter } from "../infrastructure/adapters/windows/package-manager.adapter.js";
+import { createWindowsGitAdapter } from "../infrastructure/adapters/windows/git.adapter";
+import { createWindowsFsAdapter } from "../infrastructure/adapters/windows/fs.adapter";
+import { createWindowsProcessAdapter } from "../infrastructure/adapters/windows/process.adapter";
+import { createWindowsPackageManagerAdapter } from "../infrastructure/adapters/windows/package-manager.adapter";
 
 // Mac adapters (reuse Ubuntu for most, Unix-like)
-import { createMacGitAdapter } from "../infrastructure/adapters/mac/git.adapter.js";
-import { createMacFsAdapter } from "../infrastructure/adapters/mac/fs.adapter.js";
-import { createMacProcessAdapter } from "../infrastructure/adapters/mac/process.adapter.js";
-import { createMacPackageManagerAdapter } from "../infrastructure/adapters/mac/package-manager.adapter.js";
+import { createMacGitAdapter } from "../infrastructure/adapters/mac/git.adapter";
+import { createMacFsAdapter } from "../infrastructure/adapters/mac/fs.adapter";
+import { createMacProcessAdapter } from "../infrastructure/adapters/mac/process.adapter";
+import { createMacPackageManagerAdapter } from "../infrastructure/adapters/mac/package-manager.adapter";
 
 export type Adapters = {
   readonly git: GitPort;

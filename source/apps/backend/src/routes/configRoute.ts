@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
-import { DbFactory } from "../services/config/factory.js";
-import { MainConfigSchema } from "../schemas/config.schema.js";
+import { DbFactory } from "../services/config/factory";
+import { MainConfigSchema } from "../schemas/config.schema";
 
 const router = Router();
 
 // GET /api/v1/config/main
-router.get("/main", async (req: Request, res: Response) => {
+router.get("/main", async (_req: Request, res: Response) => {
   try {
     const db = await DbFactory.getMainDb();
     res.json(db.data());
@@ -37,7 +37,7 @@ router.put("/main", async (req: Request, res: Response) => {
 });
 
 // GET /api/v1/config/version (and alias /versions)
-router.get(["/version", "/versions"], async (req: Request, res: Response) => {
+router.get(["/version", "/versions"], async (_req: Request, res: Response) => {
   try {
     const db = await DbFactory.getVersionDb();
     res.json(db.data());

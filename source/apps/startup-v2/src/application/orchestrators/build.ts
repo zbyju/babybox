@@ -3,10 +3,10 @@
  */
 
 import { type Result, ok, err } from "neverthrow";
-import type { AppContext } from "../context.js";
-import type { DirectoryPath } from "../../domain/types/index.js";
-import { suggestionsForBuild } from "../../domain/functions/index.js";
-import { Messages } from "../../presentation/messages.js";
+import type { AppContext } from "../context";
+import type { DirectoryPath } from "../../domain/types/index";
+import { suggestionsForBuild } from "../../domain/functions/index";
+import { Messages } from "../../presentation/messages";
 
 export type BuildPhaseResult =
   | { readonly kind: "success"; readonly durationMs: number }

@@ -3,7 +3,7 @@ import {
   isInstanceOfGetUnitSettingsRequest,
   isInstanceOfPostUnitSettingsRequestBody,
   isInstanceOfSetting,
-} from "../request.types.js";
+} from "../request.types";
 
 describe("request.types.ts", () => {
   describe("isInstanceOfPostUnitSettingsRequestBody", () => {

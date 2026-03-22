@@ -6,7 +6,7 @@ import {
   Suggestion,
   LogEntry,
   StartupConfigSchema,
-} from "./index.js";
+} from "./index";
 
 describe("branded types", () => {
   it("creates absolute paths correctly", () => {

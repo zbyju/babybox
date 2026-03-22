@@ -6,9 +6,9 @@ import type {
   LogEntry,
   LogLevel,
   Suggestion,
-} from "../../domain/types/index.js";
-import { LogEntry as LogEntryFactory } from "../../domain/types/index.js";
-import type { LoggerPort } from "../../application/ports/logger.port.js";
+} from "../../domain/types/index";
+import { LogEntry as LogEntryFactory } from "../../domain/types/index";
+import type { LoggerPort } from "../../application/ports/logger.port";
 
 const LEVEL_COLORS = {
   debug: "\x1b[90m", // Gray

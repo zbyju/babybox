@@ -3,14 +3,14 @@
  */
 
 import { type Result, ok } from "neverthrow";
-import type { AppContext } from "../context.js";
-import type { StartupResult } from "../../domain/types/index.js";
-import { decideBuild } from "../../domain/functions/index.js";
-import { Messages } from "../../presentation/messages.js";
-import { executeUpdate } from "./update.js";
-import { executeBuild } from "./build.js";
-import { executeOverride } from "./override.js";
-import { executeProcessStart } from "./process.js";
+import type { AppContext } from "../context";
+import type { StartupResult } from "../../domain/types/index";
+import { decideBuild } from "../../domain/functions/index";
+import { Messages } from "../../presentation/messages";
+import { executeUpdate } from "./update";
+import { executeBuild } from "./build";
+import { executeOverride } from "./override";
+import { executeProcessStart } from "./process";
 
 /**
  * Execute the complete startup flow.

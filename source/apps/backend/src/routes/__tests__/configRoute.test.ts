@@ -9,8 +9,8 @@ vi.mock("../../services/config/factory.js", () => ({
   },
 }));
 
-import { DbFactory } from "../../services/config/factory.js";
-import { configRoute } from "../configRoute.js";
+import { DbFactory } from "../../services/config/factory";
+import { configRoute } from "../configRoute";
 
 const mockGetMainDb = vi.mocked(DbFactory.getMainDb);
 const mockGetVersionDb = vi.mocked(DbFactory.getVersionDb);
@@ -49,11 +49,14 @@ async function makeRequest(
   const port = (server.address() as { port: number }).port;
 
   try {
-    const response = await fetch(`http://localhost:${port}${path}`, {
+    const fetchOptions: RequestInit = {
       method,
       headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    };
+    if (body) {
+      fetchOptions.body = JSON.stringify(body);
+    }
+    const response = await fetch(`http://localhost:${port}${path}`, fetchOptions);
     const responseBody = await response.json();
     return { status: response.status, body: responseBody };
   } finally {

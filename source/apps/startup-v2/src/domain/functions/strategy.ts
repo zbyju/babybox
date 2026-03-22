@@ -9,7 +9,7 @@ import type {
   BuildResult,
   OverrideResult,
   StartupConfig,
-} from "../types/index.js";
+} from "../types/index";
 
 /**
  * What to do after a git pull result.

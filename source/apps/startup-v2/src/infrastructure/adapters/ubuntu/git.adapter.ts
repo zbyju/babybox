@@ -9,14 +9,14 @@ import type {
   GitStashResult,
   GitStatusResult,
   DirectoryPath,
-} from "../../../domain/types/index.js";
+} from "../../../domain/types/index";
 import {
   GitPullResult as GPR,
   shellCommand,
   durationMs,
-} from "../../../domain/types/index.js";
-import { executeInDirectory } from "../../wrappers/shell.js";
-import type { GitPort } from "../../../application/ports/git.port.js";
+} from "../../../domain/types/index";
+import { executeInDirectory } from "../../wrappers/shell";
+import type { GitPort } from "../../../application/ports/git.port";
 
 function parseGitPullOutput(stdout: string, stderr: string): GitPullResult {
   const combined = stdout + stderr;

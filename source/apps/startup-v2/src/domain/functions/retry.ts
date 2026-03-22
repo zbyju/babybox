@@ -7,7 +7,7 @@ import type {
   ShellResult,
   ProcessStartResult,
   GitPullResult,
-} from "../types/index.js";
+} from "../types/index";
 
 /**
  * Configuration for retry behavior.

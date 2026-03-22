@@ -4,14 +4,14 @@
  */
 
 import { type Result, ok, err } from "neverthrow";
-import { executeCommand } from "./shell.js";
+import { executeCommand } from "./shell";
 import type {
   ProcessName,
   ProcessStartResult,
   ProcessStopResult,
   DirectoryPath,
-} from "../../domain/types/index.js";
-import { shellCommand } from "../../domain/types/index.js";
+} from "../../domain/types/index";
+import { shellCommand } from "../../domain/types/index";
 
 export type PM2Error = {
   readonly operation: string;

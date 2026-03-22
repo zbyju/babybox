@@ -4,8 +4,8 @@
  */
 
 import { type Result, ok } from "neverthrow";
-import type { ShellCommand, ShellOptions, ShellResult, DurationMs } from "../../domain/types/index.js";
-import { ShellResult as SR, durationMs } from "../../domain/types/index.js";
+import type { ShellCommand, ShellOptions, ShellResult, DurationMs } from "../../domain/types/index";
+import { ShellResult as SR, durationMs } from "../../domain/types/index";
 
 /**
  * Execute a shell command safely.

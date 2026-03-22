@@ -4,7 +4,7 @@
  */
 
 import { err } from "neverthrow";
-import type { PackageManagerPort } from "../../../application/ports/package-manager.port.js";
+import type { PackageManagerPort } from "../../../application/ports/package-manager.port";
 
 export function createWindowsPackageManagerAdapter(): PackageManagerPort {
   return {

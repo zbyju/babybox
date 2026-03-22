@@ -3,7 +3,7 @@
  * All user-facing messages are in Czech.
  */
 
-import type { ShellCommand, DirectoryPath } from "./branded.js";
+import type { ShellCommand, DirectoryPath } from "./branded";
 
 /**
  * A suggestion that can help the user recover from an error.

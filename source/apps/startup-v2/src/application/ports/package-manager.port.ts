@@ -7,7 +7,7 @@ import type {
   DirectoryPath,
   DependencyInstallResult,
   BuildResult,
-} from "../../domain/types/index.js";
+} from "../../domain/types/index";
 
 export type PackageManagerPort = {
   readonly install: (

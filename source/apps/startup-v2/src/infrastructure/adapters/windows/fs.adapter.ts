@@ -4,7 +4,7 @@
  */
 
 import { err } from "neverthrow";
-import type { FileSystemPort } from "../../../application/ports/fs.port.js";
+import type { FileSystemPort } from "../../../application/ports/fs.port";
 
 export function createWindowsFsAdapter(): FileSystemPort {
   const notImplementedAsync = async () =>

@@ -3,7 +3,7 @@ import {
   parseGitStatusPorcelain,
   parseGitPullStats,
   detectGitError,
-} from "./git.js";
+} from "./git";
 
 describe("parseGitStatusPorcelain", () => {
   it("parses clean status (empty output)", () => {

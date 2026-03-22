@@ -2,8 +2,8 @@
  * Package manager adapter for macOS.
  */
 
-import { createUbuntuPackageManagerAdapter } from "../ubuntu/package-manager.adapter.js";
-import type { PackageManagerPort } from "../../../application/ports/package-manager.port.js";
+import { createUbuntuPackageManagerAdapter } from "../ubuntu/package-manager.adapter";
+import type { PackageManagerPort } from "../../../application/ports/package-manager.port";
 
 export function createMacPackageManagerAdapter(): PackageManagerPort {
   // Bun works the same on macOS

@@ -1,8 +1,8 @@
 import express, { Request, Response, Router } from "express";
 
-import { fetchDataCommon } from "../fetch/fetchFromUnits.js";
-import { Unit } from "../types/units.types.js";
-import { successResponse, errorResponse } from "../utils/response.js";
+import { fetchDataCommon } from "../fetch/fetchFromUnits";
+import { Unit } from "../types/units.types";
+import { successResponse, errorResponse } from "../utils/response";
 
 export const router: Router = express.Router();
 

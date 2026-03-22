@@ -2,8 +2,8 @@
  * Operating system detection.
  */
 
-import type { OperatingSystem } from "../domain/types/index.js";
-import { OS } from "../domain/types/index.js";
+import type { OperatingSystem } from "../domain/types/index";
+import { OS } from "../domain/types/index";
 
 /**
  * Detect the current operating system.

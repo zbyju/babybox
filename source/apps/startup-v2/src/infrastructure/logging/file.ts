@@ -4,9 +4,9 @@
 
 import { appendFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import type { LogEntry, LogLevel } from "../../domain/types/index.js";
-import { LogEntry as LogEntryFactory } from "../../domain/types/index.js";
-import type { LoggerPort } from "../../application/ports/logger.port.js";
+import type { LogEntry, LogLevel } from "../../domain/types/index";
+import { LogEntry as LogEntryFactory } from "../../domain/types/index";
+import type { LoggerPort } from "../../application/ports/logger.port";
 import type { Result } from "neverthrow";
 import { ok, err } from "neverthrow";
 

@@ -1,5 +1,5 @@
-import { getConfig } from "../state/config.js";
-import { Action } from "../types/units.types.js";
+import { getConfig } from "../state/config";
+import { Action } from "../types/units.types";
 
 export function actionToUrl(action: Action): string | undefined {
   const config = getConfig();

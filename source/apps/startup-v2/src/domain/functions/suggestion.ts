@@ -10,8 +10,8 @@ import type {
   OverrideResult,
   ProcessStartResult,
   DirectoryPath,
-} from "../types/index.js";
-import { Suggestion as S, shellCommand } from "../types/index.js";
+} from "../types/index";
+import { Suggestion as S, shellCommand } from "../types/index";
 
 /**
  * Create suggestions for git pull failures.

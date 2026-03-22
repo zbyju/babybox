@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { executeCommand } from "./shell.js";
-import { shellCommand, durationMs } from "../../domain/types/index.js";
+import { executeCommand } from "./shell";
+import { shellCommand, durationMs } from "../../domain/types/index";
 
 describe("shell wrapper", () => {
   it("executes simple commands", async () => {

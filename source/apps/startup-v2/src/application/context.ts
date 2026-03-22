@@ -3,12 +3,12 @@
  * Passed to all orchestration functions.
  */
 
-import type { StartupConfig, OperatingSystem } from "../domain/types/index.js";
-import type { LoggerPort } from "./ports/logger.port.js";
-import type { GitPort } from "./ports/git.port.js";
-import type { FileSystemPort } from "./ports/fs.port.js";
-import type { ProcessPort } from "./ports/process.port.js";
-import type { PackageManagerPort } from "./ports/package-manager.port.js";
+import type { StartupConfig, OperatingSystem } from "../domain/types/index";
+import type { LoggerPort } from "./ports/logger.port";
+import type { GitPort } from "./ports/git.port";
+import type { FileSystemPort } from "./ports/fs.port";
+import type { ProcessPort } from "./ports/process.port";
+import type { PackageManagerPort } from "./ports/package-manager.port";
 
 /**
  * Application context containing all dependencies.

@@ -2,7 +2,7 @@
  * Shell command execution types.
  */
 
-import type { DurationMs, DirectoryPath } from "./branded.js";
+import type { DurationMs, DirectoryPath } from "./branded";
 
 /**
  * Options for executing a shell command.

@@ -1,5 +1,5 @@
-import { MainConfig } from "../../types/config.types.js";
-import { DbFactory } from "./factory.js";
+import { MainConfig } from "../../types/config.types";
+import { DbFactory } from "./factory";
 
 export async function loadConfig(): Promise<MainConfig> {
   const db = await DbFactory.getMainDb();

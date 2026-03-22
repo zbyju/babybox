@@ -7,7 +7,7 @@ import type {
   GitPullResult,
   GitStashResult,
   GitStatusResult,
-} from "../../domain/types/index.js";
+} from "../../domain/types/index";
 
 export type GitPort = {
   readonly pull: () => Promise<Result<GitPullResult, string>>;

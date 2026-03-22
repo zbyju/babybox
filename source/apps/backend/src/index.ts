@@ -6,15 +6,15 @@ import open from "open";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
-import { modulesObject } from "./modules/init.js";
-import { configRoute } from "./routes/configRoute.js";
-import { router as engineRoute } from "./routes/engineRoute.js";
-import { router as healthRoute } from "./routes/healthRoute.js";
-import { router as restartRoute } from "./routes/restartRoute.js";
-import { router as thermalRoute } from "./routes/thermalRoute.js";
-import { router as unitsRoute } from "./routes/unitsRoute.js";
-import { loadConfig } from "./services/config/loader.js";
-import { setConfig, getConfig } from "./state/config.js";
+import { modulesObject } from "./modules/init";
+import { configRoute } from "./routes/configRoute";
+import { router as engineRoute } from "./routes/engineRoute";
+import { router as healthRoute } from "./routes/healthRoute";
+import { router as restartRoute } from "./routes/restartRoute";
+import { router as thermalRoute } from "./routes/thermalRoute";
+import { router as unitsRoute } from "./routes/unitsRoute";
+import { loadConfig } from "./services/config/loader";
+import { setConfig } from "./state/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,10 +29,10 @@ async function main() {
   setConfig(config);
 
   const app = express();
-  const port = config.backend.port || process.env.PORT || 3000;
+  const port = config.backend.port || process.env['PORT'] || 3000;
 
   // Setup logger - morgan
-  if (process.env.NODE_ENV === "development") {
+  if (process.env['NODE_ENV'] === "development") {
     app.use(morgan("dev"));
   }
 
@@ -48,16 +48,16 @@ async function main() {
 
   // Status route
   const startedAt = Date.now();
-  app.get(process.env.API_PREFIX + "/status", (req, res) => {
+  app.get(process.env['API_PREFIX'] + "/status", (_req, res) => {
     res.status(200).json({
       msg: "Alive.",
       uptimeMs: Date.now() - startedAt,
-      environment: process.env.NODE_ENV ?? "unknown",
+      environment: process.env['NODE_ENV'] ?? "unknown",
     });
   });
 
   //Routes
-  const prefix = config.backend.url || process.env.API_PREFIX;
+  const prefix = config.backend.url || process.env['API_PREFIX'];
   app.use(prefix + "/config", configRoute);
   app.use(prefix + "/units", unitsRoute);
   app.use(prefix + "/engine", engineRoute);
@@ -66,10 +66,10 @@ async function main() {
   app.use(prefix + "/health", healthRoute);
 
   // Serve Frontend app if running in production
-  if (process.env.NODE_ENV === "production") {
+  if (process.env['NODE_ENV'] === "production") {
     app.use(express.static(join(__dirname, "public")));
 
-    app.get("/", (req, res) => {
+    app.get("/", (_req, res) => {
       res.sendFile(join(__dirname, "public", "index.html"));
     });
 
@@ -78,11 +78,11 @@ async function main() {
 
   app.listen(port, () => {
     const color =
-      process.env.NODE_ENV === "production" ? "\x1b[32m" : "\x1b[35m";
+      process.env['NODE_ENV'] === "production" ? "\x1b[32m" : "\x1b[35m";
 
     console.log(
       `Babybox backend running in ${color}\x1b[1m%s\x1b[0m and listening on port \x1b[1m%s`,
-      process.env.NODE_ENV,
+      process.env['NODE_ENV'],
       port
     );
   });

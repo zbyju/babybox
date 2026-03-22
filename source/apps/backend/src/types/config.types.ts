@@ -11,7 +11,7 @@ export type {
   CameraConfig,
   PcConfig,
   AppConfig,
-} from "../schemas/config.schema.js";
+} from "../schemas/config.schema";
 
 // Legacy type aliases for backward compatibility
 export type MainConfigBabybox = import("../schemas/config.schema.js").BabyboxConfig;

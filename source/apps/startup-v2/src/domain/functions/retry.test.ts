@@ -5,9 +5,9 @@ import {
   shouldRetryGitPull,
   calculateBackoff,
   DEFAULT_RETRY_CONFIG,
-} from "./retry.js";
-import type { ShellResult } from "../types/index.js";
-import { GitPullResult, durationMs } from "../types/index.js";
+} from "./retry";
+import type { ShellResult } from "../types/index";
+import { GitPullResult, durationMs } from "../types/index";
 
 describe("shouldRetryShellCommand", () => {
   describe("on success", () => {

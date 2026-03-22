@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { resolveOS, detectOS, parseOSFromArg } from "./os-detection.js";
-import { loadConfig, getLogLevel } from "./config-loader.js";
+import { resolveOS, detectOS, parseOSFromArg } from "./os-detection";
+import { loadConfig, getLogLevel } from "./config-loader";
 
 describe("OS detection", () => {
   it("respects explicit ubuntu flag", () => {

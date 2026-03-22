@@ -3,9 +3,9 @@
  */
 
 import { type Result, ok } from "neverthrow";
-import type { AppContext } from "../context.js";
-import { suggestionsForOverride } from "../../domain/functions/index.js";
-import { Messages } from "../../presentation/messages.js";
+import type { AppContext } from "../context";
+import { suggestionsForOverride } from "../../domain/functions/index";
+import { Messages } from "../../presentation/messages";
 
 export type OverridePhaseResult =
   | { readonly kind: "success" }

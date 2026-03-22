@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import type { AbsolutePath } from "./branded.js";
+import type { AbsolutePath } from "./branded";
 
 // Zod schemas for runtime validation
 export const StartupConfigSchema = z.object({

@@ -3,7 +3,7 @@
  * Every fallible operation returns one of these.
  */
 
-import type { DurationMs } from "./branded.js";
+import type { DurationMs } from "./branded";
 
 // Git operations
 export type GitPullResult =

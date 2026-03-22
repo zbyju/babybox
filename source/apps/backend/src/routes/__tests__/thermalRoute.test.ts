@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import express from "express";
-import { setConfig } from "../../state/config.js";
-import type { MainConfig } from "../../types/config.types.js";
+import { setConfig } from "../../state/config";
+import type { MainConfig } from "../../types/config.types";
 
 // Mock the fetch module
 vi.mock("../../fetch/fetchFromUnits.js", () => ({
@@ -9,8 +9,8 @@ vi.mock("../../fetch/fetchFromUnits.js", () => ({
   updateWatchdog: vi.fn(),
 }));
 
-import { fetchDataCommon } from "../../fetch/fetchFromUnits.js";
-import { router } from "../thermalRoute.js";
+import { fetchDataCommon } from "../../fetch/fetchFromUnits";
+import { router } from "../thermalRoute";
 
 const mockFetchDataCommon = vi.mocked(fetchDataCommon);
 

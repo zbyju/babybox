@@ -4,7 +4,7 @@
  */
 
 import { err } from "neverthrow";
-import type { ProcessPort } from "../../../application/ports/process.port.js";
+import type { ProcessPort } from "../../../application/ports/process.port";
 
 export function createWindowsProcessAdapter(): ProcessPort {
   const notImplemented = async () =>

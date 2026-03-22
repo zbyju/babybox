@@ -3,8 +3,8 @@
  */
 
 import { ok, err } from "neverthrow";
-import type { FileSystemPort } from "../../../application/ports/fs.port.js";
-import * as fs from "../../wrappers/fs.js";
+import type { FileSystemPort } from "../../../application/ports/fs.port";
+import * as fs from "../../wrappers/fs";
 
 export function createUbuntuFsAdapter(): FileSystemPort {
   return {

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { Action } from "../../types/units.types.js";
-import { actionToUrl } from "../url.js";
-import { setConfig } from "../../state/config.js";
-import type { MainConfig } from "../../types/config.types.js";
+import { Action } from "../../types/units.types";
+import { actionToUrl } from "../url";
+import { setConfig } from "../../state/config";
+import type { MainConfig } from "../../types/config.types";
 
 // Mock config for tests
 const mockConfig: MainConfig = {

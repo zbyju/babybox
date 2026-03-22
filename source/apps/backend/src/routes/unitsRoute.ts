@@ -4,17 +4,17 @@ import {
   fetchAction,
   fetchSettings,
   updateSettings,
-} from "../fetch/fetchFromUnits.js";
-import { validateBody, validateQuery } from "../middleware/validate.js";
+} from "../fetch/fetchFromUnits";
+import { validateBody, validateQuery } from "../middleware/validate";
 import {
   PostUnitSettingsRequestBodySchema,
   GetUnitSettingsRequestSchema,
   type SettingResult,
   type CommonSettingsResponse,
   type PostUnitSettingsRequestBody,
-} from "../schemas/request.schema.js";
-import { stringToAction } from "../utils/actions.js";
-import { successResponse, errorResponse } from "../utils/response.js";
+} from "../schemas/request.schema";
+import { stringToAction } from "../utils/actions";
+import { successResponse, errorResponse } from "../utils/response";
 
 export const router: Router = express.Router();
 

@@ -5,9 +5,9 @@ import {
   decideBuild,
   determineBuildFailureStrategy,
   determineOverrideFailureStrategy,
-} from "./strategy.js";
-import { GitPullResult, BuildResult, OverrideResult } from "../types/index.js";
-import type { GitStatusResult } from "../types/index.js";
+} from "./strategy";
+import { GitPullResult, BuildResult, OverrideResult } from "../types/index";
+import type { GitStatusResult } from "../types/index";
 
 describe("determinePullStrategy", () => {
   it("returns proceed_with_build for updated", () => {

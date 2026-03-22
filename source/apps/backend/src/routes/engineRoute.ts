@@ -1,8 +1,8 @@
 import express, { Request, Response, Router } from "express";
 
-import { fetchDataCommon, updateWatchdog } from "../fetch/fetchFromUnits.js";
-import { Unit } from "../types/units.types.js";
-import { successResponse, errorResponse } from "../utils/response.js";
+import { fetchDataCommon, updateWatchdog } from "../fetch/fetchFromUnits";
+import { Unit } from "../types/units.types";
+import { successResponse, errorResponse } from "../utils/response";
 
 export const router: Router = express.Router();
 
@@ -15,7 +15,7 @@ router.get("/data", async (req: Request, res: Response) => {
   return res.status(response.status).json(successResponse(response.data));
 });
 
-router.put("/watchdog", async (req: Request, res: Response) => {
+router.put("/watchdog", async (_req: Request, res: Response) => {
   const response = await updateWatchdog();
 
   if (response.status >= 400) {

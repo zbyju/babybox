@@ -3,8 +3,8 @@
  * All log entries are structured and typed.
  */
 
-import type { Timestamp } from "./branded.js";
-import type { Suggestion } from "./suggestion.js";
+import type { Timestamp } from "./branded";
+import type { Suggestion } from "./suggestion";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 

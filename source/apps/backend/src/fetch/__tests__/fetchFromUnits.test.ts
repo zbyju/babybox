@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
-import { setConfig } from "../../state/config.js";
-import type { MainConfig } from "../../types/config.types.js";
+import { setConfig } from "../../state/config";
+import type { MainConfig } from "../../types/config.types";
 
 // Mock the fetch module
 vi.mock("../fetch.js", () => ({
   fetchFromUrl: vi.fn(),
 }));
 
-import { fetchFromUrl } from "../fetch.js";
-import { fetchDataCommon } from "../fetchFromUnits.js";
-import { Unit } from "../../types/units.types.js";
+import { fetchFromUrl } from "../fetch";
+import { fetchDataCommon } from "../fetchFromUnits";
+import { Unit } from "../../types/units.types";
 
 const mockFetchFromUrl = vi.mocked(fetchFromUrl);
 

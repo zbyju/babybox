@@ -1,5 +1,5 @@
-import { mainConfig, MainDb } from "./main.js";
-import { versionConfig, VersionDb } from "./version.js";
+import { mainConfig, MainDb } from "./main";
+import { versionConfig, VersionDb } from "./version";
 
 export class DbFactory {
   constructor() {

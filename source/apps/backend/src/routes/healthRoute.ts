@@ -1,13 +1,13 @@
 import express, { Request, Response, Router } from "express";
 
-import { getConfig } from "../state/config.js";
-import { successResponse } from "../utils/response.js";
+import { getConfig } from "../state/config";
+import { successResponse } from "../utils/response";
 
 export const router: Router = express.Router();
 
 const startedAt = Date.now();
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (_req: Request, res: Response) => {
   const config = getConfig();
   const uptimeMs = Date.now() - startedAt;
 
@@ -24,7 +24,7 @@ router.get("/", async (req: Request, res: Response) => {
         cameraType: config.camera.cameraType,
         backendPort: config.backend.port,
       },
-      environment: process.env.NODE_ENV ?? "unknown",
+      environment: process.env['NODE_ENV'] ?? "unknown",
     })
   );
 });

@@ -6,13 +6,13 @@
  */
 
 import { parseArgs } from "node:util";
-import { createAppContext } from "../application/context.js";
-import { startup } from "../application/orchestrators/index.js";
-import { createCombinedLogger } from "../infrastructure/logging/index.js";
-import { VERSION, getVersionInfo } from "../version.js";
-import { resolveOS } from "./os-detection.js";
-import { createAdapters } from "./adapter-factory.js";
-import { loadConfig, getLogLevel } from "./config-loader.js";
+import { createAppContext } from "../application/context";
+import { startup } from "../application/orchestrators/index";
+import { createCombinedLogger } from "../infrastructure/logging/index";
+import { VERSION, getVersionInfo } from "../version";
+import { resolveOS } from "./os-detection";
+import { createAdapters } from "./adapter-factory";
+import { loadConfig, getLogLevel } from "./config-loader";
 
 const HELP_TEXT = `
 Babybox Startup v${VERSION}

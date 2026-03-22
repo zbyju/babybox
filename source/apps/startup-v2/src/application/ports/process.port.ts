@@ -8,7 +8,7 @@ import type {
   ProcessStartResult,
   ProcessStopResult,
   DirectoryPath,
-} from "../../domain/types/index.js";
+} from "../../domain/types/index";
 
 export type ProcessError = {
   readonly operation: string;

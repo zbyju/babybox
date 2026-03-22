@@ -8,7 +8,7 @@
     "test": "vitest run",
     "test:unit": "vitest --environment jsdom",
     "test:watch": "vitest",
-    "typecheck": "vue-tsc --noEmit -p tsconfig.vitest.json --composite false",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "format": "prettier . --write",
     "echo": "echo 'Hello from panel'"

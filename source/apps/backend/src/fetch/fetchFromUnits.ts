@@ -1,4 +1,4 @@
-import { getConfig } from "../state/config.js";
+import { getConfig } from "../state/config";
 import {
   CommonDataRequestQuery,
   CommonDataResponse,
@@ -7,18 +7,18 @@ import {
   isInstanceOfGetUnitSettingsRequest,
   Setting,
   SettingResult,
-} from "../types/request.types.js";
-import { Action, Unit } from "../types/units.types.js";
-import { actionToUrl, unitToIp } from "../utils/url.js";
-import { wait } from "../utils/wait.js";
-import { fetchFromUrl } from "./fetch.js";
+} from "../types/request.types";
+import { Action, Unit } from "../types/units.types";
+import { actionToUrl, unitToIp } from "../utils/url";
+import { wait } from "../utils/wait";
+import { fetchFromUrl } from "./fetch";
 
 export async function fetchDataCommon(
   unit: Unit,
   query: unknown
 ): Promise<CommonDataResponse> {
   const config = getConfig();
-  const { timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT || "") || 5000 } =
+  const { timeout = parseInt(process.env['DEFAULT_FETCH_TIMEOUT'] || "") || 5000 } =
     query as CommonDataRequestQuery;
 
   const url = `http://${
@@ -51,7 +51,7 @@ export async function fetchSettings(
   }
   const {
     unit = "both",
-    timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT || "") || 5000,
+    timeout = parseInt(process.env['DEFAULT_FETCH_TIMEOUT'] || "") || 5000,
   } = query as GetUnitSettingsRequest;
 
   const timestamp = new Date().getTime();
@@ -98,7 +98,7 @@ export async function fetchSettings(
 }
 
 export async function fetchAction(action: Action): Promise<CommonDataResponse> {
-  const timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT || "") || 5000;
+  const timeout = parseInt(process.env['DEFAULT_FETCH_TIMEOUT'] || "") || 5000;
 
   const url = actionToUrl(action);
 

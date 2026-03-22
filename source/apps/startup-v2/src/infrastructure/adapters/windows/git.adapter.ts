@@ -4,8 +4,8 @@
  */
 
 import { err } from "neverthrow";
-import type { DirectoryPath } from "../../../domain/types/index.js";
-import type { GitPort } from "../../../application/ports/git.port.js";
+import type { DirectoryPath } from "../../../domain/types/index";
+import type { GitPort } from "../../../application/ports/git.port";
 
 export function createWindowsGitAdapter(_repoPath: DirectoryPath): GitPort {
   const notImplemented = async () =>

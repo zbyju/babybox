@@ -4,8 +4,8 @@
 
 import { resolve, dirname } from "node:path";
 import { existsSync } from "node:fs";
-import type { StartupConfig, AbsolutePath, LogLevel } from "../domain/types/index.js";
-import { StartupConfigSchema, EnvConfigSchema, absolutePath } from "../domain/types/index.js";
+import type { StartupConfig, AbsolutePath, LogLevel } from "../domain/types/index";
+import { StartupConfigSchema, EnvConfigSchema, absolutePath } from "../domain/types/index";
 
 /**
  * Determine the repository root path.
