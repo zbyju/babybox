@@ -27,7 +27,7 @@ After successful modernization to Bun/Turborepo/ESM, several quality issues rema
 | 3   | [Tooling Standardization](./standards/03-tooling-standardization.md)       | **Done**    | None         | oxlint + oxfmt everywhere                 |
 | 4   | [CI Setup](./standards/04-ci-setup.md)                                     | **Done**    | #3           | GitHub Actions pipeline                   |
 | 5   | [Dependency Updates](./standards/05-dependency-updates.md)                 | **Done**    | #1, #3, #6   | Align versions, remove unused             |
-| 6   | [Bun Catalog Setup](./standards/06-bun-catalog.md)                         | **Deferred** | None         | Centralize deps, hardcode versions        |
+| 6   | [Bun Catalog Setup](./standards/06-bun-catalog.md)                         | **Done**     | None         | Centralize deps, hardcode versions        |
 | 7   | [JavaScript to TypeScript](./standards/07-javascript-to-typescript.md)     | **Done**    | #1           | Convert all .js to .ts (non-legacy)       |
 
 ### Status Legend
@@ -81,6 +81,7 @@ Before merging any project:
 
 | Date       | Project | Change                                                                |
 | ---------- | ------- | --------------------------------------------------------------------- |
+| 2026-03-22 | 6       | Alternative implementation: centralized VERSIONS.md + pinned deps    |
 | 2026-03-22 | —       | Plan expanded - 8 projects total; added Bun catalog, strict TS, JS→TS |
 | 2026-03-21 | —       | Plan created - 6 projects identified                                  |
 
