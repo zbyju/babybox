@@ -4,7 +4,7 @@
   "description": "",
   "author": "",
   "keywords": [],
-  "packageManager": "bun@1.0.0",
+  "packageManager": "bun@1.2.21",
   "workspaces": [
     "apps/*",
     "packages/*"
