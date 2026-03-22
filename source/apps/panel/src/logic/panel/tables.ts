@@ -12,10 +12,7 @@ import {
 } from "@/types/panel/tables.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 
-import {
-  booleanToTableBlockState,
-  maybeValueToTableRowValue,
-} from "../../utils/panel/conversions";
+import { booleanToTableBlockState, maybeValueToTableRowValue } from "../../utils/panel/conversions";
 import {
   displayCustomBoolean,
   displayPercentage,
@@ -25,11 +22,10 @@ import {
   isLower,
   prettyNumber,
   secondsToTime,
-} from "../../utils/panel/dataDisplay";
+} from "../../utils/panel/data-display";
 
 export const getTableConnectionValues = (
   engineData: Maybe<EngineUnit>,
-  _: Maybe<ThermalUnit>,
   connection: Connection,
   config: Config,
 ): TableConnectionValues => {
@@ -82,10 +78,7 @@ export const getTableConnectionValues = (
   };
 };
 
-export const getTableDoorsValues = (
-  engineData: Maybe<EngineUnit>,
-  _: Maybe<ThermalUnit>,
-): TableDoorsValues => {
+export const getTableDoorsValues = (engineData: Maybe<EngineUnit>): TableDoorsValues => {
   if (engineData === undefined) {
     return {
       state: TableValuesState.Error,
@@ -95,25 +88,13 @@ export const getTableDoorsValues = (
     state: TableValuesState.Ok,
     blockValues: {
       isBlocked: {
-        state: booleanToTableBlockState(
-          engineData?.data.isBlocked,
-          TableBlockState.ColorError,
-        ),
+        state: booleanToTableBlockState(engineData?.data.isBlocked, TableBlockState.ColorError),
       },
     },
     rowValues: {
-      leftLoad: maybeValueToTableRowValue(
-        engineData?.data.engine.left.load,
-        prettyNumber,
-      ),
-      rightLoad: maybeValueToTableRowValue(
-        engineData?.data.engine.right.load,
-        prettyNumber,
-      ),
-      leftPosition: maybeValueToTableRowValue(
-        engineData?.data.engine.left.position,
-        prettyNumber,
-      ),
+      leftLoad: maybeValueToTableRowValue(engineData?.data.engine.left.load, prettyNumber),
+      rightLoad: maybeValueToTableRowValue(engineData?.data.engine.right.load, prettyNumber),
+      leftPosition: maybeValueToTableRowValue(engineData?.data.engine.left.position, prettyNumber),
       rightPosition: maybeValueToTableRowValue(
         engineData?.data.engine.right.position,
         prettyNumber,
@@ -128,7 +109,6 @@ export const getTableDoorsValues = (
 };
 
 export const getTableTemperaturesValues = (
-  _: Maybe<EngineUnit>,
   thermalData: Maybe<ThermalUnit>,
 ): TableTemperaturesValues => {
   if (thermalData === undefined) {
@@ -140,19 +120,13 @@ export const getTableTemperaturesValues = (
     state: TableValuesState.Ok,
     blockValues: {
       isHeatingCasing: {
-        state: booleanToTableBlockState(
-          thermalData?.data.temperature.isHeatingCasing,
-        ),
+        state: booleanToTableBlockState(thermalData?.data.temperature.isHeatingCasing),
       },
       isHeatingAir: {
-        state: booleanToTableBlockState(
-          thermalData?.data.temperature.isHeatingAir,
-        ),
+        state: booleanToTableBlockState(thermalData?.data.temperature.isHeatingAir),
       },
       isCoolingAir: {
-        state: booleanToTableBlockState(
-          thermalData?.data.temperature.isCoolingAir,
-        ),
+        state: booleanToTableBlockState(thermalData?.data.temperature.isCoolingAir),
       },
     },
     rowValues: {
@@ -192,10 +166,7 @@ export const getTableTemperaturesValues = (
   };
 };
 
-export const getTableVoltageValues = (
-  _: Maybe<EngineUnit>,
-  thermalData: Maybe<ThermalUnit>,
-): TableVoltagesValues => {
+export const getTableVoltageValues = (thermalData: Maybe<ThermalUnit>): TableVoltagesValues => {
   if (thermalData === undefined) {
     return {
       state: TableValuesState.Error,
@@ -209,10 +180,7 @@ export const getTableVoltageValues = (
         thermalData?.data.voltage.in,
         displayVoltage,
         [],
-        isLower(
-          thermalData?.data.voltage.in,
-          thermalData?.settings.voltage.minimal,
-        )
+        isLower(thermalData?.data.voltage.in, thermalData?.settings.voltage.minimal)
           ? TableRowState.ColorError
           : TableRowState.Ok,
       ),
@@ -220,10 +188,7 @@ export const getTableVoltageValues = (
         thermalData?.data.voltage.battery,
         displayVoltage,
         [],
-        isLower(
-          thermalData?.data.voltage.battery,
-          thermalData?.settings.voltage.minimal,
-        )
+        isLower(thermalData?.data.voltage.battery, thermalData?.settings.voltage.minimal)
           ? TableRowState.ColorError
           : TableRowState.Ok,
       ),
@@ -231,10 +196,7 @@ export const getTableVoltageValues = (
         thermalData?.data.voltage.units,
         displayVoltage,
         [],
-        isLower(
-          thermalData?.data.voltage.units,
-          thermalData?.settings.voltage.minimal,
-        )
+        isLower(thermalData?.data.voltage.units, thermalData?.settings.voltage.minimal)
           ? TableRowState.ColorError
           : TableRowState.Ok,
       ),
@@ -242,10 +204,7 @@ export const getTableVoltageValues = (
         thermalData?.data.voltage.gsm,
         displayVoltage,
         [],
-        isLower(
-          thermalData?.data.voltage.gsm,
-          thermalData?.settings.voltage.minimal,
-        )
+        isLower(thermalData?.data.voltage.gsm, thermalData?.settings.voltage.minimal)
           ? TableRowState.ColorError
           : TableRowState.Ok,
       ),

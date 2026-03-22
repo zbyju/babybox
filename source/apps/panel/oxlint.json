@@ -1,0 +1,36 @@
+{
+  "settings": {
+    "jsdoc": {
+      "augments_tag_parse": "type-only"
+    }
+  },
+  "rules": {
+    "no-constant-condition": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-unsafe-negation": "error",
+    "no-new-wrappers": "error",
+    "no-nonoctal-decimal-escape": "error",
+    "no-invalid-regexp": "error",
+    "no-invalid-constructor-super": "error",
+    "no-irregular-whitespace": "error",
+    "no-unreachable": "error",
+    "no-unreachable-loop": "error",
+    "no-self-assign": "error",
+    "no-sparse-array": "error",
+    "for-direction": "error",
+    "getter-return": "error",
+    "no-import-cycle": "warn",
+    "no-implicit-any-let": "off",
+    "no-explicit-any": "off",
+    "no-throw-literal": "error",
+    "no-unused-vars": "error",
+    "no-empty-interface": "warn",
+    "prefer-const": "error",
+    "eqeqeq": "error",
+    "prefer-template": "warn",
+    "vue/multi-word-component-names": "off",
+    "vue/v-on-event-hyphenation": "off",
+    "no-accumulating-spread": "warn"
+  },
+  "ignorePatterns": ["dist", "node_modules"]
+}

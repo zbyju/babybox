@@ -34,10 +34,21 @@ The system monitors two physical units via IP:
 
 ## Configuration
 
-Main config: `source/apps/backend/configs/main.json`
-Default values: `source/apps/backend/configs/base.json`
+### Config Files
 
-Key configurable values:
+- **`base.json`** - Tracked in git, contains default values and template structure
+- **`main.json`** - Environment-specific, NOT tracked in git (local-only)
+- **`versions.json`** - Deployment metadata, NOT tracked in git (local-only)
+
+On first setup:
+```bash
+cd source/apps/backend/configs
+cp base.json main.json  # Create local config from template
+# Edit main.json with your environment-specific values (passwords, IPs, etc.)
+```
+
+### Key Configurable Values
+
 - `app.password` - UI access password
 - `units.engine.ip` / `units.thermal.ip` - Hardware IPs
 - `camera.ip`, `camera.cameraType` - Camera settings

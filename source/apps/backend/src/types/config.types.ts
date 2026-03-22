@@ -1,65 +1,26 @@
-export interface MainConfig {
-  babybox: MainConfigBabybox;
-  backend: MainConfigBackend;
-  configer: MainConfigConfiger;
-  startup: MainConfigStartup;
-  units: MainConfigUnits;
-  camera: MainConfigCamera;
-  pc: MainConfigPc;
-  app: MainConfigApp;
-}
+// Re-export types from schema
+export type {
+  MainConfig,
+  BabyboxConfig,
+  BackendConfig,
+  ConfigerConfig,
+  VoltageConfig,
+  UnitConfig,
+  UnitsConfig,
+  CameraType,
+  CameraConfig,
+  PcConfig,
+  AppConfig,
+} from "../schemas/config.schema";
 
-export interface MainConfigBabybox {
-  name: string;
-}
-
-export interface MainConfigBackend {
-  url: string;
-  port: number;
-  requestTimeout: number;
-}
-
-export interface MainConfigConfiger {
-  url: string;
-  port: number;
-  requestTimeout: number;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface MainConfigStartup {}
-
-export interface MainConfigUnits {
-  engine: MainConfigUnit;
-  thermal: MainConfigUnit;
-  requestDelay: number;
-  warningThreshold: number;
-  errorThreshold: number;
-  voltage: MainConfigVoltage;
-}
-
-export interface MainConfigVoltage {
-  divider: number;
-  multiplier: number;
-  addition: number;
-}
-
-export interface MainConfigUnit {
-  ip: string;
-}
-
-export interface MainConfigCamera {
-  ip: string;
-  username: string;
-  password: string;
-  updateDelay: number;
-  cameraType: string;
-}
-
-export interface MainConfigPc {
-  os: "windows" | "ubuntu";
-}
-
-export interface MainConfigApp {
-  password: string;
-  refreshRequestLimit?: number;
-}
+// Legacy type aliases for backward compatibility
+export type MainConfigBabybox = import("../schemas/config.schema.js").BabyboxConfig;
+export type MainConfigBackend = import("../schemas/config.schema.js").BackendConfig;
+export type MainConfigConfiger = import("../schemas/config.schema.js").ConfigerConfig;
+export type MainConfigStartup = Record<string, unknown>;
+export type MainConfigUnits = import("../schemas/config.schema.js").UnitsConfig;
+export type MainConfigVoltage = import("../schemas/config.schema.js").VoltageConfig;
+export type MainConfigUnit = import("../schemas/config.schema.js").UnitConfig;
+export type MainConfigCamera = import("../schemas/config.schema.js").CameraConfig;
+export type MainConfigPc = import("../schemas/config.schema.js").PcConfig;
+export type MainConfigApp = import("../schemas/config.schema.js").AppConfig;

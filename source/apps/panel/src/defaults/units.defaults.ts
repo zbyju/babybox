@@ -13,9 +13,7 @@ import {
   stringToVoltage,
 } from "@/utils/panel/conversions";
 
-export const rawEngineUnitToEngineUnit = (
-  rawEngineUnit: RawEngineUnit,
-): EngineUnit => {
+export const rawEngineUnitToEngineUnit = (rawEngineUnit: RawEngineUnit): EngineUnit => {
   return {
     data: {
       temperature: {

@@ -1,85 +1,47 @@
-import { BothUnit, Unit } from "./units.types";
+import {
+  SettingSchema,
+  PostUnitSettingsRequestBodySchema,
+  GetUnitSettingsRequestSchema,
+} from "../schemas/request.schema";
 
-export interface CommonDataRequestQuery {
-  timeout?: number;
-  raw?: boolean;
-}
+// Re-export types from schema
+export type {
+  Unit,
+  BothUnit,
+  CommonDataRequestQuery,
+  EngineDataRequestQuery,
+  ThermalDataRequestQuery,
+  Setting,
+  SettingResult,
+  PostUnitSettingsRequestBody,
+  GetUnitSettingsRequest,
+  CommonResponse,
+  CommonDataResponse,
+  CommonSettingsResponse,
+} from "../schemas/request.schema";
 
-export type EngineDataRequestQuery = CommonDataRequestQuery;
-export type ThermalDataRequestQuery = CommonDataRequestQuery;
-
-export interface PostUnitSettingsRequestBody {
-  settings: Setting[];
-  options?: {
-    timeout?: number;
-  };
-}
-
+// Legacy type guards using Zod schemas
 export function isInstanceOfPostUnitSettingsRequestBody(
-  object: any
-): object is PostUnitSettingsRequestBody {
-  if (!object || typeof object !== "object") return false;
-  return "settings" in object && isInstanceOfArraySetting(object.settings);
-}
-
-export interface GetUnitSettingsRequest {
-  unit?: BothUnit;
-  timeout?: number;
+  object: unknown,
+): object is import("../schemas/request.schema.js").PostUnitSettingsRequestBody {
+  return PostUnitSettingsRequestBodySchema.safeParse(object).success;
 }
 
 export function isInstanceOfGetUnitSettingsRequest(
-  object: any
-): object is GetUnitSettingsRequest {
-  if (!object || typeof object !== "object") return false;
-  if (
-    object.unit &&
-    object.unit !== "engine" &&
-    object.unit !== "thermal" &&
-    object.unit !== "both"
-  ) {
-    return false;
-  }
-  return true;
+  object: unknown,
+): object is import("../schemas/request.schema.js").GetUnitSettingsRequest {
+  return GetUnitSettingsRequestSchema.safeParse(object).success;
 }
 
-export interface CommonResponse {
-  msg: string;
-  status: number;
+export function isInstanceOfSetting(
+  object: unknown,
+): object is import("../schemas/request.schema.js").Setting {
+  return SettingSchema.safeParse(object).success;
 }
 
-export interface CommonDataResponse extends CommonResponse {
-  data?: any;
-}
-
-export interface CommonSettingsResponse extends CommonResponse {
-  results: SettingResult[];
-}
-
-export interface Setting {
-  index: number;
-  value: number;
-  unit: Unit;
-}
-
-export interface SettingResult extends Setting {
-  result: boolean;
-}
-
-export function isInstanceOfSetting(object: any): object is Setting {
-  if (!object || typeof object !== "object") return false;
-  return (
-    "index" in object &&
-    "value" in object &&
-    "unit" in object &&
-    Number.isInteger(object.index) &&
-    Number.isFinite(object.value) &&
-    (object.unit === "engine" || object.unit === "thermal")
-  );
-}
-
-export function isInstanceOfArraySetting(object: any): object is Setting[] {
-  if (!object && object !== []) return false;
-  return (
-    Array.isArray(object) && object.every((o: any) => isInstanceOfSetting(o))
-  );
+export function isInstanceOfArraySetting(
+  object: unknown,
+): object is import("../schemas/request.schema.js").Setting[] {
+  if (!Array.isArray(object)) return false;
+  return object.every((o) => SettingSchema.safeParse(o).success);
 }

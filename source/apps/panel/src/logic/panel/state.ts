@@ -1,12 +1,12 @@
 import { storeToRefs } from "pinia";
 
 import { getDefaultPanelState } from "@/defaults/panelState.default";
-import { useConfigStore } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/config-store";
 import type { Maybe } from "@/types/generic.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
-import { daysToString } from "@/utils/panel/dataDisplay";
+import { daysToString } from "@/utils/panel/data-display";
 
 export const getNewState = (
   engineUnit: Maybe<EngineUnit>,
@@ -177,8 +177,7 @@ export const getNewState = (
            if( (BlokaceMot & 1)==0 && (BlokaceMot & 2)==0 ) */
 
   // Connection
-  const errStreak: number =
-    connection.engineUnit.failStreak + connection.thermalUnit.failStreak;
+  const errStreak: number = connection.engineUnit.failStreak + connection.thermalUnit.failStreak;
 
   if (errStreak > warningThreshold * 2) {
     result = {

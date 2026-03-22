@@ -1,0 +1,229 @@
+import _ from "lodash";
+import { storeToRefs } from "pinia";
+import type { Ref } from "vue";
+import { ref } from "vue";
+
+import { getEngineData, getStatus, getThermalData, updateWatchdog } from "@/api/units";
+import { useAppStateStore } from "@/pinia/app-state-store";
+import { useConfigStore } from "@/pinia/config-store";
+import { useConnectionStore } from "@/pinia/connection-store";
+import { usePanelStateStore } from "@/pinia/panel-state-store";
+import { useUnitsStore } from "@/pinia/units-store";
+import { useVersionsStore } from "@/pinia/versions";
+import type { Maybe } from "@/types/generic.types";
+import type { AppConfig, Config, UnitsConfig } from "@/types/panel/config.types";
+import type { Connection } from "@/types/panel/connection.types";
+import type { PanelState } from "@/types/panel/main.types";
+import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
+import type { Versions } from "@/types/panel/versions.types";
+import { isInstanceOfConfig } from "@/utils/panel/instance-check";
+
+import { getNewState } from "./state";
+
+export class AppManager {
+  private panelLoopInterval: Maybe<NodeJS.Timer> = undefined;
+  private unitsConfig: Ref<UnitsConfig>;
+  private appConfig: Ref<AppConfig>;
+  private panelState: Ref<PanelState>;
+  private engineUnit: Ref<Maybe<EngineUnit>>;
+  private thermalUnit: Ref<Maybe<ThermalUnit>>;
+  private connection: Ref<Connection>;
+
+  private unitsStore;
+  private versionsStore;
+  private connectionStore;
+  private configStore;
+  private panelStateStore;
+  private appStateStore;
+
+  constructor() {
+    // TODO: Refactor
+    const configStore = useConfigStore();
+    const versionsStore = useVersionsStore();
+    const panelStateStore = usePanelStateStore();
+    const unitsStore = useUnitsStore();
+    const connectionStore = useConnectionStore();
+    const appStateStore = useAppStateStore();
+    const { units, app } = storeToRefs(configStore);
+    const { message, active } = storeToRefs(panelStateStore);
+    const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
+    const { engineUnit: euc, thermalUnit: tuc } = storeToRefs(connectionStore);
+    this.unitsConfig = units;
+    this.appConfig = app;
+    this.panelState = ref({ message, active });
+    this.engineUnit = engineUnit;
+    this.thermalUnit = thermalUnit;
+    this.connection = ref({ engineUnit: euc, thermalUnit: tuc });
+
+    this.unitsStore = unitsStore;
+    this.versionsStore = versionsStore;
+    this.connectionStore = connectionStore;
+    this.configStore = configStore;
+    this.panelStateStore = panelStateStore;
+    this.appStateStore = appStateStore;
+  }
+
+  private async updateEngineUnit() {
+    try {
+      const data = await getEngineData();
+      this.unitsStore.setRawEngineUnit(data);
+      if (data !== undefined) {
+        this.connectionStore.incrementSuccessEngine();
+      } else {
+        this.connectionStore.incrementFailEngine();
+      }
+    } catch {
+      this.connectionStore.incrementFailEngine();
+    }
+  }
+  private async updateThermalUnit() {
+    try {
+      const data = await getThermalData();
+      this.unitsStore.setRawThermalUnit(data);
+      if (data !== undefined) {
+        this.connectionStore.incrementSuccessThermal();
+      } else {
+        this.connectionStore.incrementFailThermal();
+      }
+    } catch {
+      this.connectionStore.incrementFailThermal();
+    }
+  }
+  private updateClock() {
+    const time = this.engineUnit.value?.data.time;
+    this.unitsStore.setTime(time);
+  }
+  private updateState() {
+    const newState = getNewState(
+      this.engineUnit.value,
+      this.thermalUnit.value,
+      this.connection.value,
+    );
+    if (!_.isEqual(this.panelState.value, newState)) {
+      this.panelStateStore.setState(newState);
+    }
+    this.updateClock();
+  }
+  private async updateWatchdogEngine(_timeout = 5000) {
+    try {
+      await updateWatchdog();
+    } catch {
+      // Dont care about the error
+    }
+  }
+
+  private checkRefreshLimit() {
+    const DEFAULT_REFRESH_LIMIT = 50000;
+    const limit = this.appConfig.value.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
+
+    // Disable refresh if limit is invalid (0, negative, NaN, etc.)
+    if (limit <= 0 || !Number.isFinite(limit)) {
+      return;
+    }
+
+    const engineRequests = this.connectionStore.engineUnit.requests;
+    const thermalRequests = this.connectionStore.thermalUnit.requests;
+
+    if (engineRequests >= limit || thermalRequests >= limit) {
+      window.location.reload();
+    }
+  }
+
+  private getConfig(): Promise<Config> {
+    return new Promise((resolve) => {
+      fetch("http://localhost:3000/api/v1/config/main")
+        .then((response) => {
+          return response.json();
+        })
+        .then((config) => {
+          resolve(config);
+        });
+    });
+  }
+
+  private getVersions(): Promise<Versions> {
+    return new Promise((resolve) => {
+      fetch("http://localhost:3000/api/v1/config/version")
+        .then((response) => {
+          return response.json();
+        })
+        .then((config) => {
+          resolve(config);
+        });
+    });
+  }
+
+  private async initializeConfig() {
+    const config = await this.getConfig();
+    const versions = await this.getVersions();
+    if (isInstanceOfConfig(config)) {
+      this.configStore.setConfig(config);
+      this.versionsStore.setVersions(versions);
+      return "Ok";
+    } else {
+      throw new Error("Config file error");
+    }
+  }
+
+  private async initializeBackend() {
+    try {
+      const status = await getStatus();
+      if (status) {
+        return "OK";
+      } else {
+        throw new Error("Status not ok");
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        throw err;
+      } else {
+        throw new Error("Error when fetching backend status");
+      }
+    }
+  }
+
+  async initializeGlobal(): Promise<any> {
+    let intervalTime = 5000;
+    const interval = setInterval(async () => {
+      await this.initializeConfig()
+        .then(() => {
+          this.appStateStore.setConfigSuccess();
+        })
+        .catch(() => {
+          clearInterval(interval);
+          this.appStateStore.setConfigError();
+        });
+      this.initializeBackend()
+        .then((res) => {
+          clearInterval(interval);
+          this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
+        })
+        .catch(() => {
+          this.appStateStore.setBackendError();
+        });
+      intervalTime = 20000;
+    }, intervalTime);
+  }
+
+  async startPanelLoop() {
+    const delay = this.unitsConfig.value.requestDelay || 2000;
+    const panelState = this.panelState.value;
+    this.panelLoopInterval = setInterval(
+      () => {
+        this.updateEngineUnit();
+        this.updateThermalUnit();
+        this.updateState();
+        this.updateWatchdogEngine();
+        this.checkRefreshLimit();
+      },
+      panelState.message ? delay / 2 : delay,
+    );
+  }
+
+  stopPanelLoop() {
+    if (this.panelLoopInterval !== undefined) {
+      clearInterval(this.panelLoopInterval);
+    }
+    return;
+  }
+}

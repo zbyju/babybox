@@ -1,0 +1,29 @@
+{
+  "name": "babybox",
+  "version": "1.0.0",
+  "description": "Hospital monitoring system for babybox devices",
+  "packageManager": "bun@1.2.21",
+  "workspaces": [
+    "source/apps/*",
+    "source/packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:backend": "turbo dev --filter=babybox-panel-backend",
+    "dev:panel": "turbo dev --filter=babybox-panel",
+    "stop": "pm2 delete all",
+    "start:main": "pm2 start bun --name babybox -- source/apps/backend/src/index.ts",
+    "build": "turbo build",
+    "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "format": "turbo format",
+    "format:check": "turbo format:check",
+    "clean": "turbo clean && rm -rf node_modules bun.lock"
+  },
+  "devDependencies": {
+    "turbo": "2.8.20"
+  }
+}

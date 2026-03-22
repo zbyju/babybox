@@ -6,24 +6,24 @@
 </template>
 
 <script lang="ts" setup>
-  import { storeToRefs } from "pinia";
+import { storeToRefs } from "pinia";
 
-  import { useConfigStore } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/config-store";
 
-  const configStore = useConfigStore();
-  const { babybox } = storeToRefs(configStore);
+const configStore = useConfigStore();
+const { babybox } = storeToRefs(configStore);
 
-  const babyboxName = babybox.value.name;
+const babyboxName = babybox.value.name;
 </script>
 
 <style lang="stylus">
-  #BabyboxName
-    padding-right 10px
+#BabyboxName
+  padding-right 10px
 
-    span
-      font-size font-size-babyboxName vw
-      font-weight 700
+  span
+    font-size font-size-babyboxName vw
+    font-weight 700
 
-    span#BabyboxPrependText
-      color color-text-brand
+  span#BabyboxPrependText
+    color color-text-brand
 </style>

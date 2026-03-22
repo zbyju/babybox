@@ -17,20 +17,11 @@ export const stringToNumberWithDecimals = (str: string): Maybe<number> => {
   return Number(res / 100);
 };
 
-export const numberToVoltage = (
-  num: number,
-  voltageConfig: VoltageConfig,
-): number => {
-  return (
-    (num * voltageConfig.multiplier) / voltageConfig.divider +
-    voltageConfig.addition
-  );
+export const numberToVoltage = (num: number, voltageConfig: VoltageConfig): number => {
+  return (num * voltageConfig.multiplier) / voltageConfig.divider + voltageConfig.addition;
 };
 
-export const stringToVoltage = (
-  str: string,
-  voltageConfig: VoltageConfig,
-): Maybe<number> => {
+export const stringToVoltage = (str: string, voltageConfig: VoltageConfig): Maybe<number> => {
   const res = parseInt(str);
   if (isNaN(res)) return undefined;
   return numberToVoltage(res, voltageConfig);

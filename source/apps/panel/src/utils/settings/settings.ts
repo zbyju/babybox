@@ -1,7 +1,4 @@
-import type {
-  SettingsSendResult,
-  SettingsToSend,
-} from "@/types/settings/manager.types";
+import type { SettingsSendResult, SettingsToSend } from "@/types/settings/manager.types";
 import {
   type SettingsTableRow,
   type SettingsTableRowValue,
@@ -36,19 +33,14 @@ export const getChangedSettings = (
   rows: SettingsTableRow[],
 ): SettingsToSend[] => {
   return settings.reduce(
-    (
-      res: SettingsToSend[],
-      curr: SettingsTableRowValue,
-      index: number,
-    ): SettingsToSend[] => {
+    (res: SettingsToSend[], curr: SettingsTableRowValue, index: number): SettingsToSend[] => {
       const engineValue = whenNotNullish(curr.engine, Number(curr.engine));
       const thermalValue = whenNotNullish(curr.thermal, Number(curr.thermal));
 
       if (curr.value === null || !isNumber(curr.value)) return res;
       const row = rows[index];
 
-      if (!isSettingChanged(engineValue, thermalValue, curr.value, row.type))
-        return res;
+      if (!isSettingChanged(engineValue, thermalValue, curr.value, row.type)) return res;
 
       const value = settingsRowValueToValue(curr.value, row.type);
       if (value === undefined) return res;
@@ -82,10 +74,7 @@ export const updateValueBasedOnResult = (
       // Both were sent
       return {
         ...value,
-        state: settingsResultsToState(
-          resultEngine!.result,
-          resultThermal!.result,
-        ),
+        state: settingsResultsToState(resultEngine!.result, resultThermal!.result),
       };
     } else {
       // Only engine was sent
@@ -117,14 +106,10 @@ export const settingsSendToStates = (
     const row = rows[index];
     const data = response.data;
     const resultEngine = row.engine
-      ? data.results.find(
-          (d: any) => d.index === row.engine && d.unit === "engine",
-        )
+      ? data.results.find((d: any) => d.index === row.engine && d.unit === "engine")
       : null;
     const resultThermal = row.thermal
-      ? data.results.find(
-          (d: any) => d.index === row.thermal && d.unit === "thermal",
-        )
+      ? data.results.find((d: any) => d.index === row.thermal && d.unit === "thermal")
       : null;
 
     return updateValueBasedOnResult(resultEngine, resultThermal, value);

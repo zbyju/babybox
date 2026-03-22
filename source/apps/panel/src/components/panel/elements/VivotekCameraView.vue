@@ -34,54 +34,54 @@
 </template>
 
 <script lang="ts" setup>
-  import { storeToRefs } from "pinia";
-  import { onMounted, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { onMounted, ref } from "vue";
 
-  import { useConfigStore } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/config-store";
 
-  const props = defineProps<{
-    displayTopBorder: boolean;
-    maxH?: number;
-    maxW?: number;
-  }>();
+const props = defineProps<{
+  displayTopBorder: boolean;
+  maxH?: number;
+  maxW?: number;
+}>();
 
-  const emit = defineEmits<{
-    (e: "updatedImage", width: number, height: number): void;
-  }>();
+const emit = defineEmits<{
+  (e: "updatedImage", width: number, height: number): void;
+}>();
 
-  enum CameraState {
-    Ok = 0,
-    Loading = 1,
-    Error = 2,
+enum CameraState {
+  Ok = 0,
+  Loading = 1,
+  Error = 2,
+}
+
+const state = ref(CameraState.Loading);
+
+const configStore = useConfigStore();
+const { camera } = storeToRefs(configStore);
+
+const imageRef = ref<HTMLImageElement | null>(null);
+onMounted(() => {
+  try {
+    window.open(`http://${camera.value.ip}/`, "vivotek");
+    console.log("camera ok");
+    state.value = CameraState.Ok;
+  } catch (err) {
+    console.log("Camera error", err);
+    state.value = CameraState.Error;
   }
-
-  const state = ref(CameraState.Loading);
-
-  const configStore = useConfigStore();
-  const { camera } = storeToRefs(configStore);
-
-  const imageRef = ref<HTMLImageElement | null>(null);
-  onMounted(() => {
-    try {
-      window.open(`http://${camera.value.ip}/`, "vivotek");
-      console.log("camera ok");
-      state.value = CameraState.Ok;
-    } catch (err) {
-      console.log("Camera error", err);
-      state.value = CameraState.Error;
-    }
-  });
+});
 </script>
 
 <style lang="stylus">
-  #container {
-      overflow:hidden;
-      margin:auto;
-  }
-  #container iframe {
-      width:900px;
-      height:700px;
-      margin-left:-234px;
-      margin-top:-126px;
-  }
+#container {
+    overflow:hidden;
+    margin:auto;
+}
+#container iframe {
+    width:900px;
+    height:700px;
+    margin-left:-234px;
+    margin-top:-126px;
+}
 </style>

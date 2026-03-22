@@ -1,9 +1,6 @@
-import { useConfigStore } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/config-store";
 import type { Maybe } from "@/types/generic.types";
-import {
-  SettingsTableRowState,
-  SettingsTableRowValueType,
-} from "@/types/settings/table.types";
+import { SettingsTableRowState, SettingsTableRowValueType } from "@/types/settings/table.types";
 
 import { isNumber } from "../number";
 
@@ -20,12 +17,11 @@ export const settingsRowValueToValue = (
   type: SettingsTableRowValueType,
 ): Maybe<number> => {
   if (!isNumber(value) || value === "") return undefined;
-  if (type === SettingsTableRowValueType.Temperature)
-    return Number(value) * 100;
+  if (type === SettingsTableRowValueType.Temperature) return Number(value) * 100;
 
   if (type === SettingsTableRowValueType.Voltage) {
     const divider = useConfigStore()?.units?.voltage?.divider || 63;
-    const multiplier = useConfigStore()?.units?.voltage?.multiplier || 100;
+    const _multiplier = useConfigStore()?.units?.voltage?.multiplier || 100;
     return Math.round(Number(value) * divider);
   }
 

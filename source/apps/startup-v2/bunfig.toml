@@ -1,0 +1,15 @@
+[install]
+auto = "auto"
+
+[build]
+# Minify output for smaller binaries
+minify = true
+
+[test]
+coverage = true
+coverageDir = "./coverage"
+timeout = 30000
+
+[run]
+# Enable source maps for better error messages
+sourcemap = "external"

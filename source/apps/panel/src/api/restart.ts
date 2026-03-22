@@ -1,7 +1,7 @@
 import axios from "axios";
 import { storeToRefs } from "pinia";
 
-import { useConfigStore } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/config-store";
 
 export const refreshRestartCooldown = () => {
   const configStore = useConfigStore();

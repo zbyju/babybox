@@ -7,64 +7,59 @@
 </template>
 
 <script lang="ts" setup>
-  import { storeToRefs } from "pinia";
-  import { computed } from "vue";
+import { storeToRefs } from "pinia";
+import { computed } from "vue";
 
-  import useActiveTime from "@/composables/useActiveTime";
-  import useBigClockColon from "@/composables/useBigClockColon";
-  import { usePanelStateStore } from "@/pinia/panelStateStore";
-  import { useUnitsStore } from "@/pinia/unitsStore";
-  import {
-    getHoursWithLeadingZeroes,
-    getMinutesWithLeadingZeroes,
-  } from "@/utils/time";
+import useActiveTime from "@/composables/use-active-time";
+import useBigClockColon from "@/composables/use-big-clock-colon";
+import { usePanelStateStore } from "@/pinia/panel-state-store";
+import { useUnitsStore } from "@/pinia/units-store";
+import { getHoursWithLeadingZeroes, getMinutesWithLeadingZeroes } from "@/utils/time";
 
-  const unitsStore = useUnitsStore();
-  const panelStateStore = usePanelStateStore();
-  const { time: storeTime } = storeToRefs(unitsStore);
-  const { message, active } = storeToRefs(panelStateStore);
-  const time = useActiveTime(storeTime, active);
-  const { showColon } = useBigClockColon(time, active);
-  const hours = computed((): string => getHoursWithLeadingZeroes(time.value));
-  const minutes = computed((): string =>
-    getMinutesWithLeadingZeroes(time.value),
-  );
+const unitsStore = useUnitsStore();
+const panelStateStore = usePanelStateStore();
+const { time: storeTime } = storeToRefs(unitsStore);
+const { message, active } = storeToRefs(panelStateStore);
+const time = useActiveTime(storeTime, active);
+const { showColon } = useBigClockColon(time, active);
+const hours = computed((): string => getHoursWithLeadingZeroes(time.value));
+const minutes = computed((): string => getMinutesWithLeadingZeroes(time.value));
 
-  const bigger = computed((): boolean => {
-    return !message.value?.text;
-  });
+const bigger = computed((): boolean => {
+  return !message.value?.text;
+});
 </script>
 
 <style lang="stylus">
 
-  #BigClock
-    font-size font-size-bigClockSmaller vw
-    font-weight 900
+#BigClock
+  font-size font-size-bigClockSmaller vw
+  font-weight 900
 
-    display flex
-    flex-direction row
-    flex-wrap nowrap
-    justify-content center
+  display flex
+  flex-direction row
+  flex-wrap nowrap
+  justify-content center
 
-    width fit-content
-    height 100%
+  width fit-content
+  height 100%
 
-    white-space nowrap
+  white-space nowrap
 
-    animation-duration 1s
-    animation-fill-mode both
+  animation-duration 1s
+  animation-fill-mode both
 
-    span
-      margin-top -2.5vw
-      line-height 0.95em
-      transition all 1s ease-in-out
+  span
+    margin-top -2.5vw
+    line-height 0.95em
+    transition all 1s ease-in-out
 
-  #BigClock.bigger
-    animation-duration 1s
-    animation-fill-mode both
-    animation-delay 1s
-    font-size font-size-bigClockBigger vw
+#BigClock.bigger
+  animation-duration 1s
+  animation-fill-mode both
+  animation-delay 1s
+  font-size font-size-bigClockBigger vw
 
-  .transparent
-    color transparent
+.transparent
+  color transparent
 </style>

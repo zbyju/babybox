@@ -62,9 +62,7 @@ export const getDefaultUnitsConfig = (): UnitsConfig => {
   };
 };
 
-export const getDefaultUnitConfig = (
-  unit: "engine" | "thermal",
-): UnitConfig => {
+export const getDefaultUnitConfig = (unit: "engine" | "thermal"): UnitConfig => {
   return {
     ip: unit === "engine" ? "10.1.1.5" : "10.1.1.6",
   };
