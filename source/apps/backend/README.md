@@ -38,6 +38,7 @@ cp base.json main.json
 ```
 
 Key fields to configure:
+
 - `units.engine.ip` / `units.thermal.ip` — hardware unit IP addresses
 - `camera.ip`, `camera.cameraType` — camera settings
 - `app.password` — UI access password
@@ -47,17 +48,17 @@ Key fields to configure:
 
 Base URL: `/api/v1`
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/engine/data` | Engine unit sensor readings |
-| PUT | `/engine/watchdog` | Refresh engine watchdog timer |
-| GET | `/thermal/data` | Thermal unit sensor readings |
-| GET | `/units/settings` | Get unit settings |
-| PUT | `/units/settings` | Update unit settings |
-| GET | `/units/actions/:action` | Trigger actions (`open`, `openServiceDoors`) |
-| GET | `/config` | Read application config |
-| PUT | `/config` | Update application config |
-| GET | `/health` | Health check endpoint |
+| Method | Path                     | Description                                  |
+| ------ | ------------------------ | -------------------------------------------- |
+| GET    | `/engine/data`           | Engine unit sensor readings                  |
+| PUT    | `/engine/watchdog`       | Refresh engine watchdog timer                |
+| GET    | `/thermal/data`          | Thermal unit sensor readings                 |
+| GET    | `/units/settings`        | Get unit settings                            |
+| PUT    | `/units/settings`        | Update unit settings                         |
+| GET    | `/units/actions/:action` | Trigger actions (`open`, `openServiceDoors`) |
+| GET    | `/config`                | Read application config                      |
+| PUT    | `/config`                | Update application config                    |
+| GET    | `/health`                | Health check endpoint                        |
 
 Postman collections for API testing are in `src/routes/__postman__/`.
 
@@ -104,11 +105,11 @@ src/
 
 Located in `configs/`:
 
-| File | Tracked | Description |
-|------|---------|-------------|
-| `base.json` | Yes | Default template with all possible keys |
-| `main.json` | No | Environment-specific config (create from base.json) |
-| `versions.json` | No | Deployment metadata (managed by startup-v2) |
+| File            | Tracked | Description                                         |
+| --------------- | ------- | --------------------------------------------------- |
+| `base.json`     | Yes     | Default template with all possible keys             |
+| `main.json`     | No      | Environment-specific config (create from base.json) |
+| `versions.json` | No      | Deployment metadata (managed by startup-v2)         |
 
 The config service merges `base.json` with `main.json` at startup — `main.json` overrides take precedence.
 

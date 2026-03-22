@@ -32,12 +32,14 @@ panel/
 ### Vývoj
 
 #### Windows
+
 ```powershell
 cd C:\cesta\k\babybox
 bun dev:panel
 ```
 
 #### Ubuntu
+
 ```bash
 cd /cesta/k/babybox
 bun dev:panel
@@ -50,6 +52,7 @@ Panel bude dostupný na `http://localhost:3002`.
 V produkci se panel nestaví samostatně — jeho sestavené soubory servíruje backend. Stačí spustit:
 
 #### Windows
+
 ```powershell
 cd C:\cesta\k\babybox
 bun run build
@@ -57,6 +60,7 @@ bun start:main
 ```
 
 #### Ubuntu
+
 ```bash
 cd /cesta/k/babybox
 bun run build
@@ -69,15 +73,15 @@ Konfigurace panelu se řídí z backendu — hlavní konfigurační soubor je `s
 
 ### Důležitá nastavení ovlivňující panel
 
-| Klíč v `main.json` | Popis |
-|---------------------|-------|
-| `babybox.name` | Název babyboxu zobrazený na panelu |
-| `units.engine.ip` | IP řídicí jednotky |
-| `units.thermal.ip` | IP tepelné jednotky |
-| `units.requestDelay` | Jak často se obnovují data (ms) |
-| `camera.ip` | IP kamery |
-| `camera.cameraType` | Typ kamery (`dahua`, `hikvision`, `avtech`, `vivotek`) |
-| `app.password` | Heslo pro otevření nastavení |
+| Klíč v `main.json`   | Popis                                                  |
+| -------------------- | ------------------------------------------------------ |
+| `babybox.name`       | Název babyboxu zobrazený na panelu                     |
+| `units.engine.ip`    | IP řídicí jednotky                                     |
+| `units.thermal.ip`   | IP tepelné jednotky                                    |
+| `units.requestDelay` | Jak často se obnovují data (ms)                        |
+| `camera.ip`          | IP kamery                                              |
+| `camera.cameraType`  | Typ kamery (`dahua`, `hikvision`, `avtech`, `vivotek`) |
+| `app.password`       | Heslo pro otevření nastavení                           |
 
 ### Výpočet napětí
 
@@ -88,6 +92,7 @@ Napětí = ((Hodnota * multiplier) / divider) + addition
 ```
 
 Tyto hodnoty se nastavují v `main.json` pod `units.voltage`:
+
 - `divider` — jmenovatel (pro staré SDS: 3400, pro nové SDS: 6300)
 - `multiplier` — činitel (typicky 100)
 - `addition` — korekce (typicky 0)
