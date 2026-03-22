@@ -2,12 +2,7 @@
  * Logger port - interface for logging implementations.
  */
 
-import type {
-  LogEntry,
-  LogLevel,
-  LogModule,
-  LogContext,
-} from "../../domain/types/logging";
+import type { LogEntry, LogLevel, LogModule, LogContext } from "../../domain/types/logging";
 import type { Suggestion } from "../../domain/types/suggestion";
 
 /**

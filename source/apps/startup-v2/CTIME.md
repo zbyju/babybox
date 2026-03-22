@@ -18,6 +18,7 @@ Pokud některý krok selže, program zobrazí doporučení k vyřešení problé
 ### Windows
 
 Spusťte zkompilovaný soubor v PowerShell:
+
 ```powershell
 cd C:\cesta\k\babybox
 .\source\apps\startup-v2\dist\startup-windows.exe --windows
@@ -41,15 +42,16 @@ cd /cesta/k/babybox
 
 Program je možné ovlivnit nastavením proměnných prostředí:
 
-| Proměnná | Popis | Příklad |
-|----------|-------|---------|
-| `BABYBOX_REPO_PATH` | Cesta k repozitáři babyboxu | `C:\babybox` nebo `/home/user/babybox` |
-| `BABYBOX_LOG_LEVEL` | Úroveň logování | `debug`, `info`, `warn`, `error` |
-| `BABYBOX_MAX_RETRIES` | Maximální počet pokusů při selhání | `3` |
+| Proměnná              | Popis                              | Příklad                                |
+| --------------------- | ---------------------------------- | -------------------------------------- |
+| `BABYBOX_REPO_PATH`   | Cesta k repozitáři babyboxu        | `C:\babybox` nebo `/home/user/babybox` |
+| `BABYBOX_LOG_LEVEL`   | Úroveň logování                    | `debug`, `info`, `warn`, `error`       |
+| `BABYBOX_MAX_RETRIES` | Maximální počet pokusů při selhání | `3`                                    |
 
 ### Nastavení proměnných prostředí
 
 #### Windows (PowerShell)
+
 ```powershell
 $env:BABYBOX_REPO_PATH = "C:\babybox"
 $env:BABYBOX_LOG_LEVEL = "debug"
@@ -57,6 +59,7 @@ $env:BABYBOX_LOG_LEVEL = "debug"
 ```
 
 #### Ubuntu
+
 ```bash
 export BABYBOX_REPO_PATH="/home/user/babybox"
 export BABYBOX_LOG_LEVEL="debug"
@@ -68,20 +71,25 @@ export BABYBOX_LOG_LEVEL="debug"
 Pokud potřebujete zkompilovat novou verzi startup programu:
 
 ### Windows
+
 ```powershell
 cd C:\cesta\k\babybox\source\apps\startup-v2
 bun run build:windows
 ```
+
 Výstup: `dist/startup-windows.exe`
 
 ### Ubuntu
+
 ```bash
 cd /cesta/k/babybox/source/apps/startup-v2
 bun run build:ubuntu
 ```
+
 Výstup: `dist/startup-ubuntu`
 
 ### Všechny platformy najednou
+
 ```bash
 bun run build:all
 ```

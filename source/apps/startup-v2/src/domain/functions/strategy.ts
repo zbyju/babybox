@@ -3,12 +3,7 @@
  * Pure functions that decide what actions to take based on state.
  */
 
-import type {
-  GitPullResult,
-  GitStatusResult,
-  BuildResult,
-  OverrideResult,
-} from "../types/results";
+import type { GitPullResult, GitStatusResult, BuildResult, OverrideResult } from "../types/results";
 import type { StartupConfig } from "../types/config";
 
 /**

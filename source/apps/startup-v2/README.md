@@ -47,11 +47,11 @@ bun run dev:mac
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `BABYBOX_REPO_PATH` | Path to the babybox repository |
-| `BABYBOX_LOG_LEVEL` | Log verbosity (`debug`, `info`, `warn`, `error`) |
-| `BABYBOX_MAX_RETRIES` | Max retry attempts for failed operations |
+| Variable              | Description                                      |
+| --------------------- | ------------------------------------------------ |
+| `BABYBOX_REPO_PATH`   | Path to the babybox repository                   |
+| `BABYBOX_LOG_LEVEL`   | Log verbosity (`debug`, `info`, `warn`, `error`) |
+| `BABYBOX_MAX_RETRIES` | Max retry attempts for failed operations         |
 
 ## Development
 
