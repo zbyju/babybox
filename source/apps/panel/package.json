@@ -10,10 +10,10 @@
     "test:unit": "vitest --environment jsdom",
     "test:watch": "vitest",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
-    "lint": "bunx oxlint",
-    "lint:fix": "bunx oxlint --fix",
-    "format": "bunx oxfmt --write .",
-    "format:check": "bunx oxfmt --check .",
+    "lint": "bunx oxlint --ignore-path .gitignore",
+    "lint:fix": "bunx oxlint --ignore-path .gitignore --fix",
+    "format": "bunx oxfmt --write . --ignore-path .oxfmtignore",
+    "format:check": "bunx oxfmt --check . --ignore-path .oxfmtignore",
     "echo": "echo 'Hello from panel'"
   },
   "dependencies": {
