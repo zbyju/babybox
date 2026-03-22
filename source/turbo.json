@@ -1,25 +1,31 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*.local"],
+  "globalEnv": ["CI"],
   "tasks": {
+    "format:check": {
+      "outputs": [],
+      "cache": false
+    },
+    "lint": {
+      "outputs": [],
+      "cache": false
+    },
+    "typecheck": {
+      "outputs": [],
+      "cache": false
+    },
+    "test": {
+      "outputs": ["coverage/**"],
+      "cache": false
+    },
     "build": {
-      "dependsOn": ["^build"],
       "outputs": ["dist/**"],
-      "inputs": ["src/**", "package.json", "tsconfig.json"]
+      "cache": true
     },
     "dev": {
       "cache": false,
       "persistent": true
-    },
-    "test": {
-      "outputs": ["coverage/**"],
-      "inputs": ["src/**", "**/*.test.ts"]
-    },
-    "typecheck": {
-      "dependsOn": ["^typecheck"],
-      "outputs": []
-    },
-    "lint": {
-      "outputs": []
     }
   }
 }
