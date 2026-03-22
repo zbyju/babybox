@@ -17,3 +17,11 @@ coverage/
 .env
 .env.local
 .env.*.local
+
+
+# AI
+.ralph/
+
+
+# turbo
+.turbo/
