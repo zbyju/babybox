@@ -4,3 +4,16 @@ node_modules/
 logs/
 *debug.log
 .DS_Store
+
+# Environment-specific config
+source/apps/backend/configs/main.json
+source/apps/backend/configs/versions.json
+
+# Build artifacts
+*.tsbuildinfo
+coverage/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
