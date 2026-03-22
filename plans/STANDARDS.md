@@ -23,7 +23,7 @@ After successful modernization to Bun/Turborepo/ESM, several quality issues rema
 | --- | -------------------------------------------------------------------------- | ----------- | ------------ | ----------------------------------------- |
 | 0   | [Untrack main.json](./standards/00-untrack-main-json.md)                   | **Done**    | None         | Remove env config from git                |
 | 1   | [TypeScript Config & Strict Settings](./standards/01-typescript-config.md) | **Done**    | None         | bundler resolution, strict TS, remove .js |
-| 2   | [File Renaming](./standards/02-file-renaming.md)                           | **Pending** | #1           | camelCase → kebab-case                    |
+| 2   | [File Renaming](./standards/02-file-renaming.md)                           | **In Progress** | #1           | camelCase → kebab-case (backend done)    |
 | 3   | [Tooling Standardization](./standards/03-tooling-standardization.md)       | **Done**    | None         | oxlint + oxfmt everywhere                 |
 | 4   | [CI Setup](./standards/04-ci-setup.md)                                     | **Pending** | #3           | GitHub Actions pipeline                   |
 | 5   | [Dependency Updates](./standards/05-dependency-updates.md)                 | **Pending** | #1, #3, #6   | Align versions, remove unused             |
