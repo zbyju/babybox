@@ -1,0 +1,26 @@
+{
+  "name": "babybox",
+  "version": "1.0.0",
+  "description": "Hospital monitoring system for babybox devices",
+  "packageManager": "bun@1.2.21",
+  "workspaces": [
+    "source/apps/*",
+    "source/packages/*"
+  ],
+  "scripts": {
+    "dev": "cd source && bun run dev",
+    "dev:backend": "cd source && bun run dev:backend",
+    "dev:panel": "cd source && bun run dev:panel",
+    "stop": "cd source && bun run stop",
+    "start:main": "cd source && bun run start:main",
+    "build": "cd source && bun run build",
+    "test": "cd source && bun run test",
+    "test:coverage": "cd source && bun run test:coverage",
+    "typecheck": "cd source && bun run typecheck",
+    "lint": "cd source && bun run lint",
+    "lint:fix": "cd source && bun run lint:fix",
+    "format": "cd source && bun run format",
+    "format:check": "cd source && bun run format:check",
+    "clean": "cd source && bun run clean"
+  }
+}
