@@ -55,10 +55,7 @@ async function ensureLogDir(dir: string): Promise<Result<void, string>> {
   }
 }
 
-async function writeToFile(
-  filePath: string,
-  content: string
-): Promise<Result<void, string>> {
+async function writeToFile(filePath: string, content: string): Promise<Result<void, string>> {
   try {
     await appendFile(filePath, content, "utf-8");
     return ok(undefined);
@@ -68,9 +65,7 @@ async function writeToFile(
   }
 }
 
-export function createFileLogger(
-  config: Partial<FileLoggerConfig> = {}
-): LoggerPort {
+export function createFileLogger(config: Partial<FileLoggerConfig> = {}): LoggerPort {
   const cfg: FileLoggerConfig = { ...DEFAULT_CONFIG, ...config };
   let currentLevel = cfg.level;
   let pendingWrites: Promise<void>[] = [];

@@ -21,9 +21,7 @@ import { executeProcessStart } from "./process";
  * 3. Override - deploy new build to dist (if built)
  * 4. Process - start services via PM2
  */
-export async function startup(
-  ctx: AppContext
-): Promise<Result<StartupResult, string>> {
+export async function startup(ctx: AppContext): Promise<Result<StartupResult, string>> {
   const { logger, fs, config } = ctx;
 
   logger.info("startup", Messages.startup.starting);
@@ -55,7 +53,7 @@ export async function startup(
   const buildResult = await executeBuild(
     ctx,
     shouldBuild,
-    buildDecision.kind === "skip" ? buildDecision.reason : undefined
+    buildDecision.kind === "skip" ? buildDecision.reason : undefined,
   );
 
   if (buildResult.isErr()) {
@@ -128,11 +126,7 @@ export async function startup(
   }
 
   if (processPhase.kind === "partial") {
-    logger.warn(
-      "startup",
-      `Nektere sluzby selhaly: ${processPhase.failed.join(", ")}`,
-      []
-    );
+    logger.warn("startup", `Nektere sluzby selhaly: ${processPhase.failed.join(", ")}`, []);
     return ok({
       kind: "partial_success",
       servicesStarted: processPhase.started.length > 0,

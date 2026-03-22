@@ -13,7 +13,7 @@ import { ShellResult as SR, durationMs } from "../../domain/types/index";
  */
 export async function executeCommand(
   command: ShellCommand,
-  options: ShellOptions = {}
+  options: ShellOptions = {},
 ): Promise<Result<ShellResult, never>> {
   const startTime = Date.now();
   const timeoutMs = options.timeoutMs ?? (30000 as DurationMs);
@@ -42,7 +42,7 @@ export async function executeCommand(
       stdout: "pipe",
       stderr: "pipe",
     };
-    
+
     if (options.cwd !== undefined) {
       spawnOptions.cwd = options.cwd as string;
     }
@@ -157,10 +157,11 @@ function parseCommand(command: ShellCommand): string[] {
 export async function executeInDirectory(
   command: ShellCommand,
   directory: string,
-  timeoutMs?: DurationMs
+  timeoutMs?: DurationMs,
 ): Promise<Result<ShellResult, never>> {
-  const opts: ShellOptions = timeoutMs !== undefined
-    ? { cwd: directory as ShellOptions["cwd"], timeoutMs }
-    : { cwd: directory as ShellOptions["cwd"] };
+  const opts: ShellOptions =
+    timeoutMs !== undefined
+      ? { cwd: directory as ShellOptions["cwd"], timeoutMs }
+      : { cwd: directory as ShellOptions["cwd"] };
   return executeCommand(command, opts);
 }

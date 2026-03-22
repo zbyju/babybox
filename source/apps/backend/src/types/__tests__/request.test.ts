@@ -11,13 +11,13 @@ describe("request.types.ts", () => {
       expect(
         isInstanceOfPostUnitSettingsRequestBody({
           settings: [],
-        })
+        }),
       ).toBe(true);
 
       expect(
         isInstanceOfPostUnitSettingsRequestBody({
           settings: [{ index: 0, value: 10, unit: "engine" }],
-        })
+        }),
       ).toBe(true);
 
       expect(
@@ -26,7 +26,7 @@ describe("request.types.ts", () => {
             { index: 0, value: 10, unit: "engine" },
             { index: 0, value: 10, unit: "thermal" },
           ],
-        })
+        }),
       ).toBe(true);
 
       expect(
@@ -35,7 +35,7 @@ describe("request.types.ts", () => {
             { index: 0, value: 112340, unit: "engine" },
             { index: 0, value: 112351230, unit: "thermal" },
           ],
-        })
+        }),
       ).toBe(true);
     });
 
@@ -44,7 +44,7 @@ describe("request.types.ts", () => {
         isInstanceOfPostUnitSettingsRequestBody({
           settings: [],
           options: {},
-        })
+        }),
       ).toBe(true);
 
       expect(
@@ -53,7 +53,7 @@ describe("request.types.ts", () => {
           options: {
             timeout: 10,
           },
-        })
+        }),
       ).toBe(true);
 
       expect(
@@ -65,7 +65,7 @@ describe("request.types.ts", () => {
           options: {
             timeout: 20,
           },
-        })
+        }),
       ).toBe(true);
     });
 
@@ -76,7 +76,7 @@ describe("request.types.ts", () => {
           weirdfield: {},
           wrong: "wrong",
           notspecified: 123,
-        })
+        }),
       ).toBe(true);
     });
 
@@ -86,19 +86,19 @@ describe("request.types.ts", () => {
           weirdfield: {},
           wrong: "wrong",
           notspecified: 123,
-        })
+        }),
       ).toBe(false);
 
       expect(
         isInstanceOfPostUnitSettingsRequestBody({
           options: {},
-        })
+        }),
       ).toBe(false);
 
       expect(
         isInstanceOfPostUnitSettingsRequestBody({
           options: { timeout: 123 },
-        })
+        }),
       ).toBe(false);
     });
 
@@ -109,9 +109,7 @@ describe("request.types.ts", () => {
       expect(isInstanceOfPostUnitSettingsRequestBody(false)).toBe(false);
 
       expect(
-        isInstanceOfPostUnitSettingsRequestBody([
-          { index: 0, value: 10, unit: "engine" },
-        ])
+        isInstanceOfPostUnitSettingsRequestBody([{ index: 0, value: 10, unit: "engine" }]),
       ).toBe(false);
 
       expect(isInstanceOfPostUnitSettingsRequestBody([1, 2, 3])).toBe(false);
@@ -129,24 +127,18 @@ describe("request.types.ts", () => {
   describe("isInstanceOfGetUnitSettingsRequest", () => {
     it("should return true for objects without unit and timeout", () => {
       expect(isInstanceOfGetUnitSettingsRequest({})).toBe(true);
-      expect(
-        isInstanceOfGetUnitSettingsRequest({ randomg: 123, wrong: "wrong" })
-      ).toBe(true);
+      expect(isInstanceOfGetUnitSettingsRequest({ randomg: 123, wrong: "wrong" })).toBe(true);
     });
 
     it("should return true for objects that have unit with correct value", () => {
       expect(isInstanceOfGetUnitSettingsRequest({ unit: "both" })).toBe(true);
       expect(isInstanceOfGetUnitSettingsRequest({ unit: "engine" })).toBe(true);
-      expect(isInstanceOfGetUnitSettingsRequest({ unit: "thermal" })).toBe(
-        true
-      );
+      expect(isInstanceOfGetUnitSettingsRequest({ unit: "thermal" })).toBe(true);
     });
 
     it("should return false for objects with wrong unit", () => {
       expect(isInstanceOfGetUnitSettingsRequest({ unit: "motor" })).toBe(false);
-      expect(isInstanceOfGetUnitSettingsRequest({ unit: "topeni" })).toBe(
-        false
-      );
+      expect(isInstanceOfGetUnitSettingsRequest({ unit: "topeni" })).toBe(false);
       expect(isInstanceOfGetUnitSettingsRequest({ unit: "unit" })).toBe(false);
     });
 
@@ -167,12 +159,8 @@ describe("request.types.ts", () => {
 
   describe("isInstanceOfSetting", () => {
     it("should return true for objects with all fields", () => {
-      expect(
-        isInstanceOfSetting({ index: 5, value: 1203, unit: "engine" })
-      ).toBe(true);
-      expect(
-        isInstanceOfSetting({ index: 10, value: -1234, unit: "thermal" })
-      ).toBe(true);
+      expect(isInstanceOfSetting({ index: 5, value: 1203, unit: "engine" })).toBe(true);
+      expect(isInstanceOfSetting({ index: 10, value: -1234, unit: "thermal" })).toBe(true);
     });
 
     it("should return true for objects with additional fields", () => {
@@ -182,7 +170,7 @@ describe("request.types.ts", () => {
           value: 1203,
           unit: "engine",
           nonExistent: 123,
-        })
+        }),
       ).toBe(true);
       expect(
         isInstanceOfSetting({
@@ -190,7 +178,7 @@ describe("request.types.ts", () => {
           value: -1234,
           unit: "thermal",
           wrong: "wrong",
-        })
+        }),
       ).toBe(true);
     });
 
@@ -200,28 +188,28 @@ describe("request.types.ts", () => {
           index: 10,
           value: 1234,
           unit: "motory",
-        })
+        }),
       ).toBe(false);
       expect(
         isInstanceOfSetting({
           index: 10,
           value: 1234,
           unit: "motory",
-        })
+        }),
       ).toBe(false);
       expect(
         isInstanceOfSetting({
           index: 10,
           value: 1234,
           unit: "topeni",
-        })
+        }),
       ).toBe(false);
       expect(
         isInstanceOfSetting({
           index: 10,
           value: 1234,
           unit: "both",
-        })
+        }),
       ).toBe(false);
     });
 
@@ -231,7 +219,7 @@ describe("request.types.ts", () => {
           index: 10.5,
           value: 1234,
           unit: "engine",
-        })
+        }),
       ).toBe(false);
 
       expect(
@@ -239,7 +227,7 @@ describe("request.types.ts", () => {
           index: 10,
           value: "1234",
           unit: "engine",
-        })
+        }),
       ).toBe(false);
 
       expect(
@@ -247,7 +235,7 @@ describe("request.types.ts", () => {
           index: "10",
           value: 1234,
           unit: "engine",
-        })
+        }),
       ).toBe(false);
     });
 
@@ -269,12 +257,8 @@ describe("request.types.ts", () => {
 
   describe("isInstanceOfArraySetting", () => {
     it("should return true for arrays with 1 object", () => {
-      expect(
-        isInstanceOfArraySetting([{ index: 5, value: 1203, unit: "engine" }])
-      ).toBe(true);
-      expect(
-        isInstanceOfArraySetting([{ index: 10, value: -1234, unit: "thermal" }])
-      ).toBe(true);
+      expect(isInstanceOfArraySetting([{ index: 5, value: 1203, unit: "engine" }])).toBe(true);
+      expect(isInstanceOfArraySetting([{ index: 10, value: -1234, unit: "thermal" }])).toBe(true);
     });
 
     it("should return true for arrays with multiple objects", () => {
@@ -284,7 +268,7 @@ describe("request.types.ts", () => {
           { index: 10, value: -1234, unit: "thermal" },
           { index: 15, value: 304, unit: "thermal" },
           { index: 20, value: 0, unit: "engine" },
-        ])
+        ]),
       ).toBe(true);
     });
 
@@ -297,7 +281,7 @@ describe("request.types.ts", () => {
             unit: "engine",
             nonExistent: 123,
           },
-        ])
+        ]),
       ).toBe(true);
       expect(
         isInstanceOfArraySetting([
@@ -307,7 +291,7 @@ describe("request.types.ts", () => {
             unit: "thermal",
             wrong: "wrong",
           },
-        ])
+        ]),
       ).toBe(true);
     });
 
@@ -319,7 +303,7 @@ describe("request.types.ts", () => {
             value: 1234,
             unit: "motory",
           },
-        ])
+        ]),
       ).toBe(false);
       expect(
         isInstanceOfArraySetting([
@@ -328,7 +312,7 @@ describe("request.types.ts", () => {
             value: 1234,
             unit: "motory",
           },
-        ])
+        ]),
       ).toBe(false);
       expect(
         isInstanceOfArraySetting([
@@ -337,7 +321,7 @@ describe("request.types.ts", () => {
             value: 1234,
             unit: "topeni",
           },
-        ])
+        ]),
       ).toBe(false);
       expect(
         isInstanceOfArraySetting([
@@ -346,7 +330,7 @@ describe("request.types.ts", () => {
             value: 1234,
             unit: "both",
           },
-        ])
+        ]),
       ).toBe(false);
     });
 
@@ -358,7 +342,7 @@ describe("request.types.ts", () => {
             value: 1234,
             unit: "engine",
           },
-        ])
+        ]),
       ).toBe(false);
 
       expect(
@@ -368,7 +352,7 @@ describe("request.types.ts", () => {
             value: "1234",
             unit: "engine",
           },
-        ])
+        ]),
       ).toBe(false);
 
       expect(
@@ -378,7 +362,7 @@ describe("request.types.ts", () => {
             value: 1234,
             unit: "engine",
           },
-        ])
+        ]),
       ).toBe(false);
     });
 

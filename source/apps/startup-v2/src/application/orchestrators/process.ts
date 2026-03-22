@@ -12,7 +12,11 @@ import { Messages } from "../../presentation/messages";
 
 export type ProcessPhaseResult =
   | { readonly kind: "success"; readonly servicesStarted: readonly string[] }
-  | { readonly kind: "partial"; readonly started: readonly string[]; readonly failed: readonly string[] }
+  | {
+      readonly kind: "partial";
+      readonly started: readonly string[];
+      readonly failed: readonly string[];
+    }
   | { readonly kind: "failed"; readonly message: string };
 
 /**
@@ -20,7 +24,7 @@ export type ProcessPhaseResult =
  * Starts all required services via PM2.
  */
 export async function executeProcessStart(
-  ctx: AppContext
+  ctx: AppContext,
 ): Promise<Result<ProcessPhaseResult, string>> {
   const { logger, process, config } = ctx;
   const distPath = config.distPath as DirectoryPath;
@@ -41,7 +45,7 @@ export async function executeProcessStart(
     ctx,
     mainName,
     "apps/backend/src/index.ts",
-    distPath
+    distPath,
   );
 
   if (mainResult.success) {
@@ -69,7 +73,7 @@ async function startServiceWithRetry(
   ctx: AppContext,
   name: ProcessName,
   scriptPath: string,
-  cwd: DirectoryPath
+  cwd: DirectoryPath,
 ): Promise<{ success: boolean }> {
   const { logger, process, config } = ctx;
   const maxAttempts = config.maxRetries;
@@ -107,15 +111,13 @@ async function startServiceWithRetry(
           logger.error(
             "process",
             Messages.process.failed(name as string),
-            suggestionsForProcessStart(startResult, name as string)
+            suggestionsForProcessStart(startResult, name as string),
           );
           return { success: false };
         }
 
         // Wait before retry
-        await new Promise((resolve) =>
-          setTimeout(resolve, retryDecision.delayMs)
-        );
+        await new Promise((resolve) => setTimeout(resolve, retryDecision.delayMs));
         break;
       }
     }

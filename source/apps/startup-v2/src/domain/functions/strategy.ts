@@ -66,9 +66,7 @@ export type LocalChangesStrategy =
 /**
  * Determine what to do with local changes.
  */
-export function determineLocalChangesStrategy(
-  _status: GitStatusResult
-): LocalChangesStrategy {
+export function determineLocalChangesStrategy(_status: GitStatusResult): LocalChangesStrategy {
   // Always stash to preserve local changes
   return { kind: "stash" };
 }
@@ -86,7 +84,7 @@ export type BuildDecision =
 export function decideBuild(
   pullResult: GitPullResult,
   distExists: boolean,
-  config: StartupConfig
+  config: StartupConfig,
 ): BuildDecision {
   // If auto-update is disabled and dist exists, skip
   if (!config.enableAutoUpdate && distExists) {
@@ -121,7 +119,7 @@ export type BuildFailureStrategy =
 export function determineBuildFailureStrategy(
   _result: BuildResult,
   distBackupExists: boolean,
-  config: StartupConfig
+  config: StartupConfig,
 ): BuildFailureStrategy {
   // If rollback is disabled, just use existing
   if (!config.enableRollback) {
@@ -140,16 +138,14 @@ export function determineBuildFailureStrategy(
 /**
  * What to do after override failure.
  */
-export type OverrideFailureStrategy =
-  | { readonly kind: "rollback" }
-  | { readonly kind: "abort" };
+export type OverrideFailureStrategy = { readonly kind: "rollback" } | { readonly kind: "abort" };
 
 /**
  * Determine strategy after override failure.
  */
 export function determineOverrideFailureStrategy(
   _result: OverrideResult,
-  distBackupExists: boolean
+  distBackupExists: boolean,
 ): OverrideFailureStrategy {
   if (distBackupExists) {
     return { kind: "rollback" };

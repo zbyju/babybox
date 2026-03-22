@@ -65,9 +65,7 @@ describe("conversions", () => {
     });
 
     it("should handle zero", () => {
-      expect(
-        numberToVoltage(0, { divider: 63, multiplier: 100, addition: 0 })
-      ).toBe(0);
+      expect(numberToVoltage(0, { divider: 63, multiplier: 100, addition: 0 })).toBe(0);
     });
 
     it("should apply addition", () => {
@@ -146,14 +144,7 @@ describe("conversions", () => {
     });
 
     it("should return undefined for invalid date", () => {
-      const result = partitionedTimeToMoment(
-        "99",
-        "99",
-        "9999",
-        "99",
-        "99",
-        "99"
-      );
+      const result = partitionedTimeToMoment("99", "99", "9999", "99", "99", "99");
       expect(result).toBeUndefined();
     });
   });
@@ -169,7 +160,7 @@ describe("conversions", () => {
 
     it("should return custom activeColor for true", () => {
       expect(booleanToTableBlockState(true, TableBlockState.ColorWarning)).toBe(
-        TableBlockState.ColorWarning
+        TableBlockState.ColorWarning,
       );
     });
 
@@ -196,17 +187,15 @@ describe("conversions", () => {
         42,
         (v) => String(v),
         [],
-        TableRowState.ColorSuccess
+        TableRowState.ColorSuccess,
       );
       expect(result.state).toBe(TableRowState.ColorSuccess);
     });
 
     it("should pass additional args to display function", () => {
-      const result = maybeValueToTableRowValue(
-        10,
-        (v: number, unit: string) => `${v} ${unit}`,
-        ["kg"]
-      );
+      const result = maybeValueToTableRowValue(10, (v: number, unit: string) => `${v} ${unit}`, [
+        "kg",
+      ]);
       expect(result.value).toBe("10 kg");
     });
   });

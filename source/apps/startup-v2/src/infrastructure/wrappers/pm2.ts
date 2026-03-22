@@ -26,7 +26,7 @@ export type PM2Error = {
 export async function pm2Start(
   name: ProcessName,
   script: string,
-  cwd: DirectoryPath
+  cwd: DirectoryPath,
 ): Promise<Result<ProcessStartResult, PM2Error>> {
   const cmd = shellCommand(`pm2 start ${script} --name ${name as string}`);
   const result = await executeCommand(cmd, {
@@ -45,10 +45,7 @@ export async function pm2Start(
     }
 
     case "non_zero_exit":
-      if (
-        shellResult.stderr.includes("already") ||
-        shellResult.stdout.includes("already")
-      ) {
+      if (shellResult.stderr.includes("already") || shellResult.stdout.includes("already")) {
         return ok({ kind: "already_running", pid: 0 });
       }
       return err({
@@ -80,11 +77,9 @@ export async function pm2Start(
 export async function pm2StartBun(
   name: ProcessName,
   scriptPath: string,
-  cwd: DirectoryPath
+  cwd: DirectoryPath,
 ): Promise<Result<ProcessStartResult, PM2Error>> {
-  const cmd = shellCommand(
-    `pm2 start bun --name ${name as string} -- ${scriptPath}`
-  );
+  const cmd = shellCommand(`pm2 start bun --name ${name as string} -- ${scriptPath}`);
   const result = await executeCommand(cmd, {
     cwd: cwd as unknown as DirectoryPath,
   });
@@ -98,10 +93,7 @@ export async function pm2StartBun(
     }
 
     case "non_zero_exit":
-      if (
-        shellResult.stderr.includes("already") ||
-        shellResult.stdout.includes("already")
-      ) {
+      if (shellResult.stderr.includes("already") || shellResult.stdout.includes("already")) {
         return ok({ kind: "already_running", pid: 0 });
       }
       return err({
@@ -130,9 +122,7 @@ export async function pm2StartBun(
 /**
  * Stop a process with PM2.
  */
-export async function pm2Stop(
-  name: ProcessName
-): Promise<Result<ProcessStopResult, PM2Error>> {
+export async function pm2Stop(name: ProcessName): Promise<Result<ProcessStopResult, PM2Error>> {
   const cmd = shellCommand(`pm2 stop ${name as string}`);
   const result = await executeCommand(cmd);
   const shellResult = result._unsafeUnwrap();
@@ -142,10 +132,7 @@ export async function pm2Stop(
       return ok({ kind: "stopped" });
 
     case "non_zero_exit":
-      if (
-        shellResult.stderr.includes("not found") ||
-        shellResult.stdout.includes("not found")
-      ) {
+      if (shellResult.stderr.includes("not found") || shellResult.stdout.includes("not found")) {
         return ok({ kind: "not_running" });
       }
       return err({
@@ -174,9 +161,7 @@ export async function pm2Stop(
 /**
  * Delete a process from PM2.
  */
-export async function pm2Delete(
-  name: ProcessName
-): Promise<Result<ProcessStopResult, PM2Error>> {
+export async function pm2Delete(name: ProcessName): Promise<Result<ProcessStopResult, PM2Error>> {
   const cmd = shellCommand(`pm2 delete ${name as string}`);
   const result = await executeCommand(cmd);
   const shellResult = result._unsafeUnwrap();
@@ -186,10 +171,7 @@ export async function pm2Delete(
       return ok({ kind: "stopped" });
 
     case "non_zero_exit":
-      if (
-        shellResult.stderr.includes("not found") ||
-        shellResult.stdout.includes("not found")
-      ) {
+      if (shellResult.stderr.includes("not found") || shellResult.stdout.includes("not found")) {
         return ok({ kind: "not_running" });
       }
       return err({
@@ -227,9 +209,7 @@ export async function pm2IsInstalled(): Promise<boolean> {
 /**
  * Restart a process with PM2.
  */
-export async function pm2Restart(
-  name: ProcessName
-): Promise<Result<ProcessStartResult, PM2Error>> {
+export async function pm2Restart(name: ProcessName): Promise<Result<ProcessStartResult, PM2Error>> {
   const cmd = shellCommand(`pm2 restart ${name as string}`);
   const result = await executeCommand(cmd);
   const shellResult = result._unsafeUnwrap();

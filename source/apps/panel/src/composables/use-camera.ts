@@ -12,10 +12,7 @@ import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
  * @param config - camera config
  * @returns url to the image
  */
-export default function useCamera(
-  config: CameraConfig,
-  onUpdate?: () => any,
-): Ref<string> {
+export default function useCamera(config: CameraConfig, onUpdate?: () => any): Ref<string> {
   const url = ref("");
   // if (config.cameraType === "dahua") {
   //   url.value = `http://${config.username}:${config.password}@${config.ip}/cgi-bin/mjpg/video.cgi?channel=0&subtype=1`;

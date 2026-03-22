@@ -15,7 +15,5 @@ export function actionToUrl(action: Action): string | undefined {
 
 export function unitToIp(unit: "engine" | "thermal"): string {
   const config = getConfig();
-  return unit === "engine"
-    ? config.units.engine.ip
-    : config.units.thermal.ip;
+  return unit === "engine" ? config.units.engine.ip : config.units.thermal.ip;
 }

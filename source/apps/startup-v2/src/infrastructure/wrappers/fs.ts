@@ -22,11 +22,7 @@ export type FsError = {
   readonly code?: string | undefined;
 };
 
-function createFsError(
-  operation: string,
-  path: string,
-  error: unknown
-): FsError {
+function createFsError(operation: string, path: string, error: unknown): FsError {
   if (error instanceof Error) {
     // Extract Node.js error code if available
     const nodeError = error as Error & { code?: string };
@@ -87,9 +83,7 @@ export function createDirectory(path: string): Result<void, FsError> {
 /**
  * Create directory recursively (async).
  */
-export async function createDirectoryAsync(
-  path: string
-): Promise<Result<void, FsError>> {
+export async function createDirectoryAsync(path: string): Promise<Result<void, FsError>> {
   try {
     if (!existsSync(path)) {
       await mkdir(path, { recursive: true });
@@ -103,10 +97,7 @@ export async function createDirectoryAsync(
 /**
  * Remove file or directory.
  */
-export function removePath(
-  path: string,
-  options?: { recursive?: boolean }
-): Result<void, FsError> {
+export function removePath(path: string, options?: { recursive?: boolean }): Result<void, FsError> {
   try {
     if (existsSync(path)) {
       rmSync(path, { recursive: options?.recursive ?? false, force: true });
@@ -122,7 +113,7 @@ export function removePath(
  */
 export async function removePathAsync(
   path: string,
-  options?: { recursive?: boolean }
+  options?: { recursive?: boolean },
 ): Promise<Result<void, FsError>> {
   try {
     if (existsSync(path)) {
@@ -137,10 +128,7 @@ export async function removePathAsync(
 /**
  * Rename/move a file or directory.
  */
-export function renamePath(
-  oldPath: string,
-  newPath: string
-): Result<void, FsError> {
+export function renamePath(oldPath: string, newPath: string): Result<void, FsError> {
   try {
     renameSync(oldPath, newPath);
     return ok(undefined);
@@ -154,7 +142,7 @@ export function renamePath(
  */
 export async function renamePathAsync(
   oldPath: string,
-  newPath: string
+  newPath: string,
 ): Promise<Result<void, FsError>> {
   try {
     await rename(oldPath, newPath);
@@ -167,10 +155,7 @@ export async function renamePathAsync(
 /**
  * Copy a single file.
  */
-export function copyFilePath(
-  src: string,
-  dest: string
-): Result<void, FsError> {
+export function copyFilePath(src: string, dest: string): Result<void, FsError> {
   try {
     copyFileSync(src, dest);
     return ok(undefined);
@@ -185,7 +170,7 @@ export function copyFilePath(
  */
 export async function copyDirectoryAsync(
   src: string,
-  dest: string
+  dest: string,
 ): Promise<Result<void, FsError>> {
   try {
     // Ensure destination parent exists
@@ -232,9 +217,7 @@ export function listDirectory(path: string): Result<string[], FsError> {
 /**
  * List directory contents (async).
  */
-export async function listDirectoryAsync(
-  path: string
-): Promise<Result<string[], FsError>> {
+export async function listDirectoryAsync(path: string): Promise<Result<string[], FsError>> {
   try {
     const entries = await readdir(path);
     return ok(entries);

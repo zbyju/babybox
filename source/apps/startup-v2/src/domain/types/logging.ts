@@ -8,13 +8,7 @@ import type { Suggestion } from "./suggestion";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
-export type LogModule =
-  | "startup"
-  | "update"
-  | "build"
-  | "override"
-  | "process"
-  | "install";
+export type LogModule = "startup" | "update" | "build" | "override" | "process" | "install";
 
 /**
  * A structured log entry.
@@ -62,7 +56,7 @@ export const LogEntry = {
     level: LogLevel,
     module: LogModule,
     message: string,
-    options?: CreateOptions
+    options?: CreateOptions,
   ): LogEntry => {
     const base = {
       timestamp: Date.now() as Timestamp,
@@ -73,13 +67,14 @@ export const LogEntry = {
     };
 
     // Only add optional fields if they have values
-    const result: LogEntry = options?.technicalDetails !== undefined
-      ? options?.context !== undefined
-        ? { ...base, technicalDetails: options.technicalDetails, context: options.context }
-        : { ...base, technicalDetails: options.technicalDetails }
-      : options?.context !== undefined
-        ? { ...base, context: options.context }
-        : base;
+    const result: LogEntry =
+      options?.technicalDetails !== undefined
+        ? options?.context !== undefined
+          ? { ...base, technicalDetails: options.technicalDetails, context: options.context }
+          : { ...base, technicalDetails: options.technicalDetails }
+        : options?.context !== undefined
+          ? { ...base, context: options.context }
+          : base;
 
     return result;
   },
@@ -98,7 +93,7 @@ export const LogEntry = {
     module: LogModule,
     message: string,
     suggestions?: readonly Suggestion[],
-    context?: LogContext
+    context?: LogContext,
   ): LogEntry => {
     const options: CreateOptions = {};
     if (suggestions !== undefined) {
@@ -114,7 +109,7 @@ export const LogEntry = {
     module: LogModule,
     message: string,
     suggestions: readonly Suggestion[],
-    context?: LogContext
+    context?: LogContext,
   ): LogEntry =>
     context !== undefined
       ? LogEntry.create("error", module, message, { suggestions, context })

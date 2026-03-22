@@ -86,12 +86,7 @@ export type StartupResult =
       readonly message: string;
     };
 
-export type StartupPhase =
-  | "update"
-  | "dependency_install"
-  | "build"
-  | "override"
-  | "service_start";
+export type StartupPhase = "update" | "dependency_install" | "build" | "override" | "service_start";
 
 // Constructor helpers
 export const GitPullResult = {
@@ -124,10 +119,11 @@ export const BuildResult = {
     kind: "dependency_install_failed",
     message,
   }),
-  compilationFailed: (
-    message: string,
-    errors: readonly string[]
-  ): BuildResult => ({ kind: "compilation_failed", message, errors }),
+  compilationFailed: (message: string, errors: readonly string[]): BuildResult => ({
+    kind: "compilation_failed",
+    message,
+    errors,
+  }),
   unknownError: (message: string): BuildResult => ({
     kind: "unknown_error",
     message,
@@ -148,8 +144,9 @@ export const OverrideResult = {
     kind: "rollback_success",
     originalError,
   }),
-  rollbackFailed: (
-    originalError: string,
-    rollbackError: string
-  ): OverrideResult => ({ kind: "rollback_failed", originalError, rollbackError }),
+  rollbackFailed: (originalError: string, rollbackError: string): OverrideResult => ({
+    kind: "rollback_failed",
+    originalError,
+    rollbackError,
+  }),
 } as const;

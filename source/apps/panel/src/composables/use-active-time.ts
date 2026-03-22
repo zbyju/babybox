@@ -12,10 +12,7 @@ import type { Maybe } from "@/types/generic.types";
  * @param active - is babybox active
  * @returns
  */
-export default function useActiveTime(
-  time: Ref<Maybe<Moment>>,
-  active: Ref<boolean>,
-) {
+export default function useActiveTime(time: Ref<Maybe<Moment>>, active: Ref<boolean>) {
   const result = ref(time.value);
   watch(time, (newTime, _) => {
     if (!active.value || result.value === undefined) {

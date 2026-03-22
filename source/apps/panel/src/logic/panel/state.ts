@@ -177,8 +177,7 @@ export const getNewState = (
            if( (BlokaceMot & 1)==0 && (BlokaceMot & 2)==0 ) */
 
   // Connection
-  const errStreak: number =
-    connection.engineUnit.failStreak + connection.thermalUnit.failStreak;
+  const errStreak: number = connection.engineUnit.failStreak + connection.thermalUnit.failStreak;
 
   if (errStreak > warningThreshold * 2) {
     result = {

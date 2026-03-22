@@ -44,11 +44,7 @@ export type ShellResult =
 
 // Constructor helpers
 export const ShellResult = {
-  success: (
-    stdout: string,
-    stderr: string,
-    duration: DurationMs
-  ): ShellResult => ({
+  success: (stdout: string, stderr: string, duration: DurationMs): ShellResult => ({
     kind: "success",
     stdout,
     stderr,
@@ -60,7 +56,7 @@ export const ShellResult = {
     stdout: string,
     stderr: string,
     exitCode: number,
-    duration: DurationMs
+    duration: DurationMs,
   ): ShellResult => ({
     kind: "non_zero_exit",
     stdout,
@@ -69,11 +65,7 @@ export const ShellResult = {
     duration,
   }),
 
-  timeout: (
-    stdout: string,
-    stderr: string,
-    timeoutMs: DurationMs
-  ): ShellResult => ({
+  timeout: (stdout: string, stderr: string, timeoutMs: DurationMs): ShellResult => ({
     kind: "timeout",
     stdout,
     stderr,
@@ -89,9 +81,7 @@ export const ShellResult = {
 /**
  * Check if shell result is successful (exit code 0).
  */
-export function isShellSuccess(
-  result: ShellResult
-): result is ShellResult & { kind: "success" } {
+export function isShellSuccess(result: ShellResult): result is ShellResult & { kind: "success" } {
   return result.kind === "success";
 }
 
@@ -99,11 +89,7 @@ export function isShellSuccess(
  * Check if shell result has any output (success or non-zero).
  */
 export function hasShellOutput(
-  result: ShellResult
+  result: ShellResult,
 ): result is ShellResult & { stdout: string; stderr: string } {
-  return (
-    result.kind === "success" ||
-    result.kind === "non_zero_exit" ||
-    result.kind === "timeout"
-  );
+  return result.kind === "success" || result.kind === "non_zero_exit" || result.kind === "timeout";
 }

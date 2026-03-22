@@ -67,10 +67,7 @@ export type ContactSupportSuggestion = {
 
 // Constructor helpers
 export const Suggestion = {
-  terminalGlobal: (
-    command: ShellCommand,
-    message: string
-  ): TerminalSuggestion => ({
+  terminalGlobal: (command: ShellCommand, message: string): TerminalSuggestion => ({
     kind: "terminal",
     scope: { kind: "global" },
     command,
@@ -80,7 +77,7 @@ export const Suggestion = {
   terminalInDirectory: (
     command: ShellCommand,
     directory: DirectoryPath,
-    message: string
+    message: string,
   ): TerminalSuggestion => ({
     kind: "terminal",
     scope: { kind: "directory", path: directory },
@@ -112,11 +109,7 @@ export const Suggestion = {
     message,
   }),
 
-  documentation: (
-    topic: string,
-    message: string,
-    url?: string
-  ): DocumentationSuggestion => {
+  documentation: (topic: string, message: string, url?: string): DocumentationSuggestion => {
     const base = { kind: "documentation" as const, topic, message };
     return url !== undefined ? { ...base, url } : base;
   },
@@ -124,7 +117,7 @@ export const Suggestion = {
   contactSupport: (
     severity: "low" | "medium" | "high" | "critical",
     context: string,
-    message: string
+    message: string,
   ): ContactSupportSuggestion => ({
     kind: "contact_support",
     severity,

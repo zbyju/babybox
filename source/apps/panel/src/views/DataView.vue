@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts" setup>
-  import TheNav from "../components/TheNav.vue";
+import TheNav from "../components/TheNav.vue";
 </script>
 
 <style lang="stylus"></style>

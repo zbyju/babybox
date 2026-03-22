@@ -26,9 +26,7 @@ describe("determinePullStrategy", () => {
   });
 
   it("returns skip_build for network_error", () => {
-    const result = determinePullStrategy(
-      GitPullResult.networkError("timeout")
-    );
+    const result = determinePullStrategy(GitPullResult.networkError("timeout"));
     expect(result.kind).toBe("skip_build");
   });
 
@@ -90,7 +88,7 @@ describe("determineBuildFailureStrategy", () => {
     const result = determineBuildFailureStrategy(
       BuildResult.compilationFailed("error", []),
       true,
-      configWithRollback
+      configWithRollback,
     );
     expect(result.kind).toBe("rollback");
   });
@@ -99,7 +97,7 @@ describe("determineBuildFailureStrategy", () => {
     const result = determineBuildFailureStrategy(
       BuildResult.compilationFailed("error", []),
       false,
-      configWithRollback
+      configWithRollback,
     );
     expect(result.kind).toBe("use_existing");
   });
@@ -109,7 +107,7 @@ describe("determineBuildFailureStrategy", () => {
     const result = determineBuildFailureStrategy(
       BuildResult.compilationFailed("error", []),
       true, // backup exists but rollback disabled
-      configNoRollback
+      configNoRollback,
     );
     expect(result.kind).toBe("use_existing");
   });
@@ -141,26 +139,17 @@ describe("determineLocalChangesStrategy", () => {
 
 describe("determineOverrideFailureStrategy", () => {
   it("returns rollback when backup exists", () => {
-    const result = determineOverrideFailureStrategy(
-      OverrideResult.copyFailed("disk error"),
-      true
-    );
+    const result = determineOverrideFailureStrategy(OverrideResult.copyFailed("disk error"), true);
     expect(result.kind).toBe("rollback");
   });
 
   it("returns abort when no backup", () => {
-    const result = determineOverrideFailureStrategy(
-      OverrideResult.copyFailed("disk error"),
-      false
-    );
+    const result = determineOverrideFailureStrategy(OverrideResult.copyFailed("disk error"), false);
     expect(result.kind).toBe("abort");
   });
 
   it("returns rollback for backup_failed with backup available", () => {
-    const result = determineOverrideFailureStrategy(
-      OverrideResult.backupFailed("no space"),
-      true
-    );
+    const result = determineOverrideFailureStrategy(OverrideResult.backupFailed("no space"), true);
     expect(result.kind).toBe("rollback");
   });
 });

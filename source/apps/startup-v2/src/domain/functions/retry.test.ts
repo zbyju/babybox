@@ -124,7 +124,7 @@ describe("shouldRetryProcessStart", () => {
   it("gives up after max attempts", () => {
     const decision = shouldRetryProcessStart(
       { kind: "failed", message: "error" },
-      DEFAULT_RETRY_CONFIG.maxAttempts
+      DEFAULT_RETRY_CONFIG.maxAttempts,
     );
     expect(decision.kind).toBe("give_up");
   });
@@ -169,7 +169,7 @@ describe("shouldRetryGitPull", () => {
   it("respects max attempts for network error", () => {
     const decision = shouldRetryGitPull(
       GitPullResult.networkError("timeout"),
-      DEFAULT_RETRY_CONFIG.maxAttempts
+      DEFAULT_RETRY_CONFIG.maxAttempts,
     );
     expect(decision.kind).toBe("give_up");
   });

@@ -130,7 +130,9 @@ describe("Config Route", () => {
       const mockVersionData = { version: "1.0.0" };
       mockGetVersionDb.mockResolvedValueOnce({
         data: () => mockVersionData,
-      } as unknown as ReturnType<typeof DbFactory.getVersionDb> extends Promise<infer T> ? T : never);
+      } as unknown as ReturnType<typeof DbFactory.getVersionDb> extends Promise<infer T>
+        ? T
+        : never);
 
       const { status, body } = await makeRequest(app, "GET", "/api/v1/config/version");
 

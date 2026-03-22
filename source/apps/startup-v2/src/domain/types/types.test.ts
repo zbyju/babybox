@@ -44,7 +44,7 @@ describe("suggestion types", () => {
   it("creates terminal suggestions", () => {
     const suggestion = Suggestion.terminalGlobal(
       shellCommand("git stash"),
-      "Ulozte zmeny do stashe"
+      "Ulozte zmeny do stashe",
     );
     expect(suggestion.kind).toBe("terminal");
     expect(suggestion.scope.kind).toBe("global");

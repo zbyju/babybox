@@ -24,19 +24,11 @@ export const displayPercentage = (num: number): string => {
   return `${prettyNumber(num)}%`;
 };
 
-export const displayTwoItems = <T>(
-  x1: T,
-  x2: T,
-  toString: (x: T) => string,
-): string => {
+export const displayTwoItems = <T>(x1: T, x2: T, toString: (x: T) => string): string => {
   return `${toString(x1)} | ${toString(x2)}`;
 };
 
-export const displayCustomBoolean = (
-  bool: boolean,
-  ifTrue: string,
-  ifFalse: string,
-): string => {
+export const displayCustomBoolean = (bool: boolean, ifTrue: string, ifFalse: string): string => {
   return bool ? ifTrue : ifFalse;
 };
 
@@ -65,10 +57,7 @@ const zeroFilled = (num: number, padlen: number): string => {
   return (pad + num).slice(-pad.length);
 };
 
-export const secondsToTime = (
-  seconds: number,
-  inspectionNotDoneForDays: number,
-): string => {
+export const secondsToTime = (seconds: number, inspectionNotDoneForDays: number): string => {
   if (inspectionNotDoneForDays > 0) return "Neprovedena";
   if (seconds < 0) return "Neprovedena";
   const d = Math.floor(seconds / (3600 * 24));
@@ -76,10 +65,7 @@ export const secondsToTime = (
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
   const dl = daysToString(d);
-  return `${d} ${dl} ${zeroFilled(h, 2)}:${zeroFilled(m, 2)}:${zeroFilled(
-    s,
-    2,
-  )}`;
+  return `${d} ${dl} ${zeroFilled(h, 2)}:${zeroFilled(m, 2)}:${zeroFilled(s, 2)}`;
 };
 
 export const daysToString = (days: number): string => {

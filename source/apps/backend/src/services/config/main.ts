@@ -17,10 +17,7 @@ export async function mainConfig() {
   await db.read();
 
   // Get base json and merge defaults
-  const baseStr = readFileSync(
-    join(__dirname, "../../../configs/base.json"),
-    "utf-8"
-  );
+  const baseStr = readFileSync(join(__dirname, "../../../configs/base.json"), "utf-8");
   const base = JSON.parse(baseStr);
   const merged = merge(base, db.data);
   db.data = merged;

@@ -13,12 +13,9 @@ import { actionToUrl, unitToIp } from "../utils/url";
 import { wait } from "../utils/wait";
 import { fetchFromUrl } from "./fetch";
 
-export async function fetchDataCommon(
-  unit: Unit,
-  query: unknown
-): Promise<CommonDataResponse> {
+export async function fetchDataCommon(unit: Unit, query: unknown): Promise<CommonDataResponse> {
   const config = getConfig();
-  const { timeout = parseInt(process.env['DEFAULT_FETCH_TIMEOUT'] || "") || 5000 } =
+  const { timeout = parseInt(process.env["DEFAULT_FETCH_TIMEOUT"] || "") || 5000 } =
     query as CommonDataRequestQuery;
 
   const url = `http://${
@@ -40,28 +37,22 @@ export async function fetchDataCommon(
   }
 }
 
-export async function fetchSettings(
-  query: unknown
-): Promise<CommonDataResponse> {
+export async function fetchSettings(query: unknown): Promise<CommonDataResponse> {
   if (!isInstanceOfGetUnitSettingsRequest(query)) {
     return {
       status: 400,
       msg: "Unit was specified, but it is wrong. Expected values are: 'engine' or 'thermal'.",
     };
   }
-  const {
-    unit = "both",
-    timeout = parseInt(process.env['DEFAULT_FETCH_TIMEOUT'] || "") || 5000,
-  } = query as GetUnitSettingsRequest;
+  const { unit = "both", timeout = parseInt(process.env["DEFAULT_FETCH_TIMEOUT"] || "") || 5000 } =
+    query as GetUnitSettingsRequest;
 
   const timestamp = new Date().getTime();
 
   const res: { engine: unknown; thermal: unknown } = { engine: null, thermal: null };
 
   if (unit === "engine" || unit === "both") {
-    const url = `http://${unitToIp(
-      Unit.Engine
-    )}/get_sys[100]?rn=16&${timestamp}`;
+    const url = `http://${unitToIp(Unit.Engine)}/get_sys[100]?rn=16&${timestamp}`;
 
     try {
       const result = await fetchFromUrl(url, timeout);
@@ -75,9 +66,7 @@ export async function fetchSettings(
   }
 
   if (unit === "thermal" || unit === "both") {
-    const url = `http://${unitToIp(
-      Unit.Thermal
-    )}/get_sys[100]?rn=16&${timestamp}`;
+    const url = `http://${unitToIp(Unit.Thermal)}/get_sys[100]?rn=16&${timestamp}`;
 
     try {
       const result = await fetchFromUrl(url, timeout);
@@ -98,7 +87,7 @@ export async function fetchSettings(
 }
 
 export async function fetchAction(action: Action): Promise<CommonDataResponse> {
-  const timeout = parseInt(process.env['DEFAULT_FETCH_TIMEOUT'] || "") || 5000;
+  const timeout = parseInt(process.env["DEFAULT_FETCH_TIMEOUT"] || "") || 5000;
 
   const url = actionToUrl(action);
 
@@ -136,36 +125,33 @@ export async function updateWatchdog(): Promise<CommonResponse> {
 export async function updateSettings(
   settings: Setting[],
   timeout = 5000,
-  tryNumber = 10
+  tryNumber = 10,
 ): Promise<SettingResult[]> {
-  const results = settings.reduce(
-    async (previous: Promise<SettingResult[]>, s: Setting) => {
-      const prevResult = await previous;
-      const ip = unitToIp(s.unit);
-      const timestamp = new Date().getTime();
-      let result = false;
-      let i = tryNumber;
+  const results = settings.reduce(async (previous: Promise<SettingResult[]>, s: Setting) => {
+    const prevResult = await previous;
+    const ip = unitToIp(s.unit);
+    const timestamp = new Date().getTime();
+    let result = false;
+    let i = tryNumber;
 
-      // Try to override settings tryNumber of times
-      while (!result && i > 0) {
-        result = await updateSetting(
-          `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
-          `http://${ip}/sdscep?sys140=${s.value}&${timestamp}`,
-          `http://${ip}/get_sys[141]`,
-          `http://${ip}/get_sys[100]?rn=16&${timestamp}`,
-          s.index,
-          s.value,
-          timeout
-        );
-        if (result === false) {
-          await wait(75);
-        }
-        --i;
+    // Try to override settings tryNumber of times
+    while (!result && i > 0) {
+      result = await updateSetting(
+        `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
+        `http://${ip}/sdscep?sys140=${s.value}&${timestamp}`,
+        `http://${ip}/get_sys[141]`,
+        `http://${ip}/get_sys[100]?rn=16&${timestamp}`,
+        s.index,
+        s.value,
+        timeout,
+      );
+      if (result === false) {
+        await wait(75);
       }
-      return [...prevResult, { ...s, result }];
-    },
-    Promise.resolve([])
-  );
+      --i;
+    }
+    return [...prevResult, { ...s, result }];
+  }, Promise.resolve([]));
 
   return results;
 }
@@ -186,7 +172,7 @@ async function updateSetting(
   urlVerification: string,
   index: number,
   value: number,
-  timeout = 5000
+  timeout = 5000,
 ): Promise<boolean> {
   // If unit is not ready then don't send
   const ready = await isReady(urlReady, timeout);

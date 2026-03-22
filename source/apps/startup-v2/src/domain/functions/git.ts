@@ -140,7 +140,7 @@ export function parseGitPullStats(output: string): GitPullInfo {
  * Check if git output indicates a specific error.
  */
 export function detectGitError(
-  output: string
+  output: string,
 ): "conflict" | "network" | "auth" | "not_repo" | null {
   const lower = output.toLowerCase();
 

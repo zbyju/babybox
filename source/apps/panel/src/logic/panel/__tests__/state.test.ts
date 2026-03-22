@@ -14,7 +14,7 @@ const createMockEngineUnit = (
     blockValue: number;
     doorState: number;
     inspectionNotDoneForDays: number;
-  }> = {}
+  }> = {},
 ): EngineUnit => ({
   data: {
     temperature: { inner: 22 },
@@ -52,9 +52,7 @@ const createMockEngineUnit = (
 });
 
 // Helper to create a mock thermal unit
-const createMockThermalUnit = (
-  overrides: Partial<{ blockValue: number }> = {}
-): ThermalUnit => ({
+const createMockThermalUnit = (overrides: Partial<{ blockValue: number }> = {}): ThermalUnit => ({
   data: {
     temperature: {
       inner: 22,
@@ -88,10 +86,7 @@ const createMockThermalUnit = (
 });
 
 // Helper to create a mock connection
-const createMockConnection = (
-  engineFailStreak = 0,
-  thermalFailStreak = 0
-): Connection => {
+const createMockConnection = (engineFailStreak = 0, thermalFailStreak = 0): Connection => {
   const engineTracker = new ConnectionTracker();
   const thermalTracker = new ConnectionTracker();
 

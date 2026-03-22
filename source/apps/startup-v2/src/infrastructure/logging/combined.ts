@@ -21,9 +21,7 @@ const DEFAULT_CONFIG: CombinedLoggerConfig = {
   fileLevel: "debug", // File captures more detail
 };
 
-export function createCombinedLogger(
-  config: Partial<CombinedLoggerConfig> = {}
-): LoggerPort {
+export function createCombinedLogger(config: Partial<CombinedLoggerConfig> = {}): LoggerPort {
   const cfg: CombinedLoggerConfig = { ...DEFAULT_CONFIG, ...config };
 
   const consoleLogger = createConsoleLogger(cfg.consoleLevel);

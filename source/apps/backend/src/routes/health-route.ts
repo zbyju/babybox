@@ -24,7 +24,7 @@ router.get("/", async (_req: Request, res: Response) => {
         cameraType: config.camera.cameraType,
         backendPort: config.backend.port,
       },
-      environment: process.env['NODE_ENV'] ?? "unknown",
-    })
+      environment: process.env["NODE_ENV"] ?? "unknown",
+    }),
   );
 });

@@ -2,11 +2,7 @@
  * Console logger - human-readable output to terminal.
  */
 
-import type {
-  LogEntry,
-  LogLevel,
-  Suggestion,
-} from "../../domain/types/index";
+import type { LogEntry, LogLevel, Suggestion } from "../../domain/types/index";
 import { LogEntry as LogEntryFactory } from "../../domain/types/index";
 import type { LoggerPort } from "../../application/ports/logger.port";
 
@@ -42,9 +38,7 @@ function formatSuggestion(suggestion: Suggestion, index: number): string {
   switch (suggestion.kind) {
     case "terminal": {
       const scopeInfo =
-        suggestion.scope.kind === "global"
-          ? ""
-          : ` (ve slozce: ${suggestion.scope.path})`;
+        suggestion.scope.kind === "global" ? "" : ` (ve slozce: ${suggestion.scope.path})`;
       return `${prefix}${suggestion.message}${scopeInfo}\n      $ ${BOLD}${suggestion.command}${RESET}`;
     }
     case "manual_action":

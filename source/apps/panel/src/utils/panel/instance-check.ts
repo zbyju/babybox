@@ -25,14 +25,9 @@ export const isInstanceOfConfig = (object: any): object is Config => {
   );
 };
 
-export const isInstanceOfBackendConfig = (
-  object: any,
-): object is BackendConfig => {
+export const isInstanceOfBackendConfig = (object: any): object is BackendConfig => {
   return (
-    typeof object === "object" &&
-    "url" in object &&
-    "requestTimeout" in object &&
-    "port" in object
+    typeof object === "object" && "url" in object && "requestTimeout" in object && "port" in object
   );
 };
 
@@ -40,15 +35,11 @@ export const isInstanceOfAppConfig = (object: any): object is AppConfig => {
   return typeof object === "object" && "password" in object;
 };
 
-export const isInstanceOfBabyboxConfig = (
-  object: any,
-): object is BabyboxConfig => {
+export const isInstanceOfBabyboxConfig = (object: any): object is BabyboxConfig => {
   return typeof object === "object" && "name" in object;
 };
 
-export const isInstanceOfCameraConfig = (
-  object: any,
-): object is CameraConfig => {
+export const isInstanceOfCameraConfig = (object: any): object is CameraConfig => {
   return (
     typeof object === "object" &&
     "ip" in object &&
@@ -78,9 +69,7 @@ export const isInstanceOfUnitConfig = (object: any): object is UnitConfig => {
   return typeof object === "object" && "ip" in object;
 };
 
-export const isInstanceOfVoltageConfig = (
-  object: any,
-): object is VoltageConfig => {
+export const isInstanceOfVoltageConfig = (object: any): object is VoltageConfig => {
   return (
     typeof object === "object" &&
     "divider" in object &&

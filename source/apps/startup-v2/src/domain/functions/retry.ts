@@ -3,11 +3,7 @@
  * Pure functions for determining retry behavior.
  */
 
-import type {
-  ShellResult,
-  ProcessStartResult,
-  GitPullResult,
-} from "../types/index";
+import type { ShellResult, ProcessStartResult, GitPullResult } from "../types/index";
 
 /**
  * Configuration for retry behavior.
@@ -42,7 +38,7 @@ export type RetryDecision =
 export function shouldRetryShellCommand(
   result: ShellResult,
   attempt: number,
-  config: RetryConfig = DEFAULT_RETRY_CONFIG
+  config: RetryConfig = DEFAULT_RETRY_CONFIG,
 ): RetryDecision {
   // Max attempts reached
   if (attempt >= config.maxAttempts) {
@@ -89,7 +85,7 @@ export function shouldRetryShellCommand(
 export function shouldRetryProcessStart(
   result: ProcessStartResult,
   attempt: number,
-  config: RetryConfig = DEFAULT_RETRY_CONFIG
+  config: RetryConfig = DEFAULT_RETRY_CONFIG,
 ): RetryDecision {
   if (attempt >= config.maxAttempts) {
     return {
@@ -119,7 +115,7 @@ export function shouldRetryProcessStart(
 export function shouldRetryGitPull(
   result: GitPullResult,
   attempt: number,
-  config: RetryConfig = DEFAULT_RETRY_CONFIG
+  config: RetryConfig = DEFAULT_RETRY_CONFIG,
 ): RetryDecision {
   if (attempt >= config.maxAttempts) {
     return {
@@ -165,7 +161,7 @@ export function shouldRetryGitPull(
  */
 export function calculateBackoff(
   attempt: number,
-  config: RetryConfig = DEFAULT_RETRY_CONFIG
+  config: RetryConfig = DEFAULT_RETRY_CONFIG,
 ): number {
   const delay = config.delayMs * config.backoffMultiplier ** attempt;
   return Math.min(delay, config.maxDelayMs);

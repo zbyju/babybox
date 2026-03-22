@@ -136,7 +136,7 @@ describe("executeBuild", () => {
     it("returns failed when install_failed", async () => {
       const ctx = createCtx({
         install: mock(async () =>
-          ok({ kind: "install_failed" as const, message: "network error" })
+          ok({ kind: "install_failed" as const, message: "network error" }),
         ),
       });
 
@@ -162,7 +162,7 @@ describe("executeBuild", () => {
     it("returns failed on compilation error", async () => {
       const ctx = createCtx({
         build: mock(async () =>
-          ok(BuildResult.compilationFailed("TS errors", ["error1", "error2"]))
+          ok(BuildResult.compilationFailed("TS errors", ["error1", "error2"])),
         ),
       });
 
@@ -176,9 +176,7 @@ describe("executeBuild", () => {
 
     it("returns failed on dependency_install_failed in build", async () => {
       const ctx = createCtx({
-        build: mock(async () =>
-          ok(BuildResult.dependencyInstallFailed("npm error"))
-        ),
+        build: mock(async () => ok(BuildResult.dependencyInstallFailed("npm error"))),
       });
 
       const result = await executeBuild(ctx, true);

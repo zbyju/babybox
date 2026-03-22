@@ -3,11 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { ConnectionTracker } from "@/pinia/connection-store";
 import type { Connection } from "@/types/panel/connection.types";
-import {
-  TableBlockState,
-  TableRowState,
-  TableValuesState,
-} from "@/types/panel/tables.types";
+import { TableBlockState, TableRowState, TableValuesState } from "@/types/panel/tables.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 
 import {

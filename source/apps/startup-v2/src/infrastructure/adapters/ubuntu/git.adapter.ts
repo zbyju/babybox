@@ -10,11 +10,7 @@ import type {
   GitStatusResult,
   DirectoryPath,
 } from "../../../domain/types/index";
-import {
-  GitPullResult as GPR,
-  shellCommand,
-  durationMs,
-} from "../../../domain/types/index";
+import { GitPullResult as GPR, shellCommand, durationMs } from "../../../domain/types/index";
 import { executeInDirectory } from "../../wrappers/shell";
 import type { GitPort } from "../../../application/ports/git.port";
 
@@ -31,10 +27,7 @@ function parseGitPullOutput(stdout: string, stderr: string): GitPullResult {
   }
 
   // Conflicts
-  if (
-    lowerCombined.includes("conflict") ||
-    lowerCombined.includes("merge conflict")
-  ) {
+  if (lowerCombined.includes("conflict") || lowerCombined.includes("merge conflict")) {
     const conflictFiles = extractConflictFiles(combined);
     return GPR.conflict(conflictFiles);
   }
@@ -56,9 +49,7 @@ function parseGitPullOutput(stdout: string, stderr: string): GitPullResult {
 
   // Success - try to extract commit count
   const commitMatch = combined.match(/(\d+)\s+commit/i);
-  const commitCount = commitMatch
-    ? Number.parseInt(commitMatch[1] ?? "1", 10)
-    : 1;
+  const commitCount = commitMatch ? Number.parseInt(commitMatch[1] ?? "1", 10) : 1;
 
   return GPR.updated(commitCount);
 }
@@ -86,7 +77,7 @@ export function createUbuntuGitAdapter(repoPath: DirectoryPath): GitPort {
       const result = await executeInDirectory(
         shellCommand("git pull"),
         repoPath as string,
-        timeoutMs
+        timeoutMs,
       );
 
       const shellResult = result._unsafeUnwrap();
@@ -108,7 +99,7 @@ export function createUbuntuGitAdapter(repoPath: DirectoryPath): GitPort {
       const result = await executeInDirectory(
         shellCommand("git stash push -m 'Auto-stash by startup'"),
         repoPath as string,
-        timeoutMs
+        timeoutMs,
       );
 
       const shellResult = result._unsafeUnwrap();
@@ -152,7 +143,7 @@ export function createUbuntuGitAdapter(repoPath: DirectoryPath): GitPort {
       const result = await executeInDirectory(
         shellCommand("git status --porcelain"),
         repoPath as string,
-        timeoutMs
+        timeoutMs,
       );
 
       const shellResult = result._unsafeUnwrap();
@@ -207,7 +198,7 @@ export function createUbuntuGitAdapter(repoPath: DirectoryPath): GitPort {
       const result = await executeInDirectory(
         shellCommand("git fetch"),
         repoPath as string,
-        timeoutMs
+        timeoutMs,
       );
 
       const shellResult = result._unsafeUnwrap();
@@ -216,18 +207,14 @@ export function createUbuntuGitAdapter(repoPath: DirectoryPath): GitPort {
         return ok(undefined);
       }
 
-      return err(
-        shellResult.kind === "spawn_error"
-          ? shellResult.message
-          : "Git fetch selhal"
-      );
+      return err(shellResult.kind === "spawn_error" ? shellResult.message : "Git fetch selhal");
     },
 
     resetHard: async (): Promise<Result<void, string>> => {
       const result = await executeInDirectory(
         shellCommand("git reset --hard HEAD"),
         repoPath as string,
-        timeoutMs
+        timeoutMs,
       );
 
       const shellResult = result._unsafeUnwrap();
@@ -236,11 +223,7 @@ export function createUbuntuGitAdapter(repoPath: DirectoryPath): GitPort {
         return ok(undefined);
       }
 
-      return err(
-        shellResult.kind === "spawn_error"
-          ? shellResult.message
-          : "Git reset selhal"
-      );
+      return err(shellResult.kind === "spawn_error" ? shellResult.message : "Git reset selhal");
     },
   };
 }

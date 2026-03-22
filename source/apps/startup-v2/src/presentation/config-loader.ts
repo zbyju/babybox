@@ -46,7 +46,7 @@ export function loadConfig(): StartupConfig {
 
   const repoPath =
     env.BABYBOX_REPO_PATH !== undefined
-      ? absolutePath(env.BABYBOX_REPO_PATH) ?? findRepositoryRoot()
+      ? (absolutePath(env.BABYBOX_REPO_PATH) ?? findRepositoryRoot())
       : findRepositoryRoot();
 
   return StartupConfigSchema.parse({

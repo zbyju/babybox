@@ -18,7 +18,7 @@ import { Suggestion as S, shellCommand } from "../types/index";
  */
 export function suggestionsForGitPull(
   result: GitPullResult,
-  repoPath: DirectoryPath
+  repoPath: DirectoryPath,
 ): readonly Suggestion[] {
   switch (result.kind) {
     case "updated":
@@ -30,60 +30,37 @@ export function suggestionsForGitPull(
         S.terminalInDirectory(
           shellCommand("git stash"),
           repoPath,
-          "Ulozte lokalni zmeny do stashe"
+          "Ulozte lokalni zmeny do stashe",
         ),
-        S.terminalInDirectory(
-          shellCommand("git pull"),
-          repoPath,
-          "Zkuste znovu stahnout zmeny"
-        ),
-        S.terminalInDirectory(
-          shellCommand("git stash pop"),
-          repoPath,
-          "Obnovte ulozene zmeny"
-        ),
+        S.terminalInDirectory(shellCommand("git pull"), repoPath, "Zkuste znovu stahnout zmeny"),
+        S.terminalInDirectory(shellCommand("git stash pop"), repoPath, "Obnovte ulozene zmeny"),
       ];
 
     case "network_error":
       return [
         S.checkNetwork("Zkontrolujte pripojeni k internetu"),
-        S.terminalGlobal(
-          shellCommand("ping github.com"),
-          "Overdte pripojeni k serveru"
-        ),
+        S.terminalGlobal(shellCommand("ping github.com"), "Overdte pripojeni k serveru"),
       ];
 
     case "not_a_repository":
       return [
-        S.terminalInDirectory(
-          shellCommand("git init"),
-          repoPath,
-          "Inicializujte git repozitar"
-        ),
+        S.terminalInDirectory(shellCommand("git init"), repoPath, "Inicializujte git repozitar"),
         S.terminalInDirectory(
           shellCommand("git clone <url> ."),
           repoPath,
-          "Naklonujte repozitar znovu"
+          "Naklonujte repozitar znovu",
         ),
       ];
 
     case "unknown_error":
       return [
-        S.terminalInDirectory(
-          shellCommand("git status"),
-          repoPath,
-          "Zkontrolujte stav repozitare"
-        ),
+        S.terminalInDirectory(shellCommand("git status"), repoPath, "Zkontrolujte stav repozitare"),
         S.terminalInDirectory(
           shellCommand("git fetch --all"),
           repoPath,
-          "Zkuste stahnout metadata"
+          "Zkuste stahnout metadata",
         ),
-        S.contactSupport(
-          "medium",
-          result.message,
-          "Pokud problem pretrva, kontaktujte podporu"
-        ),
+        S.contactSupport("medium", result.message, "Pokud problem pretrva, kontaktujte podporu"),
       ];
   }
 }
@@ -93,7 +70,7 @@ export function suggestionsForGitPull(
  */
 export function suggestionsForBuild(
   result: BuildResult,
-  repoPath: DirectoryPath
+  repoPath: DirectoryPath,
 ): readonly Suggestion[] {
   switch (result.kind) {
     case "success":
@@ -104,12 +81,12 @@ export function suggestionsForBuild(
         S.terminalInDirectory(
           shellCommand("rm -rf node_modules"),
           repoPath,
-          "Smazte node_modules a zkuste znovu"
+          "Smazte node_modules a zkuste znovu",
         ),
         S.terminalInDirectory(
           shellCommand("bun install"),
           repoPath,
-          "Nainstalujte zavislosti rucne"
+          "Nainstalujte zavislosti rucne",
         ),
         S.checkDiskSpace("Zkontrolujte volne misto na disku"),
         S.checkNetwork("Zkontrolujte pripojeni k npm registry"),
@@ -120,16 +97,16 @@ export function suggestionsForBuild(
         S.terminalInDirectory(
           shellCommand("bun run typecheck"),
           repoPath,
-          "Zkontrolujte typove chyby"
+          "Zkontrolujte typove chyby",
         ),
         S.documentation(
           "TypeScript errors",
-          "Projdete si chybove hlasky a opravte problemy ve zdrojovem kodu"
+          "Projdete si chybove hlasky a opravte problemy ve zdrojovem kodu",
         ),
         S.contactSupport(
           "high",
           result.errors.join("; "),
-          "Kompilace selhala - kontaktujte vyvojare"
+          "Kompilace selhala - kontaktujte vyvojare",
         ),
       ];
 
@@ -138,12 +115,12 @@ export function suggestionsForBuild(
         S.terminalInDirectory(
           shellCommand("bun run build"),
           repoPath,
-          "Zkuste build spustit rucne"
+          "Zkuste build spustit rucne",
         ),
         S.contactSupport(
           "medium",
           result.message,
-          "Neznama chyba pri buildu - kontaktujte podporu"
+          "Neznama chyba pri buildu - kontaktujte podporu",
         ),
       ];
   }
@@ -155,7 +132,7 @@ export function suggestionsForBuild(
 export function suggestionsForOverride(
   result: OverrideResult,
   distPath: string,
-  backupPath: string
+  backupPath: string,
 ): readonly Suggestion[] {
   switch (result.kind) {
     case "success":
@@ -168,7 +145,7 @@ export function suggestionsForOverride(
         S.checkPermissions(distPath, `Zkontrolujte opravneni k ${distPath}`),
         S.terminalGlobal(
           shellCommand(`rm -rf ${backupPath}`),
-          "Smazte starou zalohu a zkuste znovu"
+          "Smazte starou zalohu a zkuste znovu",
         ),
       ];
 
@@ -183,11 +160,11 @@ export function suggestionsForOverride(
         S.contactSupport(
           "critical",
           `Original: ${result.originalError}, Rollback: ${result.rollbackError}`,
-          "KRITICKA CHYBA: Rollback selhal! Kontaktujte okamzite podporu."
+          "KRITICKA CHYBA: Rollback selhal! Kontaktujte okamzite podporu.",
         ),
         S.terminalGlobal(
           shellCommand(`cp -r ${backupPath} ${distPath}`),
-          "Zkuste rucne obnovit ze zalohy"
+          "Zkuste rucne obnovit ze zalohy",
         ),
         S.restartMachine("Restartujte pocitac a zkontrolujte stav"),
       ];
@@ -199,7 +176,7 @@ export function suggestionsForOverride(
  */
 export function suggestionsForProcessStart(
   result: ProcessStartResult,
-  processName: string
+  processName: string,
 ): readonly Suggestion[] {
   switch (result.kind) {
     case "started":
@@ -208,18 +185,9 @@ export function suggestionsForProcessStart(
 
     case "failed":
       return [
-        S.terminalGlobal(
-          shellCommand("pm2 list"),
-          "Zkontrolujte stav vsech procesu"
-        ),
-        S.terminalGlobal(
-          shellCommand(`pm2 logs ${processName}`),
-          "Zkontrolujte logy procesu"
-        ),
-        S.terminalGlobal(
-          shellCommand(`pm2 delete ${processName}`),
-          "Smazte proces a zkuste znovu"
-        ),
+        S.terminalGlobal(shellCommand("pm2 list"), "Zkontrolujte stav vsech procesu"),
+        S.terminalGlobal(shellCommand(`pm2 logs ${processName}`), "Zkontrolujte logy procesu"),
+        S.terminalGlobal(shellCommand(`pm2 delete ${processName}`), "Smazte proces a zkuste znovu"),
         S.terminalGlobal(shellCommand("pm2 kill"), "Restartujte PM2 daemon"),
       ];
   }

@@ -9,7 +9,7 @@ export function successResponse<T>(data: T): { success: true; data: T } {
 
 export function errorResponse(
   error: string,
-  details?: unknown
+  details?: unknown,
 ): { success: false; error: string; details?: unknown } {
   if (details !== undefined) {
     return { success: false, error, details };

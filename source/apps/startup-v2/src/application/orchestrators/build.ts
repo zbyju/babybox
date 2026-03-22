@@ -20,7 +20,7 @@ export type BuildPhaseResult =
 export async function executeBuild(
   ctx: AppContext,
   shouldBuild: boolean,
-  skipReason?: string
+  skipReason?: string,
 ): Promise<Result<BuildPhaseResult, string>> {
   const { logger, packageManager, config } = ctx;
   const repoPath = config.repositoryPath as DirectoryPath;
@@ -47,17 +47,12 @@ export async function executeBuild(
   const installValue = installResult.value;
   if (installValue.kind !== "success") {
     const message =
-      installValue.kind === "bun_not_found"
-        ? "Bun neni nainstalovan"
-        : installValue.message;
+      installValue.kind === "bun_not_found" ? "Bun neni nainstalovan" : installValue.message;
 
     logger.error(
       "build",
       message,
-      suggestionsForBuild(
-        { kind: "dependency_install_failed", message },
-        repoPath
-      )
+      suggestionsForBuild({ kind: "dependency_install_failed", message }, repoPath),
     );
     return ok({ kind: "failed", message });
   }
@@ -75,11 +70,7 @@ export async function executeBuild(
 
   const buildValue = buildResult.value;
   if (buildValue.kind !== "success") {
-    logger.error(
-      "build",
-      Messages.build.failed,
-      suggestionsForBuild(buildValue, repoPath)
-    );
+    logger.error("build", Messages.build.failed, suggestionsForBuild(buildValue, repoPath));
     return ok({
       kind: "failed",
       message:

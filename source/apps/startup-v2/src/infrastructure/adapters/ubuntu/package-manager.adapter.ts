@@ -14,7 +14,7 @@ export function createUbuntuPackageManagerAdapter(): PackageManagerPort {
       const result = await executeInDirectory(
         shellCommand("bun install"),
         cwd,
-        durationMs(120000) // 2 minutes for install
+        durationMs(120000), // 2 minutes for install
       );
 
       const shellResult = result._unsafeUnwrap();
@@ -55,7 +55,7 @@ export function createUbuntuPackageManagerAdapter(): PackageManagerPort {
       const result = await executeInDirectory(
         shellCommand("bun run build"),
         cwd,
-        durationMs(300000) // 5 minutes for build
+        durationMs(300000), // 5 minutes for build
       );
 
       const duration = durationMs(Date.now() - startTime);
@@ -75,8 +75,8 @@ export function createUbuntuPackageManagerAdapter(): PackageManagerPort {
           return ok(
             BR.compilationFailed(
               shellResult.stderr || `Build selhal s kodem ${shellResult.exitCode}`,
-              errors
-            )
+              errors,
+            ),
           );
         }
 
@@ -89,10 +89,7 @@ export function createUbuntuPackageManagerAdapter(): PackageManagerPort {
     },
 
     isInstalled: async () => {
-      const result = await executeInDirectory(
-        shellCommand("bun --version"),
-        "." as DirectoryPath
-      );
+      const result = await executeInDirectory(shellCommand("bun --version"), "." as DirectoryPath);
       const shellResult = result._unsafeUnwrap();
       return shellResult.kind === "success";
     },

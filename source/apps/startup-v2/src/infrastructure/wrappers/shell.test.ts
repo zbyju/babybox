@@ -33,9 +33,7 @@ describe("shell wrapper", () => {
   });
 
   it("handles invalid commands", async () => {
-    const result = await executeCommand(
-      shellCommand("this-command-does-not-exist-12345")
-    );
+    const result = await executeCommand(shellCommand("this-command-does-not-exist-12345"));
     const shellResult = result._unsafeUnwrap();
 
     // Could be spawn_error or non_zero_exit depending on shell
@@ -43,9 +41,7 @@ describe("shell wrapper", () => {
   });
 
   it("captures stderr", async () => {
-    const result = await executeCommand(
-      shellCommand("sh -c 'echo error >&2'")
-    );
+    const result = await executeCommand(shellCommand("sh -c 'echo error >&2'"));
     const shellResult = result._unsafeUnwrap();
 
     expect(shellResult.kind).toBe("success");

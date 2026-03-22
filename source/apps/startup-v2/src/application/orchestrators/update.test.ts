@@ -51,7 +51,7 @@ function createMockGit(overrides: Partial<GitPort> = {}): GitPort {
 // Minimal context helper
 function createCtx(
   gitOverrides: Partial<GitPort> = {},
-  configOverrides: Partial<StartupConfig> = {}
+  configOverrides: Partial<StartupConfig> = {},
 ): AppContext {
   return {
     config: { ...baseConfig, ...configOverrides },
@@ -129,7 +129,7 @@ describe("executeUpdate", () => {
             kind: "dirty" as const,
             modifiedFiles: ["file.ts"],
             untrackedFiles: [],
-          })
+          }),
         ),
         stash: stashMock,
         pull: mock(async () => ok(GitPullResult.alreadyUpToDate())),
@@ -147,7 +147,7 @@ describe("executeUpdate", () => {
             kind: "dirty" as const,
             modifiedFiles: ["file.ts"],
             untrackedFiles: [],
-          })
+          }),
         ),
         stash: mock(async () => err("stash failed")),
         pull: mock(async () => ok(GitPullResult.alreadyUpToDate())),

@@ -1,10 +1,7 @@
 import type { Moment } from "moment";
 import { defineStore } from "pinia";
 
-import {
-  rawEngineUnitToEngineUnit,
-  rawThermalUnitToThermalUnit,
-} from "@/defaults/units.defaults";
+import { rawEngineUnitToEngineUnit, rawThermalUnitToThermalUnit } from "@/defaults/units.defaults";
 import type { Maybe } from "@/types/generic.types";
 import type { VoltageConfig } from "@/types/panel/config.types";
 import type {
@@ -48,10 +45,7 @@ export const useUnitsStore = defineStore("engineUnit", {
         const voltageConfig: VoltageConfig = config?.units?.voltage
           ? config.units.voltage
           : { divider: 3400, multiplier: 100, addition: 0 };
-        this.thermalUnit = rawThermalUnitToThermalUnit(
-          rawThermalUnit,
-          voltageConfig,
-        );
+        this.thermalUnit = rawThermalUnitToThermalUnit(rawThermalUnit, voltageConfig);
       }
     },
     setTime(time: Maybe<Moment>) {

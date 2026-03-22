@@ -6,7 +6,7 @@ describe("Suggestion.terminalGlobal", () => {
   it("creates a global terminal suggestion", () => {
     const suggestion = Suggestion.terminalGlobal(
       shellCommand("git stash"),
-      "Ulozte zmeny do stashe"
+      "Ulozte zmeny do stashe",
     );
     expect(suggestion.kind).toBe("terminal");
     expect(suggestion.scope.kind).toBe("global");
@@ -20,7 +20,7 @@ describe("Suggestion.terminalInDirectory", () => {
     const suggestion = Suggestion.terminalInDirectory(
       shellCommand("bun install"),
       directoryPath("/home/babybox"),
-      "Nainstalujte zavislosti"
+      "Nainstalujte zavislosti",
     );
     expect(suggestion.kind).toBe("terminal");
     expect(suggestion.scope.kind).toBe("directory");
@@ -62,7 +62,7 @@ describe("Suggestion.checkPermissions", () => {
   it("creates a permissions check suggestion", () => {
     const suggestion = Suggestion.checkPermissions(
       "/home/babybox/dist",
-      "Zkontrolujte prava k adresari"
+      "Zkontrolujte prava k adresari",
     );
     expect(suggestion.kind).toBe("manual_action");
     expect(suggestion.action.kind).toBe("check_permissions");
@@ -77,7 +77,7 @@ describe("Suggestion.documentation", () => {
   it("creates a documentation suggestion without URL", () => {
     const suggestion = Suggestion.documentation(
       "git-conflicts",
-      "Prectete si dokumentaci o konfliktech"
+      "Prectete si dokumentaci o konfliktech",
     );
     expect(suggestion.kind).toBe("documentation");
     expect(suggestion.topic).toBe("git-conflicts");
@@ -89,7 +89,7 @@ describe("Suggestion.documentation", () => {
     const suggestion = Suggestion.documentation(
       "git-conflicts",
       "Prectete si dokumentaci o konfliktech",
-      "https://example.com/docs"
+      "https://example.com/docs",
     );
     expect(suggestion.kind).toBe("documentation");
     expect(suggestion.url).toBe("https://example.com/docs");
@@ -98,11 +98,7 @@ describe("Suggestion.documentation", () => {
 
 describe("Suggestion.contactSupport", () => {
   it("creates a support suggestion with severity", () => {
-    const suggestion = Suggestion.contactSupport(
-      "critical",
-      "build_failed",
-      "Kontaktujte podporu"
-    );
+    const suggestion = Suggestion.contactSupport("critical", "build_failed", "Kontaktujte podporu");
     expect(suggestion.kind).toBe("contact_support");
     expect(suggestion.severity).toBe("critical");
     expect(suggestion.context).toBe("build_failed");

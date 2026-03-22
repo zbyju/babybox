@@ -10,7 +10,6 @@ This repository contains a backend server in Node.js for the Babybox Panel Front
 The API starts with `http://IP:PORT/api/v1/`; and then there are 3 main endpoints:
 
 - `units/` - for communicating with both engine and thermal unit
-
   - `actions/` - these endpoints don't follow the standard RESTful practices; they execute some action when **GET** request comes
     - `open/` - opens the front doors
     - `openServiceDoors/` - opens the service doors (mainly for reseting the babybox state)

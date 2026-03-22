@@ -20,26 +20,20 @@ export type ProcessPort = {
   readonly start: (
     name: ProcessName,
     script: string,
-    cwd: DirectoryPath
+    cwd: DirectoryPath,
   ) => Promise<Result<ProcessStartResult, ProcessError>>;
 
   readonly startBun: (
     name: ProcessName,
     scriptPath: string,
-    cwd: DirectoryPath
+    cwd: DirectoryPath,
   ) => Promise<Result<ProcessStartResult, ProcessError>>;
 
-  readonly stop: (
-    name: ProcessName
-  ) => Promise<Result<ProcessStopResult, ProcessError>>;
+  readonly stop: (name: ProcessName) => Promise<Result<ProcessStopResult, ProcessError>>;
 
-  readonly delete: (
-    name: ProcessName
-  ) => Promise<Result<ProcessStopResult, ProcessError>>;
+  readonly delete: (name: ProcessName) => Promise<Result<ProcessStopResult, ProcessError>>;
 
-  readonly restart: (
-    name: ProcessName
-  ) => Promise<Result<ProcessStartResult, ProcessError>>;
+  readonly restart: (name: ProcessName) => Promise<Result<ProcessStartResult, ProcessError>>;
 
   readonly isManagerInstalled: () => Promise<boolean>;
 };

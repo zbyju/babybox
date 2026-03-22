@@ -21,7 +21,7 @@ export type OverridePhaseResult =
 export async function executeOverride(
   ctx: AppContext,
   shouldOverride: boolean,
-  skipReason?: string
+  skipReason?: string,
 ): Promise<Result<OverridePhaseResult, string>> {
   const { logger, fs, config } = ctx;
   const { distPath, distBackupPath } = config;
@@ -56,8 +56,8 @@ export async function executeOverride(
         suggestionsForOverride(
           { kind: "backup_failed", message: renameResult.error.message },
           distPath,
-          distBackupPath
-        )
+          distBackupPath,
+        ),
       );
       return ok({
         kind: "failed",
@@ -94,8 +94,8 @@ export async function executeOverride(
       suggestionsForOverride(
         { kind: "copy_failed", message: copyResult.error.message },
         distPath,
-        distBackupPath
-      )
+        distBackupPath,
+      ),
     );
 
     // Attempt rollback
@@ -110,9 +110,7 @@ export async function executeOverride(
 /**
  * Attempt to rollback to backup.
  */
-async function attemptRollback(
-  ctx: AppContext
-): Promise<OverridePhaseResult> {
+async function attemptRollback(ctx: AppContext): Promise<OverridePhaseResult> {
   const { logger, fs, config } = ctx;
   const { distPath, distBackupPath } = config;
 
@@ -138,8 +136,8 @@ async function attemptRollback(
           rollbackError: renameResult.error.message,
         },
         distPath,
-        distBackupPath
-      )
+        distBackupPath,
+      ),
     );
     return {
       kind: "rollback_failed",

@@ -5,10 +5,7 @@
 import { type Result, ok, err } from "neverthrow";
 import type { AppContext } from "../context";
 import type { GitPullResult, DirectoryPath } from "../../domain/types/index";
-import {
-  determinePullStrategy,
-  shouldRetryGitPull,
-} from "../../domain/functions/index";
+import { determinePullStrategy, shouldRetryGitPull } from "../../domain/functions/index";
 import { suggestionsForGitPull } from "../../domain/functions/index";
 import { Messages } from "../../presentation/messages";
 
@@ -22,9 +19,7 @@ export type UpdateResult =
  * Execute the update phase.
  * Handles git pull with automatic conflict resolution via stash.
  */
-export async function executeUpdate(
-  ctx: AppContext
-): Promise<Result<UpdateResult, string>> {
+export async function executeUpdate(ctx: AppContext): Promise<Result<UpdateResult, string>> {
   const { logger, git, config } = ctx;
   const repoPath = config.repositoryPath as DirectoryPath;
 
@@ -95,11 +90,7 @@ export async function executeUpdate(
         continue;
 
       case "abort":
-        logger.error(
-          "update",
-          strategy.reason,
-          suggestionsForGitPull(pullResult, repoPath)
-        );
+        logger.error("update", strategy.reason, suggestionsForGitPull(pullResult, repoPath));
         return err(strategy.reason);
 
       case "reset_and_retry":
@@ -113,7 +104,7 @@ export async function executeUpdate(
     if (retryDecision.kind === "give_up") {
       break;
     }
-    
+
     // Wait before retry - retryDecision must be "retry" here
     await new Promise((resolve) => {
       // TypeScript narrowing workaround

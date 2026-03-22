@@ -97,10 +97,7 @@ describe("fetchFromUnits", () => {
 
       await fetchDataCommon(Unit.Engine, { timeout: 10000 });
 
-      expect(mockFetchFromUrl).toHaveBeenCalledWith(
-        expect.any(String),
-        10000,
-      );
+      expect(mockFetchFromUrl).toHaveBeenCalledWith(expect.any(String), 10000);
     });
   });
 });

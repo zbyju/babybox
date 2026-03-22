@@ -71,10 +71,7 @@ export class ConnectionTracker {
   }
 
   getRecentQuality(): number {
-    return this.calculateQuality(
-      this.recentQueue.length,
-      this.countRecentSuccess(),
-    );
+    return this.calculateQuality(this.recentQueue.length, this.countRecentSuccess());
   }
 
   getQuality(): number {

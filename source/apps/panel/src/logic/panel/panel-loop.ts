@@ -3,12 +3,7 @@ import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
-import {
-  getEngineData,
-  getStatus,
-  getThermalData,
-  updateWatchdog,
-} from "@/api/units";
+import { getEngineData, getStatus, getThermalData, updateWatchdog } from "@/api/units";
 import { useAppStateStore } from "@/pinia/app-state-store";
 import { useConfigStore } from "@/pinia/config-store";
 import { useConnectionStore } from "@/pinia/connection-store";

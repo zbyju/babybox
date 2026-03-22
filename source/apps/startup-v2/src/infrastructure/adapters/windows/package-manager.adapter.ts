@@ -8,10 +8,8 @@ import type { PackageManagerPort } from "../../../application/ports/package-mana
 
 export function createWindowsPackageManagerAdapter(): PackageManagerPort {
   return {
-    install: async () =>
-      err("Windows package manager adapter neni implementovan"),
-    build: async () =>
-      err("Windows package manager adapter neni implementovan"),
+    install: async () => err("Windows package manager adapter neni implementovan"),
+    build: async () => err("Windows package manager adapter neni implementovan"),
     isInstalled: async () => false,
   };
 }

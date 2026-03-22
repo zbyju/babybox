@@ -2,16 +2,11 @@ import { describe, it, expect } from "vitest";
 
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 
-import {
-  rawEngineUnitToEngineUnit,
-  rawThermalUnitToThermalUnit,
-} from "../units.defaults";
+import { rawEngineUnitToEngineUnit, rawThermalUnitToThermalUnit } from "../units.defaults";
 
 // Helper to create a raw unit array with default values
 // The array must be indexed properly (rawEngineUnit[35].value accesses element at index 35)
-const createRawEngineUnit = (
-  overrides: Partial<Record<number, string>> = {}
-): RawEngineUnit => {
+const createRawEngineUnit = (overrides: Partial<Record<number, string>> = {}): RawEngineUnit => {
   const defaults: Record<number, string> = {
     0: "100", // allowedLoad
     1: "5", // timeForEngineStart
@@ -53,9 +48,7 @@ const createRawEngineUnit = (
   return result;
 };
 
-const createRawThermalUnit = (
-  overrides: Partial<Record<number, string>> = {}
-): RawThermalUnit => {
+const createRawThermalUnit = (overrides: Partial<Record<number, string>> = {}): RawThermalUnit => {
   const defaults: Record<number, string> = {
     0: "2200", // optimalInner (22.00)
     1: "200", // hysteresisHeating (2.00)
