@@ -4,13 +4,10 @@
  */
 
 import { type Result, ok, err } from "neverthrow";
-import type {
-  GitPullResult,
-  GitStashResult,
-  GitStatusResult,
-  DirectoryPath,
-} from "../../../domain/types/index";
-import { GitPullResult as GPR, shellCommand, durationMs } from "../../../domain/types/index";
+import type { DirectoryPath } from "../../../domain/types/branded";
+import { shellCommand, durationMs } from "../../../domain/types/branded";
+import type { GitPullResult, GitStashResult, GitStatusResult } from "../../../domain/types/results";
+import { GitPullResult as GPR } from "../../../domain/types/results";
 import { executeInDirectory } from "../../wrappers/shell";
 import type { GitPort } from "../../../application/ports/git.port";
 

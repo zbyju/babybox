@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { Suggestion } from "./suggestion";
-import { shellCommand, directoryPath } from "./branded";
+import { Suggestion } from "../suggestion";
+import { shellCommand, directoryPath } from "../branded";
 
 describe("Suggestion.terminalGlobal", () => {
   it("creates a global terminal suggestion", () => {

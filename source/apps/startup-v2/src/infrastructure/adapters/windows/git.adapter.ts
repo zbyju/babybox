@@ -4,7 +4,7 @@
  */
 
 import { err } from "neverthrow";
-import type { DirectoryPath } from "../../../domain/types/index";
+import type { DirectoryPath } from "../../../domain/types/branded";
 import type { GitPort } from "../../../application/ports/git.port";
 
 export function createWindowsGitAdapter(_repoPath: DirectoryPath): GitPort {

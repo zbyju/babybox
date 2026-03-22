@@ -7,8 +7,8 @@
 
 import { parseArgs } from "node:util";
 import { createAppContext } from "../application/context";
-import { startup } from "../application/orchestrators/index";
-import { createCombinedLogger } from "../infrastructure/logging/index";
+import { startup } from "../application/orchestrators/startup";
+import { createCombinedLogger } from "../infrastructure/logging/combined";
 import { VERSION, getVersionInfo } from "../version";
 import { resolveOS } from "./os-detection";
 import { createAdapters } from "./adapter-factory";

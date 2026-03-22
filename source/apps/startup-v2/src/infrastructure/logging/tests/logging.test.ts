@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach, afterEach } from "bun:test";
 import { rm, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { createConsoleLogger } from "./console";
-import { createFileLogger } from "./file";
-import { createCombinedLogger } from "./combined";
+import { createConsoleLogger } from "../console";
+import { createFileLogger } from "../file";
+import { createCombinedLogger } from "../combined";
 
 const TEST_LOG_DIR = "./test-logs";
 

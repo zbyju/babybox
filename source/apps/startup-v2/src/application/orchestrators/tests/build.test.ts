@@ -1,10 +1,11 @@
 import { describe, expect, it, mock } from "bun:test";
 import { ok, err } from "neverthrow";
-import { executeBuild } from "./build";
-import type { AppContext } from "../context";
-import type { LoggerPort } from "../ports/logger.port";
-import type { StartupConfig } from "../../domain/types/index";
-import { BuildResult, durationMs } from "../../domain/types/index";
+import { executeBuild } from "../build";
+import type { AppContext } from "../../context";
+import type { LoggerPort } from "../../ports/logger.port";
+import type { StartupConfig } from "../../../domain/types/config";
+import { BuildResult } from "../../../domain/types/results";
+import { durationMs } from "../../../domain/types/branded";
 
 function createMockLogger(): LoggerPort {
   return {

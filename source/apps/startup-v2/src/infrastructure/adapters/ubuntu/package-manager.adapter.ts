@@ -4,8 +4,9 @@
 
 import { ok } from "neverthrow";
 import type { PackageManagerPort } from "../../../application/ports/package-manager.port";
-import type { DirectoryPath } from "../../../domain/types/index";
-import { BuildResult as BR, durationMs, shellCommand } from "../../../domain/types/index";
+import type { DirectoryPath } from "../../../domain/types/branded";
+import { durationMs, shellCommand } from "../../../domain/types/branded";
+import { BuildResult as BR } from "../../../domain/types/results";
 import { executeInDirectory } from "../../wrappers/shell";
 
 export function createUbuntuPackageManagerAdapter(): PackageManagerPort {

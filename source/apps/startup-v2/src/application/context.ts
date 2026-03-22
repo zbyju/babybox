@@ -3,7 +3,8 @@
  * Passed to all orchestration functions.
  */
 
-import type { StartupConfig, OperatingSystem } from "../domain/types/index";
+import type { StartupConfig } from "../domain/types/config";
+import type { OperatingSystem } from "../domain/types/os";
 import type { LoggerPort } from "./ports/logger.port";
 import type { GitPort } from "./ports/git.port";
 import type { FileSystemPort } from "./ports/fs.port";

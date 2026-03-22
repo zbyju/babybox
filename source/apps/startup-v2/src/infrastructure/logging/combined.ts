@@ -2,7 +2,7 @@
  * Combined logger - writes to both console and file.
  */
 
-import type { LogLevel } from "../../domain/types/index";
+import type { LogLevel } from "../../domain/types/logging";
 import type { LoggerPort } from "../../application/ports/logger.port";
 import { createConsoleLogger } from "./console";
 import { createFileLogger } from "./file";

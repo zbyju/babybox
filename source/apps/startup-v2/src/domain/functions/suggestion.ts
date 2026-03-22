@@ -3,15 +3,16 @@
  * Pure functions that create actionable suggestions based on errors.
  */
 
+import type { DirectoryPath } from "../types/branded";
+import { shellCommand } from "../types/branded";
 import type {
-  Suggestion,
   GitPullResult,
   BuildResult,
   OverrideResult,
   ProcessStartResult,
-  DirectoryPath,
-} from "../types/index";
-import { Suggestion as S, shellCommand } from "../types/index";
+} from "../types/results";
+import type { Suggestion } from "../types/suggestion";
+import { Suggestion as S } from "../types/suggestion";
 
 /**
  * Create suggestions for git pull failures.

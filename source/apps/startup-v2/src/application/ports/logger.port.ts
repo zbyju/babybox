@@ -7,8 +7,8 @@ import type {
   LogLevel,
   LogModule,
   LogContext,
-  Suggestion,
-} from "../../domain/types/index";
+} from "../../domain/types/logging";
+import type { Suggestion } from "../../domain/types/suggestion";
 
 /**
  * Port interface for logging.

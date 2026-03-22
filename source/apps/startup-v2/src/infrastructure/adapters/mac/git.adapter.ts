@@ -4,7 +4,7 @@
  */
 
 import { createUbuntuGitAdapter } from "../ubuntu/git.adapter";
-import type { DirectoryPath } from "../../../domain/types/index";
+import type { DirectoryPath } from "../../../domain/types/branded";
 import type { GitPort } from "../../../application/ports/git.port";
 
 export function createMacGitAdapter(repoPath: DirectoryPath): GitPort {

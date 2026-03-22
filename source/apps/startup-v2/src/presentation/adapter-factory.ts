@@ -2,7 +2,9 @@
  * Factory for creating OS-specific adapters.
  */
 
-import type { OperatingSystem, StartupConfig, DirectoryPath } from "../domain/types/index";
+import type { DirectoryPath } from "../domain/types/branded";
+import type { OperatingSystem } from "../domain/types/os";
+import type { StartupConfig } from "../domain/types/config";
 import type { GitPort } from "../application/ports/git.port";
 import type { FileSystemPort } from "../application/ports/fs.port";
 import type { ProcessPort } from "../application/ports/process.port";

@@ -4,8 +4,8 @@
 
 import { type Result, ok, err } from "neverthrow";
 import type { AppContext } from "../context";
-import type { DirectoryPath } from "../../domain/types/index";
-import { suggestionsForBuild } from "../../domain/functions/index";
+import type { DirectoryPath } from "../../domain/types/branded";
+import { suggestionsForBuild } from "../../domain/functions/suggestion";
 import { Messages } from "../../presentation/messages";
 
 export type BuildPhaseResult =

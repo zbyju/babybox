@@ -4,10 +4,10 @@
 
 import { type Result, ok } from "neverthrow";
 import type { AppContext } from "../context";
-import type { DirectoryPath, ProcessName } from "../../domain/types/index";
-import { processName } from "../../domain/types/index";
-import { shouldRetryProcessStart } from "../../domain/functions/index";
-import { suggestionsForProcessStart } from "../../domain/functions/index";
+import type { DirectoryPath, ProcessName } from "../../domain/types/branded";
+import { processName } from "../../domain/types/branded";
+import { shouldRetryProcessStart } from "../../domain/functions/retry";
+import { suggestionsForProcessStart } from "../../domain/functions/suggestion";
 import { Messages } from "../../presentation/messages";
 
 export type ProcessPhaseResult =

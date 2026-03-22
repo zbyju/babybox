@@ -1,93 +1,117 @@
-# Babybox Panel
+# Panel — Dokumentace pro techniky
 
-## Config
+Panel je webová aplikace (zobrazuje se v prohlížeči), která slouží jako hlavní monitorovací nástroj babyboxu. Zobrazuje data ze senzorů, obraz z kamery a přehrává zvukové alarmy.
 
-Pro nastavení panelu je potřeba vytvořit config soubor, který je umístěný v `/public/config`. Stačí zkopírovat soubor `config.template.json` a zkopírovaný soubor pojmenovat `config.json`. Tento soubor by měl obsahovat základní nastavení.
+## Struktura
 
-### Vysvětlení jednotlivých hodnot
-
-```typescript
-// string = řetězec = text; zapisováno v "" (příklad: "Ahoj, tohle je řetězec")
-// number = číslo; zapisováno jako číslo (příklad: 42)
-// boolean = true/false = pravda/nepravda = ano/ne; zapisováno jako true nebo false (příklad: true)
-{
-  "babybox": {
-    // Název babyboxu
-    "name": string,
-    // Má být před názvem babyboxu napsáno Babybox
-    "prependBabyboxBeforeName": boolean
-  },
-  // Nastavení jednotek
-  "units": {
-    // Motorová
-    "engine": {
-      // IP Adresa motorové jednotky
-      "ip": string
-    },
-    // Topení
-    "thermal": {
-      // IP Adresa jednotky topení
-      "ip": string
-    },
-    // URL adresa za IP adresou pro získání dat (http://IP/postfix) - pro SDS nastavit jako: "/get_ram[0]?rn=60"
-    "postfix": string,
-    // URL adresa za IP adresou pro obnovení Watchdogu babyboxu (obnovení časovače pro zablokování babyboxu, při ztrátě spojení s PC) = pro SDS nastavit jako: "postfixWatchdog": "/sdscep?sys141=115"
-    "postfixWatchdog": string,
-    // Rychlost posílání požadavků v ms
-    "requestDelay": number,
-    // Doba vyprčení požadavku v ms
-    "requestTimeout": number,
-    // Počet chyb pro vyvolání varování spojení
-    "warningThreshold": number,
-    // Počet chyb pro vyvolání chyby spojení
-    "errorThreshold": number,
-    // Výpočet napětí - rovnice: Napětí = ((Hodnota * multiplier) / divider) + addition
-    "voltage": {
-      // Jmenovatel - pro staré SDS = 3400; pro nové SDS 6300
-      "divider": number,
-      // Činitel - typicky 100
-      "multiplier": number,
-      // Dodatečná korekce +-číslo; typicky 0
-      "addition": number
-    }
-  },
-  // Nastavení kamery
-  "camera": {
-    // IP adresa kamery
-    "ip": string,
-    // Přihlašovací jméno
-    "username": string,
-    // Heslo
-    "password": string,
-    // Rychlost refreshování snímků v ms
-    "updateDelay": number,
-    // Typ kamery - povolené hodnoty: "dahua", "avtech", "vivotek"
-    "cameraType": string
-  },
-  // Nastavení aplikace
-  "app": {
-    // Heslo pro otevření navigace/menu
-    "password": "test",
-  }
-}
+```
+panel/
+├── src/                    # Zdrojový kód
+│   ├── main.ts             # Hlavní soubor — spouští aplikaci
+│   ├── views/              # Stránky (hlavní přehled, data, nastavení)
+│   ├── components/panel/   # Komponenty zobrazující data
+│   ├── pinia/              # Stavové úložiště (data z backendu)
+│   ├── logic/panel/        # Hlavní smyčka dotazování na backend
+│   ├── composables/        # Kamera, zvuky, čas
+│   └── utils/              # Pomocné funkce
+├── public/                 # Statické soubory
+│   ├── sounds/             # Zvukové soubory pro alarmy
+│   └── config/             # Statická konfigurace
+└── dist/                   # Sestavená aplikace (po buildu)
 ```
 
-Dále lze v souboru `styles.json` nastavit styly zobrazení. To může být užitečné, pokud někde text přetýká, je moc malý apod. Obecně tohle ale není potřeba měnit.
+## Jak to funguje
 
-## Příkazy
+1. Panel se pravidelně (každé ~2 sekundy) dotazuje backendu na nová data
+2. Data ze senzorů se zobrazují na hlavní obrazovce
+3. Při změně stavu (otevření dvířek, teplotní varování) se přehrají zvukové alarmy
+4. Nastavení a navigace jsou zamčeny heslem — panel běží bez zásahu
 
-Před použitím aplikace je potřeba nainstalovat: [Node.js](https://nodejs.org/en/) (stačí LTS verze; Windows 7 podporuje jen verzi 12).
+## Spuštění
 
-Pak je potřeba nainstalovat **pnpm** - `npm install -g pnpm`.
+### Vývoj
 
-### Nainstalování závislostí aplikace
+#### Windows
+```powershell
+cd C:\cesta\k\babybox
+bun dev:panel
+```
 
-`pnpm install`
+#### Ubuntu
+```bash
+cd /cesta/k/babybox
+bun dev:panel
+```
 
-### Spuštění projektu v developerském režimu
+Panel bude dostupný na `http://localhost:3002`.
 
-`pnpm dev`
+### Produkce
 
-### Zbuildění projektu (kompilace) do proudkčního kódu
+V produkci se panel nestaví samostatně — jeho sestavené soubory servíruje backend. Stačí spustit:
 
-`pnpm build`
+#### Windows
+```powershell
+cd C:\cesta\k\babybox
+bun run build
+bun start:main
+```
+
+#### Ubuntu
+```bash
+cd /cesta/k/babybox
+bun run build
+bun start:main
+```
+
+## Konfigurace
+
+Konfigurace panelu se řídí z backendu — hlavní konfigurační soubor je `source/apps/backend/configs/main.json`. Podrobný popis všech nastavení najdete v dokumentaci backendu (`source/apps/backend/CTIME.md`).
+
+### Důležitá nastavení ovlivňující panel
+
+| Klíč v `main.json` | Popis |
+|---------------------|-------|
+| `babybox.name` | Název babyboxu zobrazený na panelu |
+| `units.engine.ip` | IP řídicí jednotky |
+| `units.thermal.ip` | IP tepelné jednotky |
+| `units.requestDelay` | Jak často se obnovují data (ms) |
+| `camera.ip` | IP kamery |
+| `camera.cameraType` | Typ kamery (`dahua`, `hikvision`, `avtech`, `vivotek`) |
+| `app.password` | Heslo pro otevření nastavení |
+
+### Výpočet napětí
+
+Panel zobrazuje napětí, které se počítá podle vzorce:
+
+```
+Napětí = ((Hodnota * multiplier) / divider) + addition
+```
+
+Tyto hodnoty se nastavují v `main.json` pod `units.voltage`:
+- `divider` — jmenovatel (pro staré SDS: 3400, pro nové SDS: 6300)
+- `multiplier` — činitel (typicky 100)
+- `addition` — korekce (typicky 0)
+
+## Nejčastější problémy
+
+### Panel se nenačítá
+
+- Zkontrolujte, že backend běží (viz dokumentace backendu)
+- Zkontrolujte, že prohlížeč přistupuje na správnou adresu (`http://localhost:3002` při vývoji, nebo `http://localhost:3000` v produkci)
+
+### Nezobrazují se data
+
+- Zkontrolujte, že jsou jednotky babyboxu zapnuté a dostupné na síti
+- Zkontrolujte IP adresy v `source/apps/backend/configs/main.json`
+- Zkontrolujte logy backendu
+
+### Nehrají se zvuky
+
+- Zkontrolujte, že prohlížeč má povolené přehrávání zvuku (může být zablokováno)
+- Zkontrolujte, že jsou zvukové soubory ve složce `public/sounds/`
+
+### Kamera se nezobrazuje
+
+- Zkontrolujte IP adresu a typ kamery v `source/apps/backend/configs/main.json`
+- Zkontrolujte přihlašovací údaje kamery
+- Ověřte, že je kamera dostupná na síti

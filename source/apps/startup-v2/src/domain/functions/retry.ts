@@ -3,7 +3,8 @@
  * Pure functions for determining retry behavior.
  */
 
-import type { ShellResult, ProcessStartResult, GitPullResult } from "../types/index";
+import type { ShellResult } from "../types/shell";
+import type { ProcessStartResult, GitPullResult } from "../types/results";
 
 /**
  * Configuration for retry behavior.

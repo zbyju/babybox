@@ -8,8 +8,8 @@ import type {
   GitStatusResult,
   BuildResult,
   OverrideResult,
-  StartupConfig,
-} from "../types/index";
+} from "../types/results";
+import type { StartupConfig } from "../types/config";
 
 /**
  * What to do after a git pull result.

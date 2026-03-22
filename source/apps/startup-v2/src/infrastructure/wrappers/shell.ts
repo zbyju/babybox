@@ -4,8 +4,10 @@
  */
 
 import { type Result, ok } from "neverthrow";
-import type { ShellCommand, ShellOptions, ShellResult, DurationMs } from "../../domain/types/index";
-import { ShellResult as SR, durationMs } from "../../domain/types/index";
+import type { ShellCommand, DurationMs } from "../../domain/types/branded";
+import { durationMs } from "../../domain/types/branded";
+import type { ShellOptions, ShellResult } from "../../domain/types/shell";
+import { ShellResult as SR } from "../../domain/types/shell";
 
 /**
  * Execute a shell command safely.

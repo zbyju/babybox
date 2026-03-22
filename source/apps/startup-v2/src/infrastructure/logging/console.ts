@@ -2,8 +2,9 @@
  * Console logger - human-readable output to terminal.
  */
 
-import type { LogEntry, LogLevel, Suggestion } from "../../domain/types/index";
-import { LogEntry as LogEntryFactory } from "../../domain/types/index";
+import type { LogEntry, LogLevel } from "../../domain/types/logging";
+import { LogEntry as LogEntryFactory } from "../../domain/types/logging";
+import type { Suggestion } from "../../domain/types/suggestion";
 import type { LoggerPort } from "../../application/ports/logger.port";
 
 const LEVEL_COLORS = {

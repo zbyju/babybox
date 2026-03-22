@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseGitStatusPorcelain, parseGitPullStats, detectGitError } from "./git";
+import { parseGitStatusPorcelain, parseGitPullStats, detectGitError } from "../git";
 
 describe("parseGitStatusPorcelain", () => {
   it("parses clean status (empty output)", () => {

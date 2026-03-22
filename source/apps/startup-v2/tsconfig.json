@@ -36,8 +36,7 @@
       "@application/*": ["./src/application/*"],
       "@infrastructure/*": ["./src/infrastructure/*"],
       "@presentation/*": ["./src/presentation/*"]
-    },
-    "baseUrl": "."
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

@@ -3,7 +3,7 @@
  */
 
 import type { Result } from "neverthrow";
-import type { GitPullResult, GitStashResult, GitStatusResult } from "../../domain/types/index";
+import type { GitPullResult, GitStashResult, GitStatusResult } from "../../domain/types/results";
 
 export type GitPort = {
   readonly pull: () => Promise<Result<GitPullResult, string>>;

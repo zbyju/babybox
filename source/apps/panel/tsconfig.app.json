@@ -16,12 +16,11 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
-  "exclude": ["src/**/__tests__/*", "node_modules", "dist"],
+  "exclude": ["src/**/tests/*", "node_modules", "dist"],
   "references": [{ "path": "./tsconfig.vite-config.json" }]
 }

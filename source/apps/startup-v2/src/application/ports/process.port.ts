@@ -3,12 +3,8 @@
  */
 
 import type { Result } from "neverthrow";
-import type {
-  ProcessName,
-  ProcessStartResult,
-  ProcessStopResult,
-  DirectoryPath,
-} from "../../domain/types/index";
+import type { ProcessName, DirectoryPath } from "../../domain/types/branded";
+import type { ProcessStartResult, ProcessStopResult } from "../../domain/types/results";
 
 export type ProcessError = {
   readonly operation: string;

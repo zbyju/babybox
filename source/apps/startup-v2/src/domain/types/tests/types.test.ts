@@ -1,12 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import {
-  absolutePath,
-  shellCommand,
-  GitPullResult,
-  Suggestion,
-  LogEntry,
-  StartupConfigSchema,
-} from "./index";
+import { absolutePath, shellCommand } from "../branded";
+import { StartupConfigSchema } from "../config";
+import { LogEntry } from "../logging";
+import { GitPullResult } from "../results";
+import { Suggestion } from "../suggestion";
 
 describe("branded types", () => {
   it("creates absolute paths correctly", () => {

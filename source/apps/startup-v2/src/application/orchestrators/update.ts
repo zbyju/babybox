@@ -4,9 +4,11 @@
 
 import { type Result, ok, err } from "neverthrow";
 import type { AppContext } from "../context";
-import type { GitPullResult, DirectoryPath } from "../../domain/types/index";
-import { determinePullStrategy, shouldRetryGitPull } from "../../domain/functions/index";
-import { suggestionsForGitPull } from "../../domain/functions/index";
+import type { DirectoryPath } from "../../domain/types/branded";
+import type { GitPullResult } from "../../domain/types/results";
+import { determinePullStrategy } from "../../domain/functions/strategy";
+import { shouldRetryGitPull } from "../../domain/functions/retry";
+import { suggestionsForGitPull } from "../../domain/functions/suggestion";
 import { Messages } from "../../presentation/messages";
 
 export type UpdateResult =

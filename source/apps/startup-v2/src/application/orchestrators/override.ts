@@ -4,7 +4,7 @@
 
 import { type Result, ok } from "neverthrow";
 import type { AppContext } from "../context";
-import { suggestionsForOverride } from "../../domain/functions/index";
+import { suggestionsForOverride } from "../../domain/functions/suggestion";
 import { Messages } from "../../presentation/messages";
 
 export type OverridePhaseResult =

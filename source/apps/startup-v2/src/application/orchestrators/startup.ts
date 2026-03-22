@@ -4,8 +4,8 @@
 
 import { type Result, ok } from "neverthrow";
 import type { AppContext } from "../context";
-import type { StartupResult } from "../../domain/types/index";
-import { decideBuild } from "../../domain/functions/index";
+import type { StartupResult } from "../../domain/types/results";
+import { decideBuild } from "../../domain/functions/strategy";
 import { Messages } from "../../presentation/messages";
 import { executeUpdate } from "./update";
 import { executeBuild } from "./build";

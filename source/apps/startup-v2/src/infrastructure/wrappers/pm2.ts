@@ -5,13 +5,9 @@
 
 import { type Result, ok, err } from "neverthrow";
 import { executeCommand } from "./shell";
-import type {
-  ProcessName,
-  ProcessStartResult,
-  ProcessStopResult,
-  DirectoryPath,
-} from "../../domain/types/index";
-import { shellCommand } from "../../domain/types/index";
+import type { ProcessName, DirectoryPath } from "../../domain/types/branded";
+import { shellCommand } from "../../domain/types/branded";
+import type { ProcessStartResult, ProcessStopResult } from "../../domain/types/results";
 
 export type PM2Error = {
   readonly operation: string;

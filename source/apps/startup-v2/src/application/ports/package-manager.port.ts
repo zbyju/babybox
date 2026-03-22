@@ -3,7 +3,8 @@
  */
 
 import type { Result } from "neverthrow";
-import type { DirectoryPath, DependencyInstallResult, BuildResult } from "../../domain/types/index";
+import type { DirectoryPath } from "../../domain/types/branded";
+import type { DependencyInstallResult, BuildResult } from "../../domain/types/results";
 
 export type PackageManagerPort = {
   readonly install: (cwd: DirectoryPath) => Promise<Result<DependencyInstallResult, string>>;
