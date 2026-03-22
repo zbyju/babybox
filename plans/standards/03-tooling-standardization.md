@@ -317,15 +317,15 @@ Should show **no formatting issues**.
 
 ## Verification Checklist
 
-- [ ] `bun run lint` passes in backend (zero errors)
-- [ ] `bun run lint` passes in panel (zero errors)
-- [ ] `bun run lint` passes in startup-v2 (zero errors)
-- [ ] `bun run format:check` passes (zero formatting issues)
-- [ ] `bun run build` succeeds
-- [ ] `bun run test` passes
-- [ ] `bun run dev` starts all services
-- [ ] Old .eslintrc and .prettierrc files are deleted
-- [ ] oxlint.json exists in backend and panel
+- [x] `bun run lint` passes in backend (zero errors)
+- [x] `bun run lint` passes in panel (zero errors)
+- [x] `bun run lint` passes in startup-v2 (zero errors)
+- [x] `bun run format:check` passes (zero formatting issues)
+- [x] `bun run build` succeeds
+- [x] `bun run test` passes
+- [x] `bun run dev` starts all services
+- [x] Old .eslintrc and .prettierrc files are deleted
+- [x] oxlint.json exists in backend and panel
 
 **Verify old tools are unused**:
 ```bash

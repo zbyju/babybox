@@ -229,14 +229,14 @@ All services should start:
 
 ## Verification Checklist
 
-- [ ] All renamed files exist with new names
-- [ ] No old files remain (or are deleted)
-- [ ] `bun run typecheck` passes with **zero errors**
-- [ ] `bun run build` succeeds
-- [ ] `bun run test` passes
-- [ ] `bun run dev` starts all services
-- [ ] Panel loads and displays data at http://localhost:3002
-- [ ] Backend can connect to hardware units (if available)
+- [x] All renamed files exist with new names
+- [x] No old files remain (or are deleted)
+- [x] `bun run typecheck` passes with **zero errors**
+- [x] `bun run build` succeeds
+- [x] `bun run test` passes
+- [x] `bun run dev` starts all services
+- [x] Panel loads and displays data at http://localhost:3002
+- [x] Backend can connect to hardware units (if available)
 
 **Search for remaining camelCase imports** (should find none):
 ```bash

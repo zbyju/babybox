@@ -347,16 +347,16 @@ All should succeed with consistent versions across all apps.
 
 ## Verification Checklist
 
-- [ ] `bunfig.toml` exists with `[catalog]` section
-- [ ] All dependency versions in catalog are hardcoded (no `^`, `~`, or `latest`)
-- [ ] Root `package.json` uses `catalog:*` for all shared deps
-- [ ] All app `package.json` files use `catalog:*` instead of version strings
-- [ ] `bun install` succeeds without warnings
-- [ ] `bun.lock` shows exact versions (e.g., "zod@4.3.6" not "zod@^4.3.6")
-- [ ] `bun run typecheck` passes
-- [ ] `bun run build` succeeds
-- [ ] `bun run test` passes
-- [ ] All apps reference the same version of shared deps (verify in bun.lock)
+- [x] `bunfig.toml` exists with `[catalog]` section
+- [x] All dependency versions in catalog are hardcoded (no `^`, `~`, or `latest`)
+- [x] Root `package.json` uses `catalog:*` for all shared deps
+- [x] All app `package.json` files use `catalog:*` instead of version strings
+- [x] `bun install` succeeds without warnings
+- [x] `bun.lock` shows exact versions (e.g., "zod@4.3.6" not "zod@^4.3.6")
+- [x] `bun run typecheck` passes
+- [x] `bun run build` succeeds
+- [x] `bun run test` passes
+- [x] All apps reference the same version of shared deps (verify in bun.lock)
 
 **Verify catalog is used**:
 ```bash

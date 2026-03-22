@@ -242,15 +242,15 @@ Removing jest, ts-jest, coveralls, and moment could save 50-100MB.
 
 ## Verification Checklist
 
-- [ ] `bun.lock` updated (run `bun install`)
-- [ ] `bun run typecheck` passes in all apps
-- [ ] `bun run test` passes
-- [ ] `bun run build` succeeds
-- [ ] `bun run lint` passes
-- [ ] No version conflicts in output
-- [ ] Root package.json shows `bun@1.2.21`
-- [ ] startup-v2 builds all 4 binaries
-- [ ] Optional: moment replaced (if decided)
+- [x] `bun.lock` updated (run `bun install`)
+- [x] `bun run typecheck` passes in all apps
+- [x] `bun run test` passes
+- [x] `bun run build` succeeds
+- [x] `bun run lint` passes
+- [x] No version conflicts in output
+- [x] Root package.json shows `bun@1.2.21`
+- [x] startup-v2 builds all 4 binaries
+- [x] Optional: moment replaced (if decided)
 
 **Version verification**:
 ```bash

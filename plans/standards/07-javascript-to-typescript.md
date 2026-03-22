@@ -172,15 +172,15 @@ If you find any `.js` files that should be `.ts`:
 
 ## Verification Checklist
 
-- [ ] No `.js` files found in backend source (besides test artifacts)
-- [ ] No `.js` files found in panel source (besides test artifacts)
-- [ ] No `.js` files found in startup-v2 source (besides test artifacts)
-- [ ] `vite.config.ts` exists (or `.js` was renamed to `.ts`)
-- [ ] `jest.config.json` removed from backend (if it existed)
-- [ ] All build config files are `.json` or `.ts` (not `.js`)
-- [ ] `bun run typecheck` passes with zero errors
-- [ ] `bun run build` succeeds
-- [ ] `bun run test` passes
+- [x] No `.js` files found in backend source (besides test artifacts)
+- [x] No `.js` files found in panel source (besides test artifacts)
+- [x] No `.js` files found in startup-v2 source (besides test artifacts)
+- [x] `vite.config.ts` exists (or `.js` was renamed to `.ts`)
+- [x] `jest.config.json` removed from backend (if it existed)
+- [x] All build config files are `.json` or `.ts` (not `.js`)
+- [x] `bun run typecheck` passes with zero errors
+- [x] `bun run build` succeeds
+- [x] `bun run test` passes
 
 **Verify with search**:
 ```bash

@@ -312,13 +312,13 @@ Backend, Panel, and any other services should start correctly.
 
 ## Verification Checklist
 
-- [ ] `bun run typecheck` passes in backend
-- [ ] `bun run typecheck` passes in panel
-- [ ] `bun run typecheck` passes in startup-v2
-- [ ] `bun run build` succeeds
-- [ ] `bun run dev` starts all services without errors
-- [ ] Manual test: Panel loads at http://localhost:3002
-- [ ] All imports in TypeScript files don't end with `.js`
+- [x] `bun run typecheck` passes in backend
+- [x] `bun run typecheck` passes in panel
+- [x] `bun run typecheck` passes in startup-v2
+- [x] `bun run build` succeeds
+- [x] `bun run dev` starts all services without errors
+- [x] Manual test: Panel loads at http://localhost:3002
+- [x] All imports in TypeScript files don't end with `.js`
 
 **Command to verify no .js extensions remain**:
 ```bash
