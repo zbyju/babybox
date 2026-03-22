@@ -1,5 +1,4 @@
 import vue from "@vitejs/plugin-vue";
-import path from "path";
 import { fileURLToPath, URL } from "url";
 import { defineConfig } from "vite";
 
@@ -17,9 +16,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       stylus: {
-        imports: [
-          path.resolve(__dirname, "./src/assets/styles/variables.styl"),
-        ],
+        imports: [fileURLToPath(new URL("./src/assets/styles/variables.styl", import.meta.url))],
       },
     },
   },

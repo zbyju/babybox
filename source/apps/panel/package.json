@@ -1,6 +1,7 @@
 {
   "name": "babybox-panel",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "bunx --bun vite",
     "build": "bunx vue-tsc --noEmit && bunx --bun vite build",
