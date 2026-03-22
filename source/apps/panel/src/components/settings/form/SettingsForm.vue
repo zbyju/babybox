@@ -162,7 +162,7 @@ async function onLoadAction() {
       });
       addLogMessage("Parametry úspěšně načteny", LogEntryType.Success);
     } else {
-      throw { msg: "Status code not OK" };
+      throw new Error("Status code not OK");
     }
   } catch (err: unknown) {
     if (err instanceof AxiosError) {
@@ -196,7 +196,7 @@ async function onSaveAction() {
 
       values.value = settingsSendToStates(response, values.value, rows);
     } else {
-      throw { msg: "Status code is not OK" };
+      throw new Error("Status code is not OK");
     }
   } catch (err) {
     addLogMessage("Chyba při ukládání parametrů", LogEntryType.Error);

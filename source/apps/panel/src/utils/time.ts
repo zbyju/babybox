@@ -6,13 +6,13 @@ import type { Maybe } from "@/types/generic.types";
 export const getHoursWithLeadingZeroes = (time: Maybe<Moment>): string => {
   if (!time || !moment(time).isValid()) return "--";
   const hours = time.hours().toString();
-  return hours.length == 2 ? hours : "0" + hours;
+  return hours.length === 2 ? hours : `0${hours}`;
 };
 
 export const getMinutesWithLeadingZeroes = (time: Maybe<Moment>): string => {
   if (!time || !moment(time).isValid()) return "--";
   const minutes = time.minutes().toString();
-  return minutes.length == 2 ? minutes : "0" + minutes;
+  return minutes.length === 2 ? minutes : `0${minutes}`;
 };
 
 export const getFullTime = (time: Maybe<Moment>): string => {

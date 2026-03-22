@@ -14,7 +14,7 @@ export const getStatus = async (): Promise<boolean> => {
     if (response.status >= 200 && response.status <= 299) {
       return true;
     }
-    throw { msg: "Status code not OK" };
+    throw new Error("Status code not OK");
   } catch {
     return false;
   }

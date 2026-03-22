@@ -161,7 +161,7 @@ export class AppManager {
       this.versionsStore.setVersions(versions);
       return "Ok";
     } else {
-      throw "Config file error";
+      throw new Error("Config file error");
     }
   }
 
@@ -171,13 +171,13 @@ export class AppManager {
       if (status) {
         return "OK";
       } else {
-        throw "Status not ok";
+        throw new Error("Status not ok");
       }
     } catch (err) {
-      if (typeof err === "string") {
+      if (err instanceof Error) {
         throw err;
       } else {
-        throw "Error when fetching backend status";
+        throw new Error("Error when fetching backend status");
       }
     }
   }

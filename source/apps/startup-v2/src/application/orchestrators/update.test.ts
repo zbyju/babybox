@@ -6,6 +6,7 @@ import type { GitPort } from "../ports/git.port";
 import type { LoggerPort } from "../ports/logger.port";
 import type { StartupConfig } from "../../domain/types/index";
 import { GitPullResult } from "../../domain/types/index";
+import type { DurationMs } from "../../domain/types/branded";
 
 // Helper to create a mock logger
 function createMockLogger(): LoggerPort {
@@ -78,7 +79,7 @@ function createCtx(
     },
     packageManager: {
       install: mock(async () => ok({ kind: "success" as const })),
-      build: mock(async () => ok({ kind: "success" as const, duration: 1000 as any })),
+      build: mock(async () => ok({ kind: "success" as const, duration: 1000 as DurationMs })),
       isInstalled: mock(async () => true),
     },
   };

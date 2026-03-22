@@ -18,7 +18,7 @@ class BabyboxSoundPlayer {
   }
 
   private loadHowl(name: string, loop: boolean) {
-    if (!name || name == null || name == undefined || name == "") return null;
+    if (!name || name === null || name === undefined || name === "") return null;
     return new Howl({
       src: [`/sounds/${name}.mp3`],
       autoplay: false,
@@ -29,17 +29,17 @@ class BabyboxSoundPlayer {
   updateSound(newValue: PanelState, prevValue: PanelState) {
     if (
       newValue.message?.sound !== prevValue.message?.sound &&
-      newValue.message?.sound != null &&
-      newValue.message?.sound != undefined &&
-      newValue.message?.sound != ""
+      newValue.message?.sound !== null &&
+      newValue.message?.sound !== undefined &&
+      newValue.message?.sound !== ""
     ) {
       this.playSound(newValue.message.sound);
     }
     if (
-      newValue.message == null ||
-      newValue.message == undefined ||
-      newValue.message.sound == null ||
-      newValue.message.sound == undefined ||
+      newValue.message === null ||
+      newValue.message === undefined ||
+      newValue.message.sound === null ||
+      newValue.message.sound === undefined ||
       newValue.message.sound === ""
     ) {
       this.stopSound();
