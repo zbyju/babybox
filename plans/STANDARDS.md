@@ -81,6 +81,7 @@ Before merging any project:
 
 | Date       | Project | Change                                                                |
 | ---------- | ------- | --------------------------------------------------------------------- |
+| 2026-03-22 | —       | Ralph iteration 5: Fixed all linting errors - 25 warnings resolved   |
 | 2026-03-22 | —       | Ralph iteration 4: Verified all projects complete, fixed ESM issues   |
 | 2026-03-22 | 6       | Alternative implementation: centralized VERSIONS.md + pinned deps    |
 | 2026-03-22 | —       | Plan expanded - 8 projects total; added Bun catalog, strict TS, JS→TS |
