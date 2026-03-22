@@ -31,7 +31,7 @@
   import { storeToRefs } from "pinia";
   import { computed, ref } from "vue";
 
-  import { useConfigStore } from "@/pinia/configStore";
+  import { useConfigStore } from "@/pinia/config-store";
 
   import VersionText from "./panel/elements/VersionText.vue";
   import BaseInput from "./panel/HTMLElements/BaseInput.vue";

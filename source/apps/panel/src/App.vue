@@ -7,7 +7,7 @@
 <script lang="ts" setup>
   import { onBeforeMount } from "vue";
 
-  import { AppManager } from "@/logic/panel/panelLoop";
+  import { AppManager } from "@/logic/panel/panel-loop";
 
   import { refreshRestartCooldown } from "./api/restart";
   import AppState from "./components/AppState.vue";

@@ -8,7 +8,7 @@
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
 
-  import { useUnitsStore } from "@/pinia/unitsStore";
+  import { useUnitsStore } from "@/pinia/units-store";
   import { getFullTime } from "@/utils/time";
 
   const unitsStore = useUnitsStore();

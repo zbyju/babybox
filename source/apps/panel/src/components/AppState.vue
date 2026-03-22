@@ -28,8 +28,8 @@
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
 
-  import { useAppStateStore } from "@/pinia/appStateStore";
-  import { useConfigStore } from "@/pinia/configStore";
+  import { useAppStateStore } from "@/pinia/app-state-store";
+  import { useConfigStore } from "@/pinia/config-store";
   import { AppState } from "@/types/app/appState.types";
 
   const appStateStore = useAppStateStore();

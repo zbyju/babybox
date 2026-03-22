@@ -25,7 +25,7 @@ import {
   isLower,
   prettyNumber,
   secondsToTime,
-} from "../../utils/panel/dataDisplay";
+} from "../../utils/panel/data-display";
 
 export const getTableConnectionValues = (
   engineData: Maybe<EngineUnit>,

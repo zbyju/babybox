@@ -9,9 +9,9 @@
   import { type ComputedRef, computed } from "vue";
 
   import { getTableConnectionValues } from "@/logic/panel/tables";
-  import { useConfigStore } from "@/pinia/configStore";
-  import { useConnectionStore } from "@/pinia/connectionStore";
-  import { useUnitsStore } from "@/pinia/unitsStore";
+  import { useConfigStore } from "@/pinia/config-store";
+  import { useConnectionStore } from "@/pinia/connection-store";
+  import { useUnitsStore } from "@/pinia/units-store";
   import type {
     TableBlockTemplate,
     TableConnectionValues,

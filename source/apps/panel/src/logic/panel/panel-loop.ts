@@ -9,11 +9,11 @@ import {
   getThermalData,
   updateWatchdog,
 } from "@/api/units";
-import { useAppStateStore } from "@/pinia/appStateStore";
-import { useConfigStore } from "@/pinia/configStore";
-import { useConnectionStore } from "@/pinia/connectionStore";
-import { usePanelStateStore } from "@/pinia/panelStateStore";
-import { useUnitsStore } from "@/pinia/unitsStore";
+import { useAppStateStore } from "@/pinia/app-state-store";
+import { useConfigStore } from "@/pinia/config-store";
+import { useConnectionStore } from "@/pinia/connection-store";
+import { usePanelStateStore } from "@/pinia/panel-state-store";
+import { useUnitsStore } from "@/pinia/units-store";
 import { useVersionsStore } from "@/pinia/versions";
 import type { Maybe } from "@/types/generic.types";
 import type { AppConfig, Config, UnitsConfig } from "@/types/panel/config.types";
@@ -21,7 +21,7 @@ import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import type { Versions } from "@/types/panel/versions.types";
-import { isInstanceOfConfig } from "@/utils/panel/instanceCheck";
+import { isInstanceOfConfig } from "@/utils/panel/instance-check";
 
 import { getNewState } from "./state";
 

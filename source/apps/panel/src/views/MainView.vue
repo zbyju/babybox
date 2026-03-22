@@ -17,9 +17,9 @@
   import TheHeader from "@/components/panel/containers/TheHeader.vue";
   import HighlightMessage from "@/components/panel/elements/HighlightMessage.vue";
   import TheNav from "@/components/TheNav.vue";
-  import { useSounds } from "@/composables/useSounds";
-  import { AppManager } from "@/logic/panel/panelLoop";
-  import { usePanelStateStore } from "@/pinia/panelStateStore";
+  import { useSounds } from "@/composables/use-sounds";
+  import { AppManager } from "@/logic/panel/panel-loop";
+  import { usePanelStateStore } from "@/pinia/panel-state-store";
   import type { PanelState } from "@/types/panel/main.types";
 
   document.body.scrollTop = document.documentElement.scrollTop = 0;

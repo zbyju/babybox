@@ -1,4 +1,4 @@
-import { ConnectionTracker } from "@/pinia/connectionStore";
+import { ConnectionTracker } from "@/pinia/connection-store";
 
 export interface Connection {
   engineUnit: ConnectionTracker;

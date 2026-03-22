@@ -37,7 +37,7 @@
   import { storeToRefs } from "pinia";
   import { onMounted, ref } from "vue";
 
-  import { useConfigStore } from "@/pinia/configStore";
+  import { useConfigStore } from "@/pinia/config-store";
 
   const props = defineProps<{
     displayTopBorder: boolean;

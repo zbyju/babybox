@@ -26,7 +26,7 @@
   import { computed } from "vue";
 
   import BaseInput from "@/components/panel/HTMLElements/BaseInput.vue";
-  import { useConfigStore } from "@/pinia/configStore";
+  import { useConfigStore } from "@/pinia/config-store";
   import { BaseInputState } from "@/types/base/baseInput.types";
   import {
     type SettingsTableRow,
@@ -37,7 +37,7 @@
     displayTemperature,
     displayVoltage,
     prettyFloat,
-  } from "@/utils/panel/dataDisplay";
+  } from "@/utils/panel/data-display";
   import { typeToMeasureUnit } from "@/utils/settings/conversions";
 
   const props = defineProps<{

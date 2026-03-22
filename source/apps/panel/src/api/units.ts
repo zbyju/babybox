@@ -1,7 +1,7 @@
 import axios from "axios";
 import { storeToRefs } from "pinia";
 
-import { useConfigStore } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/config-store";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 
 export const getStatus = async (): Promise<boolean> => {

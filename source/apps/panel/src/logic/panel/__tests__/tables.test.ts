@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { ConnectionTracker } from "@/pinia/connectionStore";
+import { ConnectionTracker } from "@/pinia/connection-store";
 import type { Connection } from "@/types/panel/connection.types";
 import {
   TableBlockState,

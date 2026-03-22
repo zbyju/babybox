@@ -31,7 +31,7 @@
     TableRowTemplate,
     TableValues,
   } from "@/types/panel/tables.types";
-  import { combineTableData } from "@/utils/panel/combineTableData";
+  import { combineTableData } from "@/utils/panel/combine-table-data";
 
   import DataTableBlock from "./DataTableBlock.vue";
   import DataTableRow from "./DataTableRow.vue";

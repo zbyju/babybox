@@ -8,7 +8,7 @@
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
 
-  import { useConfigStore } from "@/pinia/configStore";
+  import { useConfigStore } from "@/pinia/config-store";
 
   const configStore = useConfigStore();
   const { babybox } = storeToRefs(configStore);

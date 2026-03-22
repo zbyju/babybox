@@ -14,7 +14,7 @@ import type {
   ThermalUnit,
 } from "@/types/panel/units.types";
 
-import { useConfigStore } from "./configStore";
+import { useConfigStore } from "./config-store";
 
 export const useUnitsStore = defineStore("engineUnit", {
   state: () => ({

@@ -10,10 +10,10 @@
   import { storeToRefs } from "pinia";
   import { computed } from "vue";
 
-  import useActiveTime from "@/composables/useActiveTime";
-  import useBigClockColon from "@/composables/useBigClockColon";
-  import { usePanelStateStore } from "@/pinia/panelStateStore";
-  import { useUnitsStore } from "@/pinia/unitsStore";
+  import useActiveTime from "@/composables/use-active-time";
+  import useBigClockColon from "@/composables/use-big-clock-colon";
+  import { usePanelStateStore } from "@/pinia/panel-state-store";
+  import { useUnitsStore } from "@/pinia/units-store";
   import {
     getHoursWithLeadingZeroes,
     getMinutesWithLeadingZeroes,

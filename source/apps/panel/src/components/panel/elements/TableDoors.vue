@@ -9,7 +9,7 @@
   import { computed } from "vue";
 
   import { getTableDoorsValues } from "@/logic/panel/tables";
-  import { useUnitsStore } from "@/pinia/unitsStore";
+  import { useUnitsStore } from "@/pinia/units-store";
   import type {
     TableBlockTemplate,
     TableRowTemplate,

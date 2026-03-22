@@ -16,7 +16,7 @@
   import { computed } from "vue";
 
   import { getTableTemperaturesValues } from "@/logic/panel/tables";
-  import { useUnitsStore } from "@/pinia/unitsStore";
+  import { useUnitsStore } from "@/pinia/units-store";
   import type {
     TableBlockTemplate,
     TableRowTemplate,

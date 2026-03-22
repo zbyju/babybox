@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 
-import { useConfigStore } from "../configStore";
-import { useUnitsStore } from "../unitsStore";
+import { useConfigStore } from "../config-store";
+import { useUnitsStore } from "../units-store";
 
 // Helper to create a mock engine unit
 const createMockEngineUnit = (): EngineUnit => ({

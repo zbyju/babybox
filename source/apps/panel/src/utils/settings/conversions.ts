@@ -1,4 +1,4 @@
-import { useConfigStore } from "@/pinia/configStore";
+import { useConfigStore } from "@/pinia/config-store";
 import type { Maybe } from "@/types/generic.types";
 import {
   SettingsTableRowState,

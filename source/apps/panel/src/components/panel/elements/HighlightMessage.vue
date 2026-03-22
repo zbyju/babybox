@@ -9,8 +9,8 @@
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
 
-  import useDelayedMessage from "@/composables/useDelayedMessage";
-  import { usePanelStateStore } from "@/pinia/panelStateStore";
+  import useDelayedMessage from "@/composables/use-delayed-message";
+  import { usePanelStateStore } from "@/pinia/panel-state-store";
 
   const panelStateStore = usePanelStateStore();
   const { message: messageFromStore } = storeToRefs(panelStateStore);

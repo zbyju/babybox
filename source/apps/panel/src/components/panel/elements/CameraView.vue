@@ -39,8 +39,8 @@
   import { storeToRefs } from "pinia";
   import { type Ref, onMounted, ref } from "vue";
 
-  import useCamera from "@/composables/useCamera";
-  import { useConfigStore } from "@/pinia/configStore";
+  import useCamera from "@/composables/use-camera";
+  import { useConfigStore } from "@/pinia/config-store";
   import { CameraType } from "@/types/panel/config.types";
   import { stringToCameraType } from "@/utils/panel/camera";
 
