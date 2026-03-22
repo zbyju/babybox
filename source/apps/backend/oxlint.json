@@ -1,0 +1,35 @@
+{
+  "settings": {
+    "jsdoc": {
+      "augments_tag_parse": "type-only"
+    }
+  },
+  "rules": {
+    "correctness/no-constant-condition": "error",
+    "correctness/no-unsafe-optional-chaining": "error",
+    "correctness/no-unsafe-negation": "error",
+    "correctness/no-new-wrappers": "error",
+    "correctness/no-nonoctal-decimal-escape": "error",
+    "correctness/no-invalid-regexp": "error",
+    "correctness/no-invalid-constructor-super": "error",
+    "correctness/no-irregular-whitespace": "error",
+    "correctness/no-unreachable": "error",
+    "correctness/no-unreachable-loop": "error",
+    "correctness/no-self-assign": "error",
+    "correctness/no-sparse-array": "error",
+    "correctness/for-direction": "error",
+    "correctness/getter-return": "error",
+    "correctness/no-import-cycle": "warn",
+    "suspicious/no-implicit-any-let": "off",
+    "suspicious/no-explicit-any": "off",
+    "suspicious/no-throw-literal": "error",
+    "suspicious/no-unused-vars": "error",
+    "suspicious/no-empty-interface": "warn",
+    "style/prefer-const": "error",
+    "style/eqeqeq": "error",
+    "style/prefer-template": "warn",
+    "performance/no-accumulating-spread": "warn",
+    "eslint-comments/no-unlimited-disable": "warn"
+  },
+  "ignorePatterns": ["dist", "node_modules"]
+}
