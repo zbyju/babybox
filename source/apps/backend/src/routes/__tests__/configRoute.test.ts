@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import express from "express";
 
 // Mock the DbFactory
-vi.mock("../../services/config/factory.js", () => ({
+vi.mock("../../services/config/factory", () => ({
   DbFactory: {
     getMainDb: vi.fn(),
     getVersionDb: vi.fn(),
@@ -10,7 +10,7 @@ vi.mock("../../services/config/factory.js", () => ({
 }));
 
 import { DbFactory } from "../../services/config/factory";
-import { configRoute } from "../configRoute";
+import { configRoute } from "../config-route";
 
 const mockGetMainDb = vi.mocked(DbFactory.getMainDb);
 const mockGetVersionDb = vi.mocked(DbFactory.getVersionDb);

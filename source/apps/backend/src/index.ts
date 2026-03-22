@@ -7,12 +7,12 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
 import { modulesObject } from "./modules/init";
-import { configRoute } from "./routes/configRoute";
-import { router as engineRoute } from "./routes/engineRoute";
-import { router as healthRoute } from "./routes/healthRoute";
-import { router as restartRoute } from "./routes/restartRoute";
-import { router as thermalRoute } from "./routes/thermalRoute";
-import { router as unitsRoute } from "./routes/unitsRoute";
+import { configRoute } from "./routes/config-route";
+import { router as engineRoute } from "./routes/engine-route";
+import { router as healthRoute } from "./routes/health-route";
+import { router as restartRoute } from "./routes/restart-route";
+import { router as thermalRoute } from "./routes/thermal-route";
+import { router as unitsRoute } from "./routes/units-route";
 import { loadConfig } from "./services/config/loader";
 import { setConfig } from "./state/config";
 

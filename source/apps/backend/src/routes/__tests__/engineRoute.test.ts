@@ -4,13 +4,13 @@ import { setConfig } from "../../state/config";
 import type { MainConfig } from "../../types/config.types";
 
 // Mock the fetch module
-vi.mock("../../fetch/fetchFromUnits.js", () => ({
+vi.mock("../../fetch/fetch-from-units", () => ({
   fetchDataCommon: vi.fn(),
   updateWatchdog: vi.fn(),
 }));
 
-import { fetchDataCommon, updateWatchdog } from "../../fetch/fetchFromUnits";
-import { router } from "../engineRoute";
+import { fetchDataCommon, updateWatchdog } from "../../fetch/fetch-from-units";
+import { router } from "../engine-route";
 
 const mockFetchDataCommon = vi.mocked(fetchDataCommon);
 const mockUpdateWatchdog = vi.mocked(updateWatchdog);

@@ -4,7 +4,7 @@ import {
   fetchAction,
   fetchSettings,
   updateSettings,
-} from "../fetch/fetchFromUnits";
+} from "../fetch/fetch-from-units";
 import { validateBody, validateQuery } from "../middleware/validate";
 import {
   PostUnitSettingsRequestBodySchema,
