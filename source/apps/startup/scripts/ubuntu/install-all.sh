@@ -442,12 +442,13 @@ ok "Pocitac se restartuje pri ztrate pripojeni a kazde pondeli ve 12:00"
 
 step "Vypnuti zhasinani obrazovky a uspavani"
 if gsettings set org.gnome.desktop.session idle-delay 0 2>/dev/null; then
+  gsettings set org.gnome.settings-daemon.plugins.power idle-dim false 2>/dev/null || true
   gsettings set org.gnome.desktop.screensaver lock-enabled false 2>/dev/null || true
   gsettings set org.gnome.desktop.screensaver idle-activation-enabled false 2>/dev/null || true
   gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
   gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing' 2>/dev/null || true
   SCREEN_SETTINGS_OK=1
-  ok "Obrazovka zustane porad zapnuta"
+  ok "Obrazovka se nezhasina, neztlumuje ani neuspava"
 else
   warn "Nepodarilo se zmenit nastaveni obrazovky (skript nebezi v grafickem prostredi).
   Spustte skript znovu z terminalu na plose, nebo nastaveni zmente rucne."
@@ -485,7 +486,7 @@ echo "  - Firefox (snap) + rozsireni AutoFullscreen + povoleny zvuk"
 echo "  - Automaticke spusteni panelu po prihlaseni"
 echo "  - Hlidani pripojeni s automatickym restartem"
 if [ "$SCREEN_SETTINGS_OK" -eq 1 ]; then
-  echo "  - Obrazovka se nezhasina ani neuspava"
+  echo "  - Obrazovka se nezhasina, neztlumuje ani neuspava"
 fi
 echo ""
 echo "${BOLD}Zbyvajici rucni kroky:${RESET}"
