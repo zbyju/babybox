@@ -28,9 +28,14 @@ TOTAL_STEPS=13
 CURRENT_STEP=0
 CURRENT_STEP_NAME="priprava"
 SUDO_KEEPALIVE_PID=""
+SCREEN_SETTINGS_OK=0
+REAL_USER="$(id -un)"
 
-export DEBIAN_FRONTEND=noninteractive
-export NEEDRESTART_MODE=a
+# apt vzdy bez interaktivnich dotazu — sudo ma env_reset,
+# takze promenne musi projit pres 'env', jinak by je zahodil
+apt_noninteractive() {
+  sudo env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get -y -q "$@"
+}
 
 # ----- Vypis pro uzivatele ---------------------------------------------------
 
@@ -130,7 +135,8 @@ if ! getent hosts github.com >/dev/null 2>&1; then
 Pocitac je nejspis bez internetu, nebo je spatne nastavena sit.
 Zkontrolujte sitovy kabel / Wi-Fi a spustte skript znovu."
 fi
-for host in github.com download.teamviewer.com addons.mozilla.org api.snapcraft.io; do
+for host in github.com download.teamviewer.com addons.mozilla.org api.snapcraft.io \
+  archive.ubuntu.com registry.npmjs.org nodejs.org; do
   if ! wget -q --spider --timeout=15 "https://$host" 2>/dev/null; then
     die "Nelze se pripojit k $host.
 Pocitac nejspis nema pristup k internetu (nebo ho blokuje firewall).
@@ -140,7 +146,7 @@ Zkontrolujte sitovy kabel / Wi-Fi a spustte skript znovu."
 done
 ok "Internet i DNS funguji"
 
-action_required "Zadejte heslo uzivatele '$USER' (pro instalaci systemovych balicku)."
+action_required "Zadejte heslo uzivatele '$REAL_USER' (pro instalaci systemovych balicku)."
 if ! sudo -v; then
   die "Nepodarilo se ziskat opravneni spravce (sudo). Zkuste to znovu."
 fi
@@ -156,8 +162,8 @@ ok "Opravneni spravce ziskano"
 
 step "Aktualizace systemu (apt update + upgrade)"
 info "Muze trvat nekolik minut..."
-sudo apt-get update -y -q
-sudo apt-get upgrade -y -q \
+apt_noninteractive update
+apt_noninteractive upgrade \
   -o Dpkg::Options::="--force-confdef" \
   -o Dpkg::Options::="--force-confold"
 ok "System je aktualni"
@@ -181,7 +187,7 @@ for pkg in "${BASE_PACKAGES[@]}"; do
 done
 if [ "${#MISSING_PACKAGES[@]}" -gt 0 ]; then
   info "Instaluji: ${MISSING_PACKAGES[*]}"
-  sudo apt-get install -y -q "${MISSING_PACKAGES[@]}"
+  apt_noninteractive install "${MISSING_PACKAGES[@]}"
 else
   info "Vsechny nastroje uz jsou nainstalovane."
 fi
@@ -193,13 +199,14 @@ step "Instalace TeamVieweru (vzdalena sprava)"
 if dpkg -s teamviewer >/dev/null 2>&1; then
   info "TeamViewer uz je nainstalovany, preskakuji."
 else
-  TMP_DEB="$(mktemp -d)/teamviewer_amd64.deb"
+  TMP_DIR="$(mktemp -d)"
+  TMP_DEB="$TMP_DIR/teamviewer_amd64.deb"
   info "Stahuji TeamViewer..."
   wget -q --show-progress -O "$TMP_DEB" \
     "https://download.teamviewer.com/download/linux/teamviewer_amd64.deb"
   info "Instaluji TeamViewer..."
-  sudo apt-get install -y -q "$TMP_DEB"
-  rm -f "$TMP_DEB"
+  apt_noninteractive install "$TMP_DEB"
+  rm -rf "$TMP_DIR"
 fi
 # Vypnuti Waylandu — bez toho se pres TeamViewer nejde pripojit bez potvrzeni
 # od uzivatele u pocitace
@@ -211,7 +218,12 @@ if [ -f /etc/gdm3/custom.conf ]; then
     if ! grep -Eq '^\s*WaylandEnable\s*=\s*false' /etc/gdm3/custom.conf; then
       sudo sed -i '/^\[daemon\]/a WaylandEnable=false' /etc/gdm3/custom.conf
     fi
-    info "Wayland vypnut (projevi se po restartu)."
+    if grep -Eq '^\s*WaylandEnable\s*=\s*false' /etc/gdm3/custom.conf; then
+      info "Wayland vypnut (projevi se po restartu)."
+    else
+      warn "Wayland se nepodarilo vypnout — pridejte 'WaylandEnable=false'
+  do sekce [daemon] v /etc/gdm3/custom.conf rucne."
+    fi
   fi
 else
   warn "/etc/gdm3/custom.conf neexistuje — Wayland nebylo mozne vypnout."
@@ -223,7 +235,7 @@ ok "TeamViewer pripraven"
 step "Instalace Node.js $NODE_VERSION"
 if ! command -v npm >/dev/null 2>&1; then
   info "Instaluji npm..."
-  sudo apt-get install -y -q npm
+  apt_noninteractive install npm
 fi
 
 # Globalni npm balicky bez sudo — vlastni adresar v home
@@ -250,7 +262,7 @@ else
   fi
   # 'n' instaluje do /usr/local — predame ho uzivateli, aby nebylo potreba sudo
   sudo mkdir -p /usr/local/n /usr/local/bin /usr/local/lib /usr/local/include /usr/local/share
-  sudo chown -R "$USER" /usr/local/n /usr/local/bin /usr/local/lib /usr/local/include /usr/local/share
+  sudo chown -R "$REAL_USER" /usr/local/n /usr/local/bin /usr/local/lib /usr/local/include /usr/local/share
   info "Instaluji Node.js $NODE_VERSION..."
   n "$NODE_VERSION"
   hash -r
@@ -261,7 +273,7 @@ ok "Node.js $(node -v)"
 
 step "Odebrani spravce aktualizaci (vyskakovaci okna)"
 if dpkg -s update-manager >/dev/null 2>&1; then
-  sudo apt-get remove -y -q update-manager
+  apt_noninteractive remove update-manager
   info "update-manager odebran."
 else
   info "update-manager uz je odebrany."
@@ -275,7 +287,7 @@ if dpkg -s wine >/dev/null 2>&1; then
   info "Wine uz je nainstalovany, preskakuji."
 else
   info "Instaluji Wine (muze trvat nekolik minut)..."
-  sudo apt-get install -y -q wine
+  apt_noninteractive install wine
 fi
 ok "Wine pripraven"
 
@@ -288,7 +300,7 @@ git config --global credential.helper store
 # zkusime ho najit na flash disku (soubor github-token.txt)
 TOKEN_FILE=""
 shopt -s nullglob
-for f in /media/"$USER"/*/github-token.txt /media/*/github-token.txt; do
+for f in /media/"$REAL_USER"/*/github-token.txt /media/*/github-token.txt; do
   if [ -r "$f" ]; then
     TOKEN_FILE="$f"
     break
@@ -309,7 +321,7 @@ if [ -n "$TOKEN_FILE" ]; then
   fi
 fi
 
-if [ -z "$TOKEN_FILE" ] && [ ! -f "$HOME/.git-credentials" ]; then
+if [ -z "$TOKEN_FILE" ] && ! grep -qs "github.com" "$HOME/.git-credentials"; then
   action_required "Za chvili budete pozadani o prihlaseni ke GitHubu:
     Username: $GITHUB_USER
     Password: pouzijte TOKEN (dlouhy retezec znaku), NE bezne heslo.
@@ -404,7 +416,7 @@ ok "Panel se spusti automaticky po prihlaseni"
 
 step "Hlidani pripojeni a pravidelny restart (cron)"
 sudo touch /var/restart_lock /var/log/internet_check.log
-sudo chmod 666 /var/restart_lock /var/log/internet_check.log
+sudo chmod 644 /var/restart_lock /var/log/internet_check.log
 CRON_LINE="* * * * * $UBUNTU_SCRIPTS_DIR/internet_check.sh"
 CRON_TMP="$(mktemp)"
 sudo crontab -l 2>/dev/null | grep -v "internet_check.sh" > "$CRON_TMP" || true
@@ -421,6 +433,7 @@ if gsettings set org.gnome.desktop.session idle-delay 0 2>/dev/null; then
   gsettings set org.gnome.desktop.screensaver idle-activation-enabled false 2>/dev/null || true
   gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
   gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing' 2>/dev/null || true
+  SCREEN_SETTINGS_OK=1
   ok "Obrazovka zustane porad zapnuta"
 else
   warn "Nepodarilo se zmenit nastaveni obrazovky (skript nebezi v grafickem prostredi).
@@ -458,10 +471,16 @@ echo "  - Repozitare babybox a BB v $HOME"
 echo "  - Firefox (snap) + rozsireni AutoFullscreen + povoleny zvuk"
 echo "  - Automaticke spusteni panelu po prihlaseni"
 echo "  - Hlidani pripojeni s automatickym restartem"
-echo "  - Obrazovka se nezhasina ani neuspava"
+if [ "$SCREEN_SETTINGS_OK" -eq 1 ]; then
+  echo "  - Obrazovka se nezhasina ani neuspava"
+fi
 echo ""
 echo "${BOLD}Zbyvajici rucni kroky:${RESET}"
 echo "  1. RESTARTUJTE POCITAC (sudo reboot) — panel se pak spusti sam."
 echo "  2. V TeamVieweru nastavte trvaly pristup (prirazeni k uctu)."
 echo "  3. Po restartu zkontrolujte, ze panel bezi a ze hraji zvuky."
+if [ "$SCREEN_SETTINGS_OK" -eq 0 ]; then
+  echo "  4. Nastaveni obrazovky se nepodarilo zmenit — vypnete zhasinani,"
+  echo "     zamykani a uspavani rucne (viz upozorneni u kroku 12 vyse)."
+fi
 echo ""
