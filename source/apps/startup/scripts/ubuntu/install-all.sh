@@ -7,7 +7,7 @@
 #
 # Pouziti (na cilovem pocitaci, prihlaseny jako bezny uzivatel):
 #
-#   wget -qO- <URL-skriptu> | bash
+#   wget -qO- https://gist.githubusercontent.com/zbyju/23716b0d96f59a07ed0ec5b675f8791d/raw/install-all.sh | bash
 #
 # nebo lokalne:
 #
