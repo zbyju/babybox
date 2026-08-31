@@ -357,10 +357,23 @@ chmod 755 "$UBUNTU_SCRIPTS_DIR/startup.sh" \
 
 step "Instalace a nastaveni Firefoxu"
 if snap list firefox >/dev/null 2>&1; then
+  # snap neaktualizuje bezici aplikaci — Firefox nejdrive zavreme
+  if pgrep -x firefox >/dev/null 2>&1; then
+    info "Zaviram bezici Firefox (kvuli aktualizaci)..."
+    pkill -x firefox 2>/dev/null || true
+    for _ in $(seq 1 10); do
+      pgrep -x firefox >/dev/null 2>&1 || break
+      sleep 1
+    done
+    if pgrep -x firefox >/dev/null 2>&1; then
+      pkill -9 -x firefox 2>/dev/null || true
+      sleep 2
+    fi
+  fi
   info "Aktualizuji Firefox (snap refresh)..."
   if ! sudo snap refresh firefox; then
-    warn "Firefox se nepodarilo aktualizovat — nejspis prave bezi.
-  Zavrete Firefox a spustte skript znovu, nebo aktualizaci nechte na pozdeji."
+    warn "Firefox se nepodarilo aktualizovat.
+  Aktualizaci muzete nechat na pozdeji, nebo spustte skript znovu."
   fi
 else
   info "Instaluji Firefox (snap install)..."
