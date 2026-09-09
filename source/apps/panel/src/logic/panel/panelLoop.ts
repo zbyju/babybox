@@ -178,15 +178,24 @@ export class AppManager {
 
   async initializeGlobal(): Promise<any> {
     const intervalTime = 5000;
+    let configLoaded = false;
     const interval = setInterval(async () => {
-      await this.initializeConfig()
-        .then((res) => {
-          this.appStateStore.setConfigSuccess();
-        })
-        .catch((err) => {
-          clearInterval(interval);
-          this.appStateStore.setConfigError();
-        });
+      /*
+       * Config comes from configer and does not change while the panel boots,
+       * so fetch it once and then keep polling only the backend.
+       * Re-setting it every tick would invalidate every config-dependent computed.
+       */
+      if (!configLoaded) {
+        await this.initializeConfig()
+          .then((res) => {
+            configLoaded = true;
+            this.appStateStore.setConfigSuccess();
+          })
+          .catch((err) => {
+            clearInterval(interval);
+            this.appStateStore.setConfigError();
+          });
+      }
       this.initializeBackend()
         .then((res) => {
           clearInterval(interval);
