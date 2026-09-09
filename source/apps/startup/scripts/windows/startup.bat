@@ -75,12 +75,15 @@ echo pnpm install selhal
 
 REM Kdyz zavislosti porad funguji, nechame je byt. Smazat je a spolehnout se na
 REM novou instalaci by pri vypadku site nechalo pocitac uplne bez node_modules.
-call node -e "require('winston'); require('fs-extra')" >nul 2>&1
-if not errorlevel 1 (
-  echo Pokracuji se stavajicimi node_modules
-  goto start
-)
+REM Kazda aplikace ma vlastni node_modules, tak se ptame na jeden balicek z kazde.
+if not exist "node_modules\winston\" goto cleaninstall
+if not exist "..\backend\node_modules\express\" goto cleaninstall
+if not exist "..\configer\node_modules\express\" goto cleaninstall
+if not exist "..\panel\node_modules\vue\" goto cleaninstall
+echo Pokracuji se stavajicimi node_modules
+goto start
 
+:cleaninstall
 echo Zavislosti nefunguji - zkousim cistou instalaci
 rmdir /s /q ..\..\node_modules 2>nul
 for /d %%d in (..\*) do rmdir /s /q "%%d\node_modules" 2>nul

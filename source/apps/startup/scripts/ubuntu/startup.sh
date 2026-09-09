@@ -89,8 +89,15 @@ ensure_pm2() {
 
 # ----- Zavislosti ------------------------------------------------------------
 
+# Kazda aplikace ma vlastni node_modules, tak se ptame na jeden balicek z kazde.
+# Kdyby se koukalo jen na startup, rozbity backend by prosel jako v poradku.
 deps_ok() {
-  node -e "require('winston'); require('fs-extra')" >/dev/null 2>&1
+  local probe app pkg
+  for probe in startup:winston backend:express configer:express panel:vue; do
+    app="${probe%%:*}"
+    pkg="${probe#*:}"
+    [ -d "$BABYBOX_DIR/source/apps/$app/node_modules/$pkg" ] || return 1
+  done
 }
 
 install_deps() {
