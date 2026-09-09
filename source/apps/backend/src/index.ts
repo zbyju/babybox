@@ -10,6 +10,9 @@ import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
 import { MainConfig } from "./types/config.types";
+import { wait } from "./utils/wait";
+
+const CONFIG_RETRY_DELAY_MS = 5000;
 
 export const modules = modulesObject();
 
@@ -19,7 +22,21 @@ async function main() {
   // .env file load
   dotenv.config();
 
-  const c = await fetchConfig();
+  /*
+   * The configer service may not be up yet at boot, or may be briefly down.
+   * Keep retrying instead of starting with no config,
+   * because this backend runs unattended and nobody can restart it on site.
+   */
+  let c = await fetchConfig();
+  let attempt = 1;
+  while (!c.data) {
+    console.log(
+      `Config not available (attempt ${attempt}): ${c.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
+    );
+    await wait(CONFIG_RETRY_DELAY_MS);
+    c = await fetchConfig();
+    attempt++;
+  }
   config = c.data;
 
   const app = express();
