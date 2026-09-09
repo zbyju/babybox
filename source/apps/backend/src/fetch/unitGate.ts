@@ -2,6 +2,15 @@ import { Unit } from "../types/units.types";
 
 type Job<T> = () => Promise<T>;
 
+/**
+ * The reads that callers are allowed to share.
+ *
+ * A closed set, so a typo or a new interpolated string cannot silently open a
+ * key of its own. The timeout is part of the key because two callers asking with
+ * different timeouts are not asking the same question.
+ */
+export type SharedRead = `data:${number}` | `settings:${number}`;
+
 /*
  * A queued job with its caller's callbacks already closed over.
  * Keeping them together lets the queue hold jobs of different result types
@@ -21,7 +30,7 @@ interface Waiter {
 class UnitQueue {
   private busy = false;
   private waiting: Waiter[] = [];
-  private shared = new Map<string, Promise<unknown>>();
+  private shared = new Map<SharedRead, Promise<unknown>>();
 
   /**
    * Queues a job behind everything already waiting for this unit.
@@ -44,7 +53,7 @@ class UnitQueue {
    * Same as `run`, but callers arriving while an identical job is still running
    * share its result instead of asking the unit twice. Only for reads.
    */
-  runShared<T>(key: string, job: Job<T>): Promise<T> {
+  runShared<T>(key: SharedRead, job: Job<T>): Promise<T> {
     const existing = this.shared.get(key);
     if (existing !== undefined) return existing as Promise<T>;
 
@@ -88,7 +97,7 @@ export function onUnit<T>(unit: Unit, job: Job<T>, first = false): Promise<T> {
 
 export function sharedOnUnit<T>(
   unit: Unit,
-  key: string,
+  key: SharedRead,
   job: Job<T>
 ): Promise<T> {
   return queues[unit].runShared(key, job);

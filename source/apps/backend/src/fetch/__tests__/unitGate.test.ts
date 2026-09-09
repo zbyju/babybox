@@ -92,8 +92,8 @@ describe("unitGate.ts", () => {
         return pending.promise;
       };
 
-      const a = sharedOnUnit(Unit.Engine, "data", job);
-      const b = sharedOnUnit(Unit.Engine, "data", job);
+      const a = sharedOnUnit(Unit.Engine, "data:5000", job);
+      const b = sharedOnUnit(Unit.Engine, "data:5000", job);
 
       pending.resolve("shared");
 
@@ -109,8 +109,8 @@ describe("unitGate.ts", () => {
         return runs;
       };
 
-      expect(await sharedOnUnit(Unit.Engine, "data", job)).toBe(1);
-      expect(await sharedOnUnit(Unit.Engine, "data", job)).toBe(2);
+      expect(await sharedOnUnit(Unit.Engine, "data:5000", job)).toBe(1);
+      expect(await sharedOnUnit(Unit.Engine, "data:5000", job)).toBe(2);
     });
 
     it("should not share between different keys", async () => {
@@ -130,11 +130,11 @@ describe("unitGate.ts", () => {
 
     it("should let the next caller run again after a failure", async () => {
       await expect(
-        sharedOnUnit(Unit.Thermal, "settings", () => Promise.reject("boom"))
+        sharedOnUnit(Unit.Thermal, "settings:5000", () => Promise.reject("boom"))
       ).rejects.toBe("boom");
 
       expect(
-        await sharedOnUnit(Unit.Thermal, "settings", () =>
+        await sharedOnUnit(Unit.Thermal, "settings:5000", () =>
           Promise.resolve("ok")
         )
       ).toBe("ok");
