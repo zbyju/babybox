@@ -10,21 +10,6 @@ const Result = {
   Success: "ResultSuccess",
 };
 
-const UpdateResult = {
-  Error: "UpdateError",
-  Updated: "UpdateSuccess",
-  Unchanged: "UpdateUnchanged",
-};
-
-const updateLogger = winston.createLogger({
-  format: winston.format.json(),
-  defaultMeta: { module: "startup/update" },
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "../../logs/startup.update.log" }),
-  ],
-});
-
 const buildLogger = winston.createLogger({
   format: winston.format.json(),
   defaultMeta: { module: "startup/build" },
@@ -53,29 +38,6 @@ const startLogger = winston.createLogger({
     new winston.transports.File({ filename: "../../logs/startup.start.log" }),
   ],
 });
-
-async function update() {
-  try {
-    const { stdout, stderr } = await exec("git pull", { cwd: "../../" });
-    if (!stdout) {
-      updateLogger.error(
-        `${getFulltimeFormatted()} - stderror when updating (${stderr})`
-      );
-      return UpdateResult.Error;
-    }
-    if (stdout.toLowerCase().includes("already up to date")) {
-      updateLogger.info(`${getFulltimeFormatted()} - Already up to date`);
-      return UpdateResult.Unchanged;
-    }
-    updateLogger.info(`${getFulltimeFormatted()} - Update successful!`);
-    return UpdateResult.Updated;
-  } catch (err) {
-    updateLogger.error(
-      `${getFulltimeFormatted()} - Error when updating (${err})`
-    );
-    return UpdateResult.Error;
-  }
-}
 
 async function build() {
   try {
@@ -225,11 +187,13 @@ async function start() {
   });
 }
 
-module.exports = async function onStartup() {
-  // Update
-  const updateRes = await update();
+/**
+ * @param {boolean} updated Prinesl git pull novy commit? Pull dela startup.sh,
+ *   takze si to tenhle proces sam nezjisti.
+ */
+module.exports = async function onStartup(updated) {
   if (
-    updateRes === UpdateResult.Updated ||
+    updated ||
     !fs.existsSync("../../../dist") ||
     !fs.existsSync("../configer/dist")
   ) {

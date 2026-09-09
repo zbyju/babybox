@@ -6,7 +6,12 @@ REM
 REM Zastupce ve slozce StartUp odkazuje na tento soubor. Nesmi se presunout
 REM ani prejmenovat, jinak se panel nespusti.
 REM
-REM Skript nejdriv srovna verze nastroju podle versions.env a pak spusti panel.
+REM Poradi je zavazne: nejdriv git pull, az potom versions.env. Jinak by se
+REM verze srovnavaly podle souboru z minuleho bootu.
+REM
+REM Kdyz pull zmeni i tenhle skript, spustime se jednou znovu, aby bezela nova
+REM verze. Pojistka BABYBOX_REEXEC brani smycce.
+REM
 REM Zadny krok nesmi spusteni zastavit - chyby se jen vypisou a pokracuje se
 REM s tim, co uz na pocitaci je.
 REM ============================================================================
@@ -15,6 +20,38 @@ REM Musi to byt cesta odvozena od skriptu, ne od cwd. Kdyz sedime jinde, spadne
 REM instalace i kontrola zavislosti a smazou se node_modules cizi slozky.
 cd /d "%~dp0..\.."
 if errorlevel 1 exit /b 1
+
+REM setlocal by priznak schoval pred re-execem, proto endlocal pred exitem nize
+set "UPDATED=0"
+pushd ..\..\..
+git pull > "%TEMP%\babybox_pull.txt" 2>&1
+if errorlevel 1 goto pullfailed
+REM find vraci errorlevel 1, kdyz retezec nenajde - tedy kdyz neco prislo
+find /i "Already up to date" "%TEMP%\babybox_pull.txt" >nul
+if errorlevel 1 set "UPDATED=1"
+goto pulldone
+
+:pullfailed
+echo git pull selhal - pokracuji se stavajici verzi
+
+:pulldone
+type "%TEMP%\babybox_pull.txt"
+popd
+
+REM Novy skript se spusti jen jednou. Podruhe uz je BABYBOX_REEXEC nastavene.
+REM Bez zavorek, protoze v bloku by se %errorlevel% dosadil uz pri parsovani.
+if not "%UPDATED%"=="1" goto noreexec
+if not "%BABYBOX_REEXEC%"=="" goto noreexec
+echo Repozitar se zmenil - spoustim znovu novou verzi skriptu
+endlocal
+set "BABYBOX_REEXEC=1"
+set "BABYBOX_UPDATED=1"
+call "%~f0" %*
+exit /b %errorlevel%
+
+:noreexec
+REM Po re-execu uz vlastni pull nic nenajde, takze si priznak neseme v promenne
+if "%BABYBOX_UPDATED%"=="1" set "UPDATED=1"
 
 if not exist versions.env (
   echo versions.env chybi - kontrolu verzi preskakuji
@@ -95,4 +132,9 @@ if errorlevel 1 (
 
 :start
 
-call node src/index.js
+REM Pull uz probehl tady, takze si node sam nezjisti, jestli prisel novy commit
+if "%UPDATED%"=="1" (
+  call node src/index.js --updated
+) else (
+  call node src/index.js
+)

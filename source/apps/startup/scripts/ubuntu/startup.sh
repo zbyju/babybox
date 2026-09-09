@@ -5,7 +5,14 @@
 # Autostart (~/.config/autostart/babybox.desktop) odkazuje primo na tento
 # soubor. Nesmi se presunout ani prejmenovat, jinak se panel nespusti.
 #
-# Skript nejdriv srovna verze nastroju podle versions.env a pak spusti panel.
+# Poradi je zavazne: nejdriv git pull, az potom versions.env. Jinak by se
+# verze srovnavaly podle souboru z minuleho bootu a novy toolchain by prisel
+# az o restart pozdeji — na pocitacich se restartuje jen v pondeli, takze i
+# o tyden.
+#
+# Kdyz pull zmeni i tenhle skript, spustime se jednou znovu, aby bezela nova
+# verze. Pojistka BABYBOX_REEXEC brani smycce.
+#
 # Zadny krok nesmi spusteni zastavit — kdyz instalace selze (treba neni sit),
 # pokracujeme s tim, co uz na pocitaci je. Proto tu neni "set -e".
 # =============================================================================
@@ -25,6 +32,25 @@ log() {
 
 run() {
   "$@" >>"$LOG_FILE" 2>&1
+}
+
+# ----- Aktualizace repozitare ------------------------------------------------
+
+# Nastavi UPDATED=1, kdyz pull neco stahl. Chyba (treba vypadek site) neni
+# duvod skoncit — pokracujeme s tim, co na pocitaci uz je.
+UPDATED=0
+update_repo() {
+  local out
+  if ! out="$(cd "$BABYBOX_DIR" && git pull 2>&1)"; then
+    log "git pull selhal — pokracuji se stavajici verzi"
+    echo "$out" >> "$LOG_FILE"
+    return 0
+  fi
+  echo "$out" >> "$LOG_FILE"
+  case "$(echo "$out" | tr '[:upper:]' '[:lower:]')" in
+    *"already up to date"*) log "Repozitar je aktualni" ;;
+    *) log "Repozitar aktualizovan"; UPDATED=1 ;;
+  esac
 }
 
 # ----- Kontrola verzi --------------------------------------------------------
@@ -120,6 +146,19 @@ install_deps() {
 
 log "Start"
 
+update_repo
+
+# Novy skript se spusti jen jednou. Podruhe uz je BABYBOX_REEXEC nastavene.
+if [ "$UPDATED" = "1" ] && [ -z "${BABYBOX_REEXEC:-}" ]; then
+  log "Repozitar se zmenil — spoustim znovu novou verzi skriptu"
+  export BABYBOX_REEXEC=1
+  export BABYBOX_UPDATED=1
+  exec "$0" "$@"
+fi
+
+# Po re-execu uz vlastni pull nic nenajde, takze si priznak neseme v promenne
+[ "${BABYBOX_UPDATED:-}" = "1" ] && UPDATED=1
+
 if [ -f "$STARTUP_DIR/versions.env" ]; then
   # shellcheck source=../../versions.env
   . "$STARTUP_DIR/versions.env"
@@ -142,4 +181,10 @@ cd "$STARTUP_DIR" || { log "Adresar $STARTUP_DIR neexistuje — koncim"; exit 1;
 # install-all.sh diky tomu nevypise INSTALACE DOKONCENA nad mrtvym pocitacem.
 install_deps || { log "Zavislosti se nepodarilo nainstalovat — panel nespoustim"; exit 1; }
 
-node src/index.js --ubuntu
+# Pull uz probehl tady, takze si node sam nezjisti, jestli prisel novy commit.
+# Bez --updated by se po zmene kodu neprebuildovalo.
+if [ "$UPDATED" = "1" ]; then
+  node src/index.js --ubuntu --updated
+else
+  node src/index.js --ubuntu
+fi

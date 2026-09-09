@@ -100,7 +100,24 @@ fi
 exit 0
 EOF
 
-  chmod +x "$bin"/node "$bin"/n "$bin"/npm "$bin"/pnpm "$bin"/pm2
+  cat > "$bin/git" <<'EOF'
+#!/bin/bash
+echo "git $* (cwd=$PWD)" >> "$CALLS"
+[ "${1:-}" = "pull" ] || exit 0
+[ "${GIT_PULL_EXIT:-0}" = "0" ] || { echo "fatal: could not read from remote"; exit 1; }
+# Druhy pull uz nic nenajde - stejne jako na opravdovem pocitaci po re-execu
+tried="$(cat "$STATE/git_pulls" 2>/dev/null || echo 0)"
+tried=$((tried + 1))
+echo "$tried" > "$STATE/git_pulls"
+if [ "${GIT_PULL_UPDATED:-0}" = "1" ] && { [ "${GIT_PULL_ALWAYS:-0}" = "1" ] || [ "$tried" -eq 1 ]; }; then
+  echo "Updating 1234567..89abcde"
+  echo " 1 file changed, 1 insertion(+)"
+else
+  echo "Already up to date."
+fi
+EOF
+
+  chmod +x "$bin"/node "$bin"/n "$bin"/npm "$bin"/pnpm "$bin"/pm2 "$bin"/git
 }
 
 # ----- Stroj testu -----------------------------------------------------------
@@ -118,6 +135,9 @@ reset_case() {
   PNPM_INSTALL_FAILS=0
   DROP_KEY=""          # klic, ktery se z versions.env vyhodi
   SEED_DEPS=""         # node_modules, ktere existuji uz pred spustenim
+  GIT_PULL_EXIT=0      # 1 = pull selze (treba neni sit)
+  GIT_PULL_UPDATED=0   # 1 = prvni pull neco stahne
+  GIT_PULL_ALWAYS=0    # 1 = kazdy pull hlasi zmenu (test pojistky proti smycce)
 }
 
 run_case() {
@@ -150,6 +170,8 @@ run_case() {
   echo "$STUB_PM2"  > "$STATE/pm2_version"
 
   SANDBOX="$sandbox"
+  # Casovy strop. Kdyby se re-exec zacyklil, test spadne misto toho, aby visel.
+  # 'timeout' na macOS neni, tak si hlidace udelame sami.
   env -i \
     HOME="$home" \
     PATH="$home/.npm-global/bin:/usr/bin:/bin" \
@@ -157,8 +179,19 @@ run_case() {
     N_EXIT="$N_EXIT" \
     NPM_INSTALL_EXIT="$NPM_INSTALL_EXIT" \
     PNPM_INSTALL_FAILS="$PNPM_INSTALL_FAILS" \
-    bash "$startup_dir/scripts/ubuntu/startup.sh" >"$sandbox/stdout" 2>&1
+    GIT_PULL_EXIT="$GIT_PULL_EXIT" \
+    GIT_PULL_UPDATED="$GIT_PULL_UPDATED" \
+    GIT_PULL_ALWAYS="$GIT_PULL_ALWAYS" \
+    bash "$startup_dir/scripts/ubuntu/startup.sh" >"$sandbox/stdout" 2>&1 &
+  local pid=$!
+  ( sleep "${RUN_TIMEOUT:-30}"; kill -9 "$pid" 2>/dev/null ) >/dev/null 2>&1 &
+  local watchdog=$!
+  wait "$pid"
   RC=$?
+  kill "$watchdog" 2>/dev/null
+  wait "$watchdog" 2>/dev/null
+  [ "$RC" -eq 137 ] && echo "  (skript byl zabit po ${RUN_TIMEOUT:-30}s - nejspis smycka)"
+  return 0
 }
 
 pass() { PASSED=$((PASSED + 1)); }
@@ -250,6 +283,60 @@ run_case
 expect_log "Zavislosti se nepodarilo nainstalovat"
 expect_not_called "node src/index.js --ubuntu"
 expect_rc 1
+
+# ----- git pull a re-exec ----------------------------------------------------
+
+echo "pull nic nestahne -> zadny re-exec, node bez --updated"
+reset_case
+run_case
+expect_called "git pull"
+expect_log "Repozitar je aktualni"
+expect_no_log "spoustim znovu"
+expect_called "node src/index.js --ubuntu"
+expect_not_called "node src/index.js --ubuntu --updated"
+expect_rc 0
+
+echo "pull nekde v korenu repozitare, ne v apps/startup"
+reset_case
+run_case
+if grep -qF "git pull (cwd=$SANDBOX/home/babybox)" "$CALLS"; then pass; else fail "git pull nebezel v korenu repozitare"; fi
+
+echo "pull stahne novy commit -> re-exec jednou a node dostane --updated"
+reset_case
+GIT_PULL_UPDATED=1
+run_case
+expect_log "Repozitar aktualizovan"
+expect_log "spoustim znovu"
+expect_called "node src/index.js --ubuntu --updated"
+expect_rc 0
+# Dva pully = presne jeden re-exec. Tri by znamenaly smycku.
+if [ "$(cat "$STATE/git_pulls")" = "2" ]; then pass; else fail "ocekavali jsme 2 pully, bylo $(cat "$STATE/git_pulls")"; fi
+
+echo "verze se srovnavaji az po pullu"
+reset_case
+GIT_PULL_UPDATED=1; STUB_PNPM="6.32.9"
+run_case
+# npm install -g smi prijit az za prvnim pullem, jinak by cetl stary versions.env
+first_pull="$(grep -n "^git pull" "$CALLS" | head -1 | cut -d: -f1)"
+first_npm="$(grep -n "^npm install -g" "$CALLS" | head -1 | cut -d: -f1)"
+if [ -n "$first_npm" ] && [ "$first_pull" -lt "$first_npm" ]; then pass; else fail "verze se srovnaly pred pullem"; fi
+
+echo "pull hlasi zmenu i podruhe -> pojistka zastavi smycku po jednom re-execu"
+reset_case
+GIT_PULL_UPDATED=1; GIT_PULL_ALWAYS=1
+run_case
+if [ "$(cat "$STATE/git_pulls")" = "2" ]; then pass; else fail "smycka: $(cat "$STATE/git_pulls") pullu misto 2"; fi
+expect_called "node src/index.js --ubuntu --updated"
+expect_rc 0
+
+echo "pull selze -> panel presto nabehne, bez --updated"
+reset_case
+GIT_PULL_EXIT=1
+run_case
+expect_log "git pull selhal"
+expect_called "node src/index.js --ubuntu"
+expect_not_called "node src/index.js --ubuntu --updated"
+expect_rc 0
 
 # ----- Vysledek --------------------------------------------------------------
 
