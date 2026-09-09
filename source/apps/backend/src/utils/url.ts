@@ -12,8 +12,15 @@ const actionTargets: Record<Action, { unit: Unit; path: string }> = {
 };
 
 export function actionToUrl(action: Action): string | undefined {
+  /*
+   * hasOwnProperty, not a plain lookup: `actionToUrl("toString")` would find
+   * Object.prototype.toString, pass an `undefined` check, and build a URL
+   * aimed at the wrong unit.
+   */
+  if (!Object.prototype.hasOwnProperty.call(actionTargets, action)) {
+    return undefined;
+  }
   const target = actionTargets[action];
-  if (target === undefined) return undefined;
   return `http://${unitToIp(target.unit)}${target.path}`;
 }
 

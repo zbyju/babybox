@@ -24,6 +24,11 @@ describe("url.ts", () => {
       expect(actionToUrl(undefined)).toBe(undefined);
     });
 
+    it("should return undefined for inherited object keys", () => {
+      expect(actionToUrl("toString" as unknown as Action)).toBe(undefined);
+      expect(actionToUrl("constructor" as unknown as Action)).toBe(undefined);
+    });
+
     it("should build the url from the unit ip and the action path", () => {
       expect(actionToUrl(Action.OpenDoors)).toBe(
         "http://10.1.1.5/sdscep?sys141=201"
