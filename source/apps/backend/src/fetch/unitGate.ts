@@ -26,6 +26,12 @@ interface Waiter {
  * The units are small embedded HTTP servers. Concurrent connections make them
  * slower, which widens the overlap and makes the pile-up feed itself, so every
  * request to a unit goes through here.
+ *
+ * WARN: a job must never call `onUnit` or `sharedOnUnit` for its own unit.
+ * The queue runs one job at a time, so the inner call waits for the outer job,
+ * which is waiting for the inner call. That freezes the unit for every later
+ * caller, with no timeout and no error. Build the whole sequence inside one job
+ * instead, the way `updateSettings` does.
  */
 class UnitQueue {
   private busy = false;
