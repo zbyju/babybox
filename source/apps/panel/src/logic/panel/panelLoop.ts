@@ -1,4 +1,4 @@
-import _ from "lodash";
+import isEqual from "lodash/isEqual";
 import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
 import { ref } from "vue";
@@ -105,7 +105,7 @@ export class AppManager {
       this.thermalUnit.value,
       this.connection.value,
     );
-    if (!_.isEqual(this.panelState.value, newState)) {
+    if (!isEqual(this.panelState.value, newState)) {
       this.panelStateStore.setState(newState);
     }
     this.updateClock();
