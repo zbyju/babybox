@@ -36,6 +36,14 @@ ensure_npm_prefix() {
   run npm config set prefix "$want" || log "npm prefix se nepodarilo nastavit"
 }
 
+ensure_n() {
+  [ "$(n --version 2>/dev/null)" = "$N_VERSION" ] && return 0
+  log "Instaluji n $N_VERSION"
+  run npm install -g "n@$N_VERSION" || { log "n se nepodarilo nainstalovat"; return 1; }
+}
+
+# Kdyz se Node nesrovna, pise se NODE_MISMATCH — podle toho se v logu fleetu
+# najdou pocitace, ktere bezi na jine verzi, nez versions.env predepisuje.
 ensure_node() {
   local want="v$NODE_VERSION"
   local have
@@ -43,14 +51,16 @@ ensure_node() {
   [ "$have" = "$want" ] && return 0
 
   log "Node je $have, chceme $want"
-  if ! command -v n >/dev/null 2>&1; then
-    run npm install -g "n@$N_VERSION" || { log "n se nepodarilo nainstalovat"; return 1; }
-  fi
-  run n "$NODE_VERSION" || { log "n $NODE_VERSION selhalo"; return 1; }
+  # Kdyz se pinnuta verze 'n' nenainstaluje, zkusime to se starou. Je to porad
+  # lepsi nez Node vubec nesrovnat.
+  ensure_n
+  command -v n >/dev/null 2>&1 || { log "NODE_MISMATCH - Node $have misto $want, n neni k dispozici"; return 1; }
+
+  run n "$NODE_VERSION" || { log "NODE_MISMATCH - Node $have misto $want, n $NODE_VERSION selhalo"; return 1; }
   hash -r
 
   have="$(node -v 2>/dev/null)"
-  [ "$have" = "$want" ] || { log "Node je porad $have"; return 1; }
+  [ "$have" = "$want" ] || { log "NODE_MISMATCH - Node je porad $have misto $want"; return 1; }
   log "Node $want nainstalovan"
 }
 
