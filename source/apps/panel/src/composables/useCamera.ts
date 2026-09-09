@@ -9,7 +9,7 @@ import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
  *
  * Depending on the implementation this value might change (to refresh the img).
  *
- * Must be called from a component's setup so the refresh timer stops on unmount.
+ * Starts a refresh timer that is only stopped on the calling component's unmount.
  *
  * @param config - camera config
  * @returns url to the image
