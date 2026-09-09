@@ -3,8 +3,9 @@ import { storeToRefs } from "pinia";
 
 import { useConfigStore } from "@/pinia/configStore";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
+import { singleFlight } from "@/utils/singleFlight";
 
-export const getStatus = async (): Promise<boolean> => {
+export const getStatus = singleFlight(async (): Promise<boolean> => {
   const configStore = useConfigStore();
   const { backend: api } = storeToRefs(configStore);
   const url = `http://localhost:${api.value.port}${api.value.url}/status`;
@@ -18,7 +19,7 @@ export const getStatus = async (): Promise<boolean> => {
   } catch (err) {
     return false;
   }
-};
+});
 
 export const getData = async (
   url: string,
@@ -36,25 +37,29 @@ export const getData = async (
   }
 };
 
-export const getEngineData = (): Promise<RawEngineUnit | undefined> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/engine/data`;
-  const timeout = api.value.requestTimeout || 5000;
+export const getEngineData = singleFlight(
+  (): Promise<RawEngineUnit | undefined> => {
+    const configStore = useConfigStore();
+    const { backend: api } = storeToRefs(configStore);
+    const url = `http://localhost:${api.value.port}${api.value.url}/engine/data`;
+    const timeout = api.value.requestTimeout || 5000;
 
-  return getData(url, timeout);
-};
+    return getData(url, timeout);
+  },
+);
 
-export const getThermalData = (): Promise<RawThermalUnit | undefined> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/thermal/data`;
-  const timeout = api.value.requestTimeout || 5000;
+export const getThermalData = singleFlight(
+  (): Promise<RawThermalUnit | undefined> => {
+    const configStore = useConfigStore();
+    const { backend: api } = storeToRefs(configStore);
+    const url = `http://localhost:${api.value.port}${api.value.url}/thermal/data`;
+    const timeout = api.value.requestTimeout || 5000;
 
-  return getData(url, timeout);
-};
+    return getData(url, timeout);
+  },
+);
 
-export const updateWatchdog = async (): Promise<boolean> => {
+export const updateWatchdog = singleFlight(async (): Promise<boolean> => {
   const configStore = useConfigStore();
   const { backend: api } = storeToRefs(configStore);
   const url = `http://localhost:${api.value.port}${api.value.url}/engine/watchdog`;
@@ -67,7 +72,7 @@ export const updateWatchdog = async (): Promise<boolean> => {
   } catch (err) {
     return false;
   }
-};
+});
 
 export const openDoors = (): Promise<any> => {
   const configStore = useConfigStore();

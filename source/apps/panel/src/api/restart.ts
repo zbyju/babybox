@@ -2,13 +2,16 @@ import axios from "axios";
 import { storeToRefs } from "pinia";
 
 import { useConfigStore } from "@/pinia/configStore";
+import { singleFlight } from "@/utils/singleFlight";
 
-export const refreshRestartCooldown = () => {
+export const refreshRestartCooldown = singleFlight((): Promise<any> => {
   const configStore = useConfigStore();
   const { backend: api } = storeToRefs(configStore);
-  if (api.value.port === undefined || api.value.url === undefined) return;
+  if (api.value.port === undefined || api.value.url === undefined) {
+    return Promise.resolve(undefined);
+  }
   const url = `http://localhost:${api.value.port}${api.value.url}/restart/refresh`;
   const timeout = api.value.requestTimeout || 5000;
 
   return axios.get(url, { timeout: timeout });
-};
+});
