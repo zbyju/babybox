@@ -1,5 +1,5 @@
 import type { Ref } from "vue";
-import { ref } from "vue";
+import { onUnmounted, ref } from "vue";
 
 import { type CameraConfig } from "@/types/panel/config.types";
 import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
@@ -9,6 +9,8 @@ import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
  *
  * Depending on the implementation this value might change (to refresh the img).
  *
+ * Must be called from a component's setup so the refresh timer stops on unmount.
+ *
  * @param config - camera config
  * @returns url to the image
  */
@@ -17,11 +19,8 @@ export default function useCamera(
   onUpdate?: () => any,
 ): Ref<string> {
   const url = ref("");
-  // if (config.cameraType === "dahua") {
-  //   url.value = `http://${config.username}:${config.password}@${config.ip}/cgi-bin/mjpg/video.cgi?channel=0&subtype=1`;
-  // } else {
   // Update camera URL (timestamp) every @config.updateDelay miliseconds - resulting in updating the image
-  setInterval(() => {
+  const timer = setInterval(() => {
     const cameraType = stringToCameraType(config.cameraType);
     const time = new Date().getTime().toString();
     url.value = `http://${config.username}:${config.password}@${
@@ -32,7 +31,8 @@ export default function useCamera(
       onUpdate();
     }
   }, config.updateDelay);
-  // }
+
+  onUnmounted(() => clearInterval(timer));
 
   return url;
 }
