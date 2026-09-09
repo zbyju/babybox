@@ -11,6 +11,13 @@ const DEFAULT_UPDATE_DELAY = 1000;
 /** Multiple of the update delay after which a snapshot that never answered is dropped. */
 const STALL_FACTOR = 3;
 
+/*
+ * Floor for the stall timeout.
+ * The update delay is a display preference, so a short one must not become a
+ * network timeout that no camera can meet.
+ */
+const MIN_LOAD_TIMEOUT = 5000;
+
 /**
  * Loads camera snapshots one at a time.
  *
@@ -18,6 +25,9 @@ const STALL_FACTOR = 3;
  * slower than the update delay just refreshes less often. Swapping the src on a
  * timer instead aborts the running load, which can leave the view stuck on Error
  * and never show a frame.
+ *
+ * A frame is dropped once it passes the stall timeout, which is at least
+ * MIN_LOAD_TIMEOUT and never below it, whatever the update delay is.
  *
  * Each snapshot loads into an off-screen image first, so the returned url changes
  * only once the new frame is ready. That also removes the flicker on refresh.
@@ -78,7 +88,8 @@ export default function useCamera(
      * Some cameras accept the connection and then never answer,
      * so neither onload nor onerror ever fires.
      */
-    stallTimer = setTimeout(() => settle(false, true), delay * STALL_FACTOR);
+    const loadTimeout = Math.max(delay * STALL_FACTOR, MIN_LOAD_TIMEOUT);
+    stallTimer = setTimeout(() => settle(false, true), loadTimeout);
 
     probe.src = buildUrl();
   };
