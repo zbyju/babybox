@@ -11,14 +11,14 @@ import {
 import { Action, Unit } from "../types/units.types";
 import { actionToUrl, unitToIp } from "../utils/url";
 import { wait } from "../utils/wait";
+import { defaultFetchTimeout } from "./constants";
 import { fetchFromUrl } from "./fetch";
 
 export async function fetchDataCommon(
   unit: Unit,
   query: unknown
 ): Promise<CommonDataResponse> {
-  const { timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT) || 5000 } =
-    query as CommonDataRequestQuery;
+  const { timeout = defaultFetchTimeout() } = query as CommonDataRequestQuery;
 
   const url = `http://${
     unit === Unit.Engine ? config.units.engine.ip : config.units.thermal.ip
@@ -48,10 +48,8 @@ export async function fetchSettings(
       msg: "Unit was specified, but it is wrong. Expected values are: 'engine' or 'thermal'.",
     };
   }
-  const {
-    unit = "both",
-    timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT) || 5000,
-  } = query as GetUnitSettingsRequest;
+  const { unit = "both", timeout = defaultFetchTimeout() } =
+    query as GetUnitSettingsRequest;
 
   const timestamp = new Date().getTime();
 
@@ -97,7 +95,7 @@ export async function fetchSettings(
 }
 
 export async function fetchAction(action: Action): Promise<CommonDataResponse> {
-  const timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT) || 5000;
+  const timeout = defaultFetchTimeout();
 
   const url = actionToUrl(action);
 

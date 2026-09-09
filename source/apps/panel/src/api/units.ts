@@ -1,16 +1,12 @@
 import axios from "axios";
-import { storeToRefs } from "pinia";
 
-import { useConfigStore } from "@/pinia/configStore";
+import { backendApi } from "@/api/base";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 
 export const getStatus = async (): Promise<boolean> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/status`;
-  const timeout = api.value.requestTimeout || 5000;
+  const { baseUrl, timeout } = backendApi();
   try {
-    const response = await axios.get(url, { timeout });
+    const response = await axios.get(`${baseUrl}/status`, { timeout });
     if (response.status >= 200 && response.status <= 299) {
       return true;
     }
@@ -37,31 +33,24 @@ export const getData = async (
 };
 
 export const getEngineData = (): Promise<RawEngineUnit | undefined> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/engine/data`;
-  const timeout = api.value.requestTimeout || 5000;
+  const { baseUrl, timeout } = backendApi();
 
-  return getData(url, timeout);
+  return getData(`${baseUrl}/engine/data`, timeout);
 };
 
 export const getThermalData = (): Promise<RawThermalUnit | undefined> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/thermal/data`;
-  const timeout = api.value.requestTimeout || 5000;
+  const { baseUrl, timeout } = backendApi();
 
-  return getData(url, timeout);
+  return getData(`${baseUrl}/thermal/data`, timeout);
 };
 
 export const updateWatchdog = async (): Promise<boolean> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/engine/watchdog`;
-  const timeout = api.value.requestTimeout || 5000;
+  const { baseUrl, timeout } = backendApi();
 
   try {
-    const response = await axios.put(url, null, { timeout });
+    const response = await axios.put(`${baseUrl}/engine/watchdog`, null, {
+      timeout,
+    });
     if (response.status >= 200 && response.status <= 299) return true;
     else return false;
   } catch (err) {
@@ -70,39 +59,33 @@ export const updateWatchdog = async (): Promise<boolean> => {
 };
 
 export const openDoors = (): Promise<any> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/units/actions/openDoors`;
-  const timeout = api.value.requestTimeout || 5000;
+  const { baseUrl, timeout } = backendApi();
 
-  return axios.get(url, { timeout });
+  return axios.get(`${baseUrl}/units/actions/openDoors`, { timeout });
 };
 
 export const resetBabybox = (): Promise<any> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/units/actions/openServiceDoors`;
-  const timeout = api.value.requestTimeout || 5000;
+  const { baseUrl, timeout } = backendApi();
 
-  return axios.get(url, { timeout });
+  return axios.get(`${baseUrl}/units/actions/openServiceDoors`, { timeout });
 };
 
 export const getSettings = (): Promise<any> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/units/settings`;
-  const timeout = api.value.requestTimeout || 5000;
+  const { baseUrl, timeout } = backendApi();
 
-  return axios.get(url, { timeout });
+  return axios.get(`${baseUrl}/units/settings`, { timeout });
 };
 
 export const sendSettings = async (data: any[]): Promise<any> => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  const url = `http://localhost:${api.value.port}${api.value.url}/units/settings`;
+  const { baseUrl } = backendApi();
 
+  /*
+   * Not the configured request timeout:
+   * the backend retries each setting against the units up to ten times,
+   * so a write can take far longer than a read.
+   */
   const response = await axios.put(
-    url,
+    `${baseUrl}/units/settings`,
     {
       settings: data,
     },
