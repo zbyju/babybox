@@ -5,7 +5,6 @@
   <template v-else>
     <img
       v-show="state === CameraState.Ok"
-      ref="imageRef"
       :src="url"
       :style="{
         borderTopWidth: props.displayTopBorder ? undefined : '0px',
@@ -37,10 +36,11 @@
 
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
-  import { type Ref, onMounted, ref } from "vue";
+  import { ref } from "vue";
 
   import useCamera from "@/composables/useCamera";
   import { useConfigStore } from "@/pinia/configStore";
+  import { CameraState } from "@/types/panel/camera.types";
   import { CameraType } from "@/types/panel/config.types";
   import { stringToCameraType } from "@/utils/panel/camera";
 
@@ -56,30 +56,15 @@
     (e: "updatedImage", width: number, height: number): void;
   }>();
 
-  enum CameraState {
-    Ok = 0,
-    Loading = 1,
-    Error = 2,
-  }
-
-  const state = ref(CameraState.Loading);
-
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);
   const cameraType = stringToCameraType(camera.value.cameraType);
-  const url: Ref<string> = useCamera(camera.value);
 
-  const imageRef = ref<HTMLImageElement | null>(null);
-  onMounted(() => {
-    if (imageRef.value) {
-      imageRef.value.onerror = () => {
-        state.value = CameraState.Error;
-      };
-      imageRef.value.onload = () => {
-        state.value = CameraState.Ok;
-      };
-    }
-  });
+  // Vivotek renders its own iframe below, so it needs no snapshot polling.
+  const { url, state } =
+    cameraType === CameraType.vivotek
+      ? { url: ref(""), state: ref(CameraState.Loading) }
+      : useCamera(camera.value);
 </script>
 
 <style lang="stylus">
