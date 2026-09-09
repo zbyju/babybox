@@ -135,27 +135,15 @@ export class AppManager {
   }
 
   private getConfig(): Promise<Config> {
-    return new Promise((resolve) => {
-      fetch("http://localhost:5001/api/v1/config/main")
-        .then((response) => {
-          return response.json();
-        })
-        .then((config) => {
-          resolve(config);
-        });
-    });
+    return fetch("http://localhost:5001/api/v1/config/main").then((response) =>
+      response.json(),
+    );
   }
 
   private getVersions(): Promise<Versions> {
-    return new Promise((resolve) => {
-      fetch("http://localhost:5001/api/v1/config/version")
-        .then((response) => {
-          return response.json();
-        })
-        .then((config) => {
-          resolve(config);
-        });
-    });
+    return fetch("http://localhost:5001/api/v1/config/version").then(
+      (response) => response.json(),
+    );
   }
 
   private async initializeConfig() {
