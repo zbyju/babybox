@@ -188,7 +188,6 @@ export async function updateSettings(
         }
         --i;
       }
-      i = tryNumber;
       return [...prevResult, { ...s, result }];
     },
     Promise.resolve([])

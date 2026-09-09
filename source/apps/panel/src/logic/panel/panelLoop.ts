@@ -124,7 +124,7 @@ export class AppManager {
     }
     this.updateClock();
   }
-  private async updateWatchdogEngine(timeout = 5000) {
+  private async updateWatchdogEngine() {
     try {
       await updateWatchdog();
     } catch (err) {
