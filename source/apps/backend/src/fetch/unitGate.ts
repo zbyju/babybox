@@ -46,7 +46,13 @@ export class UnitQueue {
    */
   run<T>(job: Job<T>, first = false): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      const waiter: Waiter = { run: () => job().then(resolve, reject) };
+      /*
+       * `Promise.resolve().then(job)` so a job that throws before it returns a
+       * promise rejects the caller instead of escaping past `.then`.
+       */
+      const waiter: Waiter = {
+        run: () => Promise.resolve().then(job).then(resolve, reject),
+      };
 
       if (first) this.waiting.unshift(waiter);
       else this.waiting.push(waiter);
@@ -82,13 +88,19 @@ export class UnitQueue {
     if (this.busy) return;
     this.busy = true;
 
-    let next = this.waiting.shift();
-    while (next !== undefined) {
-      await next.run();
-      next = this.waiting.shift();
+    try {
+      let next = this.waiting.shift();
+      while (next !== undefined) {
+        await next.run();
+        next = this.waiting.shift();
+      }
+    } finally {
+      /*
+       * Without the finally, one unexpected rejection here leaves the queue
+       * busy for good and every later caller for this unit hangs with no error.
+       */
+      this.busy = false;
     }
-
-    this.busy = false;
   }
 }
 

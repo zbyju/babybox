@@ -83,6 +83,15 @@ describe("unitGate.ts", () => {
 
       expect(order).toEqual(["urgent", "queued"]);
     });
+
+    it("should keep running jobs after one throws before it returns a promise", async () => {
+      const thrower = queue.run(() => {
+        throw new Error("sync");
+      });
+
+      await expect(thrower).rejects.toThrow("sync");
+      expect(await queue.run(async () => "next")).toBe("next");
+    });
   });
 
   describe("runShared", () => {
