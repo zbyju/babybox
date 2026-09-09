@@ -1,4 +1,5 @@
 @echo off
+setlocal
 REM ============================================================================
 REM Babybox - spusteni panelu (Windows)
 REM
@@ -42,17 +43,20 @@ goto deps
 
 REM Windows nema spravce verzi Node (na Ubuntu to resi 'n'), takze verzi jen
 REM hlasime a instalaci musi udelat clovek.
+set "HAVE_NODE=zadny"
 for /f "delims=" %%v in ('node -v 2^>nul') do set HAVE_NODE=%%v
 if not "%HAVE_NODE%"=="v%NODE_VERSION%" (
   echo POZOR: Node je %HAVE_NODE%, ma byt v%NODE_VERSION% - nainstalujte rucne
 )
 
+set "HAVE_PNPM=zadny"
 for /f "delims=" %%v in ('pnpm --version 2^>nul') do set HAVE_PNPM=%%v
 if not "%HAVE_PNPM%"=="%PNPM_VERSION%" (
   echo Instaluji pnpm %PNPM_VERSION%
   call npm install -g pnpm@%PNPM_VERSION% || echo pnpm se nepodarilo nainstalovat
 )
 
+set "HAVE_PM2=zadny"
 for /f "delims=" %%v in ('pm2 --version 2^>nul') do set HAVE_PM2=%%v
 if not "%HAVE_PM2%"=="%PM2_VERSION%" (
   echo Instaluji pm2 %PM2_VERSION%
