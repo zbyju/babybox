@@ -137,5 +137,9 @@ fi
 
 cd "$STARTUP_DIR" || { log "Adresar $STARTUP_DIR neexistuje — koncim"; exit 1; }
 
-install_deps
+# Sem se dojde jen kdyz uz jsou node_modules smazane a nova instalace selhala.
+# Node by hned spadl na require("winston"), tak radeji koncime s chybou —
+# install-all.sh diky tomu nevypise INSTALACE DOKONCENA nad mrtvym pocitacem.
+install_deps || { log "Zavislosti se nepodarilo nainstalovat — panel nespoustim"; exit 1; }
+
 node src/index.js --ubuntu

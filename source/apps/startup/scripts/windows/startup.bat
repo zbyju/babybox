@@ -87,7 +87,11 @@ goto start
 echo Zavislosti nefunguji - zkousim cistou instalaci
 rmdir /s /q ..\..\node_modules 2>nul
 for /d %%d in (..\*) do rmdir /s /q "%%d\node_modules" 2>nul
-call pnpm install --frozen-lockfile || echo pnpm install selhal i po vycisteni
+call pnpm install --frozen-lockfile
+if errorlevel 1 (
+  echo pnpm install selhal i po vycisteni - panel nespoustim
+  exit /b 1
+)
 
 :start
 
