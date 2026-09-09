@@ -1,3 +1,4 @@
+import axios from "axios";
 import _ from "lodash";
 import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
@@ -16,7 +17,11 @@ import { usePanelStateStore } from "@/pinia/panelStateStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { useVersionsStore } from "@/pinia/versions";
 import type { Maybe } from "@/types/generic.types";
-import type { AppConfig, Config, UnitsConfig } from "@/types/panel/config.types";
+import type {
+  AppConfig,
+  Config,
+  UnitsConfig,
+} from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
@@ -25,8 +30,13 @@ import { isInstanceOfConfig } from "@/utils/panel/instanceCheck";
 
 import { getNewState } from "./state";
 
+const CONFIGER_TIMEOUT = 10000;
+const FIRST_INIT_DELAY = 5000;
+const RETRY_INIT_DELAY = 20000;
+
 export class AppManager {
-  private panelLoopInterval: Maybe<NodeJS.Timer> = undefined;
+  private panelLoopTimeout: Maybe<ReturnType<typeof setTimeout>> = undefined;
+  private panelLoopRunning = false;
   private unitsConfig: Ref<UnitsConfig>;
   private appConfig: Ref<AppConfig>;
   private panelState: Ref<PanelState>;
@@ -119,7 +129,8 @@ export class AppManager {
 
   private checkRefreshLimit() {
     const DEFAULT_REFRESH_LIMIT = 50000;
-    const limit = this.appConfig.value.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
+    const limit =
+      this.appConfig.value.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
 
     // Disable refresh if limit is invalid (0, negative, NaN, etc.)
     if (limit <= 0 || !Number.isFinite(limit)) {
@@ -134,28 +145,27 @@ export class AppManager {
     }
   }
 
-  private getConfig(): Promise<Config> {
-    return new Promise((resolve) => {
-      fetch("http://localhost:5001/api/v1/config/main")
-        .then((response) => {
-          return response.json();
-        })
-        .then((config) => {
-          resolve(config);
-        });
-    });
+  /*
+   * These must reject when configer is unreachable.
+   * The startup retry chain waits for them, so a promise that never settles
+   * would stop the panel from ever retrying.
+   */
+  private async getConfig(): Promise<Config> {
+    const response = await axios.get(
+      "http://localhost:5001/api/v1/config/main",
+      {
+        timeout: CONFIGER_TIMEOUT,
+      },
+    );
+    return response.data;
   }
 
-  private getVersions(): Promise<Versions> {
-    return new Promise((resolve) => {
-      fetch("http://localhost:5001/api/v1/config/version")
-        .then((response) => {
-          return response.json();
-        })
-        .then((config) => {
-          resolve(config);
-        });
-    });
+  private async getVersions(): Promise<Versions> {
+    const response = await axios.get(
+      "http://localhost:5001/api/v1/config/version",
+      { timeout: CONFIGER_TIMEOUT },
+    );
+    return response.data;
   }
 
   private async initializeConfig() {
@@ -187,48 +197,83 @@ export class AppManager {
     }
   }
 
+  /*
+   * Retries config and backend startup until both answer.
+   * The next attempt is scheduled after the current one settles,
+   * so a hanging backend cannot collect overlapping status requests.
+   */
   async initializeGlobal(): Promise<any> {
-    let intervalTime = 5000;
-    const interval = setInterval(async () => {
-      await this.initializeConfig()
-        .then((res) => {
-          this.appStateStore.setConfigSuccess();
-        })
-        .catch((err) => {
-          clearInterval(interval);
-          this.appStateStore.setConfigError();
-        });
-      this.initializeBackend()
-        .then((res) => {
-          clearInterval(interval);
-          this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
-        })
-        .catch((err) => {
-          this.appStateStore.setBackendError();
-        });
-      intervalTime = 20000;
-    }, intervalTime);
+    let done = false;
+
+    const attempt = async () => {
+      try {
+        await this.initializeConfig();
+        this.appStateStore.setConfigSuccess();
+      } catch (err) {
+        this.appStateStore.setConfigError();
+        done = true;
+      }
+
+      try {
+        const res = await this.initializeBackend();
+        this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
+        done = true;
+      } catch (err) {
+        this.appStateStore.setBackendError();
+      }
+
+      if (done) return;
+
+      setTimeout(attempt, RETRY_INIT_DELAY);
+    };
+
+    setTimeout(attempt, FIRST_INIT_DELAY);
   }
 
-  async startPanelLoop() {
+  private nextDelay(): number {
     const delay = this.unitsConfig.value.requestDelay || 2000;
-    const panelState = this.panelState.value;
-    this.panelLoopInterval = setInterval(
-      () => {
-        this.updateEngineUnit();
-        this.updateThermalUnit();
-        this.updateState();
-        this.updateWatchdogEngine();
-        this.checkRefreshLimit();
-      },
-      panelState.message ? delay / 2 : delay,
-    );
+    return this.panelState.value.message ? delay / 2 : delay;
+  }
+
+  private async runPanelTick() {
+    /*
+     * Engine data and the watchdog both talk to the engine unit,
+     * so they go one after the other.
+     * The thermal unit is a separate device, so it runs alongside.
+     */
+    await Promise.allSettled([
+      this.updateEngineUnit().then(() => this.updateWatchdogEngine()),
+      this.updateThermalUnit(),
+    ]);
+
+    this.updateState();
+    this.checkRefreshLimit();
+  }
+
+  /*
+   * Schedules the next round only after the current one settles,
+   * so a slow or unreachable unit never gets a second request on top of the first.
+   * A fixed-rate interval would stack up to timeout/delay requests per endpoint.
+   */
+  async startPanelLoop() {
+    if (this.panelLoopRunning) return;
+    this.panelLoopRunning = true;
+
+    const tick = async () => {
+      if (!this.panelLoopRunning) return;
+      await this.runPanelTick();
+      if (!this.panelLoopRunning) return;
+      this.panelLoopTimeout = setTimeout(tick, this.nextDelay());
+    };
+
+    tick();
   }
 
   stopPanelLoop() {
-    if (this.panelLoopInterval !== undefined) {
-      clearInterval(this.panelLoopInterval);
+    this.panelLoopRunning = false;
+    if (this.panelLoopTimeout !== undefined) {
+      clearTimeout(this.panelLoopTimeout);
+      this.panelLoopTimeout = undefined;
     }
-    return;
   }
 }
