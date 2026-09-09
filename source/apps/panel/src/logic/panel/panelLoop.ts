@@ -43,6 +43,13 @@ export class AppManager {
     thermal: undefined,
   };
   private panelLoopRunning = false;
+  /*
+   * Bumped on every start and stop.
+   * A tick that was awaiting `runTick()` across a stop belongs to an old
+   * generation and must not schedule a timer, or the unit ends up with two
+   * chains and only one of them in `loopTimers`.
+   */
+  private loopGeneration = 0;
   private unitsConfig: Ref<UnitsConfig>;
   private appConfig: Ref<AppConfig>;
   private panelState: Ref<PanelState>;
@@ -261,11 +268,25 @@ export class AppManager {
    * temperature readings.
    */
   private startUnitLoop(unit: LoopUnit, runTick: () => Promise<void>) {
+    const generation = this.loopGeneration;
+
     const tick = async () => {
-      if (!this.panelLoopRunning) return;
-      await runTick();
-      if (!this.panelLoopRunning) return;
-      this.loopTimers[unit] = setTimeout(tick, this.nextDelay());
+      if (generation !== this.loopGeneration) return;
+
+      try {
+        await runTick();
+      } catch (err) {
+        console.log(err);
+      }
+
+      /*
+       * The next timer is set even after a throw.
+       * A self-scheduling chain that skips it stops for good, and the panel
+       * keeps rendering the last values with no watchdog and no error.
+       */
+      if (generation === this.loopGeneration) {
+        this.loopTimers[unit] = setTimeout(tick, this.nextDelay());
+      }
     };
 
     tick();
@@ -274,6 +295,7 @@ export class AppManager {
   async startPanelLoop() {
     if (this.panelLoopRunning) return;
     this.panelLoopRunning = true;
+    this.loopGeneration += 1;
 
     this.startUnitLoop("engine", () => this.runEngineTick());
     this.startUnitLoop("thermal", () => this.runThermalTick());
@@ -281,6 +303,7 @@ export class AppManager {
 
   stopPanelLoop() {
     this.panelLoopRunning = false;
+    this.loopGeneration += 1;
     for (const unit of Object.keys(this.loopTimers) as LoopUnit[]) {
       const timer = this.loopTimers[unit];
       if (timer !== undefined) {
