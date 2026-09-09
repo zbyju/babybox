@@ -1,9 +1,7 @@
 import type { RouteRecordRaw } from "vue-router";
 import { createRouter, createWebHistory } from "vue-router";
 
-import DataView from "../views/DataView.vue";
 import MainView from "../views/MainView.vue";
-import SettingsView from "../views/SettingsView.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -14,12 +12,12 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/settings",
     name: "Settings",
-    component: SettingsView,
+    component: () => import("../views/SettingsView.vue"),
   },
   {
     path: "/data",
     name: "Data",
-    component: DataView,
+    component: () => import("../views/DataView.vue"),
   },
 ];
 
