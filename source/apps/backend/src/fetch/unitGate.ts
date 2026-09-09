@@ -2,10 +2,13 @@ import { Unit } from "../types/units.types";
 
 type Job<T> = () => Promise<T>;
 
+/*
+ * A queued job with its caller's callbacks already closed over.
+ * Keeping them together lets the queue hold jobs of different result types
+ * without a cast, and `run` never rejects, so the queue keeps moving.
+ */
 interface Waiter {
-  job: Job<unknown>;
-  resolve: (value: unknown) => void;
-  reject: (reason: unknown) => void;
+  run: () => Promise<void>;
 }
 
 /**
@@ -28,11 +31,7 @@ class UnitQueue {
    */
   run<T>(job: Job<T>, first = false): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      const waiter: Waiter = {
-        job: job as Job<unknown>,
-        resolve: resolve as (value: unknown) => void,
-        reject,
-      };
+      const waiter: Waiter = { run: () => job().then(resolve, reject) };
 
       if (first) this.waiting.unshift(waiter);
       else this.waiting.push(waiter);
@@ -68,13 +67,10 @@ class UnitQueue {
     if (this.busy) return;
     this.busy = true;
 
-    while (this.waiting.length > 0) {
-      const next = this.waiting.shift();
-      try {
-        next.resolve(await next.job());
-      } catch (err) {
-        next.reject(err);
-      }
+    let next = this.waiting.shift();
+    while (next !== undefined) {
+      await next.run();
+      next = this.waiting.shift();
     }
 
     this.busy = false;
