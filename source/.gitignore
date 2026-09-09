@@ -1,3 +1,6 @@
 dist/
 node_modules/
 logs/
+
+# configer is TypeScript only; any .js in its src is stale compiler output
+apps/configer/src/**/*.js
