@@ -1,12 +1,12 @@
 import { CameraType } from "@/types/panel/config.types";
 
 export const stringToCameraType = (s: string): CameraType => {
-  if (s.toLowerCase().includes("dahua")) return CameraType.dahua;
-  if (s.toLowerCase().includes("dahua-image")) return CameraType.dahua;
-  if (s.toLowerCase().includes("hikvision")) return CameraType.hikvision;
-  if (s.toLowerCase().includes("avtech") || s.toLowerCase().includes("avm"))
+  const lower = s.toLowerCase();
+  if (lower.includes("dahua")) return CameraType.dahua;
+  if (lower.includes("hikvision")) return CameraType.hikvision;
+  if (lower.includes("avtech") || lower.includes("avm"))
     return CameraType.avtech;
-  if (s.toLowerCase().includes("vivotek")) return CameraType.vivotek;
+  if (lower.includes("vivotek")) return CameraType.vivotek;
   return CameraType.dahua;
 };
 

@@ -83,5 +83,7 @@ export const secondsToTime = (
 };
 
 export const daysToString = (days: number): string => {
-  return days > 1 ? "dní" : days === 0 ? "den" : "";
+  if (days === 1) return "den";
+  if (days >= 2 && days <= 4) return "dny";
+  return "dní";
 };

@@ -23,7 +23,7 @@ export const restartRepository = function (): RestartRepository {
   let errorStreak = 0;
   let isRestarting = false;
   const errorThreshold = parseInt(process.env.RESTART_ERROR_THRESHOLD) || 9;
-  const interval: number = parseInt(process.env.RESTART_INTEVAL) || 20000;
+  const interval: number = parseInt(process.env.RESTART_INTERVAL) || 20000;
 
   function onIncomingRequest(): void {
     lastRequest = moment();

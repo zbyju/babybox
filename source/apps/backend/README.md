@@ -1,4 +1,4 @@
-﻿# Babybox Panel Backend [![Build Status](https://app.travis-ci.com/zbyju/babybox-panel-backend.svg?branch=main)](https://app.travis-ci.com/zbyju/babybox-panel-backend) [![Coverage Status](https://coveralls.io/repos/github/zbyju/babybox-panel-backend/badge.svg?branch=main)](https://coveralls.io/github/zbyju/babybox-panel-backend?branch=main)
+﻿# Babybox Panel Backend
 
 This repository contains a backend server in Node.js for the Babybox Panel Frontend. This project solves several problems:
 

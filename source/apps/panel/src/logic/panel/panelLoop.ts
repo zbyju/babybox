@@ -109,7 +109,7 @@ export class AppManager {
     }
     this.updateClock();
   }
-  private async updateWatchdogEngine(timeout = 5000) {
+  private async updateWatchdogEngine() {
     try {
       await updateWatchdog();
     } catch (err) {
@@ -135,27 +135,15 @@ export class AppManager {
   }
 
   private getConfig(): Promise<Config> {
-    return new Promise((resolve) => {
-      fetch("http://localhost:5001/api/v1/config/main")
-        .then((response) => {
-          return response.json();
-        })
-        .then((config) => {
-          resolve(config);
-        });
-    });
+    return fetch("http://localhost:5001/api/v1/config/main").then((response) =>
+      response.json(),
+    );
   }
 
   private getVersions(): Promise<Versions> {
-    return new Promise((resolve) => {
-      fetch("http://localhost:5001/api/v1/config/version")
-        .then((response) => {
-          return response.json();
-        })
-        .then((config) => {
-          resolve(config);
-        });
-    });
+    return fetch("http://localhost:5001/api/v1/config/version").then(
+      (response) => response.json(),
+    );
   }
 
   private async initializeConfig() {
@@ -188,7 +176,7 @@ export class AppManager {
   }
 
   async initializeGlobal(): Promise<any> {
-    let intervalTime = 5000;
+    const intervalTime = 5000;
     const interval = setInterval(async () => {
       await this.initializeConfig()
         .then((res) => {
@@ -201,12 +189,11 @@ export class AppManager {
       this.initializeBackend()
         .then((res) => {
           clearInterval(interval);
-          this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
+          this.appStateStore.setBackendSuccess();
         })
         .catch((err) => {
           this.appStateStore.setBackendError();
         });
-      intervalTime = 20000;
     }, intervalTime);
   }
 
