@@ -23,22 +23,13 @@ export const useAppStateStore = defineStore("appState", {
       }
       this.checkState();
     },
-    setBackendSuccess(
-      versionBackend: Maybe<string> = "unknown",
-      engineIP: Maybe<string>,
-      thermalIP: Maybe<string>,
-    ) {
-      this.setBackend(true, versionBackend, engineIP, thermalIP);
+    setBackendSuccess() {
+      this.setBackend(true);
     },
     setBackendError() {
-      this.setBackend(false, undefined, undefined, undefined);
+      this.setBackend(false);
     },
-    setBackend(
-      success: boolean,
-      versionBackend: Maybe<string> = "unknown",
-      engineIP: Maybe<string>,
-      thermalIP: Maybe<string>,
-    ) {
+    setBackend(success: boolean) {
       this.done[1] = success;
       if (!success) {
         this.state = AppState.Trying;
