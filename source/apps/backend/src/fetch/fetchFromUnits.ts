@@ -69,12 +69,22 @@ export async function fetchSettings(
       ? fetchFromUrl(settingsUrl(Unit.Thermal), timeout)
       : null;
 
-  const [engineResult, thermalResult] = await Promise.allSettled([
-    enginePromise,
-    thermalPromise,
-  ]);
+  /*
+   * allSettled attaches the handler in this same tick,
+   * so whichever request fails first is never left unhandled
+   * while the other is still in flight.
+   */
+  const settle = <T>(p: T) => Promise.allSettled([p]).then(([r]) => r);
+  const engineSettled = settle(enginePromise);
+  const thermalSettled = settle(thermalPromise);
 
-  // Engine is reported first, as before, so a caller sees the same message.
+  /*
+   * Engine is awaited and reported first, as before.
+   * Awaiting it on its own also keeps the old fail-fast timing:
+   * a dead engine answers straight away
+   * instead of waiting out a thermal unit that hangs to its timeout.
+   */
+  const engineResult = await engineSettled;
   if (engineResult.status === "rejected") {
     return {
       status: 500,
@@ -82,6 +92,7 @@ export async function fetchSettings(
     };
   }
 
+  const thermalResult = await thermalSettled;
   if (thermalResult.status === "rejected") {
     return {
       status: 500,
