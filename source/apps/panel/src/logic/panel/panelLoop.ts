@@ -33,7 +33,7 @@ import { getNewState } from "./state";
 
 const CONFIGER_TIMEOUT = 10000;
 const FIRST_INIT_DELAY = 5000;
-const RETRY_INIT_DELAY = 20000;
+const MAX_INIT_DELAY = 20000;
 
 type LoopUnit = "engine" | "thermal";
 
@@ -212,6 +212,15 @@ export class AppManager {
    * so a hanging backend cannot collect overlapping status requests.
    */
   async initializeGlobal(): Promise<any> {
+    /*
+     * Backs off from 5 s to 20 s.
+     * The old code meant to retry at 20 s but setInterval had already captured
+     * 5 s, so it stayed at 5 s. A flat 20 s would add up to 15 s of blank
+     * screen with no watchdog when the backend is only a little slow to boot,
+     * so the early retries stay fast and only a longer outage slows down.
+     */
+    let delay = FIRST_INIT_DELAY;
+
     const attempt = async () => {
       let configOk = false;
       let backendOk = false;
@@ -234,7 +243,8 @@ export class AppManager {
 
       if (configOk && backendOk) return;
 
-      setTimeout(attempt, RETRY_INIT_DELAY);
+      delay = Math.min(delay * 2, MAX_INIT_DELAY);
+      setTimeout(attempt, delay);
     };
 
     setTimeout(attempt, FIRST_INIT_DELAY);
