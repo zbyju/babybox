@@ -18,6 +18,8 @@
 # =============================================================================
 set -Eeuo pipefail
 
+# Jen pro rozjeti cisteho pocitace, nez se stahne repozitar. Zavaznou verzi
+# drzi source/apps/startup/versions.env — startup.sh podle nej verze srovna.
 NODE_VERSION="18.12.1"
 PNPM_VERSION="7.5.0"
 GITHUB_USER="babybox@jurica-montel.cz"
@@ -349,7 +351,6 @@ ok "Repozitare stazeny"
 BABYBOX_DIR="$HOME/babybox"
 UBUNTU_SCRIPTS_DIR="$BABYBOX_DIR/source/apps/startup/scripts/ubuntu"
 chmod 755 "$UBUNTU_SCRIPTS_DIR/startup.sh" \
-  "$UBUNTU_SCRIPTS_DIR/install.sh" \
   "$UBUNTU_SCRIPTS_DIR/internet_check.sh" \
   "$UBUNTU_SCRIPTS_DIR/install-all.sh" 2>/dev/null || true
 
@@ -458,15 +459,8 @@ fi
 
 step "Instalace zavislosti panelu a prvni spusteni"
 info "Toto je nejdelsi krok — muze trvat i vice nez 10 minut."
-if [ "$(pnpm --version 2>/dev/null || echo none)" != "$PNPM_VERSION" ]; then
-  info "Instaluji pnpm $PNPM_VERSION..."
-  npm install -g "pnpm@$PNPM_VERSION"
-fi
-cd "$BABYBOX_DIR/source/apps/startup"
-info "Instaluji zavislosti (pnpm install)..."
-pnpm install
-info "Spoustim instalaci a prvni start panelu..."
-node src/index.js --install --ubuntu
+info "Zavislosti a verze nastroju resi startup.sh podle versions.env."
+"$UBUNTU_SCRIPTS_DIR/startup.sh"
 ok "Panel nainstalovan a spusten"
 
 # ----- Hotovo -----------------------------------------------------------------------
