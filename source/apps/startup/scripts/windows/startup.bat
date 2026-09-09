@@ -11,7 +11,10 @@ REM Zadny krok nesmi spusteni zastavit - chyby se jen vypisou a pokracuje se
 REM s tim, co uz na pocitaci je.
 REM ============================================================================
 
-cd ../../
+REM Musi to byt cesta odvozena od skriptu, ne od cwd. Kdyz sedime jinde, spadne
+REM instalace i kontrola zavislosti a smazou se node_modules cizi slozky.
+cd /d "%~dp0..\.."
+if errorlevel 1 exit /b 1
 
 if not exist versions.env (
   echo versions.env chybi - kontrolu verzi preskakuji
