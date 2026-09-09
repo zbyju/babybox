@@ -6,7 +6,7 @@ const { getFulltimeFormatted } = require("./utils/time");
 
 async function main() {
   const args = process.argv.slice(2);
-  const isUbuntu = args.find((a) => a.toLowerCase() === "--ubuntu");
+  const isUbuntu = args.some((a) => a.toLowerCase() === "--ubuntu");
 
   const logger = winston.createLogger({
     format: winston.format.json(),
@@ -18,7 +18,7 @@ async function main() {
   });
   logger.info(`${getFulltimeFormatted()} - Starting babybox panel!`);
 
-  const res = isUbuntu !== undefined ? await ubuntuStart() : await winStart();
+  const res = isUbuntu ? await ubuntuStart() : await winStart();
   if (res === true) {
     logger.info(
       `${getFulltimeFormatted()} - Successfully started babybox panel`
