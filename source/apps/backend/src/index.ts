@@ -14,14 +14,14 @@ import { wait } from "./utils/wait";
 
 const CONFIG_RETRY_DELAY_MS = 5000;
 
+// modulesObject() reads the RESTART_* vars, so .env has to be loaded before it.
+dotenv.config();
+
 export const modules = modulesObject();
 
 export let config: MainConfig | null = null;
 
 async function main() {
-  // .env file load
-  dotenv.config();
-
   /*
    * The configer service may not be up yet at boot, or may be briefly down.
    * Keep retrying instead of starting with no config,

@@ -4,6 +4,7 @@ import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
+import { CONFIGER_API_URL } from "@/api/base";
 import {
   getEngineData,
   getStatus,
@@ -156,20 +157,16 @@ export class AppManager {
    * would stop the panel from ever retrying.
    */
   private async getConfig(): Promise<Config> {
-    const response = await axios.get(
-      "http://localhost:5001/api/v1/config/main",
-      {
-        timeout: CONFIGER_TIMEOUT,
-      },
-    );
+    const response = await axios.get(`${CONFIGER_API_URL}/main`, {
+      timeout: CONFIGER_TIMEOUT,
+    });
     return response.data;
   }
 
   private async getVersions(): Promise<Versions> {
-    const response = await axios.get(
-      "http://localhost:5001/api/v1/config/version",
-      { timeout: CONFIGER_TIMEOUT },
-    );
+    const response = await axios.get(`${CONFIGER_API_URL}/version`, {
+      timeout: CONFIGER_TIMEOUT,
+    });
     return response.data;
   }
 
