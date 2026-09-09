@@ -221,8 +221,8 @@ export class AppManager {
       }
 
       try {
-        const res = await this.initializeBackend();
-        this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
+        await this.initializeBackend();
+        this.appStateStore.setBackendSuccess();
         backendOk = true;
       } catch (err) {
         this.appStateStore.setBackendError();
