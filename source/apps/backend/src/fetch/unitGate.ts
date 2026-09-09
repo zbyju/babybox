@@ -33,7 +33,7 @@ interface Waiter {
  * caller, with no timeout and no error. Build the whole sequence inside one job
  * instead, the way `updateSettings` does.
  */
-class UnitQueue {
+export class UnitQueue {
   private busy = false;
   private waiting: Waiter[] = [];
   private shared = new Map<SharedRead, Promise<unknown>>();

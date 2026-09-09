@@ -1,5 +1,4 @@
-import { onUnit, sharedOnUnit } from "../unitGate";
-import { Unit } from "../../types/units.types";
+import { UnitQueue } from "../unitGate";
 
 function deferred<T>() {
   let resolve: (value: T) => void;
@@ -12,13 +11,20 @@ function deferred<T>() {
 }
 
 describe("unitGate.ts", () => {
-  describe("onUnit", () => {
+  // A fresh queue per test, so a job left hanging cannot reach the next one.
+  let queue: UnitQueue;
+
+  beforeEach(() => {
+    queue = new UnitQueue();
+  });
+
+  describe("run", () => {
     it("should not start a job while another one is running on the same unit", async () => {
       const first = deferred<string>();
       let secondStarted = false;
 
-      const a = onUnit(Unit.Engine, () => first.promise);
-      const b = onUnit(Unit.Engine, async () => {
+      const a = queue.run(() => first.promise);
+      const b = queue.run(async () => {
         secondStarted = true;
         return "b";
       });
@@ -33,47 +39,44 @@ describe("unitGate.ts", () => {
     });
 
     it("should keep the queue moving when a job fails", async () => {
-      const failing = onUnit(Unit.Engine, () => Promise.reject("boom"));
-      const following = onUnit(Unit.Engine, () => Promise.resolve("ok"));
+      const failing = queue.run(() => Promise.reject("boom"));
+      const following = queue.run(() => Promise.resolve("ok"));
 
       await expect(failing).rejects.toBe("boom");
       expect(await following).toBe("ok");
     });
 
-    it("should run the two units independently", async () => {
-      const engine = deferred<string>();
-      let thermalDone = false;
+    it("should run two queues independently", async () => {
+      const other = new UnitQueue();
+      const blocking = deferred<string>();
+      let otherDone = false;
 
-      const e = onUnit(Unit.Engine, () => engine.promise);
-      const t = onUnit(Unit.Thermal, async () => {
-        thermalDone = true;
+      const blocked = queue.run(() => blocking.promise);
+      const free = other.run(async () => {
+        otherDone = true;
         return "t";
       });
 
-      expect(await t).toBe("t");
-      expect(thermalDone).toBe(true);
+      expect(await free).toBe("t");
+      expect(otherDone).toBe(true);
 
-      engine.resolve("e");
-      expect(await e).toBe("e");
+      blocking.resolve("e");
+      expect(await blocked).toBe("e");
     });
 
     it("should run a priority job before jobs already waiting", async () => {
       const blocking = deferred<string>();
       const order: string[] = [];
 
-      const running = onUnit(Unit.Thermal, () => blocking.promise);
-      const queued = onUnit(Unit.Thermal, async () => {
+      const running = queue.run(() => blocking.promise);
+      const queued = queue.run(async () => {
         order.push("queued");
         return "queued";
       });
-      const urgent = onUnit(
-        Unit.Thermal,
-        async () => {
-          order.push("urgent");
-          return "urgent";
-        },
-        true
-      );
+      const urgent = queue.run(async () => {
+        order.push("urgent");
+        return "urgent";
+      }, true);
 
       blocking.resolve("running");
       await Promise.all([running, queued, urgent]);
@@ -82,7 +85,7 @@ describe("unitGate.ts", () => {
     });
   });
 
-  describe("sharedOnUnit", () => {
+  describe("runShared", () => {
     it("should give callers of the same key one shared run", async () => {
       const pending = deferred<string>();
       let runs = 0;
@@ -92,8 +95,8 @@ describe("unitGate.ts", () => {
         return pending.promise;
       };
 
-      const a = sharedOnUnit(Unit.Engine, "data:5000", job);
-      const b = sharedOnUnit(Unit.Engine, "data:5000", job);
+      const a = queue.runShared("data:5000", job);
+      const b = queue.runShared("data:5000", job);
 
       pending.resolve("shared");
 
@@ -109,8 +112,8 @@ describe("unitGate.ts", () => {
         return runs;
       };
 
-      expect(await sharedOnUnit(Unit.Engine, "data:5000", job)).toBe(1);
-      expect(await sharedOnUnit(Unit.Engine, "data:5000", job)).toBe(2);
+      expect(await queue.runShared("data:5000", job)).toBe(1);
+      expect(await queue.runShared("data:5000", job)).toBe(2);
     });
 
     it("should not share between different keys", async () => {
@@ -121,8 +124,8 @@ describe("unitGate.ts", () => {
       };
 
       await Promise.all([
-        sharedOnUnit(Unit.Thermal, "data:1000", job),
-        sharedOnUnit(Unit.Thermal, "data:5000", job),
+        queue.runShared("data:1000", job),
+        queue.runShared("data:5000", job),
       ]);
 
       expect(runs).toBe(2);
@@ -130,13 +133,11 @@ describe("unitGate.ts", () => {
 
     it("should let the next caller run again after a failure", async () => {
       await expect(
-        sharedOnUnit(Unit.Thermal, "settings:5000", () => Promise.reject("boom"))
+        queue.runShared("settings:5000", () => Promise.reject("boom"))
       ).rejects.toBe("boom");
 
       expect(
-        await sharedOnUnit(Unit.Thermal, "settings:5000", () =>
-          Promise.resolve("ok")
-        )
+        await queue.runShared("settings:5000", () => Promise.resolve("ok"))
       ).toBe("ok");
     });
   });
