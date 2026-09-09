@@ -34,8 +34,13 @@ const CONFIGER_TIMEOUT = 10000;
 const FIRST_INIT_DELAY = 5000;
 const RETRY_INIT_DELAY = 20000;
 
+type LoopUnit = "engine" | "thermal";
+
 export class AppManager {
-  private panelLoopTimeout: Maybe<ReturnType<typeof setTimeout>> = undefined;
+  private loopTimers: Record<LoopUnit, Maybe<ReturnType<typeof setTimeout>>> = {
+    engine: undefined,
+    thermal: undefined,
+  };
   private panelLoopRunning = false;
   private unitsConfig: Ref<UnitsConfig>;
   private appConfig: Ref<AppConfig>;
@@ -236,45 +241,55 @@ export class AppManager {
     return this.panelState.value.message ? delay / 2 : delay;
   }
 
-  private async runPanelTick() {
-    /*
-     * Engine data and the watchdog both talk to the engine unit,
-     * so they go one after the other.
-     * The thermal unit is a separate device, so it runs alongside.
-     */
-    await Promise.allSettled([
-      this.updateEngineUnit().then(() => this.updateWatchdogEngine()),
-      this.updateThermalUnit(),
-    ]);
+  private async runEngineTick() {
+    // Engine data and the watchdog talk to the same unit, so they go in sequence.
+    await this.updateEngineUnit();
+    await this.updateWatchdogEngine();
+    this.updateState();
+    this.checkRefreshLimit();
+  }
 
+  private async runThermalTick() {
+    await this.updateThermalUnit();
     this.updateState();
     this.checkRefreshLimit();
   }
 
   /*
-   * Schedules the next round only after the current one settles,
+   * Runs one chain per unit.
+   * The next round of a chain starts only after the current one settles,
    * so a slow or unreachable unit never gets a second request on top of the first.
-   * A fixed-rate interval would stack up to timeout/delay requests per endpoint.
+   * The two units are separate devices on separate IPs,
+   * so they get separate chains and a dead engine unit cannot slow the
+   * temperature readings.
    */
-  async startPanelLoop() {
-    if (this.panelLoopRunning) return;
-    this.panelLoopRunning = true;
-
+  private startUnitLoop(unit: LoopUnit, runTick: () => Promise<void>) {
     const tick = async () => {
       if (!this.panelLoopRunning) return;
-      await this.runPanelTick();
+      await runTick();
       if (!this.panelLoopRunning) return;
-      this.panelLoopTimeout = setTimeout(tick, this.nextDelay());
+      this.loopTimers[unit] = setTimeout(tick, this.nextDelay());
     };
 
     tick();
   }
 
+  async startPanelLoop() {
+    if (this.panelLoopRunning) return;
+    this.panelLoopRunning = true;
+
+    this.startUnitLoop("engine", () => this.runEngineTick());
+    this.startUnitLoop("thermal", () => this.runThermalTick());
+  }
+
   stopPanelLoop() {
     this.panelLoopRunning = false;
-    if (this.panelLoopTimeout !== undefined) {
-      clearTimeout(this.panelLoopTimeout);
-      this.panelLoopTimeout = undefined;
+    for (const unit of Object.keys(this.loopTimers) as LoopUnit[]) {
+      const timer = this.loopTimers[unit];
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        this.loopTimers[unit] = undefined;
+      }
     }
   }
 }
