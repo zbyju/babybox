@@ -4,9 +4,13 @@ import { storeToRefs } from "pinia";
 import { useConfigStore } from "@/pinia/configStore";
 import { singleFlight } from "@/utils/singleFlight";
 
-export const refreshRestartCooldown = singleFlight((): Promise<any> => {
+export const refreshRestartCooldown = singleFlight(() => {
   const configStore = useConfigStore();
   const { backend: api } = storeToRefs(configStore);
+  /*
+   * No config yet, so nothing is sent. The caller sees `undefined`,
+   * not a response.
+   */
   if (api.value.port === undefined || api.value.url === undefined) {
     return Promise.resolve(undefined);
   }
