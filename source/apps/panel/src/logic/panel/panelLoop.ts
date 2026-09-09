@@ -104,6 +104,7 @@ export class AppManager {
       this.engineUnit.value,
       this.thermalUnit.value,
       this.connection.value,
+      this.unitsConfig.value,
     );
     if (!_.isEqual(this.panelState.value, newState)) {
       this.panelStateStore.setState(newState);
