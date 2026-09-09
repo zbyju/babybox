@@ -29,6 +29,15 @@ run() {
 
 # ----- Kontrola verzi --------------------------------------------------------
 
+# Prazdna hodnota by se poslala do npm jako "pnpm@", coz npm cte jako latest.
+# Radeji nesrovnavame nic, nez abychom nainstalovali neco nepinnuteho.
+require_versions() {
+  local v
+  for v in NODE_VERSION PNPM_VERSION PM2_VERSION N_VERSION; do
+    [ -n "${!v}" ] || { log "$v chybi ve versions.env"; return 1; }
+  done
+}
+
 ensure_npm_prefix() {
   local want="$HOME/.npm-global"
   [ "$(npm config get prefix 2>/dev/null)" = "$want" ] && return 0
@@ -107,10 +116,14 @@ log "Start"
 if [ -f "$STARTUP_DIR/versions.env" ]; then
   # shellcheck source=../../versions.env
   . "$STARTUP_DIR/versions.env"
-  ensure_npm_prefix
-  ensure_node
-  ensure_pnpm
-  ensure_pm2
+  if require_versions; then
+    ensure_npm_prefix
+    ensure_node
+    ensure_pnpm
+    ensure_pm2
+  else
+    log "versions.env je neuplny — kontrolu verzi preskakuji"
+  fi
 else
   log "versions.env chybi — kontrolu verzi preskakuji"
 fi

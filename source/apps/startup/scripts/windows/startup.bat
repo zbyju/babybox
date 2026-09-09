@@ -17,11 +17,28 @@ if not exist versions.env (
   goto deps
 )
 
+set "NODE_VERSION="
+set "PNPM_VERSION="
+set "PM2_VERSION="
+
 for /f "usebackq eol=# tokens=1,2 delims==" %%a in ("versions.env") do (
-  if "%%a"=="NODE_VERSION" set NODE_VERSION=%%~b
-  if "%%a"=="PNPM_VERSION" set PNPM_VERSION=%%~b
-  if "%%a"=="PM2_VERSION" set PM2_VERSION=%%~b
+  if "%%a"=="NODE_VERSION" set NODE_VERSION=%%b
+  if "%%a"=="PNPM_VERSION" set PNPM_VERSION=%%b
+  if "%%a"=="PM2_VERSION" set PM2_VERSION=%%b
 )
+
+REM Prazdna hodnota by se poslala do npm jako "pnpm@", coz npm cte jako latest.
+REM Radeji nesrovnavame nic, nez abychom nainstalovali neco nepinnuteho.
+if "%NODE_VERSION%"=="" goto badversions
+if "%PNPM_VERSION%"=="" goto badversions
+if "%PM2_VERSION%"=="" goto badversions
+goto versionsok
+
+:badversions
+echo versions.env je neuplny - kontrolu verzi preskakuji
+goto deps
+
+:versionsok
 
 REM Windows nema spravce verzi Node (na Ubuntu to resi 'n'), takze verzi jen
 REM hlasime a instalaci musi udelat clovek.
