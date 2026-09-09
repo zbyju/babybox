@@ -1,49 +1,16 @@
 <template>
-  <template v-if="cameraType === CameraType.vivotek">
-    <VivotekCameraView v-bind="props" />
-  </template>
-  <template v-else>
-    <img
-      v-show="state === CameraState.Ok"
-      :src="url"
-      :style="{
-        borderTopWidth: props.displayTopBorder ? undefined : '0px',
-        maxHeight: props.maxH + 'px',
-        maxWidth: props.maxW + 'px',
-      }"
-    />
-    <div
-      v-show="state === CameraState.Error"
-      class="camera-error"
-      :style="{
-        borderTopWidth: props.displayTopBorder ? undefined : '0px',
-      }"
-    >
-      <h4>Error</h4>
-      <p>Chyba při načítání kamery.</p>
-    </div>
-    <div
-      v-show="state === CameraState.Loading"
-      class="camera-loading"
-      :style="{
-        borderTopWidth: props.displayTopBorder ? undefined : '0px',
-      }"
-    >
-      <h4>Načítám</h4>
-    </div>
-  </template>
+  <VivotekCameraView v-if="cameraType === CameraType.vivotek" v-bind="props" />
+  <SnapshotCameraView v-else v-bind="props" />
 </template>
 
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
-  import { ref } from "vue";
 
-  import useCamera from "@/composables/useCamera";
   import { useConfigStore } from "@/pinia/configStore";
-  import { CameraState } from "@/types/panel/camera.types";
   import { CameraType } from "@/types/panel/config.types";
   import { stringToCameraType } from "@/utils/panel/camera";
 
+  import SnapshotCameraView from "./SnapshotCameraView.vue";
   import VivotekCameraView from "./VivotekCameraView.vue";
 
   const props = defineProps<{
@@ -52,19 +19,11 @@
     maxW?: number;
   }>();
 
-  const emit = defineEmits<{
-    (e: "updatedImage", width: number, height: number): void;
-  }>();
-
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);
-  const cameraType = stringToCameraType(camera.value.cameraType);
 
-  // Vivotek renders its own iframe below, so it needs no snapshot polling.
-  const { url, state } =
-    cameraType === CameraType.vivotek
-      ? { url: ref(""), state: ref(CameraState.Loading) }
-      : useCamera(camera.value);
+  // Vivotek renders its own iframe, so it needs no snapshot polling.
+  const cameraType = stringToCameraType(camera.value.cameraType);
 </script>
 
 <style lang="stylus">
