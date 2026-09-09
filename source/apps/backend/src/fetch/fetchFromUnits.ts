@@ -52,45 +52,50 @@ export async function fetchSettings(
     query as GetUnitSettingsRequest;
 
   const timestamp = new Date().getTime();
+  const settingsUrl = (u: Unit) =>
+    `http://${unitToIp(u)}/get_sys[100]?rn=16&${timestamp}`;
 
-  const res: any = { engine: null, thermal: null };
+  /*
+   * Engine and thermal are separate devices on separate IPs,
+   * so start both requests before awaiting either.
+   * A "both" request then costs one timeout, not two.
+   */
+  const enginePromise =
+    unit === "engine" || unit === "both"
+      ? fetchFromUrl(settingsUrl(Unit.Engine), timeout)
+      : null;
+  const thermalPromise =
+    unit === "thermal" || unit === "both"
+      ? fetchFromUrl(settingsUrl(Unit.Thermal), timeout)
+      : null;
 
-  if (unit === "engine" || unit === "both") {
-    const url = `http://${unitToIp(
-      Unit.Engine
-    )}/get_sys[100]?rn=16&${timestamp}`;
+  const [engineResult, thermalResult] = await Promise.allSettled([
+    enginePromise,
+    thermalPromise,
+  ]);
 
-    try {
-      const result = await fetchFromUrl(url, timeout);
-      res.engine = result.data;
-    } catch (err) {
-      return {
-        status: 500,
-        msg: "There was an error when fetching settings from engine unit.",
-      };
-    }
+  // Engine is reported first, as before, so a caller sees the same message.
+  if (engineResult.status === "rejected") {
+    return {
+      status: 500,
+      msg: "There was an error when fetching settings from engine unit.",
+    };
   }
 
-  if (unit === "thermal" || unit === "both") {
-    const url = `http://${unitToIp(
-      Unit.Thermal
-    )}/get_sys[100]?rn=16&${timestamp}`;
-
-    try {
-      const result = await fetchFromUrl(url, timeout);
-      res.thermal = result.data;
-    } catch (err) {
-      return {
-        status: 500,
-        msg: "There was an error when fetching settings from thermal unit.",
-      };
-    }
+  if (thermalResult.status === "rejected") {
+    return {
+      status: 500,
+      msg: "There was an error when fetching settings from thermal unit.",
+    };
   }
 
   return {
     status: 200,
     msg: "Successfully fetched settings.",
-    data: res,
+    data: {
+      engine: engineResult.value === null ? null : engineResult.value.data,
+      thermal: thermalResult.value === null ? null : thermalResult.value.data,
+    },
   };
 }
 
