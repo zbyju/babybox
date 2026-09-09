@@ -23,6 +23,15 @@ describe("url.ts", () => {
       expect(actionToUrl(null)).toBe(undefined);
       expect(actionToUrl(undefined)).toBe(undefined);
     });
+
+    it("should build the url from the unit ip and the action path", () => {
+      expect(actionToUrl(Action.OpenDoors)).toBe(
+        "http://10.1.1.5/sdscep?sys141=201"
+      );
+      expect(actionToUrl(Action.OpenServiceDoors)).toBe(
+        "http://10.1.1.5/sdscep?sys141=202"
+      );
+    });
   });
 
   describe("actionToUnit", () => {
