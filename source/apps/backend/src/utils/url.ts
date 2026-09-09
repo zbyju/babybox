@@ -12,6 +12,16 @@ export function actionToUrl(action: Action): string | undefined {
   }
 }
 
+export function actionToUnit(action: Action): Unit | undefined {
+  switch (action) {
+    case Action.OpenDoors:
+    case Action.OpenServiceDoors:
+      return Unit.Engine;
+    default:
+      return undefined;
+  }
+}
+
 export function unitToIp(unit: Unit): string {
   return unit === Unit.Engine
     ? config.units.engine.ip

@@ -9,9 +9,10 @@ import {
   SettingResult,
 } from "../types/request.types";
 import { Action, Unit } from "../types/units.types";
-import { actionToUrl, unitToIp } from "../utils/url";
+import { actionToUnit, actionToUrl, unitToIp } from "../utils/url";
 import { wait } from "../utils/wait";
 import { fetchFromUrl } from "./fetch";
+import { onUnit, sharedOnUnit } from "./unitGate";
 
 export async function fetchDataCommon(
   unit: Unit,
@@ -25,7 +26,9 @@ export async function fetchDataCommon(
   }/get_ram[0]?rn=60`;
 
   try {
-    const data = await fetchFromUrl(url, timeout);
+    const data = await sharedOnUnit(unit, `data:${timeout}`, () =>
+      fetchFromUrl(url, timeout)
+    );
     return {
       status: 200,
       msg: "Data fetched successfully.",
@@ -63,7 +66,11 @@ export async function fetchSettings(
     )}/get_sys[100]?rn=16&${timestamp}`;
 
     try {
-      const result = await fetchFromUrl(url, timeout);
+      const result = await sharedOnUnit(
+        Unit.Engine,
+        `settings:${timeout}`,
+        () => fetchFromUrl(url, timeout)
+      );
       res.engine = result.data;
     } catch (err) {
       return {
@@ -79,7 +86,11 @@ export async function fetchSettings(
     )}/get_sys[100]?rn=16&${timestamp}`;
 
     try {
-      const result = await fetchFromUrl(url, timeout);
+      const result = await sharedOnUnit(
+        Unit.Thermal,
+        `settings:${timeout}`,
+        () => fetchFromUrl(url, timeout)
+      );
       res.thermal = result.data;
     } catch (err) {
       return {
@@ -100,9 +111,18 @@ export async function fetchAction(action: Action): Promise<CommonDataResponse> {
   const timeout = parseInt(process.env.DEFAULT_FETCH_TIMEOUT) || 5000;
 
   const url = actionToUrl(action);
+  const unit = actionToUnit(action);
+
+  if (url === undefined || unit === undefined) {
+    return {
+      status: 400,
+      msg: "Unknown action.",
+    };
+  }
 
   try {
-    const data = await fetchFromUrl(url, timeout);
+    // Operator actions jump the queue so they never wait behind polling.
+    const data = await onUnit(unit, () => fetchFromUrl(url, timeout), true);
     return {
       status: 200,
       msg: "Action sent successfully.",
@@ -118,7 +138,9 @@ export async function fetchAction(action: Action): Promise<CommonDataResponse> {
 
 export async function updateWatchdog(): Promise<CommonResponse> {
   try {
-    await fetchFromUrl(`http://${config.units.engine.ip}/sdscep?sys141=115`);
+    await onUnit(Unit.Engine, () =>
+      fetchFromUrl(`http://${config.units.engine.ip}/sdscep?sys141=115`)
+    );
     return {
       status: 200,
       msg: "Successfully updated Watchdog.",
@@ -144,16 +166,22 @@ export async function updateSettings(
       let result = false;
       let i = tryNumber;
 
-      // Try to override settings tryNumber of times
+      /*
+       * Try to override settings tryNumber of times.
+       * One attempt is a single queued job, so nothing else reaches the unit
+       * between reading readiness, writing the value and verifying it.
+       */
       while (!result && i > 0) {
-        result = await updateSetting(
-          `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
-          `http://${ip}/sdscep?sys140=${s.value}&${timestamp}`,
-          `http://${ip}/get_sys[141]`,
-          `http://${ip}/get_sys[100]?rn=16&${timestamp}`,
-          s.index,
-          s.value,
-          timeout
+        result = await onUnit(s.unit, () =>
+          updateSetting(
+            `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
+            `http://${ip}/sdscep?sys140=${s.value}&${timestamp}`,
+            `http://${ip}/get_sys[141]`,
+            `http://${ip}/get_sys[100]?rn=16&${timestamp}`,
+            s.index,
+            s.value,
+            timeout
+          )
         );
         if (result === false) {
           await wait(75);
@@ -191,18 +219,17 @@ async function updateSetting(
   const ready = await isReady(urlReady, timeout);
   if (!ready) return false;
 
-  // Send value first; then index
-  const valueFetch = fetchFromUrl(urlValue, timeout);
-  const indexFetch = fetchFromUrl(urlIndex, timeout);
   try {
-    const results = await Promise.all([indexFetch, valueFetch]);
+    // Send value first; then index
+    const valueResult = await fetchFromUrl(urlValue, timeout);
+    const indexResult = await fetchFromUrl(urlIndex, timeout);
     const verification = await fetchFromUrl(urlVerification, timeout);
     const verificationArray = verification.data.split("|");
     return (
-      isStatusOk(results[0].status) &&
-      isStatusOk(results[1].status) &&
-      results[0].data === index &&
-      results[1].data === value &&
+      isStatusOk(indexResult.status) &&
+      isStatusOk(valueResult.status) &&
+      indexResult.data === index &&
+      valueResult.data === value &&
       verificationArray[index - 100] === value.toString()
     );
   } catch (err) {
