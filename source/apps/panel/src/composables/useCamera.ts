@@ -59,7 +59,7 @@ export default function useCamera(
 
     const cameraType = stringToCameraType(config.cameraType);
     const time = Date.now();
-    lastRefreshAt = time;
+    lastRefreshAt = performance.now();
     url.value = `http://${config.username}:${config.password}@${
       config.ip
     }${getURLPostfix(cameraType)}${time.toString()}`;
@@ -85,7 +85,13 @@ export default function useCamera(
     if (stopped || !waitingForImage) return;
     waitingForImage = false;
     clearTimers();
-    const sinceRefresh = Date.now() - lastRefreshAt;
+    /*
+     * performance.now(), not Date.now(): this runs unattended for months and an
+     * NTP step backwards would make the gap negative, pushing the next refresh
+     * out by the size of the step. The stall watchdog is already cleared above,
+     * so nothing would recover the feed.
+     */
+    const sinceRefresh = performance.now() - lastRefreshAt;
     scheduleRefresh(Math.max(config.updateDelay - sinceRefresh, 0));
   };
 
