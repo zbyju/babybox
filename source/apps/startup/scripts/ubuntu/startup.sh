@@ -42,7 +42,7 @@ ensure_npm_prefix() {
   local want="$HOME/.npm-global"
   [ "$(npm config get prefix 2>/dev/null)" = "$want" ] && return 0
   mkdir -p "$want"
-  run npm config set prefix "$want" || log "npm prefix se nepodarilo nastavit"
+  run npm config set prefix "$want" || { log "npm prefix se nepodarilo nastavit"; return 1; }
 }
 
 ensure_n() {
