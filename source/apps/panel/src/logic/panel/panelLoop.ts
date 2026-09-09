@@ -203,26 +203,27 @@ export class AppManager {
    * so a hanging backend cannot collect overlapping status requests.
    */
   async initializeGlobal(): Promise<any> {
-    let done = false;
-
     const attempt = async () => {
+      let configOk = false;
+      let backendOk = false;
+
       try {
         await this.initializeConfig();
         this.appStateStore.setConfigSuccess();
+        configOk = true;
       } catch (err) {
         this.appStateStore.setConfigError();
-        done = true;
       }
 
       try {
         const res = await this.initializeBackend();
         this.appStateStore.setBackendSuccess(res[0], res[1], res[2]);
-        done = true;
+        backendOk = true;
       } catch (err) {
         this.appStateStore.setBackendError();
       }
 
-      if (done) return;
+      if (configOk && backendOk) return;
 
       setTimeout(attempt, RETRY_INIT_DELAY);
     };
