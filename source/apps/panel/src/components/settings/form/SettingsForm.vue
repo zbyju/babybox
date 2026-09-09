@@ -24,10 +24,10 @@
 </template>
 
 <script lang="ts" setup>
-  import { AxiosError } from "axios";
   import moment from "moment";
   import { type Ref, ref, watch } from "vue";
 
+  import { HttpError } from "@/api/http";
   import { getSettings, sendSettings } from "@/api/units";
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
@@ -180,18 +180,17 @@
         throw { msg: "Status code not OK" };
       }
     } catch (err: unknown) {
-      if (err instanceof AxiosError) {
-        if (err.response?.status === 0) {
-          addLogMessage(
-            "Parametry nemohly být načteny - problém s backend serverem",
-            LogEntryType.Error,
-          );
-        } else if (err.response?.status === 500) {
-          addLogMessage(
-            "Parametry nemohly být načteny - problém s připojením k jednotkám",
-            LogEntryType.Error,
-          );
-        }
+      if (!(err instanceof HttpError)) {
+        // Timed out, or the request never reached the backend.
+        addLogMessage(
+          "Parametry nemohly být načteny - problém s backend serverem",
+          LogEntryType.Error,
+        );
+      } else if (err.status === 500) {
+        addLogMessage(
+          "Parametry nemohly být načteny - problém s připojením k jednotkám",
+          LogEntryType.Error,
+        );
       } else {
         addLogMessage(
           "Parametry nemohly být načteny - neznámý error",

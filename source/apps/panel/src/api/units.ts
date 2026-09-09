@@ -1,16 +1,13 @@
-import axios from "axios";
-
 import { backendApi } from "@/api/base";
+import { type JsonResponse, request, requestJson } from "@/api/http";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 export const getStatus = async (): Promise<boolean> => {
   const { baseUrl, timeout } = backendApi();
   try {
-    const response = await axios.get(`${baseUrl}/status`, { timeout });
-    if (response.status >= 200 && response.status <= 299) {
-      return true;
-    }
-    throw { msg: "Status code not OK" };
+    const response = await fetchWithTimeout(`${baseUrl}/status`, { timeout });
+    return response.ok;
   } catch (err) {
     return false;
   }
@@ -21,10 +18,8 @@ export const getData = async (
   timeout = 5000,
 ): Promise<RawEngineUnit | RawThermalUnit | undefined> => {
   try {
-    const response = await axios.get(url, {
-      timeout,
-    });
-    return response.data.data.split("|").map((x: string, i: number) => {
+    const { data: body } = await requestJson(url, { timeout });
+    return body.data.split("|").map((x: string, i: number) => {
       return { index: i, value: x };
     });
   } catch (err) {
@@ -48,35 +43,35 @@ export const updateWatchdog = async (): Promise<boolean> => {
   const { baseUrl, timeout } = backendApi();
 
   try {
-    const response = await axios.put(`${baseUrl}/engine/watchdog`, null, {
+    const response = await fetchWithTimeout(`${baseUrl}/engine/watchdog`, {
+      method: "PUT",
       timeout,
     });
-    if (response.status >= 200 && response.status <= 299) return true;
-    else return false;
+    return response.ok;
   } catch (err) {
     return false;
   }
 };
 
-export const openDoors = (): Promise<any> => {
+export const openDoors = async (): Promise<void> => {
   const { baseUrl, timeout } = backendApi();
 
-  return axios.get(`${baseUrl}/units/actions/openDoors`, { timeout });
+  await request(`${baseUrl}/units/actions/openDoors`, { timeout });
 };
 
-export const resetBabybox = (): Promise<any> => {
+export const resetBabybox = async (): Promise<void> => {
   const { baseUrl, timeout } = backendApi();
 
-  return axios.get(`${baseUrl}/units/actions/openServiceDoors`, { timeout });
+  await request(`${baseUrl}/units/actions/openServiceDoors`, { timeout });
 };
 
-export const getSettings = (): Promise<any> => {
+export const getSettings = (): Promise<JsonResponse> => {
   const { baseUrl, timeout } = backendApi();
 
-  return axios.get(`${baseUrl}/units/settings`, { timeout });
+  return requestJson(`${baseUrl}/units/settings`, { timeout });
 };
 
-export const sendSettings = async (data: any[]): Promise<any> => {
+export const sendSettings = (data: any[]): Promise<JsonResponse> => {
   const { baseUrl } = backendApi();
 
   /*
@@ -84,17 +79,10 @@ export const sendSettings = async (data: any[]): Promise<any> => {
    * the backend retries each setting against the units up to ten times,
    * so a write can take far longer than a read.
    */
-  const response = await axios.put(
-    `${baseUrl}/units/settings`,
-    {
-      settings: data,
-    },
-    { timeout: 60000 },
-  );
-
-  if (response.status >= 200 && response.status <= 299) {
-    return Promise.resolve(response);
-  } else {
-    return Promise.reject(response);
-  }
+  return requestJson(`${baseUrl}/units/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ settings: data }),
+    timeout: 60000,
+  });
 };
