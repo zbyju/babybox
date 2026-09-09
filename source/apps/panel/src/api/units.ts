@@ -66,7 +66,7 @@ export const updateWatchdog = singleFlight(async (): Promise<boolean> => {
   const timeout = api.value.requestTimeout || 5000;
 
   try {
-    const response = await axios.put(url, { timeout });
+    const response = await axios.put(url, undefined, { timeout });
     if (response.status >= 200 && response.status <= 299) return true;
     else return false;
   } catch (err) {
