@@ -63,16 +63,29 @@ export const updateWatchdog = singleFlight(async (): Promise<boolean> => {
   }
 });
 
-export const openDoors = (): Promise<any> => {
-  const { baseUrl, timeout } = backendApi();
+/*
+ * Not the configured request timeout.
+ * The backend runs one job at a time per unit, so an action jumps the queue but
+ * still waits for the request already in flight. The longest of those is one
+ * settings attempt, four sequential unit requests. Timing out below that would
+ * show the operator an error while the doors still open.
+ */
+const ACTION_TIMEOUT = 60000;
 
-  return axios.get(`${baseUrl}/units/actions/openDoors`, { timeout });
+export const openDoors = (): Promise<any> => {
+  const { baseUrl } = backendApi();
+
+  return axios.get(`${baseUrl}/units/actions/openDoors`, {
+    timeout: ACTION_TIMEOUT,
+  });
 };
 
 export const resetBabybox = (): Promise<any> => {
-  const { baseUrl, timeout } = backendApi();
+  const { baseUrl } = backendApi();
 
-  return axios.get(`${baseUrl}/units/actions/openServiceDoors`, { timeout });
+  return axios.get(`${baseUrl}/units/actions/openServiceDoors`, {
+    timeout: ACTION_TIMEOUT,
+  });
 };
 
 export const getSettings = (): Promise<any> => {
