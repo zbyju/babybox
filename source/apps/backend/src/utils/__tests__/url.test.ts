@@ -1,3 +1,13 @@
+/*
+ * url.ts reads `config` from src/index.ts, which is null until the backend has
+ * fetched it from configer. Without this the whole suite throws on import.
+ */
+jest.mock("../..", () => ({
+  config: {
+    units: { engine: { ip: "10.1.1.5" }, thermal: { ip: "10.1.1.6" } },
+  },
+}));
+
 import { Action, Unit } from "../../types/units.types";
 import { actionToUnit, actionToUrl } from "../url";
 
