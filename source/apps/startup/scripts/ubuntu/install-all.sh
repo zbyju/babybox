@@ -473,7 +473,9 @@ echo ""
 echo "Co bylo nainstalovano a nastaveno:"
 echo "  - System aktualizovan, zakladni a sitove nastroje"
 echo "  - TeamViewer (Wayland vypnut)"
-echo "  - Node.js $NODE_VERSION, pnpm $PNPM_VERSION"
+# Verze srovnava startup.sh podle versions.env, ne konstanty nahore v tomto
+# skriptu. Vypisujeme proto, co na pocitaci opravdu je.
+echo "  - Node.js $(node -v 2>/dev/null || echo '?'), pnpm $(pnpm --version 2>/dev/null || echo '?'), pm2 $(pm2 --version 2>/dev/null || echo '?')"
 echo "  - Wine"
 echo "  - Repozitare babybox a BB v $HOME"
 echo "  - Firefox (snap) + rozsireni AutoFullscreen + povoleny zvuk"
