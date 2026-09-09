@@ -3,6 +3,7 @@ import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
+import { CONFIGER_API_URL } from "@/api/base";
 import {
   getEngineData,
   getStatus,
@@ -135,14 +136,14 @@ export class AppManager {
   }
 
   private getConfig(): Promise<Config> {
-    return fetch("http://localhost:5001/api/v1/config/main").then((response) =>
+    return fetch(`${CONFIGER_API_URL}/main`).then((response) =>
       response.json(),
     );
   }
 
   private getVersions(): Promise<Versions> {
-    return fetch("http://localhost:5001/api/v1/config/version").then(
-      (response) => response.json(),
+    return fetch(`${CONFIGER_API_URL}/version`).then((response) =>
+      response.json(),
     );
   }
 
