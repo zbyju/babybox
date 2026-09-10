@@ -88,15 +88,16 @@ async function main() {
   // Parse JSON in POST requests
   app.use(express.json());
 
+  const prefix = config.backend.url || process.env.API_PREFIX;
+
   // Status route
-  app.get(process.env.API_PREFIX + "/status", (req, res) => {
+  app.get(prefix + "/status", (req, res) => {
     res.status(200).send({
       msg: "Alive.",
     });
   });
 
   //Routes
-  const prefix = config.backend.url || process.env.API_PREFIX;
   app.use(prefix + "/units", unitsRoute);
   app.use(prefix + "/engine", engineRoute);
   app.use(prefix + "/thermal", thermalRoute);
