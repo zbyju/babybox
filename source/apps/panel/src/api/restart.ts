@@ -1,10 +1,9 @@
-import axios from "axios";
-
 import { backendApi } from "@/api/base";
+import { request } from "@/api/http";
 
-export const refreshRestartCooldown = () => {
+export const refreshRestartCooldown = async (): Promise<void> => {
   const { baseUrl, timeout, isConfigured } = backendApi();
   if (!isConfigured) return;
 
-  return axios.get(`${baseUrl}/restart/refresh`, { timeout });
+  await request(`${baseUrl}/restart/refresh`, { timeout });
 };

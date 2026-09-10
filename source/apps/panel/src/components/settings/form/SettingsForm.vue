@@ -24,10 +24,10 @@
 </template>
 
 <script lang="ts" setup>
-  import { AxiosError } from "axios";
   import moment from "moment";
   import { type Ref, ref, watch } from "vue";
 
+  import { HttpError, type JsonResponse } from "@/api/http";
   import { getSettings, sendSettings } from "@/api/units";
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
@@ -156,8 +156,37 @@
   async function onLoadAction() {
     addLogMessage("Načítám aktuální hodnoty parametrů");
 
+    /*
+     * The request is caught on its own, so only a failed request can be
+     * blamed on the backend.
+     * Reading the response is caught below, where an error means the panel
+     * got an answer it could not use.
+     */
+    let response: JsonResponse;
     try {
-      const response = await getSettings();
+      response = await getSettings();
+    } catch (err: unknown) {
+      if (!(err instanceof HttpError)) {
+        // Timed out, or the request never reached the backend.
+        addLogMessage(
+          "Parametry nemohly být načteny - problém s backend serverem",
+          LogEntryType.Error,
+        );
+      } else if (err.status === 500) {
+        addLogMessage(
+          "Parametry nemohly být načteny - problém s připojením k jednotkám",
+          LogEntryType.Error,
+        );
+      } else {
+        addLogMessage(
+          "Parametry nemohly být načteny - neznámý error",
+          LogEntryType.Error,
+        );
+      }
+      return;
+    }
+
+    try {
       if (response.status >= 200 && response.status <= 299) {
         values.value = values.value.map(
           (v: SettingsTableRowValue, i: number) => {
@@ -179,25 +208,11 @@
       } else {
         throw { msg: "Status code not OK" };
       }
-    } catch (err: unknown) {
-      if (err instanceof AxiosError) {
-        if (err.response?.status === 0) {
-          addLogMessage(
-            "Parametry nemohly být načteny - problém s backend serverem",
-            LogEntryType.Error,
-          );
-        } else if (err.response?.status === 500) {
-          addLogMessage(
-            "Parametry nemohly být načteny - problém s připojením k jednotkám",
-            LogEntryType.Error,
-          );
-        }
-      } else {
-        addLogMessage(
-          "Parametry nemohly být načteny - neznámý error",
-          LogEntryType.Error,
-        );
-      }
+    } catch {
+      addLogMessage(
+        "Parametry nemohly být načteny - neznámý error",
+        LogEntryType.Error,
+      );
     }
   }
 
