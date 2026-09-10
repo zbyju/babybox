@@ -1,0 +1,50 @@
+# Overuje to, co panelove pocitace delaji pri startu. Nejdulezitejsi je frozen
+# install: startup.sh po nem konci chybou, takze rozjety lockfile na main by
+# znamenal, ze panel nenabehne.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: source
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 7.5.0
+
+      # Stejna verze, jakou drzi apps/startup/versions.env
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.12.1
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Skripty "lint" maji --fix, coz by tady prepisovalo soubory
+      - name: Lint
+        run: |
+          pnpm -F babybox-panel-backend exec eslint --ext .js,.ts .
+          pnpm -F babybox-panel exec eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore
+          pnpm -F startup exec eslint src/
+
+      - name: Build
+        run: pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build
+
+      # url.test.ts potrebuje bezici configer, tak ho tu vynechavame
+      - name: Backend tests
+        run: pnpm -F babybox-panel-backend exec jest --testPathIgnorePatterns 'url.test'
+
+      - name: Panel tests
+        run: pnpm -F babybox-panel exec vitest run --environment jsdom

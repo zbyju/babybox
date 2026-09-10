@@ -17,7 +17,11 @@ import { usePanelStateStore } from "@/pinia/panelStateStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { useVersionsStore } from "@/pinia/versions";
 import type { Maybe } from "@/types/generic.types";
-import type { AppConfig, Config, UnitsConfig } from "@/types/panel/config.types";
+import type {
+  AppConfig,
+  Config,
+  UnitsConfig,
+} from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
@@ -120,7 +124,8 @@ export class AppManager {
 
   private checkRefreshLimit() {
     const DEFAULT_REFRESH_LIMIT = 50000;
-    const limit = this.appConfig.value.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
+    const limit =
+      this.appConfig.value.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
 
     // Disable refresh if limit is invalid (0, negative, NaN, etc.)
     if (limit <= 0 || !Number.isFinite(limit)) {
