@@ -273,9 +273,13 @@ export class AppManager {
   }
 
   private async runEngineTick() {
-    // Engine data and the watchdog talk to the same unit, so they go in sequence.
-    await this.updateEngineUnit();
+    /*
+     * Engine data and the watchdog talk to the same unit, so they go in
+     * sequence. The watchdog goes first, so a slow data read cannot delay the
+     * safety write. The engine unit blocks the babybox once that timer lapses.
+     */
     await this.updateWatchdogEngine();
+    await this.updateEngineUnit();
     this.updateState();
     this.checkRefreshLimit();
   }
