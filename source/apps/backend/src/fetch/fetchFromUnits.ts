@@ -52,45 +52,61 @@ export async function fetchSettings(
     query as GetUnitSettingsRequest;
 
   const timestamp = new Date().getTime();
+  const settingsUrl = (u: Unit) =>
+    `http://${unitToIp(u)}/get_sys[100]?rn=16&${timestamp}`;
 
-  const res: any = { engine: null, thermal: null };
+  /*
+   * Engine and thermal are separate devices on separate IPs,
+   * so start both requests before awaiting either.
+   * A "both" request then costs one timeout, not two.
+   */
+  const enginePromise =
+    unit === "engine" || unit === "both"
+      ? fetchFromUrl(settingsUrl(Unit.Engine), timeout)
+      : null;
+  const thermalPromise =
+    unit === "thermal" || unit === "both"
+      ? fetchFromUrl(settingsUrl(Unit.Thermal), timeout)
+      : null;
 
-  if (unit === "engine" || unit === "both") {
-    const url = `http://${unitToIp(
-      Unit.Engine
-    )}/get_sys[100]?rn=16&${timestamp}`;
+  /*
+   * allSettled attaches the handler in this same tick,
+   * so whichever request fails first is never left unhandled
+   * while the other is still in flight.
+   */
+  const settle = <T>(p: T) => Promise.allSettled([p]).then(([r]) => r);
+  const engineSettled = settle(enginePromise);
+  const thermalSettled = settle(thermalPromise);
 
-    try {
-      const result = await fetchFromUrl(url, timeout);
-      res.engine = result.data;
-    } catch (err) {
-      return {
-        status: 500,
-        msg: "There was an error when fetching settings from engine unit.",
-      };
-    }
+  /*
+   * Engine is awaited and reported first, as before.
+   * Awaiting it on its own also keeps the old fail-fast timing:
+   * a dead engine answers straight away
+   * instead of waiting out a thermal unit that hangs to its timeout.
+   */
+  const engineResult = await engineSettled;
+  if (engineResult.status === "rejected") {
+    return {
+      status: 500,
+      msg: "There was an error when fetching settings from engine unit.",
+    };
   }
 
-  if (unit === "thermal" || unit === "both") {
-    const url = `http://${unitToIp(
-      Unit.Thermal
-    )}/get_sys[100]?rn=16&${timestamp}`;
-
-    try {
-      const result = await fetchFromUrl(url, timeout);
-      res.thermal = result.data;
-    } catch (err) {
-      return {
-        status: 500,
-        msg: "There was an error when fetching settings from thermal unit.",
-      };
-    }
+  const thermalResult = await thermalSettled;
+  if (thermalResult.status === "rejected") {
+    return {
+      status: 500,
+      msg: "There was an error when fetching settings from thermal unit.",
+    };
   }
 
   return {
     status: 200,
     msg: "Successfully fetched settings.",
-    data: res,
+    data: {
+      engine: engineResult.value === null ? null : engineResult.value.data,
+      thermal: thermalResult.value === null ? null : thermalResult.value.data,
+    },
   };
 }
 
