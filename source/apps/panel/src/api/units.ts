@@ -2,9 +2,8 @@ import { backendApi } from "@/api/base";
 import { type JsonResponse, request, requestJson } from "@/api/http";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
-import { singleFlight } from "@/utils/singleFlight";
 
-export const getStatus = singleFlight(async (): Promise<boolean> => {
+export const getStatus = async (): Promise<boolean> => {
   const { baseUrl, timeout } = backendApi();
   try {
     const response = await fetchWithTimeout(`${baseUrl}/status`, { timeout });
@@ -12,7 +11,7 @@ export const getStatus = singleFlight(async (): Promise<boolean> => {
   } catch (err) {
     return false;
   }
-});
+};
 
 export const getData = async (
   url: string,
@@ -28,23 +27,19 @@ export const getData = async (
   }
 };
 
-export const getEngineData = singleFlight(
-  (): Promise<RawEngineUnit | undefined> => {
-    const { baseUrl, timeout } = backendApi();
+export const getEngineData = (): Promise<RawEngineUnit | undefined> => {
+  const { baseUrl, timeout } = backendApi();
 
-    return getData(`${baseUrl}/engine/data`, timeout);
-  },
-);
+  return getData(`${baseUrl}/engine/data`, timeout);
+};
 
-export const getThermalData = singleFlight(
-  (): Promise<RawThermalUnit | undefined> => {
-    const { baseUrl, timeout } = backendApi();
+export const getThermalData = (): Promise<RawThermalUnit | undefined> => {
+  const { baseUrl, timeout } = backendApi();
 
-    return getData(`${baseUrl}/thermal/data`, timeout);
-  },
-);
+  return getData(`${baseUrl}/thermal/data`, timeout);
+};
 
-export const updateWatchdog = singleFlight(async (): Promise<boolean> => {
+export const updateWatchdog = async (): Promise<boolean> => {
   const { baseUrl, timeout } = backendApi();
 
   try {
@@ -56,7 +51,7 @@ export const updateWatchdog = singleFlight(async (): Promise<boolean> => {
   } catch (err) {
     return false;
   }
-});
+};
 
 /*
  * Not the configured request timeout.

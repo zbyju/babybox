@@ -38,21 +38,41 @@ const CONFIGER_TIMEOUT = 10000;
 const FIRST_INIT_DELAY = 5000;
 const MAX_INIT_DELAY = 20000;
 
+/*
+ * How often the loop clock fires.
+ *
+ * An interval, not a chain that schedules its own next round. A chain ends the
+ * moment an awaited request never settles, and this loop carries the engine
+ * watchdog and the whole display, so it must keep a clock that cannot stop.
+ * The clock is finer than the poll delay, so `requestDelay` and the
+ * message-halving still take effect between rounds.
+ */
+const LOOP_TICK = 250;
+
 type LoopUnit = "engine" | "thermal";
 
 export class AppManager {
-  private loopTimers: Record<LoopUnit, Maybe<ReturnType<typeof setTimeout>>> = {
-    engine: undefined,
-    thermal: undefined,
-  };
+  private loopTimers: Record<LoopUnit, Maybe<ReturnType<typeof setInterval>>> =
+    {
+      engine: undefined,
+      thermal: undefined,
+    };
   private panelLoopRunning = false;
+  /* True while a round for that unit is in flight, so the clock skips instead
+   * of opening a second request to the same device. */
+  private tickRunning: Record<LoopUnit, boolean> = {
+    engine: false,
+    thermal: false,
+  };
   /*
-   * Bumped on every start and stop.
-   * A tick that was awaiting `runTick()` across a stop belongs to an old
-   * generation and must not schedule a timer, or the unit ends up with two
-   * chains and only one of them in `loopTimers`.
+   * When the last round for that unit settled, on the monotonic clock.
+   * The gap is measured from the end of a round, so a slow unit does not get
+   * its next request sooner than a fast one.
    */
-  private loopGeneration = 0;
+  private lastTickEnd: Record<LoopUnit, number> = {
+    engine: Number.NEGATIVE_INFINITY,
+    thermal: Number.NEGATIVE_INFINITY,
+  };
   private unitsConfig: Ref<UnitsConfig>;
   private appConfig: Ref<AppConfig>;
   private panelState: Ref<PanelState>;
@@ -288,53 +308,47 @@ export class AppManager {
      */
     await this.updateWatchdogEngine();
     await this.updateEngineUnit();
-    this.updateState();
-    this.checkRefreshLimit();
   }
 
   private async runThermalTick() {
     await this.updateThermalUnit();
-    this.updateState();
-    this.checkRefreshLimit();
   }
 
   /*
-   * Runs one chain per unit.
-   * The next round of a chain starts only after the current one settles,
-   * so a slow or unreachable unit never gets a second request on top of the first.
-   * The two units are separate devices on separate IPs,
-   * so they get separate chains and a dead engine unit cannot slow the
-   * temperature readings.
+   * Runs one clock per unit.
+   *
+   * A round starts only when the previous round for that unit has settled, so
+   * a slow or unreachable unit never gets a second request on top of the
+   * first. The two units are separate devices on separate IPs, so a dead
+   * engine unit cannot slow the temperature readings.
+   *
+   * The panel state and the refresh limit run on the clock rather than after
+   * the awaited round, so a request in flight does not hold them up.
    */
   private startUnitLoop(unit: LoopUnit, runTick: () => Promise<void>) {
-    const generation = this.loopGeneration;
+    const clock = () => {
+      this.updateState();
+      this.checkRefreshLimit();
 
-    const tick = async () => {
-      if (generation !== this.loopGeneration) return;
+      if (this.tickRunning[unit]) return;
+      if (performance.now() - this.lastTickEnd[unit] < this.nextDelay()) return;
 
-      try {
-        await runTick();
-      } catch (err) {
-        console.log(err);
-      }
-
-      /*
-       * The next timer is set even after a throw.
-       * A self-scheduling chain that skips it stops for good, and the panel
-       * keeps rendering the last values with no watchdog and no error.
-       */
-      if (generation === this.loopGeneration) {
-        this.loopTimers[unit] = setTimeout(tick, this.nextDelay());
-      }
+      this.tickRunning[unit] = true;
+      runTick()
+        .catch((err) => console.log(err))
+        .finally(() => {
+          this.tickRunning[unit] = false;
+          this.lastTickEnd[unit] = performance.now();
+        });
     };
 
-    tick();
+    clock();
+    this.loopTimers[unit] = setInterval(clock, LOOP_TICK);
   }
 
   async startPanelLoop() {
     if (this.panelLoopRunning) return;
     this.panelLoopRunning = true;
-    this.loopGeneration += 1;
 
     this.startUnitLoop("engine", () => this.runEngineTick());
     this.startUnitLoop("thermal", () => this.runThermalTick());
@@ -342,13 +356,14 @@ export class AppManager {
 
   stopPanelLoop() {
     this.panelLoopRunning = false;
-    this.loopGeneration += 1;
     for (const unit of Object.keys(this.loopTimers) as LoopUnit[]) {
       const timer = this.loopTimers[unit];
       if (timer !== undefined) {
-        clearTimeout(timer);
+        clearInterval(timer);
         this.loopTimers[unit] = undefined;
       }
+      this.tickRunning[unit] = false;
+      this.lastTickEnd[unit] = Number.NEGATIVE_INFINITY;
     }
   }
 }
