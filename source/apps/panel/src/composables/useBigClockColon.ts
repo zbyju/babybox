@@ -1,4 +1,4 @@
-import _ from "lodash";
+import throttle from "lodash/throttle";
 import type { Moment } from "moment";
 import type { Ref } from "vue";
 import { ref, watch } from "vue";
@@ -34,7 +34,7 @@ export default function useBigClockColon(
   };
 
   // Blink at max once every @BLINK_DELAY * 2 miliseconds
-  const throttledBlink = _.throttle(blink, blinkDelay * 2);
+  const throttledBlink = throttle(blink, blinkDelay * 2);
 
   // Blink when time changes
   watch(time, (newTime, oldTime) => {

@@ -1,8 +1,6 @@
-import { storeToRefs } from "pinia";
-
 import { getDefaultPanelState } from "@/defaults/panelState.default";
-import { useConfigStore } from "@/pinia/configStore";
 import type { Maybe } from "@/types/generic.types";
+import type { UnitsConfig } from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
@@ -12,14 +10,13 @@ export const getNewState = (
   engineUnit: Maybe<EngineUnit>,
   thermalUnit: Maybe<ThermalUnit>,
   connection: Connection,
+  unitsConfig: UnitsConfig,
 ): PanelState => {
   let result = getDefaultPanelState();
 
-  const configStore = useConfigStore();
-  const { units } = storeToRefs(configStore);
-  const warningThreshold = units.value.warningThreshold || 5;
-  const errorThreshold = units.value.errorThreshold || 25;
-  const requestDelay = units.value.requestDelay || 2000;
+  const warningThreshold = unitsConfig.warningThreshold || 5;
+  const errorThreshold = unitsConfig.errorThreshold || 25;
+  const requestDelay = unitsConfig.requestDelay || 2000;
 
   // X dni neprovedena zkouska
   const inspection = engineUnit?.data.misc.inspectionNotDoneForDays;

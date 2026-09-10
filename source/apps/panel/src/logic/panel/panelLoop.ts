@@ -1,10 +1,10 @@
-import axios from "axios";
-import _ from "lodash";
+import isEqual from "lodash/isEqual";
 import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
 import { CONFIGER_API_URL } from "@/api/base";
+import { requestJson } from "@/api/http";
 import {
   getEngineData,
   getStatus,
@@ -129,8 +129,9 @@ export class AppManager {
       this.engineUnit.value,
       this.thermalUnit.value,
       this.connection.value,
+      this.unitsConfig.value,
     );
-    if (!_.isEqual(this.panelState.value, newState)) {
+    if (!isEqual(this.panelState.value, newState)) {
       this.panelStateStore.setState(newState);
     }
     this.updateClock();
@@ -167,23 +168,23 @@ export class AppManager {
    * would stop the panel from ever retrying.
    */
   private async getConfig(): Promise<Config> {
-    const response = await axios.get(`${CONFIGER_API_URL}/main`, {
+    const { data } = await requestJson<Config>(`${CONFIGER_API_URL}/main`, {
       timeout: CONFIGER_TIMEOUT,
     });
-    return response.data;
+    return data;
   }
 
   private async getVersions(): Promise<Versions> {
-    const response = await axios.get(`${CONFIGER_API_URL}/version`, {
+    const { data } = await requestJson(`${CONFIGER_API_URL}/version`, {
       timeout: CONFIGER_TIMEOUT,
     });
     /*
-     * axios keeps a body it cannot parse as a raw string instead of throwing,
-     * so without this check the store takes an HTML error page or an empty
-     * body and the panel reports config success with blank version fields.
+     * A body that is valid JSON but not a versions file would otherwise reach
+     * the store, and the panel would report config success with blank version
+     * fields.
      */
-    if (!isInstanceOfVersions(response.data)) throw "Versions file error";
-    return response.data;
+    if (!isInstanceOfVersions(data)) throw "Versions file error";
+    return data;
   }
 
   private async initializeConfig() {
@@ -229,17 +230,24 @@ export class AppManager {
      * so the early retries stay fast and only a longer outage slows down.
      */
     let delay = FIRST_INIT_DELAY;
+    /*
+     * Config comes from configer and does not change while the panel boots, so
+     * it is fetched once. Setting it again on a later retry would invalidate
+     * every config-dependent computed.
+     */
+    let configOk = false;
 
     const attempt = async () => {
-      let configOk = false;
       let backendOk = false;
 
-      try {
-        await this.initializeConfig();
-        this.appStateStore.setConfigSuccess();
-        configOk = true;
-      } catch (err) {
-        this.appStateStore.setConfigError();
+      if (!configOk) {
+        try {
+          await this.initializeConfig();
+          this.appStateStore.setConfigSuccess();
+          configOk = true;
+        } catch (err) {
+          this.appStateStore.setConfigError();
+        }
       }
 
       try {

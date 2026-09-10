@@ -1,21 +1,10 @@
-import axios from "axios";
-import { storeToRefs } from "pinia";
-
-import { useConfigStore } from "@/pinia/configStore";
+import { backendApi } from "@/api/base";
+import { request } from "@/api/http";
 import { singleFlight } from "@/utils/singleFlight";
 
-export const refreshRestartCooldown = singleFlight(() => {
-  const configStore = useConfigStore();
-  const { backend: api } = storeToRefs(configStore);
-  /*
-   * No config yet, so nothing is sent. The caller sees `undefined`,
-   * not a response.
-   */
-  if (api.value.port === undefined || api.value.url === undefined) {
-    return Promise.resolve(undefined);
-  }
-  const url = `http://localhost:${api.value.port}${api.value.url}/restart/refresh`;
-  const timeout = api.value.requestTimeout || 5000;
+export const refreshRestartCooldown = singleFlight(async (): Promise<void> => {
+  const { baseUrl, timeout, isConfigured } = backendApi();
+  if (!isConfigured) return;
 
-  return axios.get(url, { timeout: timeout });
+  await request(`${baseUrl}/restart/refresh`, { timeout });
 });
