@@ -185,7 +185,21 @@ export class AppManager {
   async initializeGlobal(): Promise<any> {
     const intervalTime = 5000;
     let configLoaded = false;
-    const interval = setInterval(async () => {
+    let interval: Maybe<ReturnType<typeof setInterval>> = undefined;
+    let stopped = false;
+
+    /*
+     * The first attempt runs before the interval exists,
+     * so remember that we stopped and let the caller skip scheduling.
+     */
+    const stop = () => {
+      stopped = true;
+      if (interval !== undefined) {
+        clearInterval(interval);
+      }
+    };
+
+    const attempt = async () => {
       /*
        * Config comes from configer and does not change while the panel boots,
        * so fetch it once and then keep polling only the backend.
@@ -198,19 +212,24 @@ export class AppManager {
             this.appStateStore.setConfigSuccess();
           })
           .catch((err) => {
-            clearInterval(interval);
+            stop();
             this.appStateStore.setConfigError();
           });
       }
       this.initializeBackend()
         .then((res) => {
-          clearInterval(interval);
+          stop();
           this.appStateStore.setBackendSuccess();
         })
         .catch((err) => {
           this.appStateStore.setBackendError();
         });
-    }, intervalTime);
+    };
+
+    attempt();
+    if (!stopped) {
+      interval = setInterval(attempt, intervalTime);
+    }
   }
 
   async startPanelLoop() {
