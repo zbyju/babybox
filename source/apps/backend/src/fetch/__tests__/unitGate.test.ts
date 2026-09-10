@@ -1,4 +1,4 @@
-import { UnitQueue } from "../unitGate";
+import { UnitQueue, UnitReadResult } from "../unitGate";
 
 function deferred<T>() {
   let resolve: (value: T) => void;
@@ -95,8 +95,11 @@ describe("unitGate.ts", () => {
   });
 
   describe("runShared", () => {
+    // Shared reads resolve to a unit response, so the jobs return that shape.
+    const reading = (data: unknown): UnitReadResult => ({ status: 200, data });
+
     it("should give callers of the same key one shared run", async () => {
-      const pending = deferred<string>();
+      const pending = deferred<UnitReadResult>();
       let runs = 0;
 
       const job = () => {
@@ -107,10 +110,10 @@ describe("unitGate.ts", () => {
       const a = queue.runShared("data:5000", job);
       const b = queue.runShared("data:5000", job);
 
-      pending.resolve("shared");
+      pending.resolve(reading("shared"));
 
-      expect(await a).toBe("shared");
-      expect(await b).toBe("shared");
+      expect((await a).data).toBe("shared");
+      expect((await b).data).toBe("shared");
       expect(runs).toBe(1);
     });
 
@@ -118,18 +121,18 @@ describe("unitGate.ts", () => {
       let runs = 0;
       const job = async () => {
         runs += 1;
-        return runs;
+        return reading(runs);
       };
 
-      expect(await queue.runShared("data:5000", job)).toBe(1);
-      expect(await queue.runShared("data:5000", job)).toBe(2);
+      expect((await queue.runShared("data:5000", job)).data).toBe(1);
+      expect((await queue.runShared("data:5000", job)).data).toBe(2);
     });
 
     it("should not share between different keys", async () => {
       let runs = 0;
       const job = async () => {
         runs += 1;
-        return runs;
+        return reading(runs);
       };
 
       await Promise.all([
@@ -146,7 +149,8 @@ describe("unitGate.ts", () => {
       ).rejects.toBe("boom");
 
       expect(
-        await queue.runShared("settings:5000", () => Promise.resolve("ok"))
+        (await queue.runShared("settings:5000", () => Promise.resolve(reading("ok"))))
+          .data
       ).toBe("ok");
     });
   });

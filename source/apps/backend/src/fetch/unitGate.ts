@@ -12,6 +12,18 @@ type Job<T> = () => Promise<T>;
 export type SharedRead = `data:${number}` | `settings:${number}`;
 
 /**
+ * What a shared read resolves to: the axios response of `fetchFromUrl`.
+ *
+ * Shared reads are keyed by a string, so a generic result type would let two
+ * callers on one key ask for different types and get each other's value with
+ * no compile error. One concrete type removes that.
+ */
+export interface UnitReadResult {
+  status: number;
+  data: any;
+}
+
+/**
  * Ceiling on one queued job.
  *
  * The queue has no other way out. A job whose promise never settles keeps
@@ -51,7 +63,7 @@ interface Waiter {
 export class UnitQueue {
   private busy = false;
   private waiting: Waiter[] = [];
-  private shared = new Map<SharedRead, Promise<unknown>>();
+  private shared = new Map<SharedRead, Promise<UnitReadResult>>();
 
   constructor(private deadlineMs = JOB_DEADLINE) {}
 
@@ -86,9 +98,12 @@ export class UnitQueue {
    * Same as `run`, but callers arriving while an identical job is still running
    * share its result instead of asking the unit twice. Only for reads.
    */
-  runShared<T>(key: SharedRead, job: Job<T>): Promise<T> {
+  runShared(
+    key: SharedRead,
+    job: Job<UnitReadResult>
+  ): Promise<UnitReadResult> {
     const existing = this.shared.get(key);
-    if (existing !== undefined) return existing as Promise<T>;
+    if (existing !== undefined) return existing;
 
     const pending = this.run(job).then(
       (value) => {
@@ -151,10 +166,10 @@ export function onUnit<T>(unit: Unit, job: Job<T>, first = false): Promise<T> {
   return queues[unit].run(job, first);
 }
 
-export function sharedOnUnit<T>(
+export function sharedOnUnit(
   unit: Unit,
   key: SharedRead,
-  job: Job<T>
-): Promise<T> {
+  job: Job<UnitReadResult>
+): Promise<UnitReadResult> {
   return queues[unit].runShared(key, job);
 }
