@@ -90,4 +90,25 @@ describe("fetchFromUnits.ts against a real server", () => {
     expect(requests).toBe(2);
     expect(maxInFlight).toBe(2);
   });
+
+  /*
+   * The server never answers the readiness read with 0, so every attempt fails
+   * and the loop retries until one of the two caps stops it.
+   */
+  it("should stop retrying a setting once the time budget runs out", async () => {
+    const setting = { index: 100, value: 1, unit: Unit.Engine };
+
+    const results = await unitApi.updateSettings([setting], 2000, 10, 200);
+
+    expect(results[0].result).toBe(false);
+    expect(requests).toBeLessThan(10);
+  });
+
+  it("should still stop at tryNumber when the budget is wide", async () => {
+    const setting = { index: 100, value: 1, unit: Unit.Engine };
+
+    await unitApi.updateSettings([setting], 2000, 2, 60000);
+
+    expect(requests).toBe(2);
+  });
 });

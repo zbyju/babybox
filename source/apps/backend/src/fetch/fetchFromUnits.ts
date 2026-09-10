@@ -151,10 +151,24 @@ export async function updateWatchdog(): Promise<CommonResponse> {
   }
 }
 
+/**
+ * Wall-clock cap on retrying one setting.
+ *
+ * An attempt is one queued job of four sequential requests, so it can hold the
+ * unit for four times the timeout. `tryNumber` alone lets a flaky unit keep the
+ * queue for minutes, and panel reads waiting behind it time out and count as
+ * failures, so the panel reports a connection problem that does not exist.
+ *
+ * Room for one slow attempt plus retries, and the cap is checked before a new
+ * attempt, so an attempt already running is never cut off.
+ */
+const SETTING_RETRY_BUDGET = 30000;
+
 export async function updateSettings(
   settings: Setting[],
   timeout = 5000,
-  tryNumber = 10
+  tryNumber = 10,
+  retryBudget = SETTING_RETRY_BUDGET
 ): Promise<SettingResult[]> {
   const results = settings.reduce(
     async (previous: Promise<SettingResult[]>, s: Setting) => {
@@ -163,13 +177,15 @@ export async function updateSettings(
       const timestamp = new Date().getTime();
       let result = false;
       let i = tryNumber;
+      const giveUpAt = Date.now() + retryBudget;
 
       /*
-       * Try to override settings tryNumber of times.
+       * Try to override settings tryNumber of times, or until the retry budget
+       * runs out, whichever comes first.
        * One attempt is a single queued job, so nothing else reaches the unit
        * between reading readiness, writing the value and verifying it.
        */
-      while (!result && i > 0) {
+      while (!result && i > 0 && Date.now() < giveUpAt) {
         result = await onUnit(s.unit, () =>
           updateSetting(
             `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
