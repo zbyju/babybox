@@ -25,7 +25,11 @@ export function actionToUrl(action: Action): string | undefined {
 }
 
 export function actionToUnit(action: Action): Unit | undefined {
-  return actionTargets[action]?.unit;
+  // Same guard as actionToUrl, so the two functions cannot disagree.
+  if (!Object.prototype.hasOwnProperty.call(actionTargets, action)) {
+    return undefined;
+  }
+  return actionTargets[action].unit;
 }
 
 export function unitToIp(unit: Unit): string {
