@@ -27,7 +27,7 @@
   import moment from "moment";
   import { type Ref, ref, watch } from "vue";
 
-  import { HttpError, type JsonResponse } from "@/api/http";
+  import { type JsonResponse, HttpError } from "@/api/http";
   import { getSettings, sendSettings } from "@/api/units";
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";

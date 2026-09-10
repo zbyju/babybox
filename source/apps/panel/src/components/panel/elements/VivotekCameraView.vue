@@ -38,6 +38,7 @@
   import { onMounted, ref } from "vue";
 
   import { useConfigStore } from "@/pinia/configStore";
+  import { CameraState } from "@/types/panel/camera.types";
 
   const props = defineProps<{
     displayTopBorder: boolean;
@@ -48,12 +49,6 @@
   const emit = defineEmits<{
     (e: "updatedImage", width: number, height: number): void;
   }>();
-
-  enum CameraState {
-    Ok = 0,
-    Loading = 1,
-    Error = 2,
-  }
 
   const state = ref(CameraState.Loading);
 

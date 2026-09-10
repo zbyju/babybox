@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { onBeforeMount } from "vue";
+  import { onBeforeMount, onUnmounted } from "vue";
 
   import { AppManager } from "@/logic/panel/panelLoop";
 
@@ -15,13 +15,28 @@
   const appManager = new AppManager();
   onBeforeMount(async () => await appManager.initializeGlobal());
 
-  setInterval(async () => {
+  const RESTART_COOLDOWN_DELAY = 5000;
+  let restartCooldownTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /*
+   * The backend reboots the PC when these stop arriving,
+   * so the next one waits for the current one to settle.
+   * Overlapping calls would queue in the browser and time out on their own.
+   */
+  const refreshRestartCooldownLoop = async () => {
     try {
       await refreshRestartCooldown();
     } catch (err) {
       console.log(err);
     }
-  }, 5000);
+    restartCooldownTimer = setTimeout(
+      refreshRestartCooldownLoop,
+      RESTART_COOLDOWN_DELAY,
+    );
+  };
+
+  refreshRestartCooldownLoop();
+  onUnmounted(() => clearTimeout(restartCooldownTimer));
 </script>
 
 <style lang="stylus">

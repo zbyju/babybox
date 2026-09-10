@@ -1,106 +1,123 @@
 import type { Ref } from "vue";
 import { onUnmounted, ref } from "vue";
 
+import type { Maybe } from "@/types/generic.types";
+import { CameraState } from "@/types/panel/camera.types";
 import { type CameraConfig } from "@/types/panel/config.types";
 import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
 
-/*
- * How long to wait for a frame that reports neither load nor error.
- * A stalled TCP connection can hang for minutes, so we drop the frame and
- * start a new one instead. Long enough not to cut off a slow camera,
- * short enough that a stuck feed recovers without anyone visiting the site.
- */
-const stalledFrameTimeout = 15000;
+const DEFAULT_UPDATE_DELAY = 1000;
 
-export interface Camera {
-  url: Ref<string>;
-  imageFinished: () => void;
-}
+/** Multiple of the update delay after which a snapshot that never answered is dropped. */
+const STALL_FACTOR = 3;
+
+/*
+ * Floor for the stall timeout.
+ * The update delay is a display preference, so a short one must not become a
+ * network timeout that no camera can meet.
+ */
+const MIN_LOAD_TIMEOUT = 5000;
+
+/* A 1x1 transparent GIF. Assigning it aborts a load that never answered. */
+const BLANK =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 /**
- * Gives the url to the camera image and keeps refreshing it.
+ * Loads camera snapshots one at a time into the caller's own `img`.
  *
- * Refreshing is self-clocking: the next url is scheduled once the caller says
- * the current image finished, so a camera slower than `config.updateDelay`
- * never gets a second request while the first is still running.
- * `config.updateDelay` is the minimum gap between two refreshes, measured from
- * one refresh to the next, so a fast camera still updates at the set rate.
+ * The next snapshot starts only after the current one loads or fails, so a
+ * camera slower than the update delay just refreshes less often. Swapping the
+ * src on a timer instead aborts the running load, which can leave the view
+ * stuck on Error and never show a frame.
  *
- * The caller MUST call `imageFinished` from both the image's load and its error
- * handler. Calling it only on load would stop the feed for good on the first
- * error; missing both leaves the feed running at the stalled-frame timeout.
+ * The element the caller renders is the element that fetches, so a frame costs
+ * one request. An off-screen probe would remove the refresh flicker, but it
+ * fetches every frame twice: the camera is cross-origin with no CORS header,
+ * so a canvas hand-over taints, and the url carries credentials, so `fetch`
+ * refuses it and there is no blob either.
  *
- * All timers stop on the calling component's unmount.
+ * A frame is dropped once it passes the stall timeout, which is at least
+ * MIN_LOAD_TIMEOUT and never below it, whatever the update delay is.
+ *
+ * The caller must wire both `onLoad` and `onError` to its `img`. They are the
+ * only way this composable learns that a frame settled.
  *
  * @param config - camera config
- * @param onUpdate - called after every url change
+ * @param onUpdate - called after every frame that loads
+ * @returns url for the img src, the current load state, and the two handlers
  */
 export default function useCamera(
   config: CameraConfig,
   onUpdate?: () => any,
-): Camera {
+): {
+  url: Ref<string>;
+  state: Ref<CameraState>;
+  onLoad: () => void;
+  onError: () => void;
+} {
   const url = ref("");
+  const state = ref(CameraState.Loading);
+  const delay = config.updateDelay || DEFAULT_UPDATE_DELAY;
 
   let stopped = false;
-  let nextTimer: ReturnType<typeof setTimeout> | undefined;
-  let stallTimer: ReturnType<typeof setTimeout> | undefined;
-  let waitingForImage = false;
-  let lastRefreshAt = 0;
+  let nextTimer: Maybe<ReturnType<typeof setTimeout>>;
+  let stallTimer: Maybe<ReturnType<typeof setTimeout>>;
+  /* True while no frame is in flight, so a late event from an aborted load
+   * cannot settle the frame that came after it. */
+  let settled = true;
 
-  const clearTimers = () => {
-    if (nextTimer !== undefined) clearTimeout(nextTimer);
-    if (stallTimer !== undefined) clearTimeout(stallTimer);
-    nextTimer = undefined;
-    stallTimer = undefined;
-  };
-
-  const refresh = () => {
-    if (stopped) return;
-
+  const buildUrl = () => {
     const cameraType = stringToCameraType(config.cameraType);
-    const time = Date.now();
-    lastRefreshAt = performance.now();
-    url.value = `http://${config.username}:${config.password}@${
+    const time = new Date().getTime().toString();
+    return `http://${config.username}:${config.password}@${
       config.ip
-    }${getURLPostfix(cameraType)}${time.toString()}`;
-
-    waitingForImage = true;
-    stallTimer = setTimeout(() => {
-      waitingForImage = false;
-      refresh();
-    }, stalledFrameTimeout);
-
-    if (onUpdate) {
-      onUpdate();
-    }
+    }${getURLPostfix(cameraType)}${time}`;
   };
 
-  const scheduleRefresh = (delay: number) => {
-    if (stopped) return;
-    nextTimer = setTimeout(refresh, delay);
-  };
+  const settle = (loaded: boolean, stalled = false) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(stallTimer);
 
-  const imageFinished = () => {
-    // The empty starting src can fire load or error before the first refresh.
-    if (stopped || !waitingForImage) return;
-    waitingForImage = false;
-    clearTimers();
+    state.value = loaded ? CameraState.Ok : CameraState.Error;
+    if (loaded && onUpdate) onUpdate();
+
     /*
-     * performance.now(), not Date.now(): this runs unattended for months and an
-     * NTP step backwards would make the gap negative, pushing the next refresh
-     * out by the size of the step. The stall watchdog is already cleared above,
-     * so nothing would recover the feed.
+     * A stalled load is still open, so point the element at a blank frame to
+     * drop it. Its abort event arrives while settled is true and is ignored.
      */
-    const sinceRefresh = performance.now() - lastRefreshAt;
-    scheduleRefresh(Math.max(config.updateDelay - sinceRefresh, 0));
+    if (stalled) url.value = BLANK;
+
+    if (!stopped) nextTimer = setTimeout(load, delay);
   };
 
-  scheduleRefresh(config.updateDelay);
+  const load = () => {
+    if (stopped) return;
+
+    settled = false;
+
+    /*
+     * Some cameras accept the connection and then never answer,
+     * so neither load nor error ever fires on the element.
+     */
+    const loadTimeout = Math.max(delay * STALL_FACTOR, MIN_LOAD_TIMEOUT);
+    stallTimer = setTimeout(() => settle(false, true), loadTimeout);
+
+    url.value = buildUrl();
+  };
+
+  load();
 
   onUnmounted(() => {
     stopped = true;
-    clearTimers();
+    clearTimeout(nextTimer);
+    clearTimeout(stallTimer);
   });
 
-  return { url, imageFinished };
+  return {
+    url,
+    state,
+    onLoad: () => settle(true),
+    onError: () => settle(false),
+  };
 }
