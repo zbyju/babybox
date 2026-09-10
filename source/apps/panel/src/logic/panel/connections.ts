@@ -12,6 +12,17 @@ export class ConnectionTracker {
   successes: number;
   fails: number;
   failStreak: number;
+  /*
+   * How long the unit has been failing, measured between the first failure of
+   * the current streak and the newest result. Requests run in sequence now, so
+   * a tick can take several times the poll delay and a count of failures no
+   * longer says how long the unit has been unreachable.
+   *
+   * Measured against result timestamps, not the clock, so time in which the
+   * panel sent nothing at all (the loop is stopped) does not count as downtime.
+   */
+  failStreakMs: number;
+  private failStreakStartedAt: number;
 
   constructor() {
     this.RECENT_SIZE = 999;
@@ -20,6 +31,8 @@ export class ConnectionTracker {
     this.successes = 0;
     this.fails = 0;
     this.failStreak = 0;
+    this.failStreakMs = 0;
+    this.failStreakStartedAt = 0;
   }
 
   calculateQuality(n: number, x: number) {
@@ -28,6 +41,7 @@ export class ConnectionTracker {
   }
 
   addResult(res: ConnectionResult) {
+    const now = Date.now();
     this.requests++;
 
     // Add to recent requests
@@ -40,10 +54,14 @@ export class ConnectionTracker {
     if (res === ConnectionResult.Success) {
       this.successes++;
       this.failStreak = 0;
+      this.failStreakMs = 0;
+      this.failStreakStartedAt = 0;
     }
     if (res === ConnectionResult.Fail) {
       this.fails++;
       this.failStreak++;
+      if (this.failStreak === 1) this.failStreakStartedAt = now;
+      this.failStreakMs = now - this.failStreakStartedAt;
     }
   }
 
@@ -92,6 +110,7 @@ export class ConnectionTracker {
       recentQuality: this.getRecentQuality(),
 
       failStreak: this.failStreak,
+      failStreakMs: this.failStreakMs,
     };
   }
 }

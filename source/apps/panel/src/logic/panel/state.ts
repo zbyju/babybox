@@ -19,6 +19,7 @@ export const getNewState = (
   const { units } = storeToRefs(configStore);
   const warningThreshold = units.value.warningThreshold || 5;
   const errorThreshold = units.value.errorThreshold || 25;
+  const requestDelay = units.value.requestDelay || 2000;
 
   // X dni neprovedena zkouska
   const inspection = engineUnit?.data.misc.inspectionNotDoneForDays;
@@ -176,11 +177,20 @@ export const getNewState = (
            the previous version resets the sound only after
            if( (BlokaceMot & 1)==0 && (BlokaceMot & 2)==0 ) */
 
-  // Connection
-  const errStreak: number =
-    connection.engineUnit.failStreak + connection.thermalUnit.failStreak;
+  /*
+   * Connection.
+   *
+   * The thresholds are counts of failed requests at the nominal poll rate, so
+   * turn them into a time budget: threshold * requestDelay is the downtime the
+   * count used to stand for. Requests to one unit now run in sequence, so a
+   * tick costs the read timeout plus the delay and counting failures would push
+   * the alarm out by several times. The * 2 keeps the old shape, where a single
+   * dead unit takes twice as long to alarm as both dead together.
+   */
+  const downtime: number =
+    connection.engineUnit.failStreakMs + connection.thermalUnit.failStreakMs;
 
-  if (errStreak > warningThreshold * 2) {
+  if (downtime > warningThreshold * 2 * requestDelay) {
     result = {
       active: false,
       message: {
@@ -189,7 +199,7 @@ export const getNewState = (
       },
     };
   }
-  if (errStreak > errorThreshold * 2) {
+  if (downtime > errorThreshold * 2 * requestDelay) {
     result = {
       active: false,
       message: {
