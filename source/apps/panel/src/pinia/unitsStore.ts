@@ -39,7 +39,7 @@ export const useUnitsStore = defineStore("engineUnit", {
     },
     setRawThermalUnit(rawThermalUnit: Maybe<RawThermalUnit>) {
       if (rawThermalUnit === undefined) {
-        this.engineUnit = undefined;
+        this.thermalUnit = undefined;
       } else {
         const config = useConfigStore();
         const voltageConfig: VoltageConfig = config?.units?.voltage
