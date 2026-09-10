@@ -18,28 +18,43 @@ const STALL_FACTOR = 3;
  */
 const MIN_LOAD_TIMEOUT = 5000;
 
+/* A 1x1 transparent GIF. Assigning it aborts a load that never answered. */
+const BLANK =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
 /**
- * Loads camera snapshots one at a time.
+ * Loads camera snapshots one at a time into the caller's own `img`.
  *
- * The next snapshot starts only after the current one loads or fails, so a camera
- * slower than the update delay just refreshes less often. Swapping the src on a
- * timer instead aborts the running load, which can leave the view stuck on Error
- * and never show a frame.
+ * The next snapshot starts only after the current one loads or fails, so a
+ * camera slower than the update delay just refreshes less often. Swapping the
+ * src on a timer instead aborts the running load, which can leave the view
+ * stuck on Error and never show a frame.
+ *
+ * The element the caller renders is the element that fetches, so a frame costs
+ * one request. An off-screen probe would remove the refresh flicker, but it
+ * fetches every frame twice: the camera is cross-origin with no CORS header,
+ * so a canvas hand-over taints, and the url carries credentials, so `fetch`
+ * refuses it and there is no blob either.
  *
  * A frame is dropped once it passes the stall timeout, which is at least
  * MIN_LOAD_TIMEOUT and never below it, whatever the update delay is.
  *
- * Each snapshot loads into an off-screen image first, so the returned url changes
- * only once the new frame is ready. That also removes the flicker on refresh.
+ * The caller must wire both `onLoad` and `onError` to its `img`. They are the
+ * only way this composable learns that a frame settled.
  *
  * @param config - camera config
  * @param onUpdate - called after every frame that loads
- * @returns url of the newest loaded frame, and the current load state
+ * @returns url for the img src, the current load state, and the two handlers
  */
 export default function useCamera(
   config: CameraConfig,
   onUpdate?: () => any,
-): { url: Ref<string>; state: Ref<CameraState> } {
+): {
+  url: Ref<string>;
+  state: Ref<CameraState>;
+  onLoad: () => void;
+  onError: () => void;
+} {
   const url = ref("");
   const state = ref(CameraState.Loading);
   const delay = config.updateDelay || DEFAULT_UPDATE_DELAY;
@@ -47,6 +62,9 @@ export default function useCamera(
   let stopped = false;
   let nextTimer: Maybe<ReturnType<typeof setTimeout>>;
   let stallTimer: Maybe<ReturnType<typeof setTimeout>>;
+  /* True while no frame is in flight, so a late event from an aborted load
+   * cannot settle the frame that came after it. */
+  let settled = true;
 
   const buildUrl = () => {
     const cameraType = stringToCameraType(config.cameraType);
@@ -56,42 +74,36 @@ export default function useCamera(
     }${getURLPostfix(cameraType)}${time}`;
   };
 
+  const settle = (loaded: boolean, stalled = false) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(stallTimer);
+
+    state.value = loaded ? CameraState.Ok : CameraState.Error;
+    if (loaded && onUpdate) onUpdate();
+
+    /*
+     * A stalled load is still open, so point the element at a blank frame to
+     * drop it. Its abort event arrives while settled is true and is ignored.
+     */
+    if (stalled) url.value = BLANK;
+
+    if (!stopped) nextTimer = setTimeout(load, delay);
+  };
+
   const load = () => {
     if (stopped) return;
 
-    const probe = new Image();
-    let settled = false;
-
-    const settle = (loaded: boolean, abort = false) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(stallTimer);
-      probe.onload = null;
-      probe.onerror = null;
-      if (abort) probe.src = "";
-
-      if (loaded) {
-        url.value = probe.src;
-        state.value = CameraState.Ok;
-        if (onUpdate) onUpdate();
-      } else {
-        state.value = CameraState.Error;
-      }
-
-      if (!stopped) nextTimer = setTimeout(load, delay);
-    };
-
-    probe.onload = () => settle(true);
-    probe.onerror = () => settle(false);
+    settled = false;
 
     /*
      * Some cameras accept the connection and then never answer,
-     * so neither onload nor onerror ever fires.
+     * so neither load nor error ever fires on the element.
      */
     const loadTimeout = Math.max(delay * STALL_FACTOR, MIN_LOAD_TIMEOUT);
     stallTimer = setTimeout(() => settle(false, true), loadTimeout);
 
-    probe.src = buildUrl();
+    url.value = buildUrl();
   };
 
   load();
@@ -102,5 +114,10 @@ export default function useCamera(
     clearTimeout(stallTimer);
   });
 
-  return { url, state };
+  return {
+    url,
+    state,
+    onLoad: () => settle(true),
+    onError: () => settle(false),
+  };
 }

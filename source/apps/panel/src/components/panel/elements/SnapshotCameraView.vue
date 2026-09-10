@@ -7,8 +7,8 @@
       maxHeight: props.maxH + 'px',
       maxWidth: props.maxW + 'px',
     }"
-    @error="onVisibleLoadError"
-    @load="onVisibleLoad"
+    @error="onError"
+    @load="onLoad"
   />
   <div
     v-show="state === CameraState.Error"
@@ -46,25 +46,13 @@
 
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);
-  const { url, state } = useCamera(camera.value);
-
   /*
-   * The off-screen probe drives the state, but the visible img can still fail
-   * on its own, so it reports both outcomes here.
-   *
-   * Both handlers are needed. Without @load nothing here can report success,
-   * so the only way out of Error is the next probe success. Without @error the
-   * operator gets a broken-image icon while the panel reports Ok.
+   * This img is the element that fetches, so its two handlers are what tell
+   * useCamera a frame settled and when to ask for the next one.
    *
    * The src is left off while url is empty. Vue would render src="", which the
    * browser resolves to the page URL and fails, and that raised Error before
-   * the first probe had even settled.
+   * the first frame had even been asked for.
    */
-  const onVisibleLoad = () => {
-    state.value = CameraState.Ok;
-  };
-
-  const onVisibleLoadError = () => {
-    state.value = CameraState.Error;
-  };
+  const { url, state, onLoad, onError } = useCamera(camera.value);
 </script>
