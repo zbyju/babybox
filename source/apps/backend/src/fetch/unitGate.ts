@@ -11,6 +11,21 @@ type Job<T> = () => Promise<T>;
  */
 export type SharedRead = `data:${number}` | `settings:${number}`;
 
+/**
+ * Ceiling on one queued job.
+ *
+ * The queue has no other way out. A job whose promise never settles keeps
+ * `drain` inside its `await`, and then every later caller for that unit waits
+ * with no error and no log. The engine queue carries the watchdog refresh, and
+ * the babybox blocks itself once that timer lapses, so a stuck lock takes the
+ * babybox out of service on a machine with nobody watching.
+ *
+ * Well above any legitimate job. The longest one is a settings attempt, which
+ * is four requests at the fetch timeout, so this only ever fires on a job that
+ * is stuck rather than slow.
+ */
+const JOB_DEADLINE = 60000;
+
 /*
  * A queued job with its caller's callbacks already closed over.
  * Keeping them together lets the queue hold jobs of different result types
@@ -29,14 +44,16 @@ interface Waiter {
  *
  * WARN: a job must never call `onUnit` or `sharedOnUnit` for its own unit.
  * The queue runs one job at a time, so the inner call waits for the outer job,
- * which is waiting for the inner call. That freezes the unit for every later
- * caller, with no timeout and no error. Build the whole sequence inside one job
- * instead, the way `updateSettings` does.
+ * which is waiting for the inner call. `JOB_DEADLINE` breaks the deadlock, but
+ * only after a minute in which the unit answered nothing. Build the whole
+ * sequence inside one job instead, the way `updateSettings` does.
  */
 export class UnitQueue {
   private busy = false;
   private waiting: Waiter[] = [];
   private shared = new Map<SharedRead, Promise<unknown>>();
+
+  constructor(private deadlineMs = JOB_DEADLINE) {}
 
   /**
    * Queues a job behind everything already waiting for this unit.
@@ -51,7 +68,11 @@ export class UnitQueue {
        * promise rejects the caller instead of escaping past `.then`.
        */
       const waiter: Waiter = {
-        run: () => Promise.resolve().then(job).then(resolve, reject),
+        run: () =>
+          withDeadline(Promise.resolve().then(job), this.deadlineMs).then(
+            resolve,
+            reject
+          ),
       };
 
       if (first) this.waiting.unshift(waiter);
@@ -102,6 +123,23 @@ export class UnitQueue {
       this.busy = false;
     }
   }
+}
+
+/*
+ * Rejects once the deadline passes. The job's own promise is left alone,
+ * because there is no way to cancel it; the queue just stops waiting for it.
+ */
+function withDeadline<T>(job: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Unit job did not settle within ${ms}ms.`)),
+      ms
+    );
+  });
+
+  return Promise.race([job, deadline]).finally(() => clearTimeout(timer));
 }
 
 const queues: Record<Unit, UnitQueue> = {

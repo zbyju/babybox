@@ -150,4 +150,37 @@ describe("unitGate.ts", () => {
       ).toBe("ok");
     });
   });
+
+  describe("deadline", () => {
+    // Short enough to wait out for real, so the test needs no fake timers.
+    const DEADLINE = 20;
+    let bounded: UnitQueue;
+
+    beforeEach(() => {
+      bounded = new UnitQueue(DEADLINE);
+    });
+
+    it("should reject a job that never settles", async () => {
+      const stuck = bounded.run(() => new Promise<string>(() => undefined));
+
+      await expect(stuck).rejects.toThrow("did not settle");
+    });
+
+    it("should keep the queue moving after a job passes the deadline", async () => {
+      const stuck = bounded.run(() => new Promise<string>(() => undefined));
+      const next = bounded.run(async () => "next");
+
+      await expect(stuck).rejects.toThrow("did not settle");
+      expect(await next).toBe("next");
+    });
+
+    it("should not reject a job that settles in time", async () => {
+      const job = deferred<string>();
+      const result = bounded.run(() => job.promise);
+
+      job.resolve("ok");
+
+      expect(await result).toBe("ok");
+    });
+  });
 });
