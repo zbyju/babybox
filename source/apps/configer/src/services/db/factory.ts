@@ -6,21 +6,24 @@ export class DbFactory {
     throw new Error("Don't call constructor, use static `getInstance` method");
   }
 
-  static mainDb: any | undefined;
-  static versionDb: any | undefined;
+  /*
+   * Cache the promise, not the resolved value,
+   * so concurrent callers share one init instead of each running mainConfig() again.
+   * mainConfig() writes main.json, so a second run can interleave writes to it.
+   */
+  static mainDb: MainDb | undefined;
+  static versionDb: VersionDb | undefined;
 
-  // Always call with await!!!
-  static async getMainDb(): MainDb {
+  static getMainDb(): MainDb {
     if (!DbFactory.mainDb) {
-      DbFactory.mainDb = await mainConfig();
+      DbFactory.mainDb = mainConfig();
     }
     return DbFactory.mainDb;
   }
 
-  // Always call with await!!!
-  static async getVersionDb(): VersionDb {
+  static getVersionDb(): VersionDb {
     if (!DbFactory.versionDb) {
-      DbFactory.versionDb = await versionConfig();
+      DbFactory.versionDb = versionConfig();
     }
     return DbFactory.versionDb;
   }
