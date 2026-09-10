@@ -37,7 +37,7 @@
 
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
-  import { type Ref, onMounted, ref } from "vue";
+  import { onMounted, ref } from "vue";
 
   import useCamera from "@/composables/useCamera";
   import { useConfigStore } from "@/pinia/configStore";
@@ -67,16 +67,18 @@
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);
   const cameraType = stringToCameraType(camera.value.cameraType);
-  const url: Ref<string> = useCamera(camera.value);
+  const { url, imageFinished } = useCamera(camera.value);
 
   const imageRef = ref<HTMLImageElement | null>(null);
   onMounted(() => {
     if (imageRef.value) {
       imageRef.value.onerror = () => {
         state.value = CameraState.Error;
+        imageFinished();
       };
       imageRef.value.onload = () => {
         state.value = CameraState.Ok;
+        imageFinished();
       };
     }
   });
