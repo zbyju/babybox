@@ -112,3 +112,124 @@ describe("fetchFromUnits.ts against a real server", () => {
     expect(requests).toBe(2);
   });
 });
+
+/*
+ * A unit that answers the readiness read, so `updateSetting` runs its whole
+ * sequence. The other server always answers "0|1|2", which never reads as
+ * ready, so every attempt there returns before the first write.
+ */
+describe("updateSettings against a unit that is ready", () => {
+  const INDEX = 100;
+  const VALUE = 7;
+
+  let server: http.Server;
+  let unitApi: typeof import("../fetchFromUnits");
+  let order: string[] = [];
+  let inFlight = 0;
+  let maxInFlight = 0;
+  let stored: number | undefined;
+  let reportWrongValue = false;
+
+  beforeAll(async () => {
+    server = http.createServer((req, res) => {
+      const url = req.url ?? "";
+      order.push(url);
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      inFlight -= 1;
+
+      const json = (body: string) => {
+        res.setHeader("Content-Type", "application/json");
+        res.end(body);
+      };
+
+      // Ready to accept a write.
+      if (url.startsWith("/get_sys[141]")) return json("0");
+
+      const value = url.match(/sys140=(\d+)/);
+      if (value !== null) {
+        stored = Number(value[1]);
+        return json(value[1]);
+      }
+
+      const index = url.match(/sys141=(\d+)/);
+      if (index !== null) return json(index[1]);
+
+      // Verification read. Slot 0 is setting index 100.
+      if (url.startsWith("/get_sys[100]")) {
+        res.setHeader("Content-Type", "text/plain");
+        const slot = reportWrongValue ? (stored ?? 0) + 1 : stored ?? 0;
+        return res.end(`${slot}|0|0`);
+      }
+
+      res.statusCode = 404;
+      return res.end();
+    });
+
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const { port } = server.address() as AddressInfo;
+
+    jest.resetModules();
+    jest.doMock("../..", () => ({
+      config: {
+        units: {
+          engine: { ip: `127.0.0.1:${port}` },
+          thermal: { ip: `127.0.0.1:${port}` },
+        },
+      },
+    }));
+    unitApi = require("../fetchFromUnits");
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  beforeEach(() => {
+    order = [];
+    inFlight = 0;
+    maxInFlight = 0;
+    stored = undefined;
+    reportWrongValue = false;
+  });
+
+  it("should write the value, then the index, then verify", async () => {
+    const results = await unitApi.updateSettings([
+      { index: INDEX, value: VALUE, unit: Unit.Engine },
+    ]);
+
+    expect(results).toEqual([
+      { index: INDEX, value: VALUE, unit: Unit.Engine, result: true },
+    ]);
+
+    const steps = [
+      order.findIndex((u) => u.startsWith("/get_sys[141]")),
+      order.findIndex((u) => u.includes(`sys140=${VALUE}`)),
+      order.findIndex((u) => u.includes(`sys141=${INDEX}`)),
+      order.findIndex((u) => u.startsWith("/get_sys[100]")),
+    ];
+
+    expect(steps).toEqual([0, 1, 2, 3]);
+    expect(order).toHaveLength(4);
+  });
+
+  it("should keep the four requests of one attempt to one at a time", async () => {
+    await unitApi.updateSettings([
+      { index: INDEX, value: VALUE, unit: Unit.Engine },
+    ]);
+
+    expect(maxInFlight).toBe(1);
+  });
+
+  it("should fail the setting when the verification read disagrees", async () => {
+    reportWrongValue = true;
+
+    const results = await unitApi.updateSettings(
+      [{ index: INDEX, value: VALUE, unit: Unit.Engine }],
+      5000,
+      1
+    );
+
+    expect(results[0].result).toBe(false);
+  });
+});
