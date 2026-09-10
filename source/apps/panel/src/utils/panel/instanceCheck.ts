@@ -8,6 +8,7 @@ import type {
   UnitsConfig,
   VoltageConfig,
 } from "@/types/panel/config.types";
+import type { Versions } from "@/types/panel/versions.types";
 
 export const isInstanceOfConfig = (object: any): object is Config => {
   return (
@@ -22,6 +23,17 @@ export const isInstanceOfConfig = (object: any): object is Config => {
     isInstanceOfCameraConfig(object.camera) &&
     "units" in object &&
     isInstanceOfUnitsConfig(object.units)
+  );
+};
+
+export const isInstanceOfVersions = (object: any): object is Versions => {
+  return (
+    typeof object === "object" &&
+    object !== null &&
+    "startup" in object &&
+    "backend" in object &&
+    "configer" in object &&
+    "frontend" in object
   );
 };
 

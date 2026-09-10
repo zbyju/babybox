@@ -27,7 +27,10 @@ import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import type { Versions } from "@/types/panel/versions.types";
-import { isInstanceOfConfig } from "@/utils/panel/instanceCheck";
+import {
+  isInstanceOfConfig,
+  isInstanceOfVersions,
+} from "@/utils/panel/instanceCheck";
 
 import { getNewState } from "./state";
 
@@ -174,6 +177,12 @@ export class AppManager {
     const response = await axios.get(`${CONFIGER_API_URL}/version`, {
       timeout: CONFIGER_TIMEOUT,
     });
+    /*
+     * axios keeps a body it cannot parse as a raw string instead of throwing,
+     * so without this check the store takes an HTML error page or an empty
+     * body and the panel reports config success with blank version fields.
+     */
+    if (!isInstanceOfVersions(response.data)) throw "Versions file error";
     return response.data;
   }
 
