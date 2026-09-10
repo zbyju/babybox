@@ -215,17 +215,13 @@ export class AppManager {
 
   async startPanelLoop() {
     const delay = this.unitsConfig.value.requestDelay || 2000;
-    const panelState = this.panelState.value;
-    this.panelLoopInterval = setInterval(
-      () => {
-        this.updateEngineUnit();
-        this.updateThermalUnit();
-        this.updateState();
-        this.updateWatchdogEngine();
-        this.checkRefreshLimit();
-      },
-      panelState.message ? delay / 2 : delay,
-    );
+    this.panelLoopInterval = setInterval(() => {
+      this.updateEngineUnit();
+      this.updateThermalUnit();
+      this.updateState();
+      this.updateWatchdogEngine();
+      this.checkRefreshLimit();
+    }, delay);
   }
 
   stopPanelLoop() {
