@@ -186,14 +186,8 @@ export class AppManager {
     const intervalTime = 5000;
     let configLoaded = false;
     let interval: Maybe<ReturnType<typeof setInterval>> = undefined;
-    let stopped = false;
 
-    /*
-     * The first attempt runs before the interval exists,
-     * so remember that we stopped and let the caller skip scheduling.
-     */
     const stop = () => {
-      stopped = true;
       if (interval !== undefined) {
         clearInterval(interval);
       }
@@ -227,9 +221,7 @@ export class AppManager {
     };
 
     attempt();
-    if (!stopped) {
-      interval = setInterval(attempt, intervalTime);
-    }
+    interval = setInterval(attempt, intervalTime);
   }
 
   async startPanelLoop() {
