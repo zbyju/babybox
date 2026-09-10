@@ -42,9 +42,8 @@ jobs:
       - name: Build
         run: pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build
 
-      # url.test.ts potrebuje bezici configer, tak ho tu vynechavame
       - name: Backend tests
-        run: pnpm -F babybox-panel-backend exec jest --testPathIgnorePatterns 'url.test'
+        run: pnpm -F babybox-panel-backend exec jest
 
       - name: Panel tests
         run: pnpm -F babybox-panel exec vitest run --environment jsdom
