@@ -2,6 +2,7 @@ import * as cors from "cors";
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as morgan from "morgan";
+import * as path from "path";
 import open = require("open");
 import { fetchConfig } from "./fetch/fetchConfig";
 import { modulesObject } from "./modules/init";
@@ -13,6 +14,36 @@ import { MainConfig } from "./types/config.types";
 import { wait } from "./utils/wait";
 
 const CONFIG_RETRY_DELAY_MS = 5000;
+
+const PUBLIC_DIR = path.join(__dirname, "public");
+const HASHED_ASSETS_DIR = path.join(PUBLIC_DIR, "assets");
+
+/* Revalidate on every load, so a deployed update is picked up right away. */
+const INDEX_CACHE_CONTROL = "no-cache";
+
+/*
+ * Vite puts a content hash in these file names,
+ * so a changed file always arrives under a new URL.
+ */
+const HASHED_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
+/*
+ * Sounds, fonts, the favicon and styles.json keep the same name across deploys,
+ * so the cache lifetime is how long we accept serving an old copy.
+ * One day skips the re-download on the panel's periodic reloads
+ * but still refreshes the alert sounds without anyone going on site.
+ */
+const STABLE_NAME_CACHE_CONTROL = "public, max-age=86400";
+
+function setPanelCacheHeaders(res: express.Response, filePath: string) {
+  if (path.basename(filePath) === "index.html") {
+    res.setHeader("Cache-Control", INDEX_CACHE_CONTROL);
+  } else if (filePath.startsWith(HASHED_ASSETS_DIR + path.sep)) {
+    res.setHeader("Cache-Control", HASHED_ASSET_CACHE_CONTROL);
+  } else {
+    res.setHeader("Cache-Control", STABLE_NAME_CACHE_CONTROL);
+  }
+}
 
 // modulesObject() reads the RESTART_* vars, so .env has to be loaded before it.
 dotenv.config();
@@ -73,10 +104,12 @@ async function main() {
 
   // Serve Frontend app if running in production
   if (process.env.NODE_ENV === "production") {
-    app.use(express.static(__dirname + "/public/"));
+    app.use(express.static(PUBLIC_DIR, { setHeaders: setPanelCacheHeaders }));
 
     app.get("/", (req, res) => {
-      res.sendFile(__dirname + "/public/index.html");
+      res.sendFile(path.join(PUBLIC_DIR, "index.html"), {
+        headers: { "Cache-Control": INDEX_CACHE_CONTROL },
+      });
     });
 
     open("http://localhost:" + port);
