@@ -195,17 +195,27 @@ export async function updateSettings(
        * between reading readiness, writing the value and verifying it.
        */
       while (!result && i > 0 && Date.now() < giveUpAt) {
-        result = await onUnit(s.unit, () =>
-          updateSetting(
-            `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
-            `http://${ip}/sdscep?sys140=${s.value}&${timestamp}`,
-            `http://${ip}/get_sys[141]`,
-            `http://${ip}/get_sys[100]?rn=16&${timestamp}`,
-            s.index,
-            s.value,
-            timeout
-          )
-        );
+        try {
+          result = await onUnit(s.unit, () =>
+            updateSetting(
+              `http://${ip}/sdscep?sys141=${s.index}&${timestamp}`,
+              `http://${ip}/sdscep?sys140=${s.value}&${timestamp}`,
+              `http://${ip}/get_sys[141]`,
+              `http://${ip}/get_sys[100]?rn=16&${timestamp}`,
+              s.index,
+              s.value,
+              timeout
+            )
+          );
+        } catch (err) {
+          /*
+           * `onUnit` rejects when a job passes the queue deadline, and
+           * `updateSetting` itself never rejects. The route awaits this
+           * function with no catch, so an escaping rejection ends the backend
+           * process. Count it as a failed attempt and let the caps stop us.
+           */
+          result = false;
+        }
         if (result === false) {
           await wait(75);
         }
