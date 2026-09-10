@@ -174,16 +174,24 @@ export class AppManager {
     return data;
   }
 
-  private async getVersions(): Promise<Versions> {
+  /*
+   * Returns undefined on a body that is valid JSON but not a versions file.
+   *
+   * Versions only feed the display string in the header. Failing the config
+   * step over them would keep AppState short of Ok, so MainView never mounts
+   * and the panel does no polling, no watchdog and no alarms. A bad body fails
+   * the same way on every retry, so that would last until someone visits.
+   *
+   * A request that fails still rejects, so a configer outage keeps retrying.
+   */
+  private async getVersions(): Promise<Maybe<Versions>> {
     const { data } = await requestJson(`${CONFIGER_API_URL}/version`, {
       timeout: CONFIGER_TIMEOUT,
     });
-    /*
-     * A body that is valid JSON but not a versions file would otherwise reach
-     * the store, and the panel would report config success with blank version
-     * fields.
-     */
-    if (!isInstanceOfVersions(data)) throw "Versions file error";
+    if (!isInstanceOfVersions(data)) {
+      console.error("Versions file error", data);
+      return undefined;
+    }
     return data;
   }
 
@@ -192,7 +200,7 @@ export class AppManager {
     const versions = await this.getVersions();
     if (isInstanceOfConfig(config)) {
       this.configStore.setConfig(config);
-      this.versionsStore.setVersions(versions);
+      if (versions !== undefined) this.versionsStore.setVersions(versions);
       return "Ok";
     } else {
       throw "Config file error";
