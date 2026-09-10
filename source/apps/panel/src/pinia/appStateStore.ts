@@ -8,6 +8,12 @@ export const useAppStateStore = defineStore("appState", {
     state: AppState.Loading as AppState,
     done: [undefined, undefined] as Maybe<boolean>[],
     message: undefined as Maybe<string>,
+    /*
+     * performance.now() is monotonic, unlike Date.now().
+     * These panels run for months, so an NTP step backwards must not stall the boot screen.
+     */
+    startedAt: performance.now(),
+    okScheduled: false,
   }),
   actions: {
     setConfigSuccess() {
@@ -37,11 +43,20 @@ export const useAppStateStore = defineStore("appState", {
       this.checkState();
     },
     checkState() {
-      if (this.done.every((d) => d === true)) {
-        setTimeout(() => {
-          this.state = AppState.Ok;
-        }, 500);
+      if (this.okScheduled || !this.done.every((d) => d === true)) {
+        return;
       }
+      this.okScheduled = true;
+
+      // Show the boot screen for at least a second so it does not flash by.
+      const MIN_BOOT_SCREEN_MS = 1000;
+      const remaining = Math.max(
+        0,
+        MIN_BOOT_SCREEN_MS - (performance.now() - this.startedAt),
+      );
+      setTimeout(() => {
+        this.state = AppState.Ok;
+      }, remaining);
     },
   },
 });
