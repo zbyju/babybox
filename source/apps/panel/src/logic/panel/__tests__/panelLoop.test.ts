@@ -8,7 +8,17 @@ vi.mock("@/api/units", () => ({
   getStatus: vi.fn(),
 }));
 
-import { getEngineData, getThermalData, updateWatchdog } from "@/api/units";
+vi.mock("@/api/http", () => ({
+  requestJson: vi.fn(),
+}));
+
+import { requestJson } from "@/api/http";
+import {
+  getEngineData,
+  getStatus,
+  getThermalData,
+  updateWatchdog,
+} from "@/api/units";
 
 import { AppManager } from "../panelLoop";
 
@@ -119,5 +129,72 @@ describe("AppManager unit loop", () => {
     await step(60000);
 
     expect(vi.mocked(getThermalData).mock.calls.length).toBe(before);
+  });
+});
+
+describe("AppManager startup retries", () => {
+  let manager: AppManager;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setActivePinia(createPinia());
+    vi.mocked(requestJson).mockRejectedValue(new Error("configer down"));
+    vi.mocked(getStatus).mockRejectedValue(new Error("backend down"));
+    manager = new AppManager();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.useRealTimers();
+  });
+
+  it("runs the first attempt without waiting", async () => {
+    await manager.initializeGlobal();
+    await drain();
+
+    expect(getStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it("backs the retries off from 5 s to 20 s", async () => {
+    await manager.initializeGlobal();
+    await drain();
+
+    for (const [wait, calls] of [
+      [5000, 2],
+      [10000, 3],
+      [20000, 4],
+      [20000, 5],
+    ]) {
+      vi.advanceTimersByTime(wait - 1);
+      await drain();
+      expect(getStatus).toHaveBeenCalledTimes(calls - 1);
+
+      vi.advanceTimersByTime(1);
+      await drain();
+      expect(getStatus).toHaveBeenCalledTimes(calls);
+    }
+  });
+
+  it("stops retrying once both answer", async () => {
+    vi.mocked(requestJson).mockRejectedValue(new Error("configer down"));
+    vi.mocked(getStatus).mockResolvedValue(true);
+
+    await manager.initializeGlobal();
+    await drain();
+    expect(getStatus).toHaveBeenCalledTimes(1);
+
+    /* Config still fails, so the chain must keep going. */
+    vi.advanceTimersByTime(5000);
+    await drain();
+    expect(getStatus).toHaveBeenCalledTimes(2);
+
+    vi.mocked(requestJson).mockResolvedValue({ data: {} } as never);
+    vi.advanceTimersByTime(10000);
+    await drain();
+
+    const settled = vi.mocked(getStatus).mock.calls.length;
+    vi.advanceTimersByTime(60000);
+    await drain();
+    expect(getStatus).toHaveBeenCalledTimes(settled);
   });
 });

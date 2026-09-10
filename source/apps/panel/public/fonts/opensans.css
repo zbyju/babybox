@@ -1,69 +1,86 @@
-@font-face {
-  font-family: "Open Sans";
-  src: local("Open Sans"), url(./OpenSans-Regular.ttf) format("truetype");
-  font-style: normal;
-  font-weight: normal;
-}
+/*
+ * Open Sans is shipped with the panel, not loaded from the internet.
+ * The panel runs on hospital machines that can be offline,
+ * so an external font host would leave the UI on a fallback font.
+ * Linked from index.html.
+ */
 
 @font-face {
   font-family: "Open Sans";
-  src: url(./OpenSans-Italic.ttf) format("truetype");
-  font-style: italic;
-  font-weight: normal;
-}
-
-@font-face {
-  font-family: "Open Sans";
-  src: url(./OpenSans-Light.ttf) format("truetype");
+  src: url("./OpenSans-Light.ttf") format("truetype");
   font-style: normal;
   font-weight: 300;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Open Sans";
-  src: url(./OpenSans-LightItalic.ttf) format("truetype");
+  src: url("./OpenSans-LightItalic.ttf") format("truetype");
   font-style: italic;
   font-weight: 300;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Open Sans";
-  src: url(./OpenSans-SemiBold.ttf) format("truetype");
+  src: url("./OpenSans-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Open Sans";
+  src: url("./OpenSans-Italic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Open Sans";
+  src: url("./OpenSans-SemiBold.ttf") format("truetype");
   font-style: normal;
   font-weight: 600;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Open Sans";
-  src: url(./OpenSans-SemiBoldItalic.ttf) format("truetype");
+  src: url("./OpenSans-SemiBoldItalic.ttf") format("truetype");
   font-style: italic;
   font-weight: 600;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Open Sans";
-  src: url(./OpenSans-Bold.ttf) format("truetype");
+  src: url("./OpenSans-Bold.ttf") format("truetype");
   font-style: normal;
   font-weight: 700;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Open Sans";
-  src: url(./OpenSans-BoldItalic.ttf) format("truetype");
+  src: url("./OpenSans-BoldItalic.ttf") format("truetype");
   font-style: italic;
   font-weight: 700;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Open Sans";
-  src: url(./OpenSans-ExtraBold.ttf) format("truetype");
+  src: url("./OpenSans-ExtraBold.ttf") format("truetype");
   font-style: normal;
   font-weight: 800;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Open Sans";
-  src: url(./OpenSans-ExtraBoldItalic.ttf) format("truetype");
+  src: url("./OpenSans-ExtraBoldItalic.ttf") format("truetype");
   font-style: italic;
   font-weight: 800;
+  font-display: swap;
 }

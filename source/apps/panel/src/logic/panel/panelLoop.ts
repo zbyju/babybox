@@ -246,12 +246,13 @@ export class AppManager {
 
   /*
    * Retries config and backend startup until both answer.
-   * The next attempt is scheduled after the current one settles,
+   * The first attempt runs at once, so a healthy boot is not held back.
+   * Each later attempt is scheduled after the current one settles,
    * so a hanging backend cannot collect overlapping status requests.
    */
   async initializeGlobal(): Promise<any> {
     /*
-     * Backs off from 5 s to 20 s.
+     * Retries back off from 5 s to 20 s.
      * The old code meant to retry at 20 s but setInterval had already captured
      * 5 s, so it stayed at 5 s. A flat 20 s would add up to 15 s of blank
      * screen with no watchdog when the backend is only a little slow to boot,
@@ -288,11 +289,11 @@ export class AppManager {
 
       if (configOk && backendOk) return;
 
-      delay = Math.min(delay * 2, MAX_INIT_DELAY);
       setTimeout(attempt, delay);
+      delay = Math.min(delay * 2, MAX_INIT_DELAY);
     };
 
-    setTimeout(attempt, FIRST_INIT_DELAY);
+    attempt();
   }
 
   private nextDelay(): number {
