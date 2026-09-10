@@ -16,8 +16,12 @@ export class ConnectionTracker {
    * a tick can take several times the poll delay and a count of failures no
    * longer says how long the unit has been unreachable.
    *
-   * Measured against result timestamps, not the clock, so time in which the
-   * panel sent nothing at all (the loop is stopped) does not count as downtime.
+   * Sampled only when a result arrives, so time in which the panel sent
+   * nothing at all (the loop is stopped) does not count as downtime.
+   *
+   * Read from performance.now, which is monotonic. The panel runs unattended
+   * for months, and an NTP step on Date.now would make this negative or jump
+   * it past the alarm threshold.
    */
   failStreakMs: number;
   private failStreakStartedAt: number;
@@ -37,7 +41,7 @@ export class ConnectionTracker {
   }
 
   addResult(res: ConnectionResult) {
-    const now = Date.now();
+    const now = performance.now();
     this.requests++;
 
     if (res === ConnectionResult.Success) {

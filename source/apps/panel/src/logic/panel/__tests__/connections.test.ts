@@ -2,10 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ConnectionResult, ConnectionTracker } from "../connections";
 
+/*
+ * failStreakMs reads performance.now, so the tests move the fake clock with
+ * advanceTimersByTime. setSystemTime would only move Date.now.
+ */
 describe("ConnectionTracker failStreakMs", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(0);
   });
 
   afterEach(() => {
@@ -15,7 +18,7 @@ describe("ConnectionTracker failStreakMs", () => {
   it("stays at zero on the first failure", () => {
     const tracker = new ConnectionTracker();
 
-    vi.setSystemTime(5000);
+    vi.advanceTimersByTime(5000);
     tracker.addResult(ConnectionResult.Fail);
 
     expect(tracker.failStreakMs).toBe(0);
@@ -24,9 +27,9 @@ describe("ConnectionTracker failStreakMs", () => {
   it("measures from the first failure of the streak, not from the start", () => {
     const tracker = new ConnectionTracker();
 
-    vi.setSystemTime(5000);
+    vi.advanceTimersByTime(5000);
     tracker.addResult(ConnectionResult.Fail);
-    vi.setSystemTime(17000);
+    vi.advanceTimersByTime(12000);
     tracker.addResult(ConnectionResult.Fail);
 
     expect(tracker.failStreakMs).toBe(12000);
@@ -36,7 +39,7 @@ describe("ConnectionTracker failStreakMs", () => {
     const tracker = new ConnectionTracker();
 
     tracker.addResult(ConnectionResult.Fail);
-    vi.setSystemTime(600000);
+    vi.advanceTimersByTime(600000);
 
     expect(tracker.failStreakMs).toBe(0);
   });
@@ -45,9 +48,9 @@ describe("ConnectionTracker failStreakMs", () => {
     const tracker = new ConnectionTracker();
 
     tracker.addResult(ConnectionResult.Fail);
-    vi.setSystemTime(12000);
+    vi.advanceTimersByTime(12000);
     tracker.addResult(ConnectionResult.Fail);
-    vi.setSystemTime(24000);
+    vi.advanceTimersByTime(12000);
     tracker.addResult(ConnectionResult.Success);
 
     expect(tracker.failStreakMs).toBe(0);
@@ -57,13 +60,24 @@ describe("ConnectionTracker failStreakMs", () => {
     const tracker = new ConnectionTracker();
 
     tracker.addResult(ConnectionResult.Fail);
-    vi.setSystemTime(12000);
+    vi.advanceTimersByTime(12000);
     tracker.addResult(ConnectionResult.Success);
-    vi.setSystemTime(24000);
+    vi.advanceTimersByTime(12000);
     tracker.addResult(ConnectionResult.Fail);
-    vi.setSystemTime(36000);
+    vi.advanceTimersByTime(12000);
     tracker.addResult(ConnectionResult.Fail);
 
     expect(tracker.failStreakMs).toBe(12000);
+  });
+
+  it("stays positive when the wall clock steps backward", () => {
+    const tracker = new ConnectionTracker();
+
+    tracker.addResult(ConnectionResult.Fail);
+    vi.advanceTimersByTime(30000);
+    vi.setSystemTime(Date.now() - 60000);
+    tracker.addResult(ConnectionResult.Fail);
+
+    expect(tracker.failStreakMs).toBe(30000);
   });
 });
