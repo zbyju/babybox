@@ -177,7 +177,6 @@ BASE_PACKAGES=(
   curl wget git ca-certificates gnupg unzip jq
   net-tools dnsutils traceroute mtr-tiny nmap ethtool
   htop vim tree lsof
-  fonts-open-sans
 )
 MISSING_PACKAGES=()
 for pkg in "${BASE_PACKAGES[@]}"; do
