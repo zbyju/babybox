@@ -1,8 +1,10 @@
 import {
   copyFileSync,
   existsSync,
+  fsyncSync,
   mkdtempSync,
   readFileSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -10,6 +12,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultConfigDir, mainConfig } from "./main";
+
+// Pass-through spies: a test can check the call order or make one call throw.
+vi.mock("node:fs", async () => {
+  const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+  return {
+    ...actual,
+    fsyncSync: vi.fn(actual.fsyncSync),
+    renameSync: vi.fn(actual.renameSync),
+  };
+});
 
 const repoBase = join(defaultConfigDir, "base.json");
 
@@ -177,6 +189,19 @@ describe("update", () => {
       ...base(),
       babybox: { name: "druhy" },
     });
+  });
+
+  it("fsyncs the data before the rename and the directory after it", async () => {
+    const db = await mainConfig(configDir);
+    vi.mocked(fsyncSync).mockClear();
+    vi.mocked(renameSync).mockClear();
+
+    await db.update({ babybox: { name: "Brno" } });
+
+    const [dataSync, dirSync] = vi.mocked(fsyncSync).mock.invocationCallOrder;
+    const [rename] = vi.mocked(renameSync).mock.invocationCallOrder;
+    expect(dataSync).toBeLessThan(rename);
+    expect(rename).toBeLessThan(dirSync);
   });
 
   it("leaves no temp file behind", async () => {

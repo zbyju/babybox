@@ -28,6 +28,22 @@ export const defaultConfigDir = join(
   "../../../configs"
 );
 
+/*
+ * A rename is durable only once the directory entry is on disk too. ext4 commits
+ * it on its own schedule, so a power cut soon after the rename could leave the
+ * old main.json in place with the new one still in main.json.tmp.
+ * Windows cannot open a directory for fsync, and base.json ships pc.os: windows.
+ */
+function syncDir(dir: string): void {
+  if (process.platform === "win32") return;
+  const handle = openSync(dir, "r");
+  try {
+    fsyncSync(handle);
+  } finally {
+    closeSync(handle);
+  }
+}
+
 function parseFile(file: string): unknown {
   try {
     return JSON.parse(readFileSync(file, "utf-8")) as unknown;
@@ -91,6 +107,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
       closeSync(handle);
     }
     renameSync(tempFile, mainFile);
+    syncDir(configDir);
   }
 
   // Boot is not validated on purpose; an odd stored value must not stop the box.
