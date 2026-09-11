@@ -1,7 +1,6 @@
 import * as express from "express";
 import { Request, Response } from "express";
 import { DbFactory } from "../services/db/factory.js";
-import { isInstanceOfMainConfig } from "../types/main.types.js";
 export const router = express.Router();
 
 router.get("/main", async (req: Request, res: Response) => {
@@ -15,13 +14,12 @@ router.get(["/version", "/versions"], async (req: Request, res: Response) => {
 });
 
 router.put("/main", async (req: Request, res: Response) => {
-  const c = req.body;
-  if (!isInstanceOfMainConfig(c)) {
+  const main = await DbFactory.getMainDb();
+  const result = await main.update(req.body);
+  if (!result.ok) {
     return res
       .status(400)
-      .json({ msg: `${JSON.stringify(c)} is not a type of 'MainConfig'` });
+      .json({ msg: "Body is not a valid MainConfig", errors: result.errors });
   }
-  const main = await DbFactory.getMainDb();
-  await main.update(c);
-  return res.json(main.data());
+  return res.json(result.config);
 });
