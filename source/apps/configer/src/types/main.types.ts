@@ -5,8 +5,9 @@ export interface ConfigError {
 
 /*
  * The camera names the panel understands, see
- * apps/panel/src/utils/panel/camera.ts. Letter case is ignored when we check a
- * value, because deployed main.json files use "DAHUA" as well as "dahua".
+ * apps/panel/src/utils/panel/camera.ts. The panel lower-cases the value and looks
+ * for one of these names inside it, so "DAHUA" and "Dahua IPC" both work there.
+ * The check here uses the same rule, so every value the panel accepts passes.
  */
 export const cameraTypes = [
   "dahua",
@@ -162,8 +163,15 @@ function checkOneOf(
   }
 }
 
-function lowerCased(value: unknown): unknown {
-  return typeof value === "string" ? value.toLowerCase() : value;
+function checkCameraType(
+  errors: ConfigError[],
+  value: unknown,
+  path: string
+): void {
+  const lower = typeof value === "string" ? value.toLowerCase() : "";
+  if (!cameraTypes.some((name) => lower.includes(name))) {
+    errors.push({ path, msg: `must contain one of: ${cameraTypes.join(", ")}` });
+  }
 }
 
 export type ParseResult =
@@ -269,12 +277,7 @@ export function validateMainConfig(config: unknown): ConfigError[] {
     checkString(errors, camera.username, "camera.username");
     checkString(errors, camera.password, "camera.password");
     checkInteger(errors, camera.updateDelay, "camera.updateDelay", positive);
-    checkOneOf(
-      errors,
-      lowerCased(camera.cameraType),
-      "camera.cameraType",
-      cameraTypes
-    );
+    checkCameraType(errors, camera.cameraType, "camera.cameraType");
   }
 
   const pc = checkObject(errors, root.pc, "pc", ["os"]);

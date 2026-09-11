@@ -87,10 +87,12 @@ Context · Decision · Why · Gave up · Where
   supports. The backend does not read `cameraType` at all; the panel does, in
   `apps/panel/src/utils/panel/camera.ts`.
 - Decision: the allowed list is `dahua`, `hikvision`, `avtech`, `avm`, `vivotek`, and
-  the check lower-cases the value before comparing. `pc.os` stays an exact match.
+  the check uses the panel's rule: lower-case the value and accept it when it contains
+  one of the names. `pc.os` stays an exact match.
 - Why: deployed `main.json` files hold `DAHUA` as well as `dahua`, and the panel
-  matches case-insensitively. A stricter check would reject a config that works today.
-  `pc.os` is compared with `=== "ubuntu"` in the backend, so there case does matter.
+  matches by substring, so `Dahua IPC` works there too. A stricter check would reject
+  a config that works today. `pc.os` is compared with `=== "ubuntu"` in the backend,
+  so there case does matter.
 - Gave up: the TS type is the lower-case union while the check accepts any case. The
   gap is deliberate; closing it would mean rewriting a value the maintainer typed.
 - Where: `source/apps/configer/src/types/main.types.ts`.

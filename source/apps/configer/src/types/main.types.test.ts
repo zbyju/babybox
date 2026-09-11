@@ -138,6 +138,13 @@ describe("validateMainConfig", () => {
     expect(validateMainConfig(config)).toEqual([]);
   });
 
+  it("accepts a camera type with extra text, like the panel does", () => {
+    const config = baseConfig();
+    config.camera = { ...(config.camera as object), cameraType: "Dahua IPC" };
+
+    expect(validateMainConfig(config)).toEqual([]);
+  });
+
   it("rejects an unknown camera type", () => {
     const config = baseConfig();
     config.camera = { ...(config.camera as object), cameraType: "axis" };
