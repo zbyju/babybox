@@ -1,3 +1,27 @@
+export interface ConfigError {
+  path: string;
+  msg: string;
+}
+
+/*
+ * The camera names the panel understands, see
+ * apps/panel/src/utils/panel/camera.ts. Letter case is ignored when we check a
+ * value, because deployed main.json files use "DAHUA" as well as "dahua".
+ */
+export const cameraTypes = [
+  "dahua",
+  "hikvision",
+  "avtech",
+  "avm",
+  "vivotek",
+] as const;
+
+export type MainConfigCameraType = (typeof cameraTypes)[number];
+
+export const pcOsTypes = ["windows", "ubuntu"] as const;
+
+export type MainConfigPcOs = (typeof pcOsTypes)[number];
+
 export interface MainConfig {
   babybox: MainConfigBabybox;
   backend: MainConfigBackend;
@@ -9,35 +33,8 @@ export interface MainConfig {
   app: MainConfigApp;
 }
 
-export function isInstanceOfMainConfig(obj: any): obj is MainConfig {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "babybox" in obj &&
-    "backend" in obj &&
-    "configer" in obj &&
-    "units" in obj &&
-    "camera" in obj &&
-    "pc" in obj &&
-    "app" in obj &&
-    isInstanceOfMainConfigApp(obj.app) &&
-    isInstanceOfMainConfigBabybox(obj.babybox) &&
-    isInstanceOfMainConfigBackend(obj.backend) &&
-    isInstanceOfMainConfigConfiger(obj.configer) &&
-    isInstanceOfMainConfigUnits(obj.units) &&
-    isInstanceOfMainConfigCamera(obj.camera) &&
-    isInstanceOfMainConfigPc(obj.pc)
-  );
-}
-
 export interface MainConfigBabybox {
   name: string;
-}
-
-export function isInstanceOfMainConfigBabybox(
-  obj: any
-): obj is MainConfigBabybox {
-  if (!obj || typeof obj !== "object") return false;
-  return "name" in obj && typeof obj.name === "string";
 }
 
 export interface MainConfigBackend {
@@ -46,61 +43,21 @@ export interface MainConfigBackend {
   requestTimeout: number;
 }
 
-export function isInstanceOfMainConfigBackend(
-  obj: any
-): obj is MainConfigBackend {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "url" in obj &&
-    "port" in obj &&
-    "requestTimeout" in obj &&
-    typeof obj.url === "string" &&
-    Number.isInteger(obj.port) &&
-    Number.isInteger(obj.requestTimeout)
-  );
-}
-
 export interface MainConfigConfiger {
   url: string;
   port: number;
   requestTimeout: number;
 }
 
-export function isInstanceOfMainConfigConfiger(
-  obj: any
-): obj is MainConfigConfiger {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "url" in obj &&
-    "port" in obj &&
-    "requestTimeout" in obj &&
-    typeof obj.url === "string" &&
-    Number.isInteger(obj.port) &&
-    Number.isInteger(obj.requestTimeout)
-  );
-}
-
 export interface MainConfigStartup {}
 
 export interface MainConfigUnits {
+  engine: MainConfigUnit;
+  thermal: MainConfigUnit;
   requestDelay: number;
   warningThreshold: number;
   errorThreshold: number;
   voltage: MainConfigVoltage;
-}
-
-export function isInstanceOfMainConfigUnits(obj: any): obj is MainConfigUnits {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "requestDelay" in obj &&
-    "warningThreshold" in obj &&
-    "errorThreshold" in obj &&
-    "voltage" in obj &&
-    Number.isInteger(obj.requestDelay) &&
-    Number.isInteger(obj.warningThreshold) &&
-    Number.isInteger(obj.errorThreshold) &&
-    isInstanceOfMainConfigVoltage(obj.voltage)
-  );
 }
 
 export interface MainConfigVoltage {
@@ -109,27 +66,8 @@ export interface MainConfigVoltage {
   addition: number;
 }
 
-export function isInstanceOfMainConfigVoltage(
-  obj: any
-): obj is MainConfigVoltage {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "divider" in obj &&
-    "multiplier" in obj &&
-    "addition" in obj &&
-    Number.isInteger(obj.divider) &&
-    Number.isInteger(obj.multiplier) &&
-    Number.isInteger(obj.addition)
-  );
-}
-
 export interface MainConfigUnit {
   ip: string;
-}
-
-export function isInstanceOfMainConfigUnit(obj: any): obj is MainConfigUnit {
-  if (!obj || typeof obj !== "object") return false;
-  return "ip" in obj && typeof obj.ip === "string";
 }
 
 export interface MainConfigCamera {
@@ -137,39 +75,11 @@ export interface MainConfigCamera {
   username: string;
   password: string;
   updateDelay: number;
-  cameraType: string;
-}
-
-export function isInstanceOfMainConfigCamera(
-  obj: any
-): obj is MainConfigCamera {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "ip" in obj &&
-    "username" in obj &&
-    "password" in obj &&
-    "updateDelay" in obj &&
-    "cameraType" in obj &&
-    typeof obj.ip === "string" &&
-    typeof obj.username === "string" &&
-    typeof obj.password === "string" &&
-    typeof obj.cameraType === "string" &&
-    ["dahua", "avtech", "vivotek"].includes(obj.cameraType) &&
-    Number.isInteger(obj.updateDelay)
-  );
+  cameraType: MainConfigCameraType;
 }
 
 export interface MainConfigPc {
-  os: "windows" | "ubuntu";
-}
-
-export function isInstanceOfMainConfigPc(obj: any): obj is MainConfigPc {
-  if (!obj || typeof obj !== "object") return false;
-  return (
-    "os" in obj &&
-    typeof obj.os === "string" &&
-    ["windows", "ubuntu"].includes(obj.os)
-  );
+  os: MainConfigPcOs;
 }
 
 export interface MainConfigApp {
@@ -177,7 +87,122 @@ export interface MainConfigApp {
   refreshRequestLimit?: number;
 }
 
-export function isInstanceOfMainConfigApp(obj: any): obj is MainConfigApp {
-  if (!obj || typeof obj !== "object") return false;
-  return "password" in obj && typeof obj.password === "string";
+type Fields = Record<string, unknown>;
+
+function isFields(value: unknown): value is Fields {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function checkObject(
+  errors: ConfigError[],
+  value: unknown,
+  path: string
+): Fields | undefined {
+  if (isFields(value)) return value;
+  errors.push({ path, msg: "must be an object" });
+  return undefined;
+}
+
+function checkString(
+  errors: ConfigError[],
+  value: unknown,
+  path: string
+): void {
+  if (typeof value !== "string") errors.push({ path, msg: "must be a string" });
+}
+
+function checkInteger(
+  errors: ConfigError[],
+  value: unknown,
+  path: string
+): void {
+  if (!Number.isInteger(value)) errors.push({ path, msg: "must be an integer" });
+}
+
+function checkOneOf(
+  errors: ConfigError[],
+  value: unknown,
+  path: string,
+  allowed: readonly string[]
+): void {
+  if (typeof value !== "string" || !allowed.includes(value)) {
+    errors.push({ path, msg: `must be one of: ${allowed.join(", ")}` });
+  }
+}
+
+function lowerCased(value: unknown): unknown {
+  return typeof value === "string" ? value.toLowerCase() : value;
+}
+
+/*
+ * The one shape check for main.json. Returns every problem it finds, each with a
+ * dotted path, so a caller can point at the field that is wrong.
+ */
+export function validateMainConfig(config: unknown): ConfigError[] {
+  const errors: ConfigError[] = [];
+  const root = checkObject(errors, config, "");
+  if (!root) return errors;
+
+  const babybox = checkObject(errors, root.babybox, "babybox");
+  if (babybox) checkString(errors, babybox.name, "babybox.name");
+
+  for (const service of ["backend", "configer"] as const) {
+    const fields = checkObject(errors, root[service], service);
+    if (!fields) continue;
+    checkString(errors, fields.url, `${service}.url`);
+    checkInteger(errors, fields.port, `${service}.port`);
+    checkInteger(errors, fields.requestTimeout, `${service}.requestTimeout`);
+  }
+
+  checkObject(errors, root.startup, "startup");
+
+  const units = checkObject(errors, root.units, "units");
+  if (units) {
+    for (const unit of ["engine", "thermal"] as const) {
+      const fields = checkObject(errors, units[unit], `units.${unit}`);
+      if (fields) checkString(errors, fields.ip, `units.${unit}.ip`);
+    }
+    checkInteger(errors, units.requestDelay, "units.requestDelay");
+    checkInteger(errors, units.warningThreshold, "units.warningThreshold");
+    checkInteger(errors, units.errorThreshold, "units.errorThreshold");
+
+    const voltage = checkObject(errors, units.voltage, "units.voltage");
+    if (voltage) {
+      checkInteger(errors, voltage.divider, "units.voltage.divider");
+      checkInteger(errors, voltage.multiplier, "units.voltage.multiplier");
+      checkInteger(errors, voltage.addition, "units.voltage.addition");
+    }
+  }
+
+  const camera = checkObject(errors, root.camera, "camera");
+  if (camera) {
+    checkString(errors, camera.ip, "camera.ip");
+    checkString(errors, camera.username, "camera.username");
+    checkString(errors, camera.password, "camera.password");
+    checkInteger(errors, camera.updateDelay, "camera.updateDelay");
+    checkOneOf(
+      errors,
+      lowerCased(camera.cameraType),
+      "camera.cameraType",
+      cameraTypes
+    );
+  }
+
+  const pc = checkObject(errors, root.pc, "pc");
+  // Exact match: the backend compares `pc.os === "ubuntu"`.
+  if (pc) checkOneOf(errors, pc.os, "pc.os", pcOsTypes);
+
+  const app = checkObject(errors, root.app, "app");
+  if (app) {
+    checkString(errors, app.password, "app.password");
+    if (app.refreshRequestLimit !== undefined) {
+      checkInteger(errors, app.refreshRequestLimit, "app.refreshRequestLimit");
+    }
+  }
+
+  return errors;
+}
+
+export function isInstanceOfMainConfig(obj: unknown): obj is MainConfig {
+  return validateMainConfig(obj).length === 0;
 }
