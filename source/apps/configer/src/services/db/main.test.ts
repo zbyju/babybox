@@ -139,6 +139,20 @@ describe("update", () => {
     expect(db.data()).toEqual(base());
   });
 
+  it("rejects an empty body and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+    await db.update({ babybox: { name: "Brno" } });
+    const before = readFileSync(file("main.json"), "utf-8");
+
+    const result = await db.update({});
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [{ path: "", msg: "must not be empty" }],
+    });
+    expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
+  });
+
   it("keeps the previous content in main.json.bak", async () => {
     const db = await mainConfig(configDir);
     await db.update({ babybox: { name: "prvni" } });

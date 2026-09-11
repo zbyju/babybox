@@ -109,6 +109,14 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
     if (typeof body !== "object" || body === null || Array.isArray(body)) {
       return { ok: false, errors: [{ path: "", msg: "must be an object" }] };
     }
+    /*
+     * express.json() leaves req.body as {} when the Content-Type is not JSON, so a
+     * PUT with a forgotten header would merge nothing and reset the whole box to
+     * base.json. A real reset sends the full default body.
+     */
+    if (Object.keys(body).length === 0) {
+      return { ok: false, errors: [{ path: "", msg: "must not be empty" }] };
+    }
 
     const merged = merge(freshBase(), body);
     const errors = validateMainConfig(merged);
