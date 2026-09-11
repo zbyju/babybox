@@ -47,3 +47,6 @@ jobs:
 
       - name: Panel tests
         run: pnpm -F babybox-panel exec vitest run --environment jsdom
+
+      - name: Configer tests
+        run: pnpm -F babybox-panel-configer exec vitest run
