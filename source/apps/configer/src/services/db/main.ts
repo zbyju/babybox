@@ -15,6 +15,7 @@ import {
   ConfigError,
   MainConfig,
   isPlainObject,
+  parseMainConfig,
   validateMainConfig,
 } from "../../types/main.types.js";
 
@@ -180,12 +181,11 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
       };
     }
 
-    const merged: unknown = merge(freshBase(), body);
-    const errors = validateMainConfig(merged);
-    if (errors.length > 0) return { status: "invalid", errors };
+    const parsed = parseMainConfig(merge(freshBase(), body));
+    if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
 
     // Disk first: memory must never hold a config the disk does not have.
-    const config = merged as MainConfig;
+    const config = parsed.config;
     try {
       write(config);
     } catch (error) {

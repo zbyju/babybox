@@ -13,6 +13,11 @@ router.get(["/version", "/versions"], async (req: Request, res: Response) => {
   res.json(version.data());
 });
 
+/*
+ * A full replace: send the whole config. A key left out is filled from base.json,
+ * not from the stored config, so a partial body resets those keys to the default.
+ * A partial update waits for PATCH.
+ */
 router.put("/main", async (req: Request, res: Response) => {
   const main = await DbFactory.getMainDb();
   const result = await main.update(req.body);

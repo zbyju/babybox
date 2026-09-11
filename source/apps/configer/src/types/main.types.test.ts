@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { cameraTypes, validateMainConfig } from "./main.types";
+import { cameraTypes, parseMainConfig, validateMainConfig } from "./main.types";
 
 const baseFile = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -112,5 +112,20 @@ describe("validateMainConfig", () => {
     expect(validateMainConfig("nope")).toEqual([
       { path: "", msg: "must be an object" },
     ]);
+  });
+});
+
+describe("parseMainConfig", () => {
+  it("returns the config when it is valid", () => {
+    const config = baseConfig();
+
+    expect(parseMainConfig(config)).toEqual({ ok: true, config });
+  });
+
+  it("returns the errors when it is not", () => {
+    expect(parseMainConfig("nope")).toEqual({
+      ok: false,
+      errors: [{ path: "", msg: "must be an object" }],
+    });
   });
 });

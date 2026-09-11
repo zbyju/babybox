@@ -134,6 +134,17 @@ function lowerCased(value: unknown): unknown {
   return typeof value === "string" ? value.toLowerCase() : value;
 }
 
+export type ParseResult =
+  | { ok: true; config: MainConfig }
+  | { ok: false; errors: ConfigError[] };
+
+// The one place an unknown value becomes a MainConfig.
+export function parseMainConfig(value: unknown): ParseResult {
+  const errors = validateMainConfig(value);
+  if (errors.length > 0) return { ok: false, errors };
+  return { ok: true, config: value as MainConfig };
+}
+
 /*
  * The one shape check for main.json. Returns every problem it finds, each with a
  * dotted path, so a caller can point at the field that is wrong.
