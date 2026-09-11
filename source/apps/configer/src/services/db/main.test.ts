@@ -7,15 +7,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mainConfig } from "./main";
+import { defaultConfigDir, mainConfig } from "./main";
 
-const repoBase = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../../configs/base.json"
-);
+const repoBase = join(defaultConfigDir, "base.json");
 
 let configDir: string;
 

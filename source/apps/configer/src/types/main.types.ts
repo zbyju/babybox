@@ -202,7 +202,3 @@ export function validateMainConfig(config: unknown): ConfigError[] {
 
   return errors;
 }
-
-export function isInstanceOfMainConfig(obj: unknown): obj is MainConfig {
-  return validateMainConfig(obj).length === 0;
-}
