@@ -89,6 +89,16 @@ describe("boot", () => {
     expect(readJson("main.json.bak")).toEqual(backup);
   });
 
+  it("keeps the unreadable main.json as main.json.corrupt", async () => {
+    writeFileSync(file("main.json"), "{ not json");
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await mainConfig(configDir);
+
+    expect(readFileSync(file("main.json.corrupt"), "utf-8")).toBe("{ not json");
+  });
+
   it("falls back to base.json when both files are corrupt", async () => {
     writeFileSync(file("main.json"), "{ not json");
     writeFileSync(file("main.json.bak"), "also not json");

@@ -41,13 +41,25 @@ function parseFile(file: string): unknown {
  * A box with a corrupt main.json must still boot: without a config neither the
  * backend nor the panel starts, and that needs someone on site.
  */
-function loadStored(mainFile: string, backupFile: string): unknown {
+function loadStored(
+  mainFile: string,
+  backupFile: string,
+  corruptFile: string
+): unknown {
   if (!existsSync(mainFile)) return undefined;
 
   const stored = parseFile(mainFile);
   if (stored !== undefined) return stored;
 
-  console.warn(`${mainFile} does not parse, falling back to ${backupFile}`);
+  /*
+   * Boot rewrites main.json straight after this, so the unreadable file would be
+   * gone. Until the UI ships main.json is edited by hand on every box, and a typo
+   * plus a restart is a normal event; keep the edit for someone to recover from.
+   */
+  copyFileSync(mainFile, corruptFile);
+  console.warn(
+    `${mainFile} does not parse, kept as ${corruptFile}, falling back to ${backupFile}`
+  );
   const backup = parseFile(backupFile);
   if (backup !== undefined) return backup;
 
@@ -59,6 +71,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   const mainFile = join(configDir, "main.json");
   const backupFile = join(configDir, "main.json.bak");
   const tempFile = join(configDir, "main.json.tmp");
+  const corruptFile = join(configDir, "main.json.corrupt");
 
   const baseText = readFileSync(join(configDir, "base.json"), "utf-8");
   const freshBase = (): unknown => JSON.parse(baseText) as unknown;
@@ -81,7 +94,10 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   }
 
   // Boot is not validated on purpose; an odd stored value must not stop the box.
-  let data = merge(freshBase(), loadStored(mainFile, backupFile)) as MainConfig;
+  let data = merge(
+    freshBase(),
+    loadStored(mainFile, backupFile, corruptFile)
+  ) as MainConfig;
   write(data);
 
   /*
