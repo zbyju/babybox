@@ -89,7 +89,7 @@ export interface MainConfigApp {
 
 type Fields = Record<string, unknown>;
 
-function isFields(value: unknown): value is Fields {
+export function isPlainObject(value: unknown): value is Fields {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -98,7 +98,7 @@ function checkObject(
   value: unknown,
   path: string
 ): Fields | undefined {
-  if (isFields(value)) return value;
+  if (isPlainObject(value)) return value;
   errors.push({ path, msg: "must be an object" });
   return undefined;
 }

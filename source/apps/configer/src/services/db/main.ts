@@ -14,6 +14,7 @@ import merge from "lodash.merge";
 import {
   ConfigError,
   MainConfig,
+  isPlainObject,
   validateMainConfig,
 } from "../../types/main.types.js";
 
@@ -49,12 +50,30 @@ function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function parseFile(file: string): unknown {
+type StoredFile =
+  | { kind: "ok"; config: Record<string, unknown> }
+  | { kind: "corrupt" }
+  | { kind: "unreadable"; error: unknown };
+
+// Only a JSON object is a config: lodash.merge would spread a string or an array.
+function parseObject(text: string): Record<string, unknown> | undefined {
   try {
-    return JSON.parse(readFileSync(file, "utf-8")) as unknown;
+    const value = JSON.parse(text) as unknown;
+    return isPlainObject(value) ? value : undefined;
   } catch {
     return undefined;
   }
+}
+
+function readConfigFile(file: string): StoredFile {
+  let text: string;
+  try {
+    text = readFileSync(file, "utf-8");
+  } catch (error) {
+    return { kind: "unreadable", error };
+  }
+  const config = parseObject(text);
+  return config ? { kind: "ok", config } : { kind: "corrupt" };
 }
 
 /*
@@ -69,22 +88,30 @@ function loadStored(
 ): unknown {
   if (!existsSync(mainFile)) return undefined;
 
-  const stored = parseFile(mainFile);
-  if (stored !== undefined) return stored;
+  const stored = readConfigFile(mainFile);
+  if (stored.kind === "ok") return stored.config;
 
-  /*
-   * Boot rewrites main.json straight after this, so the unreadable file would be
-   * gone. Until the UI ships main.json is edited by hand on every box, and a typo
-   * plus a restart is a normal event; keep the edit for someone to recover from.
-   */
-  copyFileSync(mainFile, corruptFile);
-  console.warn(
-    `${mainFile} does not parse, kept as ${corruptFile}, falling back to ${backupFile}`
-  );
-  const backup = parseFile(backupFile);
-  if (backup !== undefined) return backup;
+  if (stored.kind === "unreadable") {
+    const reason = describe(stored.error);
+    console.error(
+      `cannot read ${mainFile}: ${reason}, falling back to ${backupFile}`
+    );
+  } else {
+    /*
+     * Boot rewrites main.json straight after this, so the unreadable file would be
+     * gone. Until the UI ships main.json is edited by hand on every box, and a typo
+     * plus a restart is a normal event; keep the edit for someone to recover from.
+     */
+    copyFileSync(mainFile, corruptFile);
+    console.warn(
+      `${mainFile} is not a JSON object, kept as ${corruptFile}, falling back to ${backupFile}`
+    );
+  }
 
-  console.error(`${backupFile} does not parse either, starting from base.json`);
+  const backup = readConfigFile(backupFile);
+  if (backup.kind === "ok") return backup.config;
+
+  console.error(`${backupFile} is not usable either, starting from base.json`);
   return undefined;
 }
 
@@ -99,10 +126,12 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
 
   function write(config: MainConfig): void {
     /*
-     * Only back up a file we could read. A corrupt main.json must never
-     * overwrite a good main.json.bak.
+     * Only back up a file we could read as a config. A corrupt main.json must
+     * never overwrite a good main.json.bak.
      */
-    if (parseFile(mainFile) !== undefined) copyFileSync(mainFile, backupFile);
+    if (readConfigFile(mainFile).kind === "ok") {
+      copyFileSync(mainFile, backupFile);
+    }
 
     const handle = openSync(tempFile, "w");
     try {
@@ -127,8 +156,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
    * leaves a key out gets the default, never a missing key.
    */
   async function update(body: unknown): Promise<UpdateResult> {
-    // lodash.merge would spread a string or an array over the defaults.
-    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    if (!isPlainObject(body)) {
       return {
         status: "invalid",
         errors: [{ path: "", msg: "must be an object" }],
@@ -146,13 +174,14 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
       };
     }
 
-    const merged = merge(freshBase(), body) as MainConfig;
+    const merged: unknown = merge(freshBase(), body);
     const errors = validateMainConfig(merged);
     if (errors.length > 0) return { status: "invalid", errors };
 
     // Disk first: memory must never hold a config the disk does not have.
+    const config = merged as MainConfig;
     try {
-      write(merged);
+      write(config);
     } catch (error) {
       console.error(`cannot write ${mainFile}:`, error);
       return {
@@ -160,7 +189,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
         msg: `cannot write main.json: ${describe(error)}`,
       };
     }
-    data = merged;
+    data = config;
     return { status: "saved", config: data };
   }
 

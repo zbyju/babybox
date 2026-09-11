@@ -19,6 +19,7 @@ vi.mock("node:fs", async () => {
   return {
     ...actual,
     fsyncSync: vi.fn(actual.fsyncSync),
+    readFileSync: vi.fn(actual.readFileSync),
     renameSync: vi.fn(actual.renameSync),
   };
 });
@@ -95,6 +96,43 @@ describe("boot", () => {
     await mainConfig(configDir);
 
     expect(readJson("main.json.bak")).toEqual(backup);
+  });
+
+  it("treats a main.json that is not an object as corrupt", async () => {
+    const backup = { babybox: { name: "ze zalohy" } };
+    writeFileSync(file("main.json.bak"), JSON.stringify(backup));
+    writeFileSync(file("main.json"), '"abc"');
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const db = await mainConfig(configDir);
+
+    expect(db.data().babybox.name).toBe("ze zalohy");
+    expect(readFileSync(file("main.json.corrupt"), "utf-8")).toBe('"abc"');
+    expect(readJson("main.json.bak")).toEqual(backup);
+  });
+
+  it("falls back without a .corrupt copy when main.json cannot be read", async () => {
+    const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+    writeFileSync(
+      file("main.json.bak"),
+      JSON.stringify({ babybox: { name: "ze zalohy" } })
+    );
+    writeFileSync(file("main.json"), JSON.stringify({ babybox: { name: "x" } }));
+    vi.mocked(readFileSync).mockImplementation(((path, options) => {
+      if (String(path).endsWith("main.json")) {
+        throw Object.assign(new Error("EACCES: permission denied"), {
+          code: "EACCES",
+        });
+      }
+      return actual.readFileSync(path, options);
+    }) as typeof readFileSync);
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const db = await mainConfig(configDir);
+
+    expect(db.data().babybox.name).toBe("ze zalohy");
+    expect(existsSync(file("main.json.corrupt"))).toBe(false);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("EACCES"));
   });
 
   it("keeps the unreadable main.json as main.json.corrupt", async () => {
