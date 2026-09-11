@@ -69,6 +69,30 @@ describe("validateMainConfig", () => {
     expect(validateMainConfig(config)).toEqual([]);
   });
 
+  it("rejects an unknown root key", () => {
+    const config = { ...baseConfig(), junk: "x" };
+
+    expect(validateMainConfig(config)).toEqual([
+      { path: "junk", msg: "unknown key" },
+    ]);
+  });
+
+  it("rejects an unknown nested key", () => {
+    const config = baseConfig();
+    config.babybox = { ...(config.babybox as object), junk: 1 };
+
+    expect(validateMainConfig(config)).toEqual([
+      { path: "babybox.junk", msg: "unknown key" },
+    ]);
+  });
+
+  it("accepts any key under startup", () => {
+    const config = baseConfig();
+    config.startup = { anything: true };
+
+    expect(validateMainConfig(config)).toEqual([]);
+  });
+
   it("rejects a missing startup key", () => {
     const config = baseConfig();
     delete config.startup;

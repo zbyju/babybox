@@ -94,14 +94,25 @@ export function isPlainObject(value: unknown): value is Fields {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// With keys given, every other key is reported, so junk never reaches disk.
 function checkObject(
   errors: ConfigError[],
   value: unknown,
-  path: string
+  path: string,
+  keys?: readonly string[]
 ): Fields | undefined {
-  if (isPlainObject(value)) return value;
-  errors.push({ path, msg: "must be an object" });
-  return undefined;
+  if (!isPlainObject(value)) {
+    errors.push({ path, msg: "must be an object" });
+    return undefined;
+  }
+  if (keys) {
+    for (const key of Object.keys(value)) {
+      if (!keys.includes(key)) {
+        errors.push({ path: path ? `${path}.${key}` : key, msg: "unknown key" });
+      }
+    }
+  }
+  return value;
 }
 
 function checkString(
@@ -172,14 +183,27 @@ export function parseMainConfig(value: unknown): ParseResult {
  */
 export function validateMainConfig(config: unknown): ConfigError[] {
   const errors: ConfigError[] = [];
-  const root = checkObject(errors, config, "");
+  const root = checkObject(errors, config, "", [
+    "babybox",
+    "backend",
+    "configer",
+    "startup",
+    "units",
+    "camera",
+    "pc",
+    "app",
+  ]);
   if (!root) return errors;
 
-  const babybox = checkObject(errors, root.babybox, "babybox");
+  const babybox = checkObject(errors, root.babybox, "babybox", ["name"]);
   if (babybox) checkString(errors, babybox.name, "babybox.name");
 
   for (const service of ["backend", "configer"] as const) {
-    const fields = checkObject(errors, root[service], service);
+    const fields = checkObject(errors, root[service], service, [
+      "url",
+      "port",
+      "requestTimeout",
+    ]);
     if (!fields) continue;
     checkString(errors, fields.url, `${service}.url`);
     checkInteger(errors, fields.port, `${service}.port`, port);
@@ -191,12 +215,20 @@ export function validateMainConfig(config: unknown): ConfigError[] {
     );
   }
 
+  // startup has no known shape, so any key is fine there.
   checkObject(errors, root.startup, "startup");
 
-  const units = checkObject(errors, root.units, "units");
+  const units = checkObject(errors, root.units, "units", [
+    "engine",
+    "thermal",
+    "requestDelay",
+    "warningThreshold",
+    "errorThreshold",
+    "voltage",
+  ]);
   if (units) {
     for (const unit of ["engine", "thermal"] as const) {
-      const fields = checkObject(errors, units[unit], `units.${unit}`);
+      const fields = checkObject(errors, units[unit], `units.${unit}`, ["ip"]);
       if (fields) checkString(errors, fields.ip, `units.${unit}.ip`);
     }
     checkInteger(errors, units.requestDelay, "units.requestDelay", positive);
@@ -208,7 +240,11 @@ export function validateMainConfig(config: unknown): ConfigError[] {
     );
     checkInteger(errors, units.errorThreshold, "units.errorThreshold", positive);
 
-    const voltage = checkObject(errors, units.voltage, "units.voltage");
+    const voltage = checkObject(errors, units.voltage, "units.voltage", [
+      "divider",
+      "multiplier",
+      "addition",
+    ]);
     if (voltage) {
       checkInteger(errors, voltage.divider, "units.voltage.divider", positive);
       checkInteger(
@@ -221,7 +257,13 @@ export function validateMainConfig(config: unknown): ConfigError[] {
     }
   }
 
-  const camera = checkObject(errors, root.camera, "camera");
+  const camera = checkObject(errors, root.camera, "camera", [
+    "ip",
+    "username",
+    "password",
+    "updateDelay",
+    "cameraType",
+  ]);
   if (camera) {
     checkString(errors, camera.ip, "camera.ip");
     checkString(errors, camera.username, "camera.username");
@@ -235,11 +277,14 @@ export function validateMainConfig(config: unknown): ConfigError[] {
     );
   }
 
-  const pc = checkObject(errors, root.pc, "pc");
+  const pc = checkObject(errors, root.pc, "pc", ["os"]);
   // Exact match: the backend compares `pc.os === "ubuntu"`.
   if (pc) checkOneOf(errors, pc.os, "pc.os", pcOsTypes);
 
-  const app = checkObject(errors, root.app, "app");
+  const app = checkObject(errors, root.app, "app", [
+    "password",
+    "refreshRequestLimit",
+  ]);
   if (app) {
     checkString(errors, app.password, "app.password");
     if (app.refreshRequestLimit !== undefined) {
