@@ -22,6 +22,7 @@ export const pcOsTypes = ["windows", "ubuntu"] as const;
 
 export type MainConfigPcOs = (typeof pcOsTypes)[number];
 
+// Every number is an integer, in the range validateMainConfig checks.
 export interface MainConfig {
   babybox: MainConfigBabybox;
   backend: MainConfigBackend;
@@ -111,12 +112,32 @@ function checkString(
   if (typeof value !== "string") errors.push({ path, msg: "must be a string" });
 }
 
+interface Range {
+  min?: number;
+  max?: number;
+}
+
+const port: Range = { min: 1, max: 65535 };
+const positive: Range = { min: 1 };
+
 function checkInteger(
   errors: ConfigError[],
   value: unknown,
-  path: string
+  path: string,
+  { min, max }: Range = {}
 ): void {
-  if (!Number.isInteger(value)) errors.push({ path, msg: "must be an integer" });
+  if (!Number.isInteger(value)) {
+    errors.push({ path, msg: "must be an integer" });
+    return;
+  }
+  const n = value as number;
+  if (min !== undefined && max !== undefined && (n < min || n > max)) {
+    errors.push({ path, msg: `must be between ${min} and ${max}` });
+  } else if (min !== undefined && n < min) {
+    errors.push({ path, msg: `must be at least ${min}` });
+  } else if (max !== undefined && n > max) {
+    errors.push({ path, msg: `must be at most ${max}` });
+  }
 }
 
 function checkOneOf(
@@ -161,8 +182,13 @@ export function validateMainConfig(config: unknown): ConfigError[] {
     const fields = checkObject(errors, root[service], service);
     if (!fields) continue;
     checkString(errors, fields.url, `${service}.url`);
-    checkInteger(errors, fields.port, `${service}.port`);
-    checkInteger(errors, fields.requestTimeout, `${service}.requestTimeout`);
+    checkInteger(errors, fields.port, `${service}.port`, port);
+    checkInteger(
+      errors,
+      fields.requestTimeout,
+      `${service}.requestTimeout`,
+      positive
+    );
   }
 
   checkObject(errors, root.startup, "startup");
@@ -173,14 +199,24 @@ export function validateMainConfig(config: unknown): ConfigError[] {
       const fields = checkObject(errors, units[unit], `units.${unit}`);
       if (fields) checkString(errors, fields.ip, `units.${unit}.ip`);
     }
-    checkInteger(errors, units.requestDelay, "units.requestDelay");
-    checkInteger(errors, units.warningThreshold, "units.warningThreshold");
-    checkInteger(errors, units.errorThreshold, "units.errorThreshold");
+    checkInteger(errors, units.requestDelay, "units.requestDelay", positive);
+    checkInteger(
+      errors,
+      units.warningThreshold,
+      "units.warningThreshold",
+      positive
+    );
+    checkInteger(errors, units.errorThreshold, "units.errorThreshold", positive);
 
     const voltage = checkObject(errors, units.voltage, "units.voltage");
     if (voltage) {
-      checkInteger(errors, voltage.divider, "units.voltage.divider");
-      checkInteger(errors, voltage.multiplier, "units.voltage.multiplier");
+      checkInteger(errors, voltage.divider, "units.voltage.divider", positive);
+      checkInteger(
+        errors,
+        voltage.multiplier,
+        "units.voltage.multiplier",
+        positive
+      );
       checkInteger(errors, voltage.addition, "units.voltage.addition");
     }
   }
@@ -190,7 +226,7 @@ export function validateMainConfig(config: unknown): ConfigError[] {
     checkString(errors, camera.ip, "camera.ip");
     checkString(errors, camera.username, "camera.username");
     checkString(errors, camera.password, "camera.password");
-    checkInteger(errors, camera.updateDelay, "camera.updateDelay");
+    checkInteger(errors, camera.updateDelay, "camera.updateDelay", positive);
     checkOneOf(
       errors,
       lowerCased(camera.cameraType),
@@ -207,7 +243,12 @@ export function validateMainConfig(config: unknown): ConfigError[] {
   if (app) {
     checkString(errors, app.password, "app.password");
     if (app.refreshRequestLimit !== undefined) {
-      checkInteger(errors, app.refreshRequestLimit, "app.refreshRequestLimit");
+      checkInteger(
+        errors,
+        app.refreshRequestLimit,
+        "app.refreshRequestLimit",
+        positive
+      );
     }
   }
 

@@ -40,6 +40,35 @@ describe("validateMainConfig", () => {
     });
   });
 
+  it("rejects a port outside 1..65535", () => {
+    const config = baseConfig();
+    config.configer = { ...(config.configer as object), port: 70000 };
+
+    expect(validateMainConfig(config)).toEqual([
+      { path: "configer.port", msg: "must be between 1 and 65535" },
+    ]);
+  });
+
+  it("rejects a delay below 1", () => {
+    const config = baseConfig();
+    config.units = { ...(config.units as object), requestDelay: 0 };
+
+    expect(validateMainConfig(config)).toEqual([
+      { path: "units.requestDelay", msg: "must be at least 1" },
+    ]);
+  });
+
+  it("accepts a negative voltage addition", () => {
+    const config = baseConfig();
+    const units = config.units as Record<string, unknown>;
+    config.units = {
+      ...units,
+      voltage: { ...(units.voltage as object), addition: -5 },
+    };
+
+    expect(validateMainConfig(config)).toEqual([]);
+  });
+
   it("rejects a missing startup key", () => {
     const config = baseConfig();
     delete config.startup;
