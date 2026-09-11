@@ -1,6 +1,6 @@
 # Config UI page
 
-Status: **not started**
+Status: **P0 in review**
 Owner: —
 Last updated: 2026-09-11
 
@@ -116,14 +116,14 @@ useful; the rest is unchanged.
 
 Nothing in the UI should be built on the current `PUT`.
 
-- [ ] Add `engine` and `thermal` to `MainConfigUnits` and to `isInstanceOfMainConfigUnits`
-- [ ] Add the `startup` key to `isInstanceOfMainConfig`
-- [ ] Merge the incoming body over `base.json` on write, the same way boot does
-- [ ] Write atomically: write to `main.json.tmp`, `fsync`, then rename over `main.json`
-- [ ] Keep the previous file as `main.json.bak` before the rename
-- [ ] On boot, fall back to `main.json.bak` when `main.json` fails to parse, and log it
-- [ ] Return field-level errors from `PUT`, not `JSON.stringify` of the whole body
-- [ ] Tests: a partial body does not lose keys; a corrupt file boots from the backup
+- [x] Add `engine` and `thermal` to `MainConfigUnits` and to the units check
+- [x] Add the `startup` key to the config check
+- [x] Merge the incoming body over `base.json` on write, the same way boot does
+- [x] Write atomically: write to `main.json.tmp`, `fsync`, then rename over `main.json`
+- [x] Keep the previous file as `main.json.bak` before the rename
+- [x] On boot, fall back to `main.json.bak` when `main.json` fails to parse, and log it
+- [x] Return field-level errors from `PUT`, not `JSON.stringify` of the whole body
+- [x] Tests: a partial body does not lose keys; a corrupt file boots from the backup
 
 Size: ~1 day. Worth doing on its own even if the UI is dropped.
 

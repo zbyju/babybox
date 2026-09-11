@@ -61,3 +61,40 @@ Context · Decision · Why · Gave up · Where
   [config-ui-agent-workflow.md](plans/config-ui-agent-workflow.md).
 - Why: the PR is the record. Anyone can read what was found and what was done.
 - Gave up: speed; a review round adds an hour.
+
+## 2026-09-11 — main.json is read and written with node:fs, not lowdb
+
+- Context: P0 needs an atomic write with a backup. lowdb's `JSONFile` truncates and
+  rewrites in place, so the write had to be ours anyway.
+- Decision: drop lowdb for `main.json` and use `node:fs` (open, write, fsync, rename).
+  `versions.json` stays on lowdb, it is read-only.
+- Why: once the write is ours, lowdb only wraps `readFileSync` and `JSON.parse`. One
+  layer fewer to reason about on the path that can kill a box.
+- Gave up: nothing. The on-disk format is the same, `JSON.stringify(config, null, 2)`,
+  which is exactly what lowdb wrote.
+- Where: `source/apps/configer/src/services/db/main.ts`, PR "feat: make writing the
+  config safe".
+
+## 2026-09-11 — The camera type list is the panel's list, and case does not matter
+
+- Context: the plan asked for a union of the camera types the rest of the system
+  supports. The backend does not read `cameraType` at all; the panel does, in
+  `apps/panel/src/utils/panel/camera.ts`.
+- Decision: the allowed list is `dahua`, `hikvision`, `avtech`, `avm`, `vivotek`, and
+  the check lower-cases the value before comparing. `pc.os` stays an exact match.
+- Why: deployed `main.json` files hold `DAHUA` as well as `dahua`, and the panel
+  matches case-insensitively. A stricter check would reject a config that works today.
+  `pc.os` is compared with `=== "ubuntu"` in the backend, so there case does matter.
+- Gave up: the TS type is the lower-case union while the check accepts any case. The
+  gap is deliberate; closing it would mean rewriting a value the maintainer typed.
+- Where: `source/apps/configer/src/types/main.types.ts`.
+
+## 2026-09-11 — A corrupt main.json never overwrites main.json.bak
+
+- Context: boot rewrites `main.json` after merging `base.json`. If it had backed up
+  first, recovering from a corrupt file would copy the corrupt file over the good
+  backup and lose the only copy.
+- Decision: take the backup only when the current `main.json` parses.
+- Why: one rule, no flag to pass around, and the backup can only ever hold a file we
+  managed to read.
+- Where: `write()` in `source/apps/configer/src/services/db/main.ts`.

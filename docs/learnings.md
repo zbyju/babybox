@@ -14,6 +14,9 @@ lesson: what happened, what to do instead.
   A warning printed by `tsc` or a package script fails the update on the box.
 - **Backend `tsc` picks up `bun-types` from a parent `node_modules`.** Pass
   `--typeRoots ./node_modules/@types` when you get TS1005/TS1139 noise.
+- **pnpm 7.5.0 cannot reach the registry on Node 20+** (`ERR_INVALID_THIS` from
+  undici). Resolution works on CI's Node 18.12.1. On a newer machine, seed the metadata
+  cache under `~/Library/Caches/pnpm/metadata` or install from a machine with Node 18.
 
 ## Configer
 
@@ -25,6 +28,11 @@ lesson: what happened, what to do instead.
 - **The db factory caches the init promise.** `mainConfig()` writes `main.json` on
   boot; two concurrent inits interleave writes. Do not call it directly, use
   `DbFactory.getMainDb()`.
+- **vitest 0.9.4 runs configer's ESM TypeScript with no config file**, but vite 2 does
+  not resolve a `.js` import specifier to a `.ts` file. Import without the extension in
+  `*.test.ts`; the rest of `src` keeps `.js` because `tsc` runs with `module: node16`.
+- **`lodash.merge` spreads a string source over the target** (`merge({}, "ab")` gives
+  `{0:"a",1:"b"}`). Reject a non-object body before merging it over the defaults.
 
 ## Process
 
