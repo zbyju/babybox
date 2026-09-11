@@ -109,8 +109,9 @@ describe("boot", () => {
 });
 
 describe("update", () => {
-  it("fills a partial body from base.json", async () => {
+  it("fills a partial body from base.json, not from the stored config", async () => {
     const db = await mainConfig(configDir);
+    await db.update({ camera: { ip: "10.1.1.99" } });
 
     const result = await db.update({ babybox: { name: "Brno" } });
 
@@ -133,6 +134,19 @@ describe("update", () => {
     });
     expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
     expect(db.data()).toEqual(base());
+  });
+
+  it("rejects a non-object body and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+    const before = readFileSync(file("main.json"), "utf-8");
+
+    const result = await db.update([]);
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [{ path: "", msg: "must be an object" }],
+    });
+    expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
   });
 
   it("rejects an empty body and writes nothing", async () => {

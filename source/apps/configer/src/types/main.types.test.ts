@@ -94,6 +94,20 @@ describe("validateMainConfig", () => {
     ]);
   });
 
+  it("rejects pc.os in a different case", () => {
+    const config = baseConfig();
+    config.pc = { ...(config.pc as object), os: "Ubuntu" };
+
+    expect(validateMainConfig(config).map((e) => e.path)).toEqual(["pc.os"]);
+  });
+
+  it("rejects an unknown pc.os", () => {
+    const config = baseConfig();
+    config.pc = { ...(config.pc as object), os: "linux" };
+
+    expect(validateMainConfig(config).map((e) => e.path)).toEqual(["pc.os"]);
+  });
+
   it("rejects a non-object", () => {
     expect(validateMainConfig("nope")).toEqual([
       { path: "", msg: "must be an object" },
