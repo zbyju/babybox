@@ -73,6 +73,19 @@ describe("boot", () => {
     expect(db.data().units.engine.ip).toBe("10.1.1.5");
   });
 
+  it("boots with a stored value PUT would reject, and warns", async () => {
+    writeFileSync(
+      file("main.json"),
+      JSON.stringify({ configer: { port: "8080" } })
+    );
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const db = await mainConfig(configDir);
+
+    expect(db.data().configer.port).toBe("8080");
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("configer.port"));
+  });
+
   it("boots from main.json.bak when main.json does not parse", async () => {
     writeFileSync(
       file("main.json.bak"),

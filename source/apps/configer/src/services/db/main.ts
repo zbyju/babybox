@@ -144,11 +144,17 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
     syncDir(configDir);
   }
 
-  // Boot is not validated on purpose; an odd stored value must not stop the box.
+  /*
+   * Boot never rejects: an odd stored value must not stop the box. It warns, so a
+   * value PUT would refuse shows in the log before the UI trips on it.
+   */
   let data = merge(
     freshBase(),
     loadStored(mainFile, backupFile, corruptFile)
   ) as MainConfig;
+  for (const { path, msg } of validateMainConfig(data)) {
+    console.warn(`${mainFile}: ${path} ${msg}`);
+  }
   write(data);
 
   /*
