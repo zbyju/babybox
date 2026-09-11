@@ -118,12 +118,13 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
       return { ok: false, errors: [{ path: "", msg: "must not be empty" }] };
     }
 
-    const merged = merge(freshBase(), body);
+    const merged = merge(freshBase(), body) as MainConfig;
     const errors = validateMainConfig(merged);
     if (errors.length > 0) return { ok: false, errors };
 
-    data = merged as MainConfig;
-    write(data);
+    // Disk first: memory must never hold a config the disk does not have.
+    write(merged);
+    data = merged;
     return { ok: true, config: data };
   }
 
