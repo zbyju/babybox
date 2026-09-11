@@ -23,13 +23,17 @@ Context · Decision · Why · Gave up · Where
 
 ## 2026-09-11 — Config file is written atomically, with one backup
 
-- Context: lowdb truncates then rewrites `main.json`. A power cut mid-write leaves a
-  corrupt file, and both backend and panel refuse to start without one.
+- Context: lowdb 3.0.0 writes `main.json` through steno, which already writes a temp
+  file and renames it. What it does not do is `fsync` before the rename, so the rename
+  can land before the data and a power cut can leave an empty or truncated file. It
+  also keeps no backup, and `JSON.parse` in `JSONFile.read()` throws on a corrupt file,
+  so configer does not start. Both backend and panel refuse to start without a config.
 - Decision: write to `main.json.tmp`, `fsync`, rename over `main.json`. Before the
   rename, copy the current file to `main.json.bak`. On boot, if `main.json` does not
   parse, load `main.json.bak` and log it.
-- Why: rename is atomic on the filesystems we run on (ext4, NTFS). One backup covers
-  the failure we actually see. A history with N versions is a later decision.
+- Why: the rename was already atomic; the `fsync` is what makes the renamed file whole.
+  One backup covers the failure we actually see. A history with N versions is a later
+  decision.
 - Gave up: rollback to older versions; a corrupt `.bak` and `.json` at the same time.
 - Where: [config-ui plan, P0](plans/config-ui.md).
 
@@ -64,8 +68,10 @@ Context · Decision · Why · Gave up · Where
 
 ## 2026-09-11 — main.json is read and written with node:fs, not lowdb
 
-- Context: P0 needs an atomic write with a backup. lowdb's `JSONFile` truncates and
-  rewrites in place, so the write had to be ours anyway.
+- Context: P0 needs an `fsync` before the rename and a backup copy. lowdb's `JSONFile`
+  goes through steno, which writes a temp file and renames it but never calls `fsync`
+  and keeps no backup, and steno exposes no hook for either. So the write had to be
+  ours anyway.
 - Decision: drop lowdb for `main.json` and use `node:fs` (open, write, fsync, rename).
   `versions.json` stays on lowdb, it is read-only.
 - Why: once the write is ours, lowdb only wraps `readFileSync` and `JSON.parse`. One
@@ -98,3 +104,36 @@ Context · Decision · Why · Gave up · Where
 - Why: one rule, no flag to pass around, and the backup can only ever hold a file we
   managed to read.
 - Where: `write()` in `source/apps/configer/src/services/db/main.ts`.
+
+## 2026-09-11 — An unreadable main.json is kept as main.json.corrupt
+
+- Context: boot rewrites `main.json` from the backup or from `base.json`, so the file
+  the maintainer broke was gone. Until the UI ships, `main.json` is edited by hand on
+  every box, so a typo (a trailing comma, a BOM from Notepad) plus a restart is normal.
+- Decision: on boot, when `main.json` exists but does not parse, copy it to
+  `main.json.corrupt` before falling back. `main.json.corrupt` is gitignored.
+- Why: the box still comes up, and the edit is still there to recover from. Before this
+  PR lowdb threw and configer did not start, which at least left the file alone.
+- Gave up: nothing. One extra file per broken edit, overwritten by the next one.
+- Where: `loadStored()` in `source/apps/configer/src/services/db/main.ts`.
+
+## 2026-09-11 — An empty body is rejected, not treated as "reset to defaults"
+
+- Context: `PUT` now merges the body over `base.json`. `express.json()` sets
+  `req.body = {}` for any request whose Content-Type is not JSON, so a `curl -X PUT -d
+  @main.json` without the header returned 200 and put the box on defaults.
+- Decision: `update()` rejects a body with no keys with `must not be empty` (400).
+- Why: no caller needs "reset everything" through an empty body; a real reset sends the
+  full default body. The merge-over-base opened this hole, so it closes it.
+- Gave up: nothing.
+- Where: `update()` in `source/apps/configer/src/services/db/main.ts`.
+
+## 2026-09-11 — The config is written to disk before memory is updated
+
+- Context: `update()` assigned `data` and then called `write()`. If `write` throws,
+  memory holds a config that disk does not.
+- Decision: `write(merged)` first, then `data = merged`.
+- Why: costs nothing, and it stays right once a `try/catch` or error middleware lands.
+  Today the unhandled rejection kills the process before anyone reads the stale value,
+  which hides the bug rather than fixing it.
+- Gave up: nothing.

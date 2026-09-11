@@ -31,6 +31,15 @@ lesson: what happened, what to do instead.
 - **vitest 0.9.4 runs configer's ESM TypeScript with no config file**, but vite 2 does
   not resolve a `.js` import specifier to a `.ts` file. Import without the extension in
   `*.test.ts`; the rest of `src` keeps `.js` because `tsc` runs with `module: node16`.
+- **lowdb 3 already wrote a temp file and renamed it.** `JSONFile` goes through steno
+  2.1.0, so a power cut could not leave a half-written `main.json`. What was missing was
+  the `fsync` before the rename, a backup, and a boot that survives a corrupt file.
+  Check the dependency's source before writing down why you replaced it.
+- **`express.json()` sets `req.body = {}` when the Content-Type is not JSON.** A route
+  that merges the body over defaults must reject an empty body, or a forgotten
+  `-H 'Content-Type: application/json'` silently resets the config.
+- **A test that starts from the defaults cannot tell which side the merge came from.**
+  Change a second key first, then assert it went back to its default.
 - **`lodash.merge` spreads a string source over the target** (`merge({}, "ab")` gives
   `{0:"a",1:"b"}`). Reject a non-object body before merging it over the defaults.
 

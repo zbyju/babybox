@@ -1,6 +1,6 @@
 # Config UI — agent workflow
 
-Status: **running P0**
+Status: **P0 in review, threads addressed**
 Last updated: 2026-09-11
 
 How each phase of [config-ui.md](config-ui.md) gets built. Same pipeline for every
@@ -76,5 +76,5 @@ docs updated. Merging is a human decision.
 
 - **P0** — make writing the config safe. Brief: the P0 checklist in config-ui.md,
   plus: add a configer test step to `.github/workflows/ci.yml`, gitignore
-  `main.json.bak` and `main.json.tmp`, keep the on-disk `main.json` shape unchanged.
+  `main.json.bak`, `main.json.tmp` and `main.json.corrupt`, keep the on-disk `main.json` shape unchanged.
 - P1 to P5 — written when P0 is merged, after the zod decision.
