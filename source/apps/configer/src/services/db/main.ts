@@ -20,8 +20,9 @@ import {
 export type MainDb = ReturnType<typeof mainConfig>;
 
 export type UpdateResult =
-  | { ok: true; config: MainConfig }
-  | { ok: false; errors: ConfigError[] };
+  | { status: "saved"; config: MainConfig }
+  | { status: "invalid"; errors: ConfigError[] }
+  | { status: "write-failed"; msg: string };
 
 export const defaultConfigDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -42,6 +43,10 @@ function syncDir(dir: string): void {
   } finally {
     closeSync(handle);
   }
+}
+
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function parseFile(file: string): unknown {
@@ -124,7 +129,10 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   async function update(body: unknown): Promise<UpdateResult> {
     // lodash.merge would spread a string or an array over the defaults.
     if (typeof body !== "object" || body === null || Array.isArray(body)) {
-      return { ok: false, errors: [{ path: "", msg: "must be an object" }] };
+      return {
+        status: "invalid",
+        errors: [{ path: "", msg: "must be an object" }],
+      };
     }
     /*
      * express.json() leaves req.body as {} when the Content-Type is not JSON, so a
@@ -132,17 +140,28 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
      * base.json. A real reset sends the full default body.
      */
     if (Object.keys(body).length === 0) {
-      return { ok: false, errors: [{ path: "", msg: "must not be empty" }] };
+      return {
+        status: "invalid",
+        errors: [{ path: "", msg: "must not be empty" }],
+      };
     }
 
     const merged = merge(freshBase(), body) as MainConfig;
     const errors = validateMainConfig(merged);
-    if (errors.length > 0) return { ok: false, errors };
+    if (errors.length > 0) return { status: "invalid", errors };
 
     // Disk first: memory must never hold a config the disk does not have.
-    write(merged);
+    try {
+      write(merged);
+    } catch (error) {
+      console.error(`cannot write ${mainFile}:`, error);
+      return {
+        status: "write-failed",
+        msg: `cannot write main.json: ${describe(error)}`,
+      };
+    }
     data = merged;
-    return { ok: true, config: data };
+    return { status: "saved", config: data };
   }
 
   return {

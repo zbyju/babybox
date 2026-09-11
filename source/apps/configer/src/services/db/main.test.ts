@@ -127,7 +127,7 @@ describe("update", () => {
 
     const result = await db.update({ babybox: { name: "Brno" } });
 
-    expect(result.ok).toBe(true);
+    expect(result.status).toBe("saved");
     expect(readJson("main.json")).toEqual({
       ...base(),
       babybox: { name: "Brno" },
@@ -141,7 +141,7 @@ describe("update", () => {
     const result = await db.update({ units: { engine: { ip: 5 } } });
 
     expect(result).toEqual({
-      ok: false,
+      status: "invalid",
       errors: [{ path: "units.engine.ip", msg: "must be a string" }],
     });
     expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
@@ -155,7 +155,7 @@ describe("update", () => {
     const result = await db.update([]);
 
     expect(result).toEqual({
-      ok: false,
+      status: "invalid",
       errors: [{ path: "", msg: "must be an object" }],
     });
     expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
@@ -169,7 +169,7 @@ describe("update", () => {
     const result = await db.update({});
 
     expect(result).toEqual({
-      ok: false,
+      status: "invalid",
       errors: [{ path: "", msg: "must not be empty" }],
     });
     expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
@@ -188,6 +188,29 @@ describe("update", () => {
     expect(readJson("main.json")).toEqual({
       ...base(),
       babybox: { name: "druhy" },
+    });
+  });
+
+  it("keeps the old config in memory and on disk when the write fails", async () => {
+    const db = await mainConfig(configDir);
+    await db.update({ babybox: { name: "prvni" } });
+    vi.mocked(fsyncSync).mockImplementationOnce(() => {
+      throw Object.assign(new Error("no space left on device"), {
+        code: "ENOSPC",
+      });
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await db.update({ babybox: { name: "druhy" } });
+
+    expect(result).toEqual({
+      status: "write-failed",
+      msg: "cannot write main.json: no space left on device",
+    });
+    expect(db.data().babybox.name).toBe("prvni");
+    expect(readJson("main.json")).toEqual({
+      ...base(),
+      babybox: { name: "prvni" },
     });
   });
 
