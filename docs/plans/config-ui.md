@@ -30,7 +30,7 @@ What the form buys us over editing JSON:
 | Panel config store | `src/pinia/configStore.ts` | set once at boot, never again |
 | Panel config types | `src/types/panel/config.types.ts` | derived from the shared type |
 | Panel validation | `src/utils/panel/instanceCheck.ts` | the shared schema |
-| Panel defaults | `src/defaults/config.default.ts` | the shared `defaultConfig()` |
+| Panel defaults | `src/pinia/configStore.ts` | the shared `defaultConfig()` |
 | Nav | `src/components/TheNav.vue` | already has a `secured` flag gated on `app.password` |
 | Settings page | `src/views/SettingsView.vue` | password-gated, returns to the panel after 10 min |
 
