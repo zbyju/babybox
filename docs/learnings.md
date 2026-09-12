@@ -12,8 +12,10 @@ lesson: what happened, what to do instead.
   with 17 pre-existing errors and the build's type gate checks zero files.
 - **The startup app treats any stderr from `pnpm run build` as a failed build.**
   A warning printed by `tsc` or a package script fails the update on the box.
-- **Backend `tsc` picks up `bun-types` from a parent `node_modules`.** Pass
-  `--typeRoots ./node_modules/@types` when you get TS1005/TS1139 noise.
+- **`tsc` picks up `bun-types` from a parent `node_modules`** (TS1005/TS1139 noise).
+  A package that needs no ambient types sets `"types": []` in its tsconfig, as
+  config-schema does. The backend needs Node types, so pass
+  `--typeRoots ./node_modules/@types` there.
 - **pnpm 7.5.0 cannot reach the registry on Node 20+** (`ERR_INVALID_THIS` from
   undici). Run it under Node 18 through npx instead:
   `npx -y -p node@18.12.1 -p pnpm@7.5.0 pnpm install` from `source/`. npx puts a
@@ -71,13 +73,14 @@ lesson: what happened, what to do instead.
 - **zod's `safeParse` returns a copy, built in the order the schema declares.** The
   written `main.json` follows the schema's key order, so declare the keys in the order
   `base.json` has them or every box rewrites its file on the first PUT.
-- **A `tsc` build in a parent folder's shadow needs `"types": []`.** Cheaper and more
-  correct than `--typeRoots` on the command line when the package needs no ambient
-  types at all.
+- **Build the package before the configer or panel tests.** Both suites resolve
+  `@babybox/config-schema` to its gitignored `dist/`, so on a fresh clone they cannot
+  find it, and after an edit to `src/` they run against the previous build. Run
+  `pnpm run build:schema` from `source/` first.
 
 ## Tests
 
 - **`fetch` on Node 18 refuses a request that sets `connection`.** undici calls it an
   invalid connection header and the call fails with `TypeError: fetch failed`; Node 24
-  ignores the header, so a test written on Node 24 only goes red on CI. Let the agent
+  forwards the header, so a test written on Node 24 only goes red on CI. Let the agent
   manage the connection and close the server with `closeAllConnections()`.

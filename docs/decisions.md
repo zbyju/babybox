@@ -149,7 +149,7 @@ Context · Decision · Why · Gave up · Where
   one thing, and nothing ever has to rewrite what a maintainer typed.
 - Gave up: the panel is wider than the check. `Dahua IPC` works in the panel but a
   PUT with it gets a 400. No deployed file has such a value.
-- Where: `source/apps/configer/src/types/main.types.ts`.
+- Where: `cameraTypes` in `source/packages/config-schema/src/schema.ts`.
 
 ## 2026-09-12 — The config shape is one zod schema in a shared package
 
@@ -169,15 +169,9 @@ Context · Decision · Why · Gave up · Where
   1. The package is ESM and built with `tsc` to `dist/`. Configer runs the built JS on
      Node 18, which cannot load `.ts`, so every consumer resolves `main` and `types`
      from `dist/` and the package is built first: root `build` and `dev` scripts, CI.
-  2. The backend must not list the package in its `package.json`. The startup app
-     copies `apps/backend/dist` and the backend's `package.json` to the repo-root
-     `dist/` and runs `pnpm install` there, outside the workspace, where
-     `workspace:*` cannot resolve. The backend reaches the type through a tsconfig
-     `paths` entry and `import type`, so nothing survives into its JS.
-  3. The lockfile changes only through pnpm 7.5.0 on Node 18:
-     `npx -y -p node@18.12.1 -p pnpm@7.5.0 pnpm install` from `source/`. Checked
-     2026-09-12 that this resolves `zod@3.23.8` and writes a `lockfileVersion: 5.4`
-     file.
+  2. The backend imports the type only, through a tsconfig `paths` entry and
+     `import type`, and lists the package nowhere in its `package.json`. Why it
+     cannot: learnings.md, Startup.
 - Gave up: a hand-written validator we already had and understood; about 60 KB of zod
   in the panel bundle; one more build step in every box's update path. The form
   metadata moved from P1 to P3, where it is first read.
@@ -199,18 +193,6 @@ Context · Decision · Why · Gave up · Where
   and nothing in the type system stops it. The cost is one object per call, at boot.
 - Gave up: nothing.
 - Where: `source/packages/config-schema/src/defaults.ts`.
-
-## 2026-09-12 — The schema package declares no ambient types
-
-- Context: `tsc` pulls in every `@types` package it finds walking up from the project,
-  so a build could fail on whatever sits above the checkout. It does here: a
-  `bun-types` in a parent `node_modules` breaks the parse.
-- Decision: `"types": []` in the package's tsconfig.
-- Why: the package uses no Node and no test API, so this is what it actually needs.
-  It also keeps the build of the one package every box compiles first from depending
-  on anything outside the repo.
-- Gave up: nothing. Test files are excluded from `tsc` and import vitest explicitly.
-- Where: `source/packages/config-schema/tsconfig.json`.
 
 ## 2026-09-12 — The panel checks the shape it reads, not the whole schema
 

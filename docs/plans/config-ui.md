@@ -29,7 +29,7 @@ What the form buys us over editing JSON:
 | Validation | `validateMainConfig` in `@babybox/config-schema` | zod, returns field-level errors |
 | Panel config store | `src/pinia/configStore.ts` | set once at boot, never again |
 | Panel config types | `src/types/panel/config.types.ts` | derived from the shared type |
-| Panel validation | `src/utils/panel/instanceCheck.ts` | the shared schema |
+| Panel validation | `src/utils/panel/instanceCheck.ts` | the shape the panel reads, warns about the rest |
 | Panel defaults | `src/pinia/configStore.ts` | the shared `defaultConfig()` |
 | Nav | `src/components/TheNav.vue` | already has a `secured` flag gated on `app.password` |
 | Settings page | `src/views/SettingsView.vue` | password-gated, returns to the panel after 10 min |
