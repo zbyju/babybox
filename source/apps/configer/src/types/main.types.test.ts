@@ -131,18 +131,13 @@ describe("validateMainConfig", () => {
     });
   }
 
-  it("accepts a camera type in upper case", () => {
+  it("rejects a camera type in a different case", () => {
     const config = baseConfig();
     config.camera = { ...(config.camera as object), cameraType: "DAHUA" };
 
-    expect(validateMainConfig(config)).toEqual([]);
-  });
-
-  it("accepts a camera type with extra text, like the panel does", () => {
-    const config = baseConfig();
-    config.camera = { ...(config.camera as object), cameraType: "Dahua IPC" };
-
-    expect(validateMainConfig(config)).toEqual([]);
+    expect(validateMainConfig(config).map((e) => e.path)).toEqual([
+      "camera.cameraType",
+    ]);
   });
 
   it("rejects an unknown camera type", () => {
