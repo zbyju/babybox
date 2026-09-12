@@ -183,3 +183,41 @@ Context · Decision · Why · Gave up · Where
   metadata moved from P1 to P3, where it is first read.
 - Where: [config-ui plan, P1](plans/config-ui.md), PR "feat: share one config schema
   across the apps".
+
+## 2026-09-12 — The panel accepts a config with a key it does not know
+
+- Context: the panel's config guard is now the shared schema, which rejects an
+  unknown key. If the panel refuses the config it never mounts, so a box with an
+  extra key in `main.json` would show nothing until someone drives out to it.
+- Decision: `isMainConfig` in the package, used only by the panel, passes a value
+  whose only problems are unrecognised keys. Every other rule still applies, and
+  `PUT /config/main` still refuses the same key.
+- Why: rejecting is right where a change is written, not where one is read. The write
+  path is the place to stop junk.
+- Gave up: the panel is one rule looser than configer, so the two are not the same
+  check. Anything else a stored config gets wrong (a wrong type, a camera type we do
+  not know) still stops the panel — that is the risk this decision does not remove.
+- Where: `isMainConfig` in `source/packages/config-schema/src/validate.ts`,
+  `isInstanceOfConfig` in `apps/panel/src/utils/panel/instanceCheck.ts`.
+
+## 2026-09-12 — defaultConfig is a function, not a constant
+
+- Context: the package exports the defaults that base.json holds on disk. The panel
+  puts them straight into a pinia store, which is reactive and mutable.
+- Decision: `defaultConfig()` builds a fresh object on every call.
+- Why: a shared constant that one store mutates changes what every later caller reads,
+  and nothing in the type system stops it. The cost is one object per call, at boot.
+- Gave up: nothing.
+- Where: `source/packages/config-schema/src/defaults.ts`.
+
+## 2026-09-12 — The schema package declares no ambient types
+
+- Context: `tsc` pulls in every `@types` package it finds walking up from the project,
+  so a build could fail on whatever sits above the checkout. It does here: a
+  `bun-types` in a parent `node_modules` breaks the parse.
+- Decision: `"types": []` in the package's tsconfig.
+- Why: the package uses no Node and no test API, so this is what it actually needs.
+  It also keeps the build of the one package every box compiles first from depending
+  on anything outside the repo.
+- Gave up: nothing. Test files are excluded from `tsc` and import vitest explicitly.
+- Where: `source/packages/config-schema/tsconfig.json`.

@@ -1,6 +1,6 @@
 # Config UI page
 
-Status: **P0 merged, P1 in progress**
+Status: **P0 merged, P1 in review**
 Owner: —
 Last updated: 2026-09-12
 
@@ -26,16 +26,16 @@ What the form buys us over editing JSON:
 | Defaults | `source/apps/configer/configs/base.json` | merged over the file on every configer boot |
 | Read endpoint | `GET /api/v1/config/main` | works |
 | Write endpoint | `PUT /api/v1/config/main` | exists, unused, and unsafe — see Risks |
-| Validation | `validateMainConfig` in `src/types/main.types.ts` | hand-written, returns field-level errors |
+| Validation | `validateMainConfig` in `@babybox/config-schema` | zod, returns field-level errors |
 | Panel config store | `src/pinia/configStore.ts` | set once at boot, never again |
-| Panel config types | `src/types/panel/config.types.ts` | a second hand-written copy of the shape |
-| Panel validation | `src/utils/panel/instanceCheck.ts` | a third hand-written copy |
-| Panel defaults | `src/defaults/config.default.ts` | a fourth copy |
+| Panel config types | `src/types/panel/config.types.ts` | derived from the shared type |
+| Panel validation | `src/utils/panel/instanceCheck.ts` | the shared schema |
+| Panel defaults | `src/defaults/config.default.ts` | the shared `defaultConfig()` |
 | Nav | `src/components/TheNav.vue` | already has a `secured` flag gated on `app.password` |
 | Settings page | `src/views/SettingsView.vue` | password-gated, returns to the panel after 10 min |
 
-The config shape is currently written out four times. Any new field means four edits,
-and they already disagree with each other (see the first two risks).
+The shape used to be written out four times, which is where the first two risks come
+from. Since P1 it is one zod schema in `source/packages/config-schema`.
 
 ## Risks to clear before the UI is worth building
 
@@ -136,15 +136,15 @@ Size: ~1 day. Worth doing on its own even if the UI is dropped.
 
 ### P1 — Shared config schema
 
-- [ ] Create `source/packages/config-schema` (zod schema + inferred `MainConfig` type)
-- [ ] Wire it into the pnpm workspace and both tsconfigs
+- [x] Create `source/packages/config-schema` (zod schema + inferred `MainConfig` type)
+- [x] Wire it into the pnpm workspace and both tsconfigs
 - [ ] ~~Per field, carry the form metadata alongside the schema~~ — moved to P3, where
       it is first used. Nothing in P1 or P2 reads it (motto 1).
-- [ ] Point configer's `main.types.ts` at the shared type and delete the local guards
-- [ ] Point the panel's `config.types.ts` and `instanceCheck.ts` at the shared schema
-- [ ] Point the backend's `types/config.types.ts` at the shared type. Type only: the
+- [x] Point configer's `main.types.ts` at the shared type and delete the local guards
+- [x] Point the panel's `config.types.ts` and `instanceCheck.ts` at the shared schema
+- [x] Point the backend's `types/config.types.ts` at the shared type. Type only: the
       backend's `dist` is installed standalone, see decisions.md
-- [ ] Derive `base.json` defaults from the schema, or add a test that they match
+- [x] Derive `base.json` defaults from the schema, or add a test that they match
 
 Size: ~1 day. This is where most of the value is.
 

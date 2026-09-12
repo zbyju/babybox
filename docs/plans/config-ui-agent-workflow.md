@@ -1,6 +1,6 @@
 # Config UI — agent workflow
 
-Status: **P0 merged, P1 in progress**
+Status: **P0 merged, P1 in review**
 Last updated: 2026-09-12
 
 How each phase of [config-ui.md](config-ui.md) gets built. Same pipeline for every

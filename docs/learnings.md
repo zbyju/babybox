@@ -60,3 +60,17 @@ lesson: what happened, what to do instead.
 
 - **A PR branch checked out in the main checkout cannot be committed to from a
   worktree.** Use a side branch and fast-forward push.
+
+## Shared package
+
+- **zod's strict object reports the unknown keys of one object as one issue.** It
+  carries a `keys` array, so expand it into one error per key before anyone sees it.
+- **`z.enum` needs an `errorMap` to carry a custom message.** `invalid_type_error`
+  only covers a value that is not a string; a string outside the list is
+  `invalid_enum_value` and keeps zod's own wording.
+- **zod's `safeParse` returns a copy, built in the order the schema declares.** The
+  written `main.json` follows the schema's key order, so declare the keys in the order
+  `base.json` has them or every box rewrites its file on the first PUT.
+- **A `tsc` build in a parent folder's shadow needs `"types": []`.** Cheaper and more
+  correct than `--typeRoots` on the command line when the package needs no ambient
+  types at all.
