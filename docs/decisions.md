@@ -82,23 +82,6 @@ Context · Decision · Why · Gave up · Where
 - Where: `source/apps/configer/src/services/db/main.ts`, PR "feat: make writing the
   config safe".
 
-## 2026-09-11 — The camera type list is the panel's list, matched exactly
-
-- Context: the plan asked for a union of the camera types the rest of the system
-  supports. The backend does not read `cameraType` at all; the panel does, in
-  `apps/panel/src/utils/panel/camera.ts`, where it lower-cases the value and looks
-  for a known name inside it.
-- Decision: the allowed list is `dahua`, `hikvision`, `avtech`, `avm`, `vivotek`, and
-  the check is an exact match, the same as `pc.os`.
-- Why: every deployed box holds one of these exact lower-case values (confirmed
-  2026-09-12). With an exact match the TS type, the check and the stored value are
-  one thing, and nothing ever has to rewrite what a maintainer typed. A first version
-  of this PR accepted any case and any extra text, which left the type and the stored
-  value apart.
-- Gave up: the panel is wider than the check. `Dahua IPC` works in the panel but a
-  PUT with it gets a 400. No deployed file has such a value.
-- Where: `source/apps/configer/src/types/main.types.ts`.
-
 ## 2026-09-11 — A corrupt main.json never overwrites main.json.bak
 
 - Context: a box boots from `main.json.bak` because `main.json` does not parse. The
@@ -150,3 +133,20 @@ Context · Decision · Why · Gave up · Where
   the full merged shape. `GET /config/main` and `base.json` still show the full
   shape. A fresh box has no `main.json` until the first PUT.
 - Where: `mainConfig()` in `source/apps/configer/src/services/db/main.ts`.
+
+## 2026-09-12 — The camera type list is the panel's list, matched exactly
+
+- Context: the plan asked for a union of the camera types the rest of the system
+  supports. The backend does not read `cameraType` at all; the panel does, in
+  `apps/panel/src/utils/panel/camera.ts`, where it lower-cases the value and looks
+  for a known name inside it. An earlier version of this PR matched the panel's rule
+  and accepted any case and any extra text, which left the TS type and the stored
+  value apart.
+- Decision: the allowed list is `dahua`, `hikvision`, `avtech`, `avm`, `vivotek`, and
+  the check is an exact match, the same as `pc.os`.
+- Why: every deployed box holds one of these exact lower-case values, confirmed
+  2026-09-12. With an exact match the TS type, the check and the stored value are
+  one thing, and nothing ever has to rewrite what a maintainer typed.
+- Gave up: the panel is wider than the check. `Dahua IPC` works in the panel but a
+  PUT with it gets a 400. No deployed file has such a value.
+- Where: `source/apps/configer/src/types/main.types.ts`.

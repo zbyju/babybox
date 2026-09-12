@@ -25,9 +25,9 @@ lesson: what happened, what to do instead.
   old file cannot be read.
 - **`tsconfig.json` includes all of `src`.** Anything under `src` ends up in `dist`
   and is started by pm2. Exclude test files.
-- **The db factory caches the init promise.** `mainConfig()` writes `main.json` on
-  boot; two concurrent inits interleave writes. Do not call it directly, use
-  `DbFactory.getMainDb()`.
+- **The db factory caches the init promise.** Each call to `mainConfig()` gets its
+  own `data`. Two independent calls would drift apart the moment either one saw a
+  PUT. Do not call it directly, use `DbFactory.getMainDb()`.
 - **vitest 0.9.4 runs configer's ESM TypeScript with no config file**, but vite 2 does
   not resolve a `.js` import specifier to a `.ts` file. Import without the extension in
   `*.test.ts`; the rest of `src` keeps `.js` because `tsc` runs with `module: node16`.
