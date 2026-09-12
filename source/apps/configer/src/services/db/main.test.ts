@@ -10,6 +10,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import {
+  defaultConfig,
+  parseMainConfig,
+  validateMainConfig,
+} from "@babybox/config-schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultConfigDir, mainConfig } from "./main";
 
@@ -311,5 +316,29 @@ describe("update", () => {
     await db.update({ babybox: { name: "Brno" } });
 
     expect(existsSync(file("main.json.tmp"))).toBe(false);
+  });
+});
+
+/*
+ * base.json is the file configer merges a stored config over, and defaultConfig is
+ * the same values for everyone who has no file to read. They must not drift apart.
+ * The rules themselves are tested in @babybox/config-schema.
+ */
+describe("base.json", () => {
+  it("is the schema's defaults", () => {
+    expect(base()).toEqual(defaultConfig());
+  });
+
+  it("is a valid config", () => {
+    expect(validateMainConfig(base())).toEqual([]);
+  });
+
+  /* A PUT writes the parsed copy, so a key order change here rewrites every box's file. */
+  it("keeps its key order when it is parsed", () => {
+    const result = parseMainConfig(base());
+
+    expect(result.ok && JSON.stringify(result.config)).toBe(
+      JSON.stringify(base())
+    );
   });
 });

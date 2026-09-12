@@ -10,13 +10,13 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import merge from "lodash.merge";
 import {
   ConfigError,
   MainConfig,
   parseMainConfig,
   validateMainConfig,
-} from "../../types/main.types.js";
+} from "@babybox/config-schema";
+import merge from "lodash.merge";
 
 export type MainDb = ReturnType<typeof mainConfig>;
 
