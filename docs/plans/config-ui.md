@@ -140,7 +140,8 @@ Size: ~1 day. Worth doing on its own even if the UI is dropped.
 - [x] Wire it into the pnpm workspace and both tsconfigs
 - [ ] ~~Per field, carry the form metadata alongside the schema~~ — moved to P3, where
       it is first used. Nothing in P1 or P2 reads it (motto 1).
-- [x] Point configer's `main.types.ts` at the shared type and delete the local guards
+- [x] Delete configer's `main.types.ts` with its local guards; `db/main.ts` imports
+      the package
 - [x] Point the panel's `config.types.ts` and `instanceCheck.ts` at the shared schema
 - [x] Point the backend's `types/config.types.ts` at the shared type. Type only: the
       backend's `dist` is installed standalone, see decisions.md
