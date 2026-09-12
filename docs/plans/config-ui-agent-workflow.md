@@ -1,6 +1,6 @@
 # Config UI — agent workflow
 
-Status: **P0 in review, threads addressed**
+Status: **P0 merged, P1 in progress**
 Last updated: 2026-09-12
 
 How each phase of [config-ui.md](config-ui.md) gets built. Same pipeline for every
@@ -77,4 +77,38 @@ docs updated. Merging is a human decision.
 - **P0** — make writing the config safe. Brief: the P0 checklist in config-ui.md,
   plus: add a configer test step to `.github/workflows/ci.yml`, gitignore
   `main.json.bak` and `main.json.tmp`, keep the on-disk `main.json` shape unchanged.
-- P1 to P5 — written when P0 is merged, after the zod decision.
+- **P1** — one config schema shared by configer, the panel and the backend. Brief: the
+  P1 checklist in config-ui.md and the decision "The config shape is one zod schema in
+  a shared package" in decisions.md, plus:
+  - New package `source/packages/config-schema`, name `@babybox/config-schema`,
+    `"type": "module"`, `main` and `types` pointing into `dist/`, built by `tsc` with a
+    tsconfig like configer's (node16, strict, `*.test.ts` excluded). `zod` pinned to
+    exactly `3.23.8`; `vitest` as a devDependency at the version configer already has,
+    so the lockfile gains no other new version.
+  - The schema keeps every rule `validateMainConfig` has today: integers with the same
+    ranges, exact `cameraType` and `pc.os` lists, unknown keys rejected in every
+    object, `startup` any object, `app.refreshRequestLimit` optional. Errors keep the
+    `{ path, msg }` shape with a dotted path, one entry per unknown key. Wording may
+    change; every configer test that asserted a message is updated, none is deleted.
+  - Configer's `main.types.ts` becomes a thin re-export. `parseMainConfig` and
+    `validateMainConfig` wrap `safeParse`. `db/main.ts` and the route do not change
+    behaviour.
+  - Panel: `config.types.ts`, the config half of `instanceCheck.ts` (the versions guard
+    stays) and `config.default.ts` come from the package. Drop `app.version` if nothing
+    sets it. Replace the `CameraType` enum and the `includes` matching in
+    `utils/panel/camera.ts` with the schema's union; `avm` keeps the avtech URL.
+  - Backend: `types/config.types.ts` re-exports the type through a tsconfig `paths`
+    entry and `import type` only. No entry in the backend's `package.json`. Check the
+    built `dist` has no `require("@babybox/config-schema")`.
+  - Defaults: `base.json` stays the file on disk. The package exports `defaultConfig`;
+    a configer test asserts `base.json` deep-equals it; the panel's defaults are that
+    export. Record it in decisions.md if you choose otherwise.
+  - Wiring: root `build` and `dev` scripts and CI build the package before the apps;
+    CI runs the package tests. Update `pnpm-lock.yaml` only through pnpm 7.5.0 on
+    Node 18 (learnings.md). The lockfile diff is the new importer, `zod`, and the
+    `link:` entries, nothing else.
+  - Before opening the PR, from a clean `git clone` under Node 18: `pnpm install
+    --frozen-lockfile` then `pnpm run build` from `source/`, both with empty stderr.
+    Then the four test suites.
+  - PR title `feat: share one config schema across the apps`.
+- P2 to P5 — written when P1 is merged.

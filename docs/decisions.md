@@ -150,3 +150,36 @@ Context · Decision · Why · Gave up · Where
 - Gave up: the panel is wider than the check. `Dahua IPC` works in the panel but a
   PUT with it gets a 400. No deployed file has such a value.
 - Where: `source/apps/configer/src/types/main.types.ts`.
+
+## 2026-09-12 — The config shape is one zod schema in a shared package
+
+- Context: the config shape was written five times: configer's types and validator,
+  the backend's types, the panel's types, guards and defaults. They already disagreed:
+  `cameraType` is a union in one and a `string` in two, the panel's default voltage
+  divider is 3400 where `base.json` says 63, and the panel has an `app.version` that
+  nothing sets. The [config-ui plan](plans/config-ui.md) left zod versus hand-written
+  guards open until P0 was merged.
+- Decision: one zod schema in `source/packages/config-schema`
+  (`@babybox/config-schema`). `MainConfig` is `z.infer` of it. Configer and the panel
+  validate with it, the backend imports the type only. zod pinned to `3.23.8`.
+- Why: one source for the type, the validation, the defaults and, in P3, the form
+  descriptor. `3.23.8` is the last 3.x before zod started shipping v4 next to v3
+  (3.25), and it runs on TypeScript 4.7, which all three apps use; zod 4 needs 5.5.
+- Constraints found on the way, each of them shapes the package:
+  1. The package is ESM and built with `tsc` to `dist/`. Configer runs the built JS on
+     Node 18, which cannot load `.ts`, so every consumer resolves `main` and `types`
+     from `dist/` and the package is built first: root `build` and `dev` scripts, CI.
+  2. The backend must not list the package in its `package.json`. The startup app
+     copies `apps/backend/dist` and the backend's `package.json` to the repo-root
+     `dist/` and runs `pnpm install` there, outside the workspace, where
+     `workspace:*` cannot resolve. The backend reaches the type through a tsconfig
+     `paths` entry and `import type`, so nothing survives into its JS.
+  3. The lockfile changes only through pnpm 7.5.0 on Node 18:
+     `npx -y -p node@18.12.1 -p pnpm@7.5.0 pnpm install` from `source/`. Checked
+     2026-09-12 that this resolves `zod@3.23.8` and writes a `lockfileVersion: 5.4`
+     file.
+- Gave up: a hand-written validator we already had and understood; about 60 KB of zod
+  in the panel bundle; one more build step in every box's update path. The form
+  metadata moved from P1 to P3, where it is first read.
+- Where: [config-ui plan, P1](plans/config-ui.md), PR "feat: share one config schema
+  across the apps".
