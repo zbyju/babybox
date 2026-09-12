@@ -5,9 +5,5 @@ export type {
   MainConfigCameraType,
   MainConfigPcOs,
 } from "./schema.js";
-export {
-  isMainConfig,
-  parseMainConfig,
-  validateMainConfig,
-} from "./validate.js";
+export { parseMainConfig, validateMainConfig } from "./validate.js";
 export type { ConfigError, ParseResult } from "./validate.js";

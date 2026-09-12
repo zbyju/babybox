@@ -44,18 +44,3 @@ export function parseMainConfig(value: unknown): ParseResult {
   if (result.success) return { ok: true, config: result.data };
   return { ok: false, errors: toConfigErrors(result.error) };
 }
-
-/*
- * True for a config that follows every rule except that it may carry keys we do not
- * know. For a reader, not for a write: a box whose main.json grew an extra key must
- * still start its panel, while a PUT that adds one is still refused.
- */
-export function isMainConfig(value: unknown): value is MainConfig {
-  const result = mainConfigSchema.safeParse(value);
-  return (
-    result.success ||
-    result.error.issues.every(
-      (issue) => issue.code === z.ZodIssueCode.unrecognized_keys
-    )
-  );
-}

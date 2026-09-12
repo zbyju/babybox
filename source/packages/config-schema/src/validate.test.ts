@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { defaultConfig } from "./defaults";
 import { cameraTypes, pcOsTypes } from "./schema";
-import { isMainConfig, parseMainConfig, validateMainConfig } from "./validate";
+import { parseMainConfig, validateMainConfig } from "./validate";
 
 type Fields = Record<string, unknown>;
 
@@ -267,28 +267,5 @@ describe("parseMainConfig", () => {
       ok: false,
       errors: [{ path: "", msg: "must be an object" }],
     });
-  });
-});
-
-describe("isMainConfig", () => {
-  it("accepts a valid config", () => {
-    expect(isMainConfig(config())).toBe(true);
-  });
-
-  it("accepts a config with a key we do not know", () => {
-    const value = config();
-    value.camera = { ...(value.camera as Fields), zoom: 2 };
-
-    expect(isMainConfig({ ...value, junk: "x" })).toBe(true);
-  });
-
-  it("rejects a config with a field of the wrong type", () => {
-    expect(isMainConfig(withUnits({ engine: { ip: 10 } }))).toBe(false);
-  });
-
-  it("rejects a body that is not a config", () => {
-    expect(isMainConfig("<html>Not Found</html>")).toBe(false);
-    expect(isMainConfig(null)).toBe(false);
-    expect(isMainConfig([])).toBe(false);
   });
 });

@@ -186,19 +186,9 @@ Context · Decision · Why · Gave up · Where
 
 ## 2026-09-12 — The panel accepts a config with a key it does not know
 
-- Context: the panel's config guard is now the shared schema, which rejects an
-  unknown key. If the panel refuses the config it never mounts, so a box with an
-  extra key in `main.json` would show nothing until someone drives out to it.
-- Decision: `isMainConfig` in the package, used only by the panel, passes a value
-  whose only problems are unrecognised keys. Every other rule still applies, and
-  `PUT /config/main` still refuses the same key.
-- Why: rejecting is right where a change is written, not where one is read. The write
-  path is the place to stop junk.
-- Gave up: the panel is one rule looser than configer, so the two are not the same
-  check. Anything else a stored config gets wrong (a wrong type, a camera type we do
-  not know) still stops the panel — that is the risk this decision does not remove.
-- Where: `isMainConfig` in `source/packages/config-schema/src/validate.ts`,
-  `isInstanceOfConfig` in `apps/panel/src/utils/panel/instanceCheck.ts`.
+- Superseded the same day by "The panel checks the shape it reads, not the whole
+  schema". Unknown keys were only the smallest part of what a stored config can get
+  wrong, and the rest stopped the panel just as hard.
 
 ## 2026-09-12 — defaultConfig is a function, not a constant
 
@@ -221,3 +211,31 @@ Context · Decision · Why · Gave up · Where
   on anything outside the repo.
 - Gave up: nothing. Test files are excluded from `tsc` and import vitest explicitly.
 - Where: `source/packages/config-schema/tsconfig.json`.
+
+## 2026-09-12 — The panel checks the shape it reads, not the whole schema
+
+- Context: the panel's guard was the shared schema with unknown keys forgiven. Every
+  other rule then applied to a file no write path had ever checked — configer only
+  warns about a bad stored value and serves it. A `refreshRequestLimit` of 0 (the only
+  way to turn the reload off), a delay of 0, a `pc.os` the panel never reads: each one
+  kept `AppState` short of `Ok`, so `MainView` never mounted, the loop never started
+  and the engine watchdog never ran. A box that blocks itself (motto 3). Review
+  finding on the P1 PR.
+- Decision: the panel's guard is structural. The five sections it reads must be there
+  and be objects, and each field it reads must be a string where it reads a string and
+  a number where it reads a number. No ranges, no name lists; `refreshRequestLimit`
+  may be missing or null. `isInstanceOfConfig` first logs the full
+  `validateMainConfig` result with `console.warn`, so a maintainer still sees the bad
+  value. `PUT /config/main` keeps every rule.
+- Why: rejecting is a write-path job. The read path only needs the shape it reads.
+- The check lives in the panel, not in the package: the field list is the panel's, not
+  the file's, and the package should not have to know which sections a consumer reads.
+  `isMainConfig` is gone from the package, it had no other caller.
+- `camera.cameraType` is checked as a string only. `getURLPostfix` falls back to the
+  dahua url and warns, which is what the old `stringToCameraType` did with a name it
+  did not know. A wrong snapshot url costs one camera; refusing the config costs the
+  whole panel.
+- Gave up: a hand-written guard beside the schema, so the two can drift; the panel's
+  tests are what hold them together. A field of the wrong type still stops the panel,
+  and a hand-typed `backend.port: "5000"` is the realistic case.
+- Where: `isInstanceOfConfig` in `apps/panel/src/utils/panel/instanceCheck.ts`.
