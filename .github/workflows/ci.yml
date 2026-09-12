@@ -46,6 +46,12 @@ jobs:
       - name: Build
         run: pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build
 
+      # Backend dist se na boxu instaluje mimo workspace, schema tam smi byt jen typ
+      - name: Backend dist has no schema import
+        run: |
+          test -d apps/backend/dist
+          ! grep -rl "config-schema" apps/backend/dist
+
       - name: Config schema tests
         run: pnpm -F @babybox/config-schema exec vitest run
 
