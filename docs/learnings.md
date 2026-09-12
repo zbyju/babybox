@@ -74,3 +74,10 @@ lesson: what happened, what to do instead.
 - **A `tsc` build in a parent folder's shadow needs `"types": []`.** Cheaper and more
   correct than `--typeRoots` on the command line when the package needs no ambient
   types at all.
+
+## Tests
+
+- **`fetch` on Node 18 refuses a request that sets `connection`.** undici calls it an
+  invalid connection header and the call fails with `TypeError: fetch failed`; Node 24
+  ignores the header, so a test written on Node 24 only goes red on CI. Let the agent
+  manage the connection and close the server with `closeAllConnections()`.
