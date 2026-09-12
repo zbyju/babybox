@@ -1,21 +1,15 @@
-import { CameraType } from "@/types/panel/config.types";
+import type { MainConfigCameraType } from "@babybox/config-schema";
 
-export const stringToCameraType = (s: string): CameraType => {
-  const lower = s.toLowerCase();
-  if (lower.includes("dahua")) return CameraType.dahua;
-  if (lower.includes("hikvision")) return CameraType.hikvision;
-  if (lower.includes("avtech") || lower.includes("avm"))
-    return CameraType.avtech;
-  if (lower.includes("vivotek")) return CameraType.vivotek;
-  return CameraType.dahua;
+const AVTECH_SNAPSHOT = "/cgi-bin/guest/Video.cgi?media=JPEG&channel=0/";
+
+/* avm is an AVTECH camera sold under the older name, so it answers the same url. */
+const urlPostfixes: Record<MainConfigCameraType, string> = {
+  dahua: "/cgi-bin/snapshot.cgi?Channel=0/",
+  hikvision: "/ISAPI/Streaming/channels/101/picture?snapShotImageType=JPEG",
+  avtech: AVTECH_SNAPSHOT,
+  avm: AVTECH_SNAPSHOT,
+  vivotek: "/cgi-bin/viewer/video.jpg/",
 };
 
-export const getURLPostfix = (type: CameraType): string => {
-  if (type === CameraType.dahua) return "/cgi-bin/snapshot.cgi?Channel=0/";
-  if (type === CameraType.hikvision)
-    return "/ISAPI/Streaming/channels/101/picture?snapShotImageType=JPEG";
-  if (type === CameraType.avtech)
-    return "/cgi-bin/guest/Video.cgi?media=JPEG&channel=0/";
-  if (type === CameraType.vivotek) return "/cgi-bin/viewer/video.jpg/";
-  return "ERROR";
-};
+export const getURLPostfix = (type: MainConfigCameraType): string =>
+  urlPostfixes[type];

@@ -18,11 +18,7 @@ import { usePanelStateStore } from "@/pinia/panelStateStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { useVersionsStore } from "@/pinia/versions";
 import type { Maybe } from "@/types/generic.types";
-import type {
-  AppConfig,
-  Config,
-  UnitsConfig,
-} from "@/types/panel/config.types";
+import type { AppConfig, UnitsConfig } from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
@@ -187,8 +183,8 @@ export class AppManager {
    * The startup retry chain waits for them, so a promise that never settles
    * would stop the panel from ever retrying.
    */
-  private async getConfig(): Promise<Config> {
-    const { data } = await requestJson<Config>(`${CONFIGER_API_URL}/main`, {
+  private async getConfig(): Promise<unknown> {
+    const { data } = await requestJson<unknown>(`${CONFIGER_API_URL}/main`, {
       timeout: CONFIGER_TIMEOUT,
     });
     return data;
