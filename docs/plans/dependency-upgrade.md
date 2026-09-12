@@ -29,8 +29,8 @@ decisions in [decisions.md](../decisions.md), lessons in [learnings.md](../learn
 
 | Piece | Today | Pinned where |
 |---|---|---|
-| Node on the boxes | 18.12.1 | `apps/startup/scripts/ubuntu/install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`, `apps/startup/versions.env` (empty) |
-| Node on Windows boxes | whatever was installed by hand | nowhere; `install.bat` only checks `node -v` |
+| Node on Ubuntu boxes (half the fleet) | 18.12.1 via `n`, `/usr/local` chowned to the user; same in the old `installAll.sh` and the current `install-all.sh` | `install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`, `apps/startup/versions.env` (empty) |
+| Node on Windows boxes (other half) | installed by hand with nvm-windows, "mimicking" 18.12.1; OS is Windows 7, 8, 10 or 11 | nowhere; `install.bat` only checks `node -v` |
 | pnpm | 7.5.0, lockfile `5.4` | `install-all.sh`, `install.sh`, `install.bat`, `src/logic/install/{ubuntu,windows}.js`, root `packageManager`, `ci.yml` |
 | pm2 | `@latest` at install time | `src/logic/install/*.js` |
 | Global `typescript@4.7.4`, `ts-node@10.9.1` | installed on every box | `src/logic/install/*.js`; unused by the build (the workspace `tsc` is used) |
@@ -69,10 +69,11 @@ The startup app cannot upgrade Node or pnpm today.
 ### Upgrading from any older version
 
 A box never sees phases. It sees HEAD, whenever it next has power and network. Boxes
-are off for weeks, so **any commit on `main` must be reachable from the legacy runtime
-(Node 18.12.1, pnpm 7.5.0, lockfile 5.4, old startup app, old `node_modules`) in one
-boot, two at most.** A fleet-wide gate ("ship P3 once every box reports P1") cannot
-be relied on; the box that was unplugged during P1 comes back straight into P6.
+have been off for months and in some cases years, so **any commit on `main` must be
+reachable from the legacy runtime (Node 18.12.1 or older, pnpm 7.5.0, lockfile 5.4,
+old startup app, old `node_modules`) in one boot, two at most, and the bootstrap
+stays in HEAD indefinitely.** A fleet-wide gate ("ship P3 once every box reports P1")
+cannot be relied on; the box that was unplugged during P1 comes back straight into P6.
 
 There are only two runtime states, legacy and new. Everything after the runtime jump
 is ordinary code, so the whole problem is: HEAD must carry its own bootstrap from
@@ -93,12 +94,49 @@ Two mechanisms, both in HEAD, both required:
    repeats the bootstrap with better logging and a `git checkout -- pnpm-lock.yaml`
    before its pull, so a dirtied tree self-heals. Two boots.
 
+### Windows boxes
+
+Half the fleet. Facts that shape the bootstrap there:
+
+- **Node 18 and later need Windows 10 or Server 2016** (Node's `BUILDING.md`, Tier 1
+  row; Windows 8.1 was "experimental" in 18 and is gone in 24; Windows 7 was last
+  supported by Node 13). So a Windows 7 or 8 box cannot run Node 24, and most likely
+  is not running 18.12.1 today either, whatever nvm-windows was asked for. These boxes
+  cannot follow this plan on their current OS. Confidence high on the support matrix,
+  medium on what they actually run; the `GET /status` fields from P1 will tell.
+- **nvm-windows keeps global packages per Node version.** After `nvm use 24`, `pnpm`,
+  `pm2` and `nodemon` are gone until reinstalled. The bootstrap reinstalls them after
+  every switch, in that order.
+- **`nvm use` rewrites a symlink under Program Files and needs elevation.** The startup
+  runs from the user's Start Menu autostart. Whether `nvm use` succeeds without a UAC
+  prompt on the boxes (admin user, UAC off, or `sudo-prompt` already in the startup's
+  dependencies) has to be tested on one Windows 10 box before P1 lands. A UAC prompt
+  on a kiosk with nobody in front of it is a hung update.
+
+What the bootstrap does on Windows:
+
+1. Windows 10 or 11: `nvm install <NODE_VERSION>`, `nvm use <NODE_VERSION>`, then
+   `npm install -g pnpm@… pm2@…`, then `pm2 update`. Same contract as Ubuntu.
+2. Windows 7 or 8: **do not attempt Node.** Log the OS and the Node version, switch
+   the checkout to the `legacy` branch (`git checkout legacy`), exit 0. From then on
+   the box pulls only that branch, which holds the last commit before P2 plus any
+   backport we choose to make. One boot, automatic, no dirty tree, and the box keeps
+   working. Getting such a box onto this plan means a new OS on site: Windows 10/11 if
+   the hardware allows, or Ubuntu via `install-all.sh`.
+
+Decision needed from the owner: is parking Windows 7/8 boxes on `legacy` acceptable,
+and is there a plan to reinstall them? Until then the `legacy` branch is a supported
+target and gets security backports only.
+
 Rules that follow, and hold until the last legacy box is gone:
 
-- `bootstrap.js` and everything in `apps/startup/src` run on Node 18 and use **no
-  dependency** that is not already in a legacy `node_modules` (`fs-extra` 10,
-  `winston` 3.8, or nothing at all). New syntax and new packages are for the other
-  three apps.
+- `bootstrap.js` and everything in `apps/startup/src` run on the **oldest Node in the
+  field**, not on Node 18. Until the inventory says otherwise, assume Node 12: no `??`
+  or `?.`, no `fs/promises` import, CommonJS. They use **no dependency** that is not
+  already in a legacy `node_modules` (`fs-extra` 10, `winston` 3.8, `sudo-prompt` 9,
+  or nothing at all). New syntax and new packages are for the other three apps.
+- The `legacy` branch and the `legacy-runtime` tag are never deleted. The offline
+  tail is years.
 - `bootstrap.js` writes only to stdout and a log file. `npm install -g` and `n` both
   chat on stderr; redirect it. Stderr fails the build.
 - `bootstrap.js` is idempotent and fast when nothing differs; it runs on every update.
@@ -109,7 +147,8 @@ Rules that follow, and hold until the last legacy box is gone:
   two commands the legacy startup runs, `git pull` to the PR head and `pnpm run
   build`, and asserts: exit 0, empty stderr, clean tree, `node -v` and `pnpm -v`
   equal to `versions.env`. Windows gets the same check on a `windows-latest` runner
-  for whatever the bootstrap can do there.
+  with nvm-windows installed, for the Windows 10/11 path. The Windows 7/8 path is
+  tested by faking the OS version and asserting the checkout ends on `legacy`.
 
 Falsifier: the legacy-image job. If it fails, HEAD is not installable from a legacy
 box and the PR does not merge.
@@ -216,11 +255,12 @@ arrays are fine). `req.query` is a getter now; nothing assigns to it.
 
 **ESM-only packages.** `open` (≥9), `pinia` (4), `lowdb` (≥4), and Vue Router 6
 later. The panel is bundled by Vite, so ESM-only is invisible there. Configer is
-already ESM. The backend is CommonJS with `import x = require("open")`. Options:
-(a) keep `open@8`, (b) convert the backend to ESM, (c) rely on `require(esm)`, which
-Node ≥22.12 supports without a flag for modules without top-level await. (c) is the
-least work and is one more reason the Node upgrade comes before the library bumps.
-Decide in P4 and record it.
+already ESM. The backend is CommonJS with `import x = require("open")`. **Decided
+2026-09-12: convert the backend to ESM**, the same shape as configer: `"type":
+"module"`, `module`/`moduleResolution: node16`, `.js` on relative import specifiers,
+`import.meta.dirname` for `__dirname`, plain `import` for `open`, `moment`, `winston`.
+`dist/package.json` is a copy of the backend's, so pm2 sees `"type": "module"` too.
+Jest is the only CommonJS-shaped tool in the backend and goes in the same phase.
 
 **TypeScript 6 and 7.** 6.0 is the last JS-based release and exists to flag what 7
 removes. Removed in 7, and present in this repo: `baseUrl` (both panel tsconfigs;
@@ -236,13 +276,16 @@ deprecated. `tsc --build` and project references still work.
 **TypeScript 7 has no stable JS API.** The `typescript@7` package is a 2.5 MB
 launcher for a Go binary. Everything that today loads TypeScript as a library keeps
 needing a 6.x: `vue-tsc` (Volar), `ts-jest` (peer `<7`), `ts-node`,
-`@typescript-eslint/parser` (peer `<6.1`), vitest typecheck mode. So "TypeScript 7
-everywhere" means: `tsc` builds of backend and configer on 7; dev runners on `tsx`
+`@typescript-eslint/parser` (peer `<6.1`), vitest typecheck mode. **Tested
+2026-09-12: `vue-tsc@3.3.11` crashes on `typescript@7.0.2`**
+(`ERR_PACKAGE_PATH_NOT_EXPORTED` while resolving `tsc`) and works on `6.0.3`. So the
+latest tooling that can type-check `.vue` files is `vue-tsc` 3.3.11 on TypeScript
+6.0.3; there is no newer combination to pick. "TypeScript 7 everywhere it runs"
+therefore means: `tsc` builds of backend and configer on 7; dev runners on `tsx`
 (needs no TS at all); tests on vitest (transforms with esbuild/oxc, no TS needed);
-the panel keeps `typescript@6.0.3` as its own devDependency for `vue-tsc` until Volar
-runs on the native compiler. pnpm gives each app its own `typescript`, so this is a
-per-`package.json` choice, not a workspace-wide one. Confidence that Volar has no
-tsgo support today: medium; verify before P6.
+the panel keeps `typescript@6.0.3` as its own devDependency. pnpm gives each app its
+own `typescript`, so this is a per-`package.json` choice. Re-test `vue-tsc` on 7 at
+each Volar major; move the panel when it passes.
 
 **Dev runners.** `nodemon` in the backend uses `ts-node` under the hood, configer uses
 `nodemon --esm` (ts-node's ESM loader). Both go to `tsx`. Node 24 can also run `.ts`
@@ -262,14 +305,19 @@ but `import.meta.dirname` is the forward-compatible spelling. Vite 7 moved the d
 browser target to Baseline Widely Available (Chrome 107+, Safari 16+); the panel PCs
 run a current Chromium, so no `build.target` override is needed unless a box proves
 otherwise. Vite 8 has a compatibility layer for `rollupOptions` and `esbuild` options;
-we use neither. If 8 misbehaves, `vite@7.3.6` with `rolldown-vite` is the documented
-half-step.
+we use neither. **Decided 2026-09-12: go to 8.** If 8 misbehaves, `vite@7.3.6` with
+`rolldown-vite` is the documented half-step, recorded here so nobody re-derives it.
 
-**Lint stack.** ESLint 8 → 10 means rewriting three `.eslintrc` files as flat config
-plus a `typescript-eslint` 8 and `eslint-plugin-vue` 10 migration. A separate question
-is open on whether configer (and later the rest) moves to oxlint and oxfmt instead.
-Decide that first; migrating ESLint and then replacing it is wasted work. P5 is
-blocked on that decision.
+**Lint stack. Decided 2026-09-12: oxlint + oxfmt, not ESLint 10.** The ESLint family
+(`eslint`, `@typescript-eslint/*`, `eslint-plugin-vue`, `@vue/eslint-config-*`,
+`eslint-plugin-prettier`, `eslint-plugin-simple-import-sort`,
+`eslint-plugin-unused-imports`, `@rushstack/eslint-patch`, `prettier`) is removed, not
+upgraded. `oxfmt` covers formatting and import sorting; `oxlint` with the `import`,
+`promise`, `node`, `unicorn` and `vitest` plugins covers the rules we use today, and
+`oxlint-tsgolint` adds the type-aware rules. Both need Node ≥20.19, so they land after
+P3. Configer goes first as its own PR (strict TypeScript flags, tracked suppressions,
+CI gate), then the same config is copied to the other apps. `.oxlintrc.json` and
+`.oxfmtrc.json` live once, at `source/`, with per-app overrides.
 
 ## Phases
 
@@ -295,7 +343,7 @@ what breaks, not for the boxes. Each phase must pass the legacy-image job on its
       allowed to fail. It shows what breaks per phase before the boxes move.
 - [ ] Add `GET /status` fields to configer (or the startup log) reporting `node -v`,
       `pnpm -v`, so the fleet's runtime state is visible remotely
-- [ ] Decide the lint stack (see above); record in decisions.md
+- [x] Lint stack decided: oxlint + oxfmt (see "Decisions taken")
 - [ ] Remove `lowdb` from the backend, `jest` from startup, global `typescript` and
       `ts-node` from the install scripts. Dead weight goes first.
 
@@ -314,8 +362,14 @@ the numbers.
       to the user there), pnpm and pm2 via `npm install -g`, then `pm2 update` so the
       daemon runs on the new Node before it spawns the apps. Confirm pm2 spawns the
       apps with the new `node`, not the daemon's old `process.execPath`.
-- [ ] Windows: pnpm and pm2 via `npm install -g`; Node via `winget` if present,
-      otherwise log "manual Node upgrade needed" and continue on the old Node
+- [ ] Windows 10/11: `nvm install` + `nvm use` from nvm-windows, then reinstall
+      `pnpm`, `pm2`, `nodemon` globally (nvm-windows keeps globals per version), then
+      `pm2 update`
+- [ ] Windows 7/8: detect the OS version, log it, `git checkout legacy`, exit 0
+- [ ] Create the `legacy` branch from the last commit before P2 and protect it
+- [ ] Test on one Windows 10 box: does `nvm use` succeed from the autostart context
+      without a UAC prompt? If not, decide between `sudo-prompt` (already a dependency)
+      and a one-time on-site change, before P1 merges
 - [ ] Root `package.json`: `"build": "node apps/startup/bootstrap.js && pnpm install
       && …"`
 - [ ] Startup app: run the bootstrap again before its own `git pull`, after a
@@ -328,14 +382,14 @@ the numbers.
 - [ ] Legacy-image job runs the P1 head with a `versions.env` override to Node 24 and
       pnpm 12 and asserts the versions changed. This is the real proof; it runs on
       every PR from here on.
-- [ ] Open question answered: how were the boxes in the field provisioned? Old
-      `install.sh` boxes may lack `n`, or have `/usr/local` owned by root. The
-      bootstrap must detect that and log it, not fail the build.
-- [ ] Open question answered: are there Windows boxes in the field?
+- [ ] Ubuntu: both `installAll.sh` (old) and `install-all.sh` (new) installed Node
+      with `n` and chowned `/usr/local` to the user, so `n <version>` works without
+      sudo on every Ubuntu box. The bootstrap still checks it is writable and logs if
+      not.
 
-Size: ~1.5 days. No fleet round-trip is required before the next phase, because the
-legacy-image job replaces it. A round-trip is still worth watching for, on the
-`GET /status` fields, to learn how long the tail of offline boxes really is.
+Size: ~2.5 days, of which Windows is one. No fleet round-trip is required before the
+next phase, because the legacy-image job replaces it. Watch the `GET /status` fields
+anyway; they are the only inventory of what Node the Windows boxes actually run.
 
 ### P2 — pnpm 7.5.0 → 12.4.1
 
@@ -373,8 +427,10 @@ Still the JS compiler, so `vue-tsc`, `ts-jest`, `typescript-eslint` keep working
 Fix everything TS 6 deprecates, so P6 is a swap of the binary, not a migration.
 
 - [ ] `typescript@6.0.3` in root, panel, backend; configer uses the root one
-- [ ] Backend tsconfig: `module`/`moduleResolution: node16`, drop the implied node10,
-      accept `strict: true` and fix what it finds
+- [ ] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
+      node16`, `.js` on relative imports, `import.meta.dirname`, drop every
+      `import x = require()`; accept `strict: true` and fix what it finds; the 6 jest
+      tests move to vitest in the same PR because ts-jest is the last CommonJS tool
 - [ ] Panel: `@vue/tsconfig@0.9.1`, `vue-tsc@3.3.11`, remove `baseUrl`, make `paths`
       relative, fix the 17 known typecheck errors, make `pnpm build` actually run the
       type gate over `src` (learnings.md says it checks zero files today)
@@ -386,34 +442,36 @@ Fix everything TS 6 deprecates, so P6 is a swap of the binary, not a migration.
       middleware to both; extend the configer empty-body test for `undefined`
 - [ ] cors, dotenv 17 (`quiet: true`), morgan, winston, fs-extra 11, nodemon 3,
       newman 6
-- [ ] `open` decision: `require(esm)` on Node 24 vs keep 8 vs backend to ESM
+- [ ] `open@11` as a plain ESM import once the backend is ESM
 - [ ] lowdb 7 in configer
 - [ ] Full manual run: panel against a real engine and thermal unit, camera feed,
       sound alerts, settings page, restart route; configer PUT path from PR #85
 
-Size: ~2 days. The express 5 and panel typecheck items are most of it.
+Size: ~2.5 days. The backend ESM conversion, express 5 and the panel typecheck are
+most of it.
 
 ### P5 — Test and lint toolchain
 
 - [ ] vite 8.3.0, @vitejs/plugin-vue 6.0.8, vitest 5.0.0, jsdom 30.0.1 in the panel;
-      `vite.config.ts` to `import.meta.dirname`; fallback to vite 7.3.6 documented if
-      8 fails
-- [ ] Decide: backend tests to vitest 5 (one runner, drops ts-jest and the TS JS API
-      dependency; 6 files) or jest 30 + ts-jest 29.4. Recommendation: vitest, and note
-      the 2026-09-11 decision that accepted two runners as superseded.
-- [ ] Lint stack per the P0 decision: either flat-config ESLint 10 + typescript-eslint 8
-      + eslint-plugin-vue 10 + prettier 3, or oxlint + oxfmt from the separate plan
-- [ ] CI lint step updated; the three `.eslintrc*` files replaced or deleted
+      `vite.config.ts` to `import.meta.dirname`
+- [ ] vitest 5 in the backend (moved in P4) and configer; `jest`, `ts-jest`,
+      `@types/jest` removed everywhere; note the 2026-09-11 decision that accepted two
+      runners as superseded
+- [ ] oxlint + oxfmt: configer first (its own PR, with the strict TypeScript flags and
+      tracked suppressions), then panel (`vue` plugin), backend, startup
+- [ ] Remove the ESLint and Prettier family from every `package.json`; delete the three
+      `.eslintrc*` files and `.prettierrc.json`
+- [ ] CI: `oxlint --deny-warnings` and `oxfmt --check` replace the three eslint lines
 
-Size: ~1.5 days, half of it the lint rewrite.
+Size: ~1.5 days.
 
 ### P6 — TypeScript 7.0.2
 
 - [ ] Backend and configer: `typescript@7.0.2` as their own devDependency; `tsc` and
       `tsc --build` produce identical `dist` output (diff it)
 - [ ] Root: `typescript@7.0.2`, or nothing if no root code compiles
-- [ ] Panel: stays on `typescript@6.0.3` for `vue-tsc`; add a check-in item to move
-      when Volar supports the native compiler
+- [ ] Panel: stays on `typescript@6.0.3`; `vue-tsc` 3.3.11 crashes on 7 (tested).
+      Re-test at each Volar major and move when it passes
 - [ ] Remove any `ignoreDeprecations` left from P4
 - [ ] TS 7 pulls a platform binary (`@typescript/typescript-linux-x64`,
       `-win32-x64`); the legacy-image job on Linux and the Windows runner both confirm
@@ -438,10 +496,10 @@ Size: ~0.5 day.
 
 ## Total
 
-Roughly **7.5 to 8.5 focused days**. No phase waits on the fleet, because the
+Roughly **9 to 10 focused days**. No phase waits on the fleet, because the
 legacy-image job proves each commit is reachable from a legacy box. What does take
-calendar time is the tail: the bootstrap stays in HEAD until the last box has made
-the jump.
+calendar time is the tail: the bootstrap stays in HEAD for years, and the Windows 7/8
+boxes need a new OS on site before they can leave the `legacy` branch.
 
 A cut-down version that removes the security exposure and unblocks tooling is P0
 through P4 with TypeScript 5.9.3 instead of 6.0.3, about 4.5 days. It stops short of
@@ -453,8 +511,10 @@ sits.
 - The box update path treats any stderr from `pnpm run build` as failure. Every phase
   is verified by the legacy-image job (Node 18.12.1 + pnpm 7.5.0 + the
   `legacy-runtime` checkout) before it lands on `main`.
-- `apps/startup` and `bootstrap.js` stay on Node 18 syntax with no new dependencies
-  until the last legacy box is gone. They are the code that runs on the old runtime.
+- `apps/startup` and `bootstrap.js` stay on the oldest field Node's syntax (assume 12)
+  with no new dependencies until the last legacy box is gone. They are the code that
+  runs on the old runtime.
+- Half the fleet is Windows. Every startup and bootstrap change is tested on both.
 - `pnpm@7.5.0` cannot reach the registry on Node 20+ (learnings.md). Until P2 lands,
   lockfile changes are made from a Node 18 shell.
 - `configs/main.json` persists across updates. No phase changes its on-disk shape.
@@ -462,23 +522,36 @@ sits.
   number formatting).
 - `moment` stays. It works, and 17 call sites are a separate, smaller project.
 
+## Decisions taken (2026-09-12, owner)
+
+To be copied into decisions.md once PR #85 lands that file.
+
+| Question | Answer | Consequence |
+|---|---|---|
+| Windows boxes in the field? | Yes, half the fleet, Windows 7/8/10/11, nvm-windows, installed by hand | Windows bootstrap path in P1; Windows 7/8 cannot run Node ≥18 and are parked on `legacy` |
+| Ubuntu provisioning? | `installAll.sh` (old) and `install-all.sh` (new); both use `n` with `/usr/local` owned by the user | Ubuntu Node step needs no sudo |
+| Offline tail? | Months, sometimes years | Bootstrap stays in HEAD indefinitely; `legacy` branch and `legacy-runtime` tag are permanent |
+| Backend and ESM-only packages? | Convert the backend to ESM | P4 grows by ~0.5 day; `open@11` becomes a plain import |
+| Backend tests? | vitest | jest, ts-jest, @types/jest removed; one runner |
+| Lint stack? | oxlint + oxfmt | ESLint and Prettier family removed, not upgraded; configer first |
+| Volar on TypeScript 7? | Not required, use the latest tooling | Tested: `vue-tsc` 3.3.11 crashes on TS 7.0.2, works on 6.0.3. The latest working tooling for the panel is TS 6.0.3; backend and configer build with TS 7 |
+| Vite 8 or hold at 7? | Upgrade | Vite 8.3.0; 7.3.6 + `rolldown-vite` only as a documented fallback |
+
 ## Open questions
 
-- [ ] Are there Windows boxes in the field? P1's Node step has no automated path there.
-- [ ] How were the boxes in the field provisioned: old `install.sh` or
-      `install-all.sh`? Decides whether `n` exists and whether `/usr/local` is
-      writable without sudo, which the bootstrap needs for the Node step.
-- [ ] How long is the offline tail? The longest a box has gone between updates sets
-      how long the bootstrap must stay in HEAD.
-- [ ] Backend: `require(esm)` on Node 24, keep `open@8`, or convert to ESM?
-- [ ] Backend tests: vitest or jest 30?
-- [ ] Lint stack: ESLint 10 flat config or oxlint + oxfmt?
-- [ ] Does Volar (`vue-tsc`) run on the TypeScript 7 native compiler yet? Decides
-      whether the panel can leave 6.0.3.
-- [ ] Vite 8 (Rolldown) or hold at 7.3.6 for one release cycle?
+- [ ] Windows 7/8 boxes: is parking them on the `legacy` branch acceptable, and is
+      there a plan to reinstall them (Windows 10/11 or Ubuntu) on site? Until answered,
+      `legacy` is a supported branch with security backports only.
+- [ ] Does `nvm use` run without a UAC prompt from the autostart context on the
+      Windows 10/11 boxes? Test on one box before P1 merges.
+- [ ] What Node do the Windows boxes actually run? nvm-windows "mimicked" 18.12.1, but
+      Node 18 does not install on Windows 7/8. Sets the syntax floor for
+      `bootstrap.js`; assumed Node 12 until known.
 
 ## Progress log
 
 One line per landed step: date, PR, what moved.
 
 - 2026-09-12 — plan written; nothing landed.
+- 2026-09-12 — owner answered the open questions; Windows path, backend ESM, vitest,
+  oxlint + oxfmt, Vite 8 recorded. `vue-tsc` on TS 7 tested and ruled out.
