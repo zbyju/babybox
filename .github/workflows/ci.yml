@@ -39,8 +39,15 @@ jobs:
           pnpm -F babybox-panel exec eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore
           pnpm -F startup exec eslint src/
 
+      # Vsechny aplikace ctou tvar konfigurace odsud, musi se sestavit jako prvni
+      - name: Build config schema
+        run: pnpm -F @babybox/config-schema build
+
       - name: Build
         run: pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build
+
+      - name: Config schema tests
+        run: pnpm -F @babybox/config-schema exec vitest run
 
       - name: Backend tests
         run: pnpm -F babybox-panel-backend exec jest
