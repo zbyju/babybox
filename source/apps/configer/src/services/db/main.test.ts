@@ -54,11 +54,26 @@ afterEach(() => {
 });
 
 describe("boot", () => {
-  it("writes main.json from base.json when there is none", async () => {
+  it("boots from base.json when there is no main.json, and writes nothing", async () => {
     const db = await mainConfig(configDir);
 
     expect(db.data()).toEqual(base());
-    expect(readJson("main.json")).toEqual(base());
+    expect(existsSync(file("main.json"))).toBe(false);
+    expect(existsSync(file("main.json.bak"))).toBe(false);
+  });
+
+  it("leaves main.json and main.json.bak as they are", async () => {
+    writeFileSync(file("main.json"), '{"babybox":{"name":"Praha"}}');
+    writeFileSync(file("main.json.bak"), '{"babybox":{"name":"Brno"}}');
+
+    await mainConfig(configDir);
+
+    expect(readFileSync(file("main.json"), "utf-8")).toBe(
+      '{"babybox":{"name":"Praha"}}'
+    );
+    expect(readFileSync(file("main.json.bak"), "utf-8")).toBe(
+      '{"babybox":{"name":"Brno"}}'
+    );
   });
 
   it("keeps the stored values and fills in the missing ones", async () => {
@@ -100,17 +115,6 @@ describe("boot", () => {
     expect(warn).toHaveBeenCalled();
   });
 
-  it("keeps a good main.json.bak when main.json is corrupt", async () => {
-    const backup = { babybox: { name: "ze zalohy" } };
-    writeFileSync(file("main.json.bak"), JSON.stringify(backup));
-    writeFileSync(file("main.json"), "{ not json");
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    await mainConfig(configDir);
-
-    expect(readJson("main.json.bak")).toEqual(backup);
-  });
-
   it("treats a main.json that is not an object as corrupt", async () => {
     const backup = { babybox: { name: "ze zalohy" } };
     writeFileSync(file("main.json.bak"), JSON.stringify(backup));
@@ -120,11 +124,10 @@ describe("boot", () => {
     const db = await mainConfig(configDir);
 
     expect(db.data().babybox.name).toBe("ze zalohy");
-    expect(readFileSync(file("main.json.corrupt"), "utf-8")).toBe('"abc"');
     expect(readJson("main.json.bak")).toEqual(backup);
   });
 
-  it("falls back without a .corrupt copy when main.json cannot be read", async () => {
+  it("falls back to main.json.bak when main.json cannot be read", async () => {
     const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
     writeFileSync(
       file("main.json.bak"),
@@ -144,18 +147,17 @@ describe("boot", () => {
     const db = await mainConfig(configDir);
 
     expect(db.data().babybox.name).toBe("ze zalohy");
-    expect(existsSync(file("main.json.corrupt"))).toBe(false);
     expect(error).toHaveBeenCalledWith(expect.stringContaining("EACCES"));
   });
 
-  it("keeps the unreadable main.json as main.json.corrupt", async () => {
+  it("leaves an unreadable main.json in place", async () => {
     writeFileSync(file("main.json"), "{ not json");
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     await mainConfig(configDir);
 
-    expect(readFileSync(file("main.json.corrupt"), "utf-8")).toBe("{ not json");
+    expect(readFileSync(file("main.json"), "utf-8")).toBe("{ not json");
   });
 
   it("falls back to base.json when both files are corrupt", async () => {
@@ -187,7 +189,6 @@ describe("update", () => {
 
   it("rejects an invalid body and writes nothing", async () => {
     const db = await mainConfig(configDir);
-    const before = readFileSync(file("main.json"), "utf-8");
 
     const result = await db.update({ units: { engine: { ip: 5 } } });
 
@@ -195,13 +196,12 @@ describe("update", () => {
       status: "invalid",
       errors: [{ path: "units.engine.ip", msg: "must be a string" }],
     });
-    expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
+    expect(existsSync(file("main.json"))).toBe(false);
     expect(db.data()).toEqual(base());
   });
 
   it("rejects a non-object body and writes nothing", async () => {
     const db = await mainConfig(configDir);
-    const before = readFileSync(file("main.json"), "utf-8");
 
     const result = await db.update([]);
 
@@ -209,7 +209,7 @@ describe("update", () => {
       status: "invalid",
       errors: [{ path: "", msg: "must be an object" }],
     });
-    expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
+    expect(existsSync(file("main.json"))).toBe(false);
   });
 
   it("rejects an empty body and writes nothing", async () => {
@@ -276,6 +276,33 @@ describe("update", () => {
     const [rename] = vi.mocked(renameSync).mock.invocationCallOrder;
     expect(dataSync).toBeLessThan(rename);
     expect(rename).toBeLessThan(dirSync);
+  });
+
+  it("keeps the config before the last PUT in main.json.bak across a reboot", async () => {
+    writeFileSync(
+      file("main.json"),
+      JSON.stringify({ babybox: { name: "Praha" } })
+    );
+    const first = await mainConfig(configDir);
+    await first.update({ babybox: { name: "Brno" } });
+
+    await mainConfig(configDir);
+
+    expect(readJson("main.json.bak")).toEqual({ babybox: { name: "Praha" } });
+    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
+  });
+
+  it("never copies a corrupt main.json over main.json.bak", async () => {
+    const backup = { babybox: { name: "ze zalohy" } };
+    writeFileSync(file("main.json.bak"), JSON.stringify(backup));
+    writeFileSync(file("main.json"), "{ not json");
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const db = await mainConfig(configDir);
+
+    await db.update({ babybox: { name: "Brno" } });
+
+    expect(readJson("main.json.bak")).toEqual(backup);
+    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
   });
 
   it("leaves no temp file behind", async () => {

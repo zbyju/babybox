@@ -30,7 +30,8 @@ Context · Decision · Why · Gave up · Where
   so configer does not start. Both backend and panel refuse to start without a config.
 - Decision: write to `main.json.tmp`, `fsync`, rename over `main.json`. Before the
   rename, copy the current file to `main.json.bak`. On boot, if `main.json` does not
-  parse, load `main.json.bak` and log it.
+  parse, load `main.json.bak` and log it. Only a PUT writes, see
+  "Boot reads main.json and never writes it" below.
 - Why: the rename was already atomic; the `fsync` is what makes the renamed file whole.
   One backup covers the failure we actually see. A history with N versions is a later
   decision.
@@ -99,9 +100,9 @@ Context · Decision · Why · Gave up · Where
 
 ## 2026-09-11 — A corrupt main.json never overwrites main.json.bak
 
-- Context: boot rewrites `main.json` after merging `base.json`. If it had backed up
-  first, recovering from a corrupt file would copy the corrupt file over the good
-  backup and lose the only copy.
+- Context: a box boots from `main.json.bak` because `main.json` does not parse. The
+  next PUT backs up the current file before it writes. Without a guard that copies
+  the corrupt file over the good backup and loses the only copy.
 - Decision: take the backup only when the current `main.json` parses.
 - Why: one rule, no flag to pass around, and the backup can only ever hold a file we
   managed to read.
@@ -109,15 +110,8 @@ Context · Decision · Why · Gave up · Where
 
 ## 2026-09-11 — An unreadable main.json is kept as main.json.corrupt
 
-- Context: boot rewrites `main.json` from the backup or from `base.json`, so the file
-  the maintainer broke was gone. Until the UI ships, `main.json` is edited by hand on
-  every box, so a typo (a trailing comma, a BOM from Notepad) plus a restart is normal.
-- Decision: on boot, when `main.json` exists but does not parse, copy it to
-  `main.json.corrupt` before falling back. `main.json.corrupt` is gitignored.
-- Why: the box still comes up, and the edit is still there to recover from. Before this
-  PR lowdb threw and configer did not start, which at least left the file alone.
-- Gave up: nothing. One extra file per broken edit, overwritten by the next one.
-- Where: `loadStored()` in `source/apps/configer/src/services/db/main.ts`.
+- Superseded on 2026-09-12 by "Boot reads main.json and never writes it". Boot no
+  longer touches the file, so the broken edit stays in place on its own.
 
 ## 2026-09-11 — An empty body is rejected, not treated as "reset to defaults"
 
@@ -139,3 +133,19 @@ Context · Decision · Why · Gave up · Where
   Today the unhandled rejection kills the process before anyone reads the stale value,
   which hides the bug rather than fixing it.
 - Gave up: nothing.
+
+## 2026-09-12 — Boot reads main.json and never writes it
+
+- Context: boot merged `base.json` over the stored file and wrote the result back.
+  The backup copy sat inside the write, so every boot copied the current file over
+  `main.json.bak`. A valid but wrong PUT followed by a reboot lost the good config
+  from both files. Review finding on the P0 PR.
+- Decision: boot merges in memory only. The only writer is `PUT /config/main`, so
+  `main.json.bak` is always the config before the last PUT. `main.json.corrupt` is
+  gone. Confirmed on 2026-09-12: nothing outside this repo reads or writes
+  `main.json`.
+- Why: one backup that means one thing, and a reboot can no longer destroy it.
+- Gave up: after a boot `main.json` on disk shows only the keys someone typed, not
+  the full merged shape. `GET /config/main` and `base.json` still show the full
+  shape. A fresh box has no `main.json` until the first PUT.
+- Where: `mainConfig()` in `source/apps/configer/src/services/db/main.ts`.

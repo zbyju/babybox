@@ -82,11 +82,7 @@ function readConfigFile(file: string): StoredFile {
  * A box with a corrupt main.json must still boot: without a config neither the
  * backend nor the panel starts, and that needs someone on site.
  */
-function loadStored(
-  mainFile: string,
-  backupFile: string,
-  corruptFile: string
-): unknown {
+function loadStored(mainFile: string, backupFile: string): unknown {
   if (!existsSync(mainFile)) return undefined;
 
   const stored = readConfigFile(mainFile);
@@ -98,14 +94,8 @@ function loadStored(
       `cannot read ${mainFile}: ${reason}, falling back to ${backupFile}`
     );
   } else {
-    /*
-     * Boot rewrites main.json straight after this, so the unreadable file would be
-     * gone. Until the UI ships main.json is edited by hand on every box, and a typo
-     * plus a restart is a normal event; keep the edit for someone to recover from.
-     */
-    copyFileSync(mainFile, corruptFile);
     console.warn(
-      `${mainFile} is not a JSON object, kept as ${corruptFile}, falling back to ${backupFile}`
+      `${mainFile} is not a JSON object, falling back to ${backupFile}`
     );
   }
 
@@ -120,7 +110,6 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   const mainFile = join(configDir, "main.json");
   const backupFile = join(configDir, "main.json.bak");
   const tempFile = join(configDir, "main.json.tmp");
-  const corruptFile = join(configDir, "main.json.corrupt");
 
   const baseText = readFileSync(join(configDir, "base.json"), "utf-8");
   const freshBase = (): unknown => JSON.parse(baseText) as unknown;
@@ -146,17 +135,15 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   }
 
   /*
+   * Boot only reads. Nothing on disk changes until a PUT, so main.json.bak always
+   * holds the config before the last PUT, and a reboot cannot lose it.
    * Boot never rejects: an odd stored value must not stop the box. It warns, so a
    * value PUT would refuse shows in the log before the UI trips on it.
    */
-  let data = merge(
-    freshBase(),
-    loadStored(mainFile, backupFile, corruptFile)
-  ) as MainConfig;
+  let data = merge(freshBase(), loadStored(mainFile, backupFile)) as MainConfig;
   for (const { path, msg } of validateMainConfig(data)) {
     console.warn(`${mainFile}: ${path} ${msg}`);
   }
-  write(data);
 
   /*
    * A full replace. The body is filled in from base.json first, so a client that

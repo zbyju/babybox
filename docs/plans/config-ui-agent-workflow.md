@@ -76,5 +76,5 @@ docs updated. Merging is a human decision.
 
 - **P0** — make writing the config safe. Brief: the P0 checklist in config-ui.md,
   plus: add a configer test step to `.github/workflows/ci.yml`, gitignore
-  `main.json.bak`, `main.json.tmp` and `main.json.corrupt`, keep the on-disk `main.json` shape unchanged.
+  `main.json.bak` and `main.json.tmp`, keep the on-disk `main.json` shape unchanged.
 - P1 to P5 — written when P0 is merged, after the zod decision.
