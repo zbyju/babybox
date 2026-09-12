@@ -1,7 +1,6 @@
 import * as express from "express";
 import { Request, Response } from "express";
 import { DbFactory } from "../services/db/factory.js";
-import { isInstanceOfMainConfig } from "../types/main.types.js";
 export const router = express.Router();
 
 router.get("/main", async (req: Request, res: Response) => {
@@ -14,14 +13,21 @@ router.get(["/version", "/versions"], async (req: Request, res: Response) => {
   res.json(version.data());
 });
 
+/*
+ * A full replace: send the whole config. A key left out is filled from base.json,
+ * not from the stored config, so a partial body resets those keys to the default.
+ * A partial update waits for PATCH.
+ */
 router.put("/main", async (req: Request, res: Response) => {
-  const c = req.body;
-  if (!isInstanceOfMainConfig(c)) {
+  const main = await DbFactory.getMainDb();
+  const result = await main.update(req.body);
+  if (result.status === "invalid") {
     return res
       .status(400)
-      .json({ msg: `${JSON.stringify(c)} is not a type of 'MainConfig'` });
+      .json({ msg: "Body is not a valid MainConfig", errors: result.errors });
   }
-  const main = await DbFactory.getMainDb();
-  await main.update(c);
-  return res.json(main.data());
+  if (result.status === "write-failed") {
+    return res.status(500).json({ msg: result.msg });
+  }
+  return res.json(result.config);
 });

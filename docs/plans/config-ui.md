@@ -1,8 +1,8 @@
 # Config UI page
 
-Status: **not started**
+Status: **P0 in review**
 Owner: —
-Last updated: 2026-09-11
+Last updated: 2026-09-12
 
 ## Goal
 
@@ -26,7 +26,7 @@ What the form buys us over editing JSON:
 | Defaults | `source/apps/configer/configs/base.json` | merged over the file on every configer boot |
 | Read endpoint | `GET /api/v1/config/main` | works |
 | Write endpoint | `PUT /api/v1/config/main` | exists, unused, and unsafe — see Risks |
-| Validation | `isInstanceOfMainConfig` in `src/types/main.types.ts` | hand-written, has holes |
+| Validation | `validateMainConfig` in `src/types/main.types.ts` | hand-written, returns field-level errors |
 | Panel config store | `src/pinia/configStore.ts` | set once at boot, never again |
 | Panel config types | `src/types/panel/config.types.ts` | a second hand-written copy of the shape |
 | Panel validation | `src/utils/panel/instanceCheck.ts` | a third hand-written copy |
@@ -43,7 +43,7 @@ These are the reason this project is not just "add a form".
 
 1. **The validator has a hole that the UI would drive straight through.**
    `MainConfigUnits` in `configer/src/types/main.types.ts` has no `engine` or `thermal`
-   field, so `isInstanceOfMainConfig` never checks the unit IPs. A `PUT` that drops
+   field, so the config check never checks the unit IPs. A `PUT` that drops
    them passes validation and is written to disk. The backend then throws on
    `config.units.engine.ip` and the panel shows nothing. `startup` is also missing
    from the check.
@@ -52,10 +52,13 @@ These are the reason this project is not just "add a form".
    There is no merge with `base.json` on write, so anything the client leaves out is
    gone until configer restarts and re-merges the base.
 
-3. **The write is not atomic and there is no backup.** lowdb truncates and rewrites
-   `main.json`. A power cut mid-write on a box that runs unattended leaves a corrupt
-   file. Both the backend and the panel refuse to start without a readable config, so
-   that is a dead babybox that needs someone on site.
+3. **The write has no `fsync` and no backup.** lowdb 3.0.0 writes through steno, which
+   already writes a temp file and renames it over `main.json`. What is missing is the
+   `fsync` before the rename — without it the rename can land before the data, so a
+   power cut can leave `main.json` empty or truncated — plus a backup copy and a boot
+   that survives a corrupt file (`JSON.parse` in `JSONFile.read()` throws, so configer
+   does not start). Both the backend and the panel refuse to start without a readable
+   config, so that is a dead babybox that needs someone on site.
 
 4. **`PUT /config/main` has no auth at all.** Today that is tolerable because nothing
    calls it. Shipping a UI that calls it makes it a reachable way to change the unit
@@ -116,14 +119,17 @@ useful; the rest is unchanged.
 
 Nothing in the UI should be built on the current `PUT`.
 
-- [ ] Add `engine` and `thermal` to `MainConfigUnits` and to `isInstanceOfMainConfigUnits`
-- [ ] Add the `startup` key to `isInstanceOfMainConfig`
-- [ ] Merge the incoming body over `base.json` on write, the same way boot does
-- [ ] Write atomically: write to `main.json.tmp`, `fsync`, then rename over `main.json`
-- [ ] Keep the previous file as `main.json.bak` before the rename
-- [ ] On boot, fall back to `main.json.bak` when `main.json` fails to parse, and log it
-- [ ] Return field-level errors from `PUT`, not `JSON.stringify` of the whole body
-- [ ] Tests: a partial body does not lose keys; a corrupt file boots from the backup
+- [x] Add `engine` and `thermal` to `MainConfigUnits` and to the units check
+- [x] Add the `startup` key to the config check
+- [x] Merge the incoming body over `base.json` on write, the same way boot does
+- [x] Write atomically: write to `main.json.tmp`, `fsync`, then rename over `main.json`
+- [x] Keep the previous file as `main.json.bak` before the rename
+- [x] On boot, fall back to `main.json.bak` when `main.json` fails to parse, and log it
+- [x] Boot only reads `main.json`, so `main.json.bak` is the config before the last PUT
+- [x] Reject an empty `PUT` body instead of writing `base.json` over the config
+- [x] Return field-level errors from `PUT`, not `JSON.stringify` of the whole body
+- [x] Tests: a partial body does not lose keys; a corrupt file boots from the backup;
+      the merge base is `base.json`, not the stored config
 
 Size: ~1 day. Worth doing on its own even if the UI is dropped.
 
