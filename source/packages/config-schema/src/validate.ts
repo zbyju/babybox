@@ -29,13 +29,9 @@ function toConfigErrors(error: z.ZodError): ConfigError[] {
   });
 }
 
-/*
- * Every problem with a value, each with a dotted path, so a caller can point at the
- * field that is wrong. An empty list means the value is a MainConfig.
- */
 export function validateMainConfig(config: unknown): ConfigError[] {
-  const result = mainConfigSchema.safeParse(config);
-  return result.success ? [] : toConfigErrors(result.error);
+  const result = parseMainConfig(config);
+  return result.ok ? [] : result.errors;
 }
 
 // The one place an unknown value becomes a MainConfig.

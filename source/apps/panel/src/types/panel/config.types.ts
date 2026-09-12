@@ -15,5 +15,4 @@ export type BabyboxConfig = MainConfig["babybox"];
 export type BackendConfig = MainConfig["backend"];
 export type CameraConfig = MainConfig["camera"];
 export type UnitsConfig = MainConfig["units"];
-export type UnitConfig = UnitsConfig["engine"];
 export type VoltageConfig = UnitsConfig["voltage"];
