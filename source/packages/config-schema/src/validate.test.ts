@@ -37,6 +37,17 @@ describe("validateMainConfig", () => {
     ]);
   });
 
+  it("rejects units without engine and thermal", () => {
+    const units = { ...(config().units as Fields) };
+    delete units.engine;
+    delete units.thermal;
+
+    expect(validateMainConfig({ ...config(), units })).toEqual([
+      { path: "units.engine", msg: "must be an object" },
+      { path: "units.thermal", msg: "must be an object" },
+    ]);
+  });
+
   it("rejects a section that is not an object", () => {
     const value = config();
     value.babybox = "Nenastaveno";
