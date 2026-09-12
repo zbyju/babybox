@@ -107,20 +107,33 @@ describe("validateMainConfig", () => {
     expect(validateMainConfig(value)).toEqual([]);
   });
 
-  it("rejects an unknown root key", () => {
-    expect(validateMainConfig({ ...config(), junk: "x" })).toEqual([
-      { path: "junk", msg: "unknown key" },
-    ]);
-  });
+  /* startup is left out on purpose: it takes any key. */
+  for (const path of [
+    "",
+    "babybox",
+    "backend",
+    "configer",
+    "units",
+    "units.engine",
+    "units.thermal",
+    "units.voltage",
+    "camera",
+    "pc",
+    "app",
+  ]) {
+    it(`rejects an unknown key under ${path || "the root"}`, () => {
+      const value = config();
+      let target = value;
+      for (const key of path.split(".").filter(Boolean)) {
+        target = target[key] as Fields;
+      }
+      target.junk = 1;
 
-  it("rejects an unknown nested key", () => {
-    const value = config();
-    value.babybox = { ...(value.babybox as Fields), junk: 1 };
-
-    expect(validateMainConfig(value)).toEqual([
-      { path: "babybox.junk", msg: "unknown key" },
-    ]);
-  });
+      expect(validateMainConfig(value)).toEqual([
+        { path: path ? `${path}.junk` : "junk", msg: "unknown key" },
+      ]);
+    });
+  }
 
   it("reports every unknown key of an object on its own", () => {
     const value = config();
