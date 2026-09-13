@@ -4,26 +4,28 @@
       <div id="ConfigActions">
         <h2>Akce</h2>
         <div class="action-wrapper">
-          <button class="btn-success" disabled>Uložit konfiguraci</button>
+          <button
+            class="btn-success"
+            :disabled="loaded === null || saving"
+            @click="onSave"
+          >
+            Uložit konfiguraci
+          </button>
           <button
             class="btn-primary"
-            :disabled="loaded === null"
+            :disabled="loaded === null || saving"
             @click="onDiscard"
           >
             Zahodit změny
           </button>
           <button
             class="btn-warning"
-            :disabled="loaded === null"
+            :disabled="loaded === null || saving"
             @click="onResetToDefaults"
           >
             Vrátit výchozí hodnoty
           </button>
         </div>
-        <p class="save-disabled">
-          Ukládání zatím není zapojené. Formulář nic neodesílá, změny zůstávají
-          jen v prohlížeči.
-        </p>
       </div>
       <SettingsFormResult :result="result" />
     </div>
@@ -54,6 +56,7 @@
 
 <script lang="ts" setup>
   import {
+    type ConfigError,
     type MainConfig,
     configForm,
     parseMainConfig,
@@ -61,16 +64,23 @@
   import moment from "moment";
   import { type Ref, computed, ref } from "vue";
 
-  import { getConfig } from "@/api/config";
+  import { getConfig, saveConfig } from "@/api/config";
+  import { reloadBackendConfig } from "@/api/reload";
   import ConfigFormSection from "@/components/config/ConfigFormSection.vue";
   import SettingsFormLog from "@/components/settings/form/SettingsFormLog.vue";
   import SettingsFormResult from "@/components/settings/form/SettingsFormResult.vue";
   import {
     type FormValues,
+    buildConfig,
     defaultFormValues,
     formState,
     toFormValues,
   } from "@/logic/config/configForm";
+  import {
+    type SaveOutcome,
+    bannerFor,
+    rememberBanner,
+  } from "@/logic/config/restartBanner";
   import {
     type LogEntry,
     type SettingsResult,
@@ -79,9 +89,15 @@
 
   const loaded: Ref<MainConfig | null> = ref(null);
   const values: Ref<FormValues> = ref({});
+  const saving = ref(false);
+
+  /* What configer refused last time, shown on the fields it named. */
+  const serverErrors: Ref<ConfigError[]> = ref([]);
 
   const state = computed(() =>
-    loaded.value === null ? null : formState(loaded.value, values.value),
+    loaded.value === null
+      ? null
+      : formState(loaded.value, values.value, serverErrors.value),
   );
 
   const sections = computed(() => {
@@ -112,21 +128,113 @@
 
   function onFieldUpdate(path: string, value: string) {
     values.value = { ...values.value, [path]: value };
+    serverErrors.value = serverErrors.value.filter(
+      (error) => error.path !== path,
+    );
   }
 
   function onDiscard() {
     if (loaded.value === null) return;
     values.value = toFormValues(loaded.value);
+    serverErrors.value = [];
     addLogMessage("Změny zahozeny");
   }
 
   function onResetToDefaults() {
     if (loaded.value === null) return;
     values.value = defaultFormValues(loaded.value);
+    serverErrors.value = [];
     addLogMessage(
-      "Vloženy výchozí hodnoty. Zatím se nikam neukládají.",
+      "Vloženy výchozí hodnoty. Uloží se, až stiskneš Uložit konfiguraci.",
       LogEntryType.Warning,
     );
+  }
+
+  /*
+   * Send, then apply. The whole config goes in one PATCH: configer deep-equals it
+   * against the running one, so a save that changes nothing writes nothing.
+   */
+  async function runSave(): Promise<SaveOutcome> {
+    const current = state.value;
+    if (loaded.value === null || current === null) return { kind: "notSent" };
+
+    if (current.hasErrors) {
+      addLogMessage(
+        "Formulář obsahuje chyby, neodesílám nic.",
+        LogEntryType.Error,
+      );
+      return { kind: "notSent" };
+    }
+
+    const parsed = parseMainConfig(buildConfig(loaded.value, values.value));
+    if (!parsed.ok) {
+      addLogMessage("Konfigurace neodpovídá schématu.", LogEntryType.Error);
+      for (const error of parsed.errors) {
+        addLogMessage(`${error.path}: ${error.msg}`, LogEntryType.Error);
+      }
+      serverErrors.value = parsed.errors;
+      return { kind: "notSent" };
+    }
+
+    addLogMessage("Ukládám konfiguraci do configeru");
+
+    let saved;
+    try {
+      saved = await saveConfig(parsed.config);
+    } catch {
+      addLogMessage(
+        "Configer neodpovídá, konfigurace se neuložila.",
+        LogEntryType.Error,
+      );
+      return { kind: "notSent" };
+    }
+
+    if (!saved.ok) {
+      addLogMessage(
+        `Configer konfiguraci odmítl (HTTP ${saved.status}).`,
+        LogEntryType.Error,
+      );
+      for (const error of saved.errors) {
+        addLogMessage(`${error.path}: ${error.msg}`, LogEntryType.Error);
+      }
+      serverErrors.value = saved.errors;
+      return { kind: "rejected", errors: saved.errors };
+    }
+
+    addLogMessage("Konfigurace uložena", LogEntryType.Success);
+
+    const reload = await reloadBackendConfig();
+    if (!reload.ok) {
+      addLogMessage(
+        "Backend novou konfiguraci nenačetl, restartuj ho.",
+        LogEntryType.Warning,
+      );
+      return { kind: "reloadFailed" };
+    }
+
+    addLogMessage("Backend načetl novou konfiguraci", LogEntryType.Success);
+    return { kind: "applied", unapplied: reload.unapplied };
+  }
+
+  /*
+   * The reload is what makes the panel-tier changes take effect, so it happens even
+   * when the backend did not answer. The banner goes to sessionStorage first,
+   * because the reload wipes every component.
+   */
+  async function onSave() {
+    if (saving.value) return;
+    saving.value = true;
+    let outcome: SaveOutcome;
+    try {
+      outcome = await runSave();
+    } finally {
+      saving.value = false;
+    }
+
+    if (outcome.kind === "notSent" || outcome.kind === "rejected") return;
+
+    rememberBanner(bannerFor(outcome));
+    window.location.reload();
   }
 
   /*
@@ -188,12 +296,6 @@
         flex-direction row
         flex-wrap wrap
         gap 10px
-
-      p.save-disabled
-        margin 8px 0 0 0
-        max-width 420px
-        font-size 0.8em
-        color color-text-warning
 
     button
       display inline-block

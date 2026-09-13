@@ -291,3 +291,86 @@ describe("discard and reset to defaults", () => {
     expect(built.startup).toEqual({ branch: "main", autoUpdate: true });
   });
 });
+
+/*
+ * What Save sends is one PATCH carrying the whole parsed config, not a diff.
+ * configer merges it over the config it is running and returns early when nothing
+ * moved, so a whole body costs nothing and cannot lose a key the form never drew.
+ */
+describe("the body a save sends", () => {
+  it("is the loaded config with the edits written over it", () => {
+    const loaded = loadedConfig();
+    const values = { ...toFormValues(loaded), "units.engine.ip": "10.9.9.9" };
+
+    expect(builtConfig(loaded, values)).toEqual({
+      ...loaded,
+      units: { ...loaded.units, engine: { ip: "10.9.9.9" } },
+    });
+  });
+
+  it("carries startup through untouched, the form draws no row for it", () => {
+    const loaded = loadedConfig();
+    const values = { ...toFormValues(loaded), "babybox.name": "Brno" };
+
+    expect(builtConfig(loaded, values).startup).toEqual({
+      branch: "main",
+      autoUpdate: true,
+    });
+  });
+
+  it("repeats the configer address, which configer reads as no change", () => {
+    const loaded = loadedConfig();
+    const built = builtConfig(loaded, toFormValues(loaded));
+
+    expect(built.configer.port).toBe(loaded.configer.port);
+    expect(built.configer.url).toBe(loaded.configer.url);
+  });
+
+  it("is the whole config, every section, when nothing was edited", () => {
+    const loaded = loadedConfig();
+
+    expect(builtConfig(loaded, toFormValues(loaded))).toEqual(loaded);
+  });
+});
+
+/*
+ * A 400 from configer names the fields, so the maintainer reads the reason next to
+ * the input rather than as one blob at the bottom of the log.
+ */
+describe("formState with what configer refused", () => {
+  it("puts a server error on the field it names", () => {
+    const loaded = loadedConfig();
+    const errors = [{ path: "backend.port", msg: "must be at most 65535" }];
+
+    const field = formState(loaded, toFormValues(loaded), errors).fields.find(
+      (f) => f.field.path === "backend.port",
+    );
+
+    expect(field?.errors).toEqual(["must be at most 65535"]);
+  });
+
+  it("blocks the next save while a server error stands", () => {
+    const loaded = loadedConfig();
+    const errors = [{ path: "backend.port", msg: "must be at most 65535" }];
+
+    expect(formState(loaded, toFormValues(loaded), errors).hasErrors).toBe(
+      true,
+    );
+  });
+
+  it("keeps an error for a field the form draws no row for", () => {
+    const loaded = loadedConfig();
+    const errors = [{ path: "startup.branch", msg: "unknown key" }];
+
+    expect(formState(loaded, toFormValues(loaded), errors).otherErrors).toEqual(
+      errors,
+    );
+  });
+
+  it("changes nothing when configer refused nothing", () => {
+    const loaded = loadedConfig();
+    const values = toFormValues(loaded);
+
+    expect(formState(loaded, values, [])).toEqual(formState(loaded, values));
+  });
+});
