@@ -29,10 +29,13 @@ export async function getConfig(): Promise<unknown> {
  *
  * A refusal is a resolved result, not a rejection: its field-level errors are the
  * useful part and they belong next to the inputs that caused them.
+ *
+ * `errors` is filled on a 400. `msg` carries configer's own line, which is the only
+ * thing a 500 gives us — that is a failed write of `main.json`, not a rejection.
  */
 export type SaveResult =
   | { ok: true }
-  | { ok: false; status: number; errors: ConfigError[] };
+  | { ok: false; status: number; errors: ConfigError[]; msg?: string };
 
 type Fields = Record<string, unknown>;
 
@@ -48,15 +51,22 @@ function isConfigError(value: unknown): value is ConfigError {
   );
 }
 
-async function readErrors(response: Response): Promise<ConfigError[]> {
+/** The two useful parts of a refusal body. Both are absent when it is not JSON. */
+async function readFailure(
+  response: Response,
+): Promise<{ errors: ConfigError[]; msg?: string }> {
   let body: unknown;
   try {
     body = await response.json();
   } catch {
-    return [];
+    return { errors: [] };
   }
-  if (!isObject(body) || !Array.isArray(body.errors)) return [];
-  return body.errors.filter(isConfigError);
+  if (!isObject(body)) return { errors: [] };
+
+  return {
+    errors: Array.isArray(body.errors) ? body.errors.filter(isConfigError) : [],
+    msg: typeof body.msg === "string" ? body.msg : undefined,
+  };
 }
 
 /**
@@ -72,7 +82,8 @@ async function readErrors(response: Response): Promise<ConfigError[]> {
  *
  * Rejects only when configer cannot be reached. A 400 resolves as `ok: false` with
  * one `{ path, msg }` per bad field, or an empty list when the body was not the
- * shape we expect.
+ * shape we expect. A 500 means the write of `main.json` failed and carries only
+ * `msg`; the caller has to say that, not "configer refused it".
  *
  * @example
  * const result = await saveConfig(parsed.config);
@@ -91,6 +102,6 @@ export async function saveConfig(config: MainConfig): Promise<SaveResult> {
   return {
     ok: false,
     status: response.status,
-    errors: await readErrors(response),
+    ...(await readFailure(response)),
   };
 }
