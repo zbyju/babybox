@@ -1,41 +1,43 @@
 <template>
   <div id="FloatingActions">
-    <button
-      id="FloatingScrollUp"
-      class="floating-action variant-success size-small"
-      type="button"
-      aria-label="Nahoru"
-      @click="onScrollUp"
-    >
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path
-          d="M6 14l6-6 6 6"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </button>
-    <button
-      id="FloatingGoToPanel"
-      class="floating-action variant-primary size-large"
-      type="button"
-      aria-label="Panel"
-      @click="onGoToPanel"
-    >
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path
-          d="M4 11l8-7 8 7M6 10.5V20h12V10.5"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </button>
+    <div class="floating-actions-cluster">
+      <button
+        id="FloatingGoToPanel"
+        class="floating-action variant-primary size-large"
+        type="button"
+        aria-label="Panel"
+        @click="onGoToPanel"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            d="M4 11l8-7 8 7M6 10.5V20h12V10.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+      <button
+        id="FloatingScrollUp"
+        class="floating-action variant-success size-small"
+        type="button"
+        aria-label="Nahoru"
+        @click="onScrollUp"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            d="M6 14l6-6 6 6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -70,16 +72,18 @@
     right 24px
     bottom 24px
     z-index 50
-    display flex
-    flex-direction column
-    align-items center
+    padding-top 26px
+    padding-right 26px
     pointer-events none
 
-  .floating-action
+  .floating-actions-cluster
     position relative
+    width 84px
+    height 84px
+
+  .floating-action
     isolation isolate
     overflow hidden
-    flex-shrink 0
     display flex
     align-items center
     justify-content center
@@ -113,9 +117,12 @@
       height 42px
 
   .floating-action.size-small
+    position absolute
+    top -26px
+    right -26px
+    z-index 1
     width 52px
     height 52px
-    margin-bottom 24px
 
     svg
       width 26px
