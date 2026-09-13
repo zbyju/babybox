@@ -5,8 +5,10 @@ import * as morgan from "morgan";
 import * as path from "path";
 import open = require("open");
 import { fetchConfig } from "./fetch/fetchConfig";
+import type { BoundAddress } from "./modules/configReload";
 import { modulesObject } from "./modules/init";
 import { router as engineRoute } from "./routes/engineRoute";
+import { router as reloadRoute } from "./routes/reloadRoute";
 import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
@@ -51,6 +53,22 @@ dotenv.config();
 export const modules = modulesObject();
 
 export let config: MainConfig | null = null;
+
+/*
+ * What the server is really listening on, set when it starts listening. Null until
+ * then. POST /reload compares the stored values against this and not against
+ * `config.backend`, which it overwrites a line later.
+ */
+export let bound: BoundAddress | null = null;
+
+/*
+ * The one writer of `config`, so POST /reload can swap it in without a second copy
+ * of the binding. Consumers read `config.x` inside their functions, so the new
+ * value reaches them on their next call.
+ */
+export function applyConfig(next: MainConfig): void {
+  config = next;
+}
 
 async function main() {
   /*
@@ -102,6 +120,7 @@ async function main() {
   app.use(prefix + "/engine", engineRoute);
   app.use(prefix + "/thermal", thermalRoute);
   app.use(prefix + "/restart", restartRoute);
+  app.use(prefix + "/reload", reloadRoute);
 
   // Serve Frontend app if running in production
   if (process.env.NODE_ENV === "production") {
@@ -115,6 +134,8 @@ async function main() {
 
     open("http://localhost:" + port);
   }
+
+  bound = { port, prefix: prefix ?? "" };
 
   app.listen(port, () => {
     const color =
