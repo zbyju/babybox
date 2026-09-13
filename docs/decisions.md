@@ -221,3 +221,37 @@ Context · Decision · Why · Gave up · Where
   tests are what hold them together. A field of the wrong type still stops the panel,
   and a hand-typed `backend.port: "5000"` is the realistic case.
 - Where: `isInstanceOfConfig` in `apps/panel/src/utils/panel/instanceCheck.ts`.
+
+## 2026-09-13 — No `GET /config/schema`; the form descriptor is a build-time import
+
+- Context: the [config-ui plan](plans/config-ui.md) lists `GET /config/schema` in P2
+  and leaves it open against "just importing the shared package".
+- Decision: do not build it. The panel resolves `@babybox/config-schema` at build
+  time, as it has since P1, and the P3 form metadata comes from that same import.
+- Why: a runtime descriptor is a second copy of the shape with no reader today
+  (motto 1). It would also have to stay in step with the package, and a box serving
+  an old descriptor from an old configer to a newly built panel is a drift we would
+  then have to detect.
+- Gave up: a consumer that cannot compile against the package has no way to learn the
+  shape. Nothing is in that position; configer, the backend and the panel all build
+  from the same checkout.
+- What reverses it: a reader outside this repo, or a panel build that has to run
+  against a configer of another version. Then add the endpoint and serve it from the
+  same zod schema, so there is still one source.
+- Where: [config-ui plan, P2](plans/config-ui.md).
+
+## 2026-09-13 — A write may change `configer.port` and `configer.url`
+
+- Context: P2 asked to either reject a write that changes the port or the prefix of
+  the running configer, or accept it and state that it needs a restart.
+- Decision: accept it. Both fields are checked like any other field and written.
+  The API response says nothing about a restart.
+- Why: rejecting leaves hand-editing `main.json` as the only way to change them, and
+  removing that is why this feature exists. `index.ts` reads both once when it starts
+  listening, so the write does not disturb the running service; it takes effect on the
+  next start.
+- Gave up: a maintainer can store a port the box only uses after a restart, and can
+  store a port nothing can bind. The previous value is in `main.json.bak`.
+- No `restartRequired` field in the response: the apply tier is form metadata and
+  belongs with the rest of it in P3, where something reads it (motto 1).
+- Where: `update()` and `patch()` in `source/apps/configer/src/services/db/main.ts`.

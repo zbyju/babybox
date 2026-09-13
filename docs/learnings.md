@@ -20,6 +20,10 @@ lesson: what happened, what to do instead.
   undici). Run it under Node 18 through npx instead:
   `npx -y -p node@18.12.1 -p pnpm@7.5.0 pnpm install` from `source/`. npx puts a
   Node 18 binary first on PATH and pnpm's shebang picks it up. Checked 2026-09-12.
+- **Nothing formats configer, so prettier rewrites lines nobody touched.** CI lints the
+  backend, the panel and startup only, and the one `.prettierrc.json` belongs to the
+  panel. Format the lines you added by hand, or check the diff after prettier and put
+  the untouched lines back.
 - **`pnpm view` is not a test of the above.** It shells out to the machine's npm, which
   fails under Node 18 with `tracingChannel is not a function`. Test with
   `pnpm install --lockfile-only` in a scratch folder.
@@ -48,6 +52,13 @@ lesson: what happened, what to do instead.
   Change a second key first, then assert it went back to its default.
 - **`lodash.merge` spreads a string source over the target** (`merge({}, "ab")` gives
   `{0:"a",1:"b"}`). Reject a non-object body before merging it over the defaults.
+- **A stored value the schema rejects blocks every PATCH.** Boot only warns about one,
+  so a box can be running on it, and a PATCH merges over that config and fails the
+  check. The errors name the field, so a PATCH that sends a valid value for it gets
+  through. Do not add a bypass; it would write a config nothing checked.
+- **No write can remove a key.** PUT fills a missing key from `base.json`, PATCH keeps
+  the stored value, and `lodash.merge` cannot delete. `app.refreshRequestLimit` is the
+  only optional field and there is no way to clear it through the API.
 
 ## Startup
 
