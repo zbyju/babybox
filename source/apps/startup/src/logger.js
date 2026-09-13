@@ -232,6 +232,7 @@ function createLogger(options = {}) {
     } catch (err) {
       fileEnabled = false;
       fileDest = null;
+      pinoLogger = null;
       if (!warnedFileUnavailable) {
         warnedFileUnavailable = true;
         writeStdout(
@@ -264,15 +265,43 @@ function createLogger(options = {}) {
     } catch (writeErr) {
       try {
         stdout.write(`${String(message)}\n`);
-      } catch (consoleErr) {
-        // Last resort failed. There is nothing else to do.
-      }
+      } catch (consoleErr) {}
     }
   }
 
   try {
     fs.mkdirSync(logsDir, { recursive: true });
+  } catch (err) {
+    fileEnabled = false;
+    fileDest = null;
+    pinoLogger = null;
+    warnedFileUnavailable = true;
+    writeStdout(
+      formatLogLine(now(), "warn", "start", strings.logFileUnavailable, err)
+    );
+    return {
+      error(stage, message, err) {
+        emit("error", stage, message, err);
+      },
+      info(stage, message, err) {
+        emit("info", stage, message, err);
+      },
+      warn(stage, message, err) {
+        emit("warn", stage, message, err);
+      },
+    };
+  }
+
+  try {
     rotateLogFile(logsDir, now());
+  } catch (err) {
+    writeStdout(
+      formatLogLine(now(), "warn", "start", strings.logFileUnavailable, err)
+    );
+  }
+
+  fileEnabled = true;
+  try {
     if (pinoLib && pinoLib.pino && pinoLib.pretty) {
       fileDest = pinoLib.pino.destination({
         dest: livePath,
@@ -286,15 +315,10 @@ function createLogger(options = {}) {
           { stream: createPretty(pinoLib.pretty, fileDest) },
         ])
       );
-      fileEnabled = true;
-    } else {
-      fileEnabled = true;
     }
   } catch (err) {
-    fileEnabled = false;
-    fileDest = null;
     pinoLogger = null;
-    warnedFileUnavailable = true;
+    fileDest = null;
     writeStdout(
       formatLogLine(now(), "warn", "start", strings.logFileUnavailable, err)
     );
