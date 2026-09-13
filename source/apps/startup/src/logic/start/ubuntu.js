@@ -22,10 +22,14 @@ function withRetryIndex(template, index) {
 
 function collectStdio(child) {
   const chunks = [];
+  const append = (data) => {
+    chunks.push(Buffer.isBuffer(data) ? data.toString("utf8") : String(data));
+  };
+  if (child.stdout) {
+    child.stdout.on("data", append);
+  }
   if (child.stderr) {
-    child.stderr.on("data", (data) => {
-      chunks.push(Buffer.isBuffer(data) ? data.toString("utf8") : String(data));
-    });
+    child.stderr.on("data", append);
   }
   return () => chunks.join("");
 }
