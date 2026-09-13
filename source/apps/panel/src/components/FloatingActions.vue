@@ -1,8 +1,8 @@
 <template>
   <div id="FloatingActions">
     <button
-      id="ScrollToTop"
-      class="floating-action variant-accent size-small"
+      id="FloatingScrollUp"
+      class="floating-action variant-success size-small"
       type="button"
       aria-label="Nahoru"
       @click="onScrollUp"
@@ -19,7 +19,7 @@
       </svg>
     </button>
     <button
-      id="GoToPanel"
+      id="FloatingGoToPanel"
       class="floating-action variant-primary size-large"
       type="button"
       aria-label="Panel"
@@ -72,13 +72,14 @@
     z-index 50
     display flex
     flex-direction column
-    align-items flex-end
-    gap 14px
+    align-items center
+    pointer-events none
 
   .floating-action
     position relative
     isolation isolate
     overflow hidden
+    flex-shrink 0
     display flex
     align-items center
     justify-content center
@@ -86,6 +87,7 @@
     border 0
     border-radius 50%
     cursor pointer
+    pointer-events auto
     color color-text-white
     background-size 220% 220%
     background-position 0% 50%
@@ -111,28 +113,29 @@
       height 42px
 
   .floating-action.size-small
-    width 48px
-    height 48px
+    width 52px
+    height 52px
+    margin-bottom 24px
 
     svg
-      width 24px
-      height 24px
+      width 26px
+      height 26px
 
   .floating-action.variant-primary
     background-color color-primary
     background-image linear-gradient(120deg, color-primary 0%, #4A148C 40%, color-primary-hover 70%, color-primary 100%)
-    box-shadow 0 0 18px rgba(40, 53, 147, 0.45)
+    box-shadow 0 0 0 3px color-bg-black, 0 0 18px rgba(40, 53, 147, 0.45)
 
     &:hover
-      box-shadow 0 0 22px rgba(40, 53, 147, 0.7)
+      box-shadow 0 0 0 3px color-bg-black, 0 0 22px rgba(40, 53, 147, 0.7)
 
-  .floating-action.variant-accent
-    background-color color-accent
-    background-image linear-gradient(120deg, color-accent 0%, #7C4DFF 40%, color-accent-hover 70%, color-accent 100%)
-    box-shadow 0 0 16px rgba(83, 35, 196, 0.45)
+  .floating-action.variant-success
+    background-color color-success
+    background-image linear-gradient(120deg, color-success 0%, #00E5A0 40%, color-success-hover 70%, color-success 100%)
+    box-shadow 0 0 0 3px color-bg-black, 0 0 18px rgba(0, 192, 61, 0.45)
 
     &:hover
-      box-shadow 0 0 20px rgba(83, 35, 196, 0.7)
+      box-shadow 0 0 0 3px color-bg-black, 0 0 22px rgba(0, 192, 61, 0.7)
 
   @media (prefers-reduced-motion: reduce)
     .floating-action
