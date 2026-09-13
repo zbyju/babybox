@@ -1,13 +1,14 @@
 <template>
-  <input
-    :type="type"
-    :placeholder="placeholder"
+  <select
     :value="props.modelValue"
     :class="classState"
-    :pattern="props.pattern"
     :disabled="props.disabled"
-    @input="inputChange"
-  />
+    @change="selectChange"
+  >
+    <option v-for="option in props.options" :key="option" :value="option">
+      {{ option }}
+    </option>
+  </select>
 </template>
 
 <script lang="ts" setup>
@@ -16,11 +17,9 @@
   import { BaseInputState } from "@/types/base/baseInput.types";
 
   const props = defineProps<{
-    type: string;
-    placeholder?: string;
+    options: readonly string[];
     modelValue?: string;
     state?: BaseInputState;
-    pattern?: string;
     disabled?: boolean;
   }>();
 
@@ -28,8 +27,8 @@
     (e: "update:modelValue", value: string): void;
   }>();
 
-  function inputChange(event: Event) {
-    emit("update:modelValue", (event.target as HTMLInputElement).value);
+  function selectChange(event: Event) {
+    emit("update:modelValue", (event.target as HTMLSelectElement).value);
   }
 
   const classState = computed(() =>
@@ -46,7 +45,7 @@
 </script>
 
 <style lang="stylus">
-  input
+  select
     background-color color-bg-black
     border 1px solid color-border-secondary
     border-radius 5px
@@ -55,19 +54,16 @@
     flex-grow 1
     font-size 1.1em
 
-  input.border-accent
+  select.border-accent
     border 1px solid color-border-accent
-  input.border-success
+  select.border-success
     border 1px solid color-border-success
-  input.border-warning
+  select.border-warning
     border 1px solid color-border-warning
-  input.border-error
+  select.border-error
     border 1px solid color-border-error
 
-  input:focus
-    border 1px solid color-border-secondary
-
-  input:disabled
+  select:disabled
     color color-text-secondary
     cursor not-allowed
 </style>
