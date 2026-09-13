@@ -46,6 +46,8 @@
     text-align center
     min-width 160px
     min-height 90px
+    box-sizing border-box
+    padding 0 10px
 
     h4
       color color-text-error
