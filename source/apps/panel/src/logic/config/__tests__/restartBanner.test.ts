@@ -17,14 +17,18 @@ describe("bannerFor", () => {
     expect(bannerFor({ kind: "applied", unapplied: [] })).toBeNull();
   });
 
-  it("names the field, the running value and the stored one", () => {
+  /*
+   * The field is named by the label the form shows, not by its dotted path, and a
+   * changed port also names the address the panel comes back on after the restart.
+   */
+  it("names the field by its label and says where the panel will be", () => {
     const banner = bannerFor({
       kind: "applied",
       unapplied: [{ path: "backend.port", running: 5000, stored: 5050 }],
     });
 
     expect(banner).toBe(
-      "Restartuj backend, tyto hodnoty se použijí až potom: backend.port (běží 5000, uloženo 5050).",
+      "Restartuj backend, tyto hodnoty se použijí až potom: Port (běží 5000, uloženo 5050). Panel pak poběží na http://localhost:5050.",
     );
   });
 
@@ -37,8 +41,32 @@ describe("bannerFor", () => {
       ],
     });
 
-    expect(banner).toContain("backend.port (běží 5000, uloženo 5050)");
-    expect(banner).toContain("backend.url (běží /api/v1, uloženo /api/v2)");
+    expect(banner).toContain("Port (běží 5000, uloženo 5050)");
+    expect(banner).toContain("Předpona API (běží /api/v1, uloženo /api/v2)");
+  });
+
+  /* Only a changed port moves the panel, so nothing else may promise an address. */
+  it("says nothing about the address when only the prefix is unapplied", () => {
+    const banner = bannerFor({
+      kind: "applied",
+      unapplied: [
+        { path: "backend.url", running: "/api/v1", stored: "/api/v2" },
+      ],
+    });
+
+    expect(banner).toBe(
+      "Restartuj backend, tyto hodnoty se použijí až potom: Předpona API (běží /api/v1, uloženo /api/v2).",
+    );
+  });
+
+  /* A path the form draws no row for still has to read as something. */
+  it("falls back to the path when no field carries that label", () => {
+    const banner = bannerFor({
+      kind: "applied",
+      unapplied: [{ path: "backend.nothing", running: 1, stored: 2 }],
+    });
+
+    expect(banner).toContain("backend.nothing (běží 1, uloženo 2)");
   });
 
   /* A failed reload leaves every backend-read field on the old value, not just two. */

@@ -1,4 +1,4 @@
-import type { UnappliedField } from "@babybox/config-schema";
+import { type UnappliedField, configFormFields } from "@babybox/config-schema";
 
 /*
  * The save ends in window.location.reload(), which wipes every component, so the
@@ -23,6 +23,15 @@ export type SaveOutcome =
 const BACKEND_FIELDS =
   "IP jednotek, operační systém, port backendu a předpona API";
 
+/* The Czech label the form shows for a field, so the banner prints no dotted path. */
+const fieldLabels = new Map(
+  configFormFields.map((field) => [field.path, field.label]),
+);
+
+function labelFor(path: string): string {
+  return fieldLabels.get(path) ?? path;
+}
+
 /**
  * The line to keep across the panel reload, or null when nothing needs a restart.
  *
@@ -45,10 +54,24 @@ export function bannerFor(
   if (outcome.unapplied.length === 0) return null;
 
   const fields = outcome.unapplied
-    .map((f) => `${f.path} (běží ${f.running}, uloženo ${f.stored})`)
+    .map((f) => `${labelFor(f.path)} (běží ${f.running}, uloženo ${f.stored})`)
     .join(", ");
-  return `Restartuj backend, tyto hodnoty se použijí až potom: ${fields}.`;
+
+  /*
+   * In production the backend serves the panel on that port, so this tab is on the
+   * old address after the restart. index.ts opens the browser on every production
+   * start, so the restart lands on the new address by itself; the maintainer only
+   * has to be told which one it is.
+   */
+  const port = outcome.unapplied.find((f) => f.path === "backend.port");
+  const address =
+    port === undefined
+      ? ""
+      : ` Panel pak poběží na http://localhost:${port.stored}.`;
+
+  return `Restartuj backend, tyto hodnoty se použijí až potom: ${fields}.${address}`;
 }
+
 /** Writes the banner for the page to pick up after the reload; null clears it. */
 export function rememberBanner(text: string | null): void {
   if (text === null) sessionStorage.removeItem(BANNER_KEY);
