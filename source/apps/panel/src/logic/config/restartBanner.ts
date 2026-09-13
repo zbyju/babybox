@@ -1,6 +1,4 @@
-import type { ConfigError } from "@babybox/config-schema";
-
-import type { UnappliedField } from "@/api/reload";
+import type { ConfigError, UnappliedField } from "@babybox/config-schema";
 
 /*
  * The save ends in window.location.reload(), which wipes every component, so the

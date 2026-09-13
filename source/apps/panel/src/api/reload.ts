@@ -1,3 +1,5 @@
+import type { UnappliedField } from "@babybox/config-schema";
+
 import { backendApi } from "@/api/base";
 import { requestJson } from "@/api/http";
 
@@ -7,13 +9,6 @@ import { requestJson } from "@/api/http";
  * on a slow configer before the backend did and report a failed reload that worked.
  */
 const RELOAD_TIMEOUT = 15000;
-
-/** A field the backend read but a listening process cannot change. */
-export interface UnappliedField {
-  path: string;
-  running: string | number;
-  stored: string | number;
-}
 
 export type ReloadResult =
   | { ok: true; unapplied: UnappliedField[] }
