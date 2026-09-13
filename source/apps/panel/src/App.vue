@@ -1,16 +1,23 @@
 <template>
   <AppState>
     <router-view></router-view>
+    <FloatingActions v-if="showFloatingActions" />
   </AppState>
 </template>
 
 <script lang="ts" setup>
-  import { onBeforeMount, onUnmounted } from "vue";
+  import { computed, onBeforeMount, onUnmounted } from "vue";
+  import { useRoute } from "vue-router";
 
   import { AppManager } from "@/logic/panel/panelLoop";
 
   import { refreshRestartCooldown } from "./api/restart";
   import AppState from "./components/AppState.vue";
+  import FloatingActions from "./components/FloatingActions.vue";
+
+  const route = useRoute();
+  /* The panel is one screen. Settings and config are long pages. */
+  const showFloatingActions = computed(() => route.name !== "Main");
 
   const appManager = new AppManager();
   onBeforeMount(async () => await appManager.initializeGlobal());
