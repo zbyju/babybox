@@ -99,6 +99,48 @@ describe("configForm field metadata", () => {
     expect(optional).toEqual(["app.refreshRequestLimit"]);
   });
 
+  /*
+   * The dialog is the last thing between a maintainer and a box nobody can reach.
+   * The list is spelled out here so adding a field to it is a deliberate edit with
+   * a reviewer, not something a hint reword can do by accident.
+   */
+  it("asks before a save only on the fields that can cut the box off", () => {
+    const asking = configFormFields
+      .filter((field) => field.confirm !== undefined)
+      .map((field) => field.path);
+    expect(asking).toEqual([
+      "backend.url",
+      "backend.port",
+      "units.engine.ip",
+      "units.thermal.ip",
+      "pc.os",
+      "app.password",
+      "app.refreshRequestLimit",
+    ]);
+  });
+
+  /* confirmSave.ts fires on `!== undefined`, so an empty string would ask with no reason. */
+  it("gives every question a reason to show", () => {
+    for (const field of configFormFields) {
+      if (field.confirm === undefined) continue;
+      expect(field.confirm.length).toBeGreaterThan(0);
+    }
+  });
+
+  /* confirmSave.ts appends "Opravdu uložit?" itself, so a reason must not ask too. */
+  it("writes every reason as a statement, not as a question", () => {
+    for (const field of configFormFields) {
+      expect(field.confirm?.endsWith("?") ?? false).toBe(false);
+    }
+  });
+
+  /* A read-only field never counts as changed, so its question could never show. */
+  it("puts no question on a read-only field", () => {
+    for (const field of configFormFields) {
+      if (field.readOnly) expect(field.confirm).toBeUndefined();
+    }
+  });
+
   it("offers a select only values the schema accepts", () => {
     const config = defaultConfig();
     for (const field of configFormFields) {

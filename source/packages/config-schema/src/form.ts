@@ -58,6 +58,13 @@ export interface FormField {
   readOnly?: boolean;
   /** Masked behind a reveal toggle. */
   secret?: boolean;
+  /**
+   * Why this change can cut the maintainer off from the box.
+   *
+   * Write a reason, not a question: `confirmSave.ts` on the panel builds the
+   * question around it. A `readOnly` field never changes, so it must not carry one.
+   */
+  confirm?: string;
   /** The schema allows the key to be missing, so an empty input is a valid state. */
   optional?: boolean;
 }
@@ -105,6 +112,8 @@ export const configForm: readonly FormSection[] = [
         widget: "text",
         tier: "backendRestart",
         hint: "Backend ji čte, až když začíná poslouchat. Uložení ohlásí, že je potřeba restart.",
+        confirm:
+          "Panel začne volat novou předponu hned, backend ji začne obsluhovat až po restartu. Do té doby zůstane panel bez dat.",
       },
       {
         path: "backend.port",
@@ -112,6 +121,8 @@ export const configForm: readonly FormSection[] = [
         widget: "number",
         tier: "backendRestart",
         hint: "Backend ho čte, až když začíná poslouchat. Uložení ohlásí, že je potřeba restart.",
+        confirm:
+          "Po restartu backendu bude panel na jiné adrese. V produkci si ji prohlížeč otevře sám, ze vzdálené relace ji musíš zadat ručně.",
       },
       {
         path: "backend.requestTimeout",
@@ -163,6 +174,8 @@ export const configForm: readonly FormSection[] = [
         widget: "ip",
         tier: "backendReload",
         hint: "Backend adresu načte znovu při uložení, odkaz v menu s obnovením panelu.",
+        confirm:
+          "Když adresa nesedí, backend jednotku nenajde. Panel zůstane bez dat z motorů a dveře nepůjdou otevřít z panelu.",
       },
       {
         path: "units.thermal.ip",
@@ -170,6 +183,8 @@ export const configForm: readonly FormSection[] = [
         widget: "ip",
         tier: "backendReload",
         hint: "Backend adresu načte znovu při uložení, odkaz v menu s obnovením panelu.",
+        confirm:
+          "Když adresa nesedí, backend jednotku nenajde. Panel zůstane bez teplot a bez hlídání napětí.",
       },
       {
         path: "units.requestDelay",
@@ -267,6 +282,8 @@ export const configForm: readonly FormSection[] = [
         options: pcOsTypes,
         tier: "backendReload",
         hint: "Backend podle něj volí příkaz pro restart počítače a načte ho při uložení.",
+        confirm:
+          "Backend podle něj volí příkaz na restart i na jeho zrušení. Se špatnou hodnotou restart spustí, ale už ho nezruší.",
       },
     ],
   },
@@ -281,6 +298,8 @@ export const configForm: readonly FormSection[] = [
         tier: "panelReload",
         secret: true,
         hint: "Odemyká Nastavení a Konfiguraci. Kontroluje se jen v prohlížeči.",
+        confirm:
+          "Když heslo zapomeneš, zbyde jen úprava main.json na počítači babyboxu. Prázdné heslo odemkne panel komukoli.",
       },
       {
         path: "app.refreshRequestLimit",
@@ -289,6 +308,8 @@ export const configForm: readonly FormSection[] = [
         tier: "panelReload",
         optional: true,
         hint: "Po tolika dotazech na jednotku se panel sám obnoví. Hodnotu nelze smazat; vypnout obnovování jde jen velkým číslem.",
+        confirm:
+          "Při velmi nízké hodnotě se panel obnovuje pořád dokola a nemusí zbýt čas dostat se zpět do Konfigurace a hodnotu vrátit.",
       },
     ],
   },

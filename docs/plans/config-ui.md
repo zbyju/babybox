@@ -1,6 +1,7 @@
 # Config UI page
 
-Status: **P3 merged, P4 in review**
+Status: **P0-P5 merged. The feature is done.** The one thing left is the config
+history open question below, which was never in scope for P0-P5.
 Owner: —
 Last updated: 2026-09-13
 
@@ -318,15 +319,59 @@ Size: ~0.5 day.
 
 ### P5 — Guard rails
 
-- [ ] Decide on auth for the configer write endpoint. Cheapest honest option: require
-      the `app.password` as a header, checked server-side. The panel's current password
-      gate is client-side only and protects nothing on its own.
-- [ ] Confirm dialog for `app.password`, `backend.port`, `configer.port` and both unit IPs
-- [ ] Unit tests for the schema, the merge and the diff
-- [ ] A component test that a bad value blocks Save
-- [ ] Update `CLAUDE.md` and `README.md`
+- [x] Decide on auth for the configer write endpoint — **decided against**, not
+      skipped. The suggestion above is circular: `GET /config/main` has no auth and
+      returns `app.password`, so whoever can send the header can first read it. Both
+      servers also bind every interface and answer `Access-Control-Allow-Origin: *`,
+      and the same caller can already open the doors with an unauthenticated
+      `GET <prefix>/units/actions/opendoors`. Masking the passwords in `GET` instead
+      breaks every box: the panel puts that body into its store, and the nav compares
+      the typed password against it, so a sentinel would become the panel password.
+      See decisions.md for the evidence and for what reverses it — the real fix is
+      binding configer to `127.0.0.1`, in the same phase as the door routes
+- [x] Confirm before saving `app.password`, `backend.port`, `backend.url`, both unit
+      IPs, `pc.os` and `app.refreshRequestLimit`. It is per-field metadata (`confirm`
+      on `FormField`), not a list in the component, and it is one question for the
+      whole save naming each dangerous field that really changed, with its old and
+      new value. A secret is named, never printed, and being cleared reads
+      differently from being changed. Four changes to the checklist's list, each
+      checked against the reader:
+      - `configer.port` dropped — it is `readOnly`, so `formState` can never report
+        it as changed and the question could never appear.
+      - `backend.url` added — it strands the panel exactly the way `backend.port`
+        does.
+      - `pc.os` added — `restart.ts` picks the reboot *and the cancel* command from
+        it, so a wrong value means a reboot the panel cannot call off. "Vrátit
+        výchozí hodnoty" flips it to `windows` on an Ubuntu box.
+      - `app.refreshRequestLimit` added — a low value reloads the panel every few
+        seconds, leaving almost no time to undo it.
+      **Not `window.confirm`**: it blocks the event loop, which stops the heartbeat
+      the backend watches, and the box reboots after about three minutes. The
+      question is shown in the page and Save is pressed twice. See decisions.md
+- [x] Unit tests for the schema, the merge and the diff — already covered by P0-P4 and
+      checked field by field before adding anything: the schema in
+      `packages/config-schema/src/validate.test.ts` (42 cases), the merge in
+      configer's `services/db/main.test.ts` and `routes/configRoute.test.ts`, the diff
+      in `formState` / `buildConfig` in `logic/config/__tests__/configForm.test.ts`.
+      P5 adds the confirm rule in `__tests__/confirmSave.test.ts` and the `confirm`
+      metadata in the package's `form.test.ts`. Nothing was duplicated (motto 1)
+- [x] A component test that a bad value blocks Save — **decided against**, and so is
+      `@vue/test-utils` for the third time. The rule is already proved on both halves:
+      `configForm.test.ts` that a bad value sets `hasErrors`, `saveFlow.test.ts` that
+      `hasErrors` makes `runSave` send nothing. A mount would add the one line that
+      passes `hasErrors` between them, and cost a lockfile change every box applies
+      unattended. See decisions.md for what reverses it
+- [x] Update `CLAUDE.md` and `README.md`
 
 Size: ~0.5 day.
+
+Not in P5, deliberately:
+
+- Binding configer to `127.0.0.1`. It closes the config hole completely and costs one
+  argument, but it changes the network behaviour of every deployed box on an
+  unattended update, and shipped without auth on the backend's action routes it would
+  claim a protection the box does not have. Written up in decisions.md.
+- Config history and rollback. Still the open question below.
 
 ---
 
@@ -359,6 +404,8 @@ need is "see what this box is set to" more often than "change it".
       change and the box is dead after the next restart. `configer.requestTimeout` is
       still editable. See decisions.md, "A write cannot change `configer.port` or
       `configer.url`"
-- [ ] Do we want a config history — keep the last N versions, offer a rollback? The
-      atomic write from P0 makes this nearly free, and it is the real answer to
-      "someone typed the wrong IP and now nobody can reach the box".
+- [ ] **The one thing left.** Do we want a config history — keep the last N versions,
+      offer a rollback? The atomic write from P0 makes this nearly free, and it is
+      the real answer to "someone typed the wrong IP and now nobody can reach the
+      box". P5's confirm dialog asks before that save; it cannot undo it. Not in
+      P0-P5 at any point, so it needs a plan of its own.

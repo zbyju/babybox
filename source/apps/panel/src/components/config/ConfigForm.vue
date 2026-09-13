@@ -6,7 +6,7 @@
         <div class="action-wrapper">
           <button
             class="btn-success"
-            :disabled="loaded === null || saving"
+            :disabled="loaded === null || saving || pendingQuestion !== null"
             @click="onSave"
           >
             Uložit konfiguraci
@@ -25,6 +25,14 @@
           >
             Vrátit výchozí hodnoty
           </button>
+        </div>
+
+        <div v-if="pendingQuestion !== null" class="config-confirm">
+          <pre class="config-confirm-text">{{ pendingQuestion }}</pre>
+          <div class="action-wrapper">
+            <button class="btn-warning" @click="onSave">Ano, uložit</button>
+            <button class="btn-primary" @click="onCancelConfirm">Zrušit</button>
+          </div>
         </div>
       </div>
       <SettingsFormResult :result="result" />
@@ -92,6 +100,7 @@
     formState,
     toFormValues,
   } from "@/logic/config/configForm";
+  import { nextSaveStep } from "@/logic/config/confirmSave";
   import { bannerFor, rememberBanner } from "@/logic/config/restartBanner";
   import { type SaveFlowResult, runSave } from "@/logic/config/saveFlow";
   import {
@@ -103,6 +112,9 @@
   const loaded: Ref<MainConfig | null> = ref(null);
   const values: Ref<FormValues> = ref({});
   const saving = ref(false);
+
+  /* The question shown on the page, waiting for a second press of Save. */
+  const pendingQuestion: Ref<string | null> = ref(null);
 
   /* What configer refused last time, shown on the fields it named. */
   const serverErrors: Ref<ConfigError[]> = ref([]);
@@ -144,12 +156,24 @@
     serverErrors.value = serverErrors.value.filter(
       (error) => error.path !== path,
     );
+    /*
+     * Any edit drops the question on screen.
+     * A secret's line carries no value, so the text reads the same for every new
+     * password, and a second press would send a value nobody read.
+     */
+    pendingQuestion.value = null;
+  }
+
+  function onCancelConfirm() {
+    pendingQuestion.value = null;
+    addLogMessage("Uložení zrušeno, nic se neodeslalo.", LogEntryType.Warning);
   }
 
   function onDiscard() {
     if (loaded.value === null) return;
     values.value = toFormValues(loaded.value);
     serverErrors.value = [];
+    pendingQuestion.value = null;
     addLogMessage("Změny zahozeny");
   }
 
@@ -157,6 +181,7 @@
     if (loaded.value === null) return;
     values.value = defaultFormValues(loaded.value);
     serverErrors.value = [];
+    pendingQuestion.value = null;
     addLogMessage(
       "Vloženy výchozí hodnoty. Uloží se, až stiskneš Uložit konfiguraci.",
       LogEntryType.Warning,
@@ -164,8 +189,9 @@
   }
 
   /*
-   * Only the Vue side of a save: the re-entrancy guard, the log, the banner and the
-   * reload. Everything the save decides is in logic/config/saveFlow.ts.
+   * Only the Vue side of a save: the two-step confirmation, the re-entrancy guard,
+   * the log, the banner and the reload. Everything the save decides is in
+   * logic/config/saveFlow.ts, and what to ask about is in confirmSave.ts.
    *
    * The draft is built before the first await, so the body sent is the form as it
    * was when Save was pressed. The inputs are disabled meanwhile, so a later edit
@@ -176,6 +202,14 @@
 
     const current = state.value;
     if (loaded.value === null || current === null) return;
+
+    const step = nextSaveStep(current, pendingQuestion.value);
+    if (step.kind === "ask") {
+      pendingQuestion.value = step.question;
+      addLogMessage("Zkontroluj změny a potvrď uložení.", LogEntryType.Warning);
+      return;
+    }
+    pendingQuestion.value = null;
 
     const draft = buildConfig(loaded.value, values.value);
     saving.value = true;
@@ -264,6 +298,21 @@
         flex-direction row
         flex-wrap wrap
         gap 10px
+
+    .config-confirm
+      margin-top 16px
+      padding 12px
+      max-width 640px
+      border-left 4px solid color-warning
+      background-color color-bg-primary
+
+      .config-confirm-text
+        margin 0 0 12px 0
+        white-space pre-wrap
+        overflow-wrap anywhere
+        font-family inherit
+        font-size 0.9em
+        line-height 1.4
 
     button
       display inline-block
