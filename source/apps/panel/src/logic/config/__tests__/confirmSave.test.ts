@@ -200,7 +200,7 @@ describe("confirmQuestion", () => {
 describe("nextSaveStep", () => {
   it("sends a save that changed nothing dangerous", () => {
     const state = stateWith(loadedConfig(), { "camera.ip": "10.1.1.9" });
-    expect(nextSaveStep(state, null)).toEqual({ kind: "send" });
+    expect(nextSaveStep(state, null)).toEqual({ kind: "proceed" });
   });
 
   /* runSave stops on hasErrors and says so, so asking first would ask for nothing. */
@@ -210,7 +210,7 @@ describe("nextSaveStep", () => {
       "units.requestDelay": "0",
     });
     expect(state.hasErrors).toBe(true);
-    expect(nextSaveStep(state, null)).toEqual({ kind: "send" });
+    expect(nextSaveStep(state, null)).toEqual({ kind: "proceed" });
   });
 
   it("asks on the first press of a dangerous save", () => {
@@ -224,7 +224,7 @@ describe("nextSaveStep", () => {
   it("sends on the second press of the same question", () => {
     const state = stateWith(loadedConfig(), { "units.engine.ip": "10.1.1.9" });
     expect(nextSaveStep(state, confirmQuestion(state))).toEqual({
-      kind: "send",
+      kind: "proceed",
     });
   });
 

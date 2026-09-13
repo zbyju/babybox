@@ -101,8 +101,12 @@ export function confirmQuestion(state: FormState): string | null {
   ].join("\n");
 }
 
-/** What one press of Save should do: put the question on the page, or send it. */
-export type SaveStep = { kind: "ask"; question: string } | { kind: "send" };
+/**
+ * What one press of Save should do: put the question on the page, or hand the save
+ * to `runSave`. `proceed`, not `send`: a form with errors also lands here, and
+ * `runSave` stops it without sending anything.
+ */
+export type SaveStep = { kind: "ask"; question: string } | { kind: "proceed" };
 
 /**
  * Turns one press of Save into the next step, given the question already on screen.
@@ -121,17 +125,17 @@ export function nextSaveStep(
   pending: string | null,
 ): SaveStep {
   /* A save with errors never leaves the form, so there is nothing to ask about. */
-  if (state.hasErrors) return { kind: "send" };
+  if (state.hasErrors) return { kind: "proceed" };
 
   const question = confirmQuestion(state);
-  if (question === null) return { kind: "send" };
+  if (question === null) return { kind: "proceed" };
 
   /*
    * Matched as text, not as a flag, so a rewritten question asks again.
    * A backstop only: the form drops the question on any edit, because a secret's
    * line reads the same for every new value and text alone cannot tell them apart.
    */
-  if (question === pending) return { kind: "send" };
+  if (question === pending) return { kind: "proceed" };
 
   return { kind: "ask", question };
 }
