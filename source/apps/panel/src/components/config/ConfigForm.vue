@@ -37,6 +37,21 @@
       </span>
     </p>
 
+    <div
+      v-if="state !== null && state.otherErrors.length > 0"
+      class="config-other-errors"
+    >
+      <p>Chyby v polích, která formulář nezobrazuje:</p>
+      <ul>
+        <li
+          v-for="error in state.otherErrors"
+          :key="`${error.path}: ${error.msg}`"
+        >
+          {{ error.path }}: {{ error.msg }}
+        </li>
+      </ul>
+    </div>
+
     <div v-if="state !== null" class="config-sections">
       <ConfigFormSection
         v-for="group in sections"
@@ -296,6 +311,19 @@
     .summary-error
       font-weight 700
       color color-text-error
+
+    .config-other-errors
+      margin 0 0 16px 0
+      font-size 0.9em
+      color color-text-error
+
+      p
+        margin 0
+        font-weight 700
+
+      ul
+        margin 4px 0 0 0
+        padding-left 20px
 
     .config-sections
       display grid
