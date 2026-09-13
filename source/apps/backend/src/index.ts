@@ -132,6 +132,19 @@ async function main() {
       });
     });
 
+    /*
+     * The panel is a history-mode SPA, so /config is a real URL. A hard load of it
+     * asks this server for that path, and without this the answer is
+     * "Cannot GET /config". The save path ends in window.location.reload(), so the
+     * config page could not come back up. Registered after the API routes and after
+     * express.static, so it only sees what nothing else matched.
+     */
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(PUBLIC_DIR, "index.html"), {
+        headers: { "Cache-Control": INDEX_CACHE_CONTROL },
+      });
+    });
+
     open("http://localhost:" + port);
   }
 
