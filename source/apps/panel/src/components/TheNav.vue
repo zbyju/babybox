@@ -22,7 +22,12 @@
         </template>
       </div>
     </div>
-    <BaseInput v-model="password" type="password" placeholder="Heslo" />
+    <BaseInput
+      :id="PANEL_PASSWORD_INPUT_ID"
+      v-model="password"
+      type="password"
+      placeholder="Heslo"
+    />
     <VersionText />
   </div>
 </template>
@@ -31,6 +36,7 @@
   import { storeToRefs } from "pinia";
   import { computed, ref } from "vue";
 
+  import { PANEL_PASSWORD_INPUT_ID } from "@/logic/panel/scroll";
   import { useConfigStore } from "@/pinia/configStore";
 
   import VersionText from "./panel/elements/VersionText.vue";
