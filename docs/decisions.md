@@ -608,7 +608,7 @@ Context · Decision · Why · Gave up · Where
   (`panel/src/logic/panel/panelLoop.ts:217`). `TheNav.vue:43` unlocks the nav by
   comparing the typed password against `app.password` from that store, so a
   sentinel in the answer **becomes the panel password on every box** — strictly
-  worse than today. `useCamera.ts:68` builds `http://user:password@ip/...`, so the
+  worse than today. `useCamera.ts:71` builds `http://user:password@ip/...`, so the
   camera image dies with it. Masking only for some callers needs a way to tell them
   apart, which is the circular problem again.
 - Gave up: anything on the network can still change the unit IPs and the app
