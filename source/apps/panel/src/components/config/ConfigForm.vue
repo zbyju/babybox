@@ -92,6 +92,7 @@
     formState,
     toFormValues,
   } from "@/logic/config/configForm";
+  import { confirmQuestion } from "@/logic/config/confirmSave";
   import { bannerFor, rememberBanner } from "@/logic/config/restartBanner";
   import { type SaveFlowResult, runSave } from "@/logic/config/saveFlow";
   import {
@@ -164,8 +165,9 @@
   }
 
   /*
-   * Only the Vue side of a save: the re-entrancy guard, the log, the banner and the
-   * reload. Everything the save decides is in logic/config/saveFlow.ts.
+   * Only the Vue side of a save: the confirm dialog, the re-entrancy guard, the log,
+   * the banner and the reload. Everything the save decides is in
+   * logic/config/saveFlow.ts, and what to ask about is in confirmSave.ts.
    *
    * The draft is built before the first await, so the body sent is the form as it
    * was when Save was pressed. The inputs are disabled meanwhile, so a later edit
@@ -176,6 +178,21 @@
 
     const current = state.value;
     if (loaded.value === null || current === null) return;
+
+    /*
+     * Nothing to confirm on a save that cannot be sent: runSave stops on hasErrors
+     * and the maintainer would answer a question about a save that never happens.
+     */
+    if (!current.hasErrors) {
+      const question = confirmQuestion(current);
+      if (question !== null && !window.confirm(question)) {
+        addLogMessage(
+          "Uložení zrušeno, nic se neodeslalo.",
+          LogEntryType.Warning,
+        );
+        return;
+      }
+    }
 
     const draft = buildConfig(loaded.value, values.value);
     saving.value = true;
