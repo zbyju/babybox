@@ -9,6 +9,7 @@ import { Server } from "node:http";
 import { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { MainConfig } from "@babybox/config-schema";
 import express from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MainDb, defaultConfigDir, mainConfig } from "../services/db/main";
@@ -29,10 +30,10 @@ let configDir: string;
 let server: Server;
 let url: string;
 
-function base(): Record<string, unknown> {
+function base(): MainConfig {
   return JSON.parse(
     readFileSync(join(defaultConfigDir, "base.json"), "utf-8")
-  ) as Record<string, unknown>;
+  ) as MainConfig;
 }
 
 beforeEach(async () => {
@@ -152,10 +153,7 @@ describe("PATCH /config/main", () => {
     expect(res.body).toEqual({
       ...base(),
       babybox: { name: "Brno" },
-      camera: {
-        ...(base().camera as Record<string, unknown>),
-        ip: "10.1.1.99",
-      },
+      camera: { ...base().camera, ip: "10.1.1.99" },
     });
 
     const get = await fetch(url);
