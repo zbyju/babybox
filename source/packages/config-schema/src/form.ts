@@ -11,14 +11,19 @@ export type FormWidget = "text" | "number" | "password" | "select" | "ip";
  * the field. The panel's config store is set once at boot and never again, so a
  * field the panel reads needs a panel reload even when the read itself is reactive.
  *
- * - `panelReload` — `window.location.reload()` after the save.
- * - `backendRestart` — the backend loads the config once at boot.
+ * - `panelReload` — `window.location.reload()`, which the save does on its own.
+ * - `backendReload` — the save also asks the backend to read the config again, so
+ *   the value is live once that call comes back. If it fails the backend keeps the
+ *   config it has until someone restarts it, and the panel says so.
+ * - `backendRestart` — the backend binds the value when it starts listening, so no
+ *   reload can pick it up.
  * - `configerRestart` — configer binds the value when it starts listening. The API
  *   refuses to write these, so the only way in is editing `main.json` by hand.
  * - `none` — nothing in the repo reads the field.
  */
 export type ApplyTier =
   | "panelReload"
+  | "backendReload"
   | "backendRestart"
   | "configerRestart"
   | "none";
@@ -26,6 +31,7 @@ export type ApplyTier =
 /** Czech wording for each tier, shown next to a field. */
 export const applyTierLabels: Record<ApplyTier, string> = {
   panelReload: "Projeví se po obnovení panelu",
+  backendReload: "Projeví se po uložení, backend se načte znovu",
   backendRestart: "Projeví se až po restartu backendu",
   configerRestart: "Projeví se až po restartu configeru",
   none: "Nikde se nepoužívá",
@@ -98,14 +104,14 @@ export const configForm: readonly FormSection[] = [
         label: "Předpona API",
         widget: "text",
         tier: "backendRestart",
-        hint: "Backend ji čte, až když začíná poslouchat.",
+        hint: "Backend ji čte, až když začíná poslouchat. Uložení ohlásí, že je potřeba restart.",
       },
       {
         path: "backend.port",
         label: "Port",
         widget: "number",
         tier: "backendRestart",
-        hint: "Backend ho čte, až když začíná poslouchat.",
+        hint: "Backend ho čte, až když začíná poslouchat. Uložení ohlásí, že je potřeba restart.",
       },
       {
         path: "backend.requestTimeout",
@@ -155,15 +161,15 @@ export const configForm: readonly FormSection[] = [
         path: "units.engine.ip",
         label: "IP motorové jednotky",
         widget: "ip",
-        tier: "backendRestart",
-        hint: "Backend adresu čte při startu. Odkaz v menu panelu se obnoví s panelem.",
+        tier: "backendReload",
+        hint: "Backend adresu načte znovu při uložení, odkaz v menu s obnovením panelu.",
       },
       {
         path: "units.thermal.ip",
         label: "IP topné jednotky",
         widget: "ip",
-        tier: "backendRestart",
-        hint: "Backend adresu čte při startu. Odkaz v menu panelu se obnoví s panelem.",
+        tier: "backendReload",
+        hint: "Backend adresu načte znovu při uložení, odkaz v menu s obnovením panelu.",
       },
       {
         path: "units.requestDelay",
@@ -259,8 +265,8 @@ export const configForm: readonly FormSection[] = [
         label: "Operační systém",
         widget: "select",
         options: pcOsTypes,
-        tier: "backendRestart",
-        hint: "Backend podle něj volí příkaz pro restart počítače a čte ho při startu.",
+        tier: "backendReload",
+        hint: "Backend podle něj volí příkaz pro restart počítače a načte ho při uložení.",
       },
     ],
   },
