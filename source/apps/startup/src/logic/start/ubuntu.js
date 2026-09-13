@@ -146,14 +146,23 @@ async function startConfiger() {
       detached: true,
     });
     const readStdio = collectStdio(pnpm);
+    let settled = false;
 
     pnpm.on("error", (err) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       err.stderr = readStdio();
       logger.error("start", strings.startConfigerFailed, err);
       return reject(err);
     });
 
     pnpm.on("close", (code) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       if (code === 0) {
         return resolve(code);
       }
