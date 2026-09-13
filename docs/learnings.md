@@ -78,6 +78,25 @@ lesson: what happened, what to do instead.
   The form saves with a PATCH every time, so `save()` returns early when the parsed
   config deep-equals the running one.
 
+## Backend
+
+- **`fetchConfig()` returns no `data` key when it fails.** It answers
+  `{ status: 408, msg }`, so `config = (await fetchConfig()).data` sets `undefined`
+  and the next poll throws on `config.units.engine.ip`. Check for the key before any
+  assignment; boot's retry loop happens to survive it only because it loops on
+  `!c.data`.
+- **`prefix` is `config.backend.url || process.env.API_PREFIX`.** The prefix the
+  process really serves may never have come from the config. Anything that compares
+  a new config against "what we are running" has to compare against a value captured
+  at listen time, not against `config.backend`.
+- **The backend's tests land in `dist`.** `tsconfig.json` includes all of `src` with
+  no test exclusion, unlike configer's. A test file that imports the schema for real
+  would fail CI's `! grep -rl config-schema apps/backend/dist`, so use `import type`
+  in tests too.
+- **Lint the backend before you build it in a clone.** eslint and jest both pick up
+  `apps/backend/dist` once it exists, which produces phantom failures. CI lints
+  first, so it never sees them.
+
 ## Startup
 
 - **The backend's `dist` is installed standalone.** `startup` copies
@@ -140,3 +159,12 @@ lesson: what happened, what to do instead.
   invalid connection header and the call fails with `TypeError: fetch failed`; Node 24
   forwards the header, so a test written on Node 24 only goes red on CI. Let the agent
   manage the connection and close the server with `closeAllConnections()`.
+- **jest 28's node environment does not expose the global `fetch`** that Node 18 has.
+  A backend test that needs an HTTP client uses `axios`, which the backend already
+  depends on, or `node:http` directly.
+- **A backend route that reads `index.ts` needs `jest.doMock("../..")`.** Importing
+  `index.ts` for real starts the whole server, `main()` runs on import. Mock it and
+  the route's own `fetchConfig`, then mount the router on a bare express app.
+- **The panel's vitest run is `--environment jsdom`, so `sessionStorage` is there.**
+  A test of it has to `sessionStorage.clear()` between cases; the store is shared
+  across the file.

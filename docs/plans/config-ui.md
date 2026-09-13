@@ -1,6 +1,6 @@
 # Config UI page
 
-Status: **P2 merged, P3 in review**
+Status: **P3 merged, P4 in review**
 Owner: —
 Last updated: 2026-09-13
 
@@ -25,7 +25,9 @@ What the form buys us over editing JSON:
 | Config file | `source/apps/configer/configs/main.json` | written by hand |
 | Defaults | `source/apps/configer/configs/base.json` | merged over the file on every configer boot |
 | Read endpoint | `GET /api/v1/config/main` | works |
-| Write endpoint | `PUT /api/v1/config/main` | exists, unused, and unsafe — see Risks |
+| Write endpoint | `PUT /api/v1/config/main` | safe since P0; the form does not use it |
+| Partial write | `PATCH /api/v1/config/main` | P2; what the config page saves with |
+| Backend reload | `POST <prefix>/reload` | P4; re-reads the config into the running process |
 | Validation | `validateMainConfig` in `@babybox/config-schema` | zod, returns field-level errors |
 | Panel config store | `src/pinia/configStore.ts` | set once at boot, never again |
 | Panel config types | `src/types/panel/config.types.ts` | derived from the shared type |
@@ -73,6 +75,11 @@ These are the reason this project is not just "add a form".
    `modules/restart`) reads `config.x` inside a function, so reassigning that binding
    does reach them. `backend.port` and `backend.url` are the exception — they are bound
    when the server starts listening and cannot be changed without a restart.
+   Cleared in P4 by `POST /reload`, which does that reassignment. It is also what
+   makes the binding dangerous: `fetchConfig()` answers a failure with an object
+   that has no `data` key, so an unguarded swap leaves `config` undefined and the
+   next poll throws. The route checks the shape first and keeps the old config on
+   any failure.
 
 ## How a saved value actually reaches the running system
 
@@ -90,14 +97,14 @@ adds lines to `api/base.ts` and `TheNav.vue`, both of which the table cites.
 | Field | Reader | Tier |
 |---|---|---|
 | `babybox.name` | `panel/components/panel/elements/BabyboxName.vue:16` (const at setup) | Panel reload |
-| `backend.url` | `backend/src/index.ts:91` at listen; `panel/src/api/base.ts:20` | Backend restart |
-| `backend.port` | `backend/src/index.ts:74` at listen; `panel/src/api/base.ts:20` | Backend restart |
+| `backend.url` | `backend/src/index.ts:109` at listen; `panel/src/api/base.ts:20` | Backend restart |
+| `backend.port` | `backend/src/index.ts:92` at listen; `panel/src/api/base.ts:20` | Backend restart |
 | `backend.requestTimeout` | `panel/src/api/base.ts:21`, `panel/src/logic/panel/tables.ts:74` | Panel reload |
 | `configer.url` | `configer/src/index.ts:30` at bind | Configer restart, not writable |
 | `configer.port` | `configer/src/index.ts:42` at bind | Configer restart, not writable |
 | `configer.requestTimeout` | nothing | No reader |
-| `units.engine.ip` | `backend/src/fetch/fetchFromUnits.ts:25,149`, `backend/src/utils/url.ts:37`; `panel/src/components/TheNav.vue:67` | Backend restart |
-| `units.thermal.ip` | `backend/src/fetch/fetchFromUnits.ts:25`, `backend/src/utils/url.ts:38`; `panel/src/components/TheNav.vue:73` | Backend restart |
+| `units.engine.ip` | `backend/src/fetch/fetchFromUnits.ts:25,149`, `backend/src/utils/url.ts:37`; `panel/src/components/TheNav.vue:67` | Backend reload |
+| `units.thermal.ip` | `backend/src/fetch/fetchFromUnits.ts:25`, `backend/src/utils/url.ts:38`; `panel/src/components/TheNav.vue:73` | Backend reload |
 | `units.requestDelay` | `panel/src/logic/panel/panelLoop.ts:295`, `panel/src/logic/panel/state.ts:19` | Panel reload |
 | `units.warningThreshold` | `panel/src/logic/panel/state.ts:17` | Panel reload |
 | `units.errorThreshold` | `panel/src/logic/panel/state.ts:18` | Panel reload |
@@ -109,21 +116,34 @@ adds lines to `api/base.ts` and `TheNav.vue`, both of which the table cites.
 | `camera.password` | `panel/src/composables/useCamera.ts:71` | Panel reload |
 | `camera.updateDelay` | `panel/src/composables/useCamera.ts:60` | Panel reload |
 | `camera.cameraType` | `panel/src/composables/useCamera.ts:73`, `panel/src/components/panel/elements/CameraView.vue:3` | Panel reload |
-| `pc.os` | `backend/src/modules/restart.ts:35,45` | Backend restart |
+| `pc.os` | `backend/src/modules/restart.ts:35,45` | Backend reload |
 | `app.password` | `panel/src/components/TheNav.vue:43` | Panel reload |
 | `app.refreshRequestLimit` | `panel/src/logic/panel/panelLoop.ts:165` | Panel reload |
 
-`units.engine.ip` and `units.thermal.ip` are read on both sides. The nav links are a
-plain const array, so the panel needs a reload; the backend loads its config once at
-boot, so it needs a restart. The higher of the two is what the form shows.
+The four tiers, and what each one costs the maintainer:
 
-A backend `POST /reload` that re-runs `fetchConfig()` and reassigns `config` would
-move the unit IPs and `pc.os` down to the panel-reload tier. It has not shipped, so
-the table above is the tier as the box behaves today. `backend.port` and
-`backend.url` stay in the restart tier even then, and `POST /reload` cannot help.
+- **Panel reload** — `window.location.reload()`, which the save does on its own.
+- **Backend reload** — the save also calls `POST /reload` on the backend, which
+  re-reads the config from configer and swaps the exported `config` binding. Live
+  as soon as that call comes back. P4.
+- **Backend restart** — bound when the server starts listening, so no reload
+  reaches it. Someone has to restart the process.
+- **Configer restart** — bound when configer starts listening, and the API refuses
+  to write it, so it changes only by editing `main.json`.
+
+`units.engine.ip` and `units.thermal.ip` are read on both sides, and both sides are
+covered by the save: the backend by `POST /reload`, the panel's nav const array by
+the panel reload that follows it.
+
+`backend.port` and `backend.url` stay in the restart tier. `POST /reload` cannot
+help there, so instead it reports them: the 200 body carries an `unapplied` list of
+what it read but could not put into effect, and the panel turns that into the
+banner. The tier is what the form promises before the save; the banner is what the
+box actually did.
 
 The panel already reloads itself on `refreshRequestLimit`, so a reload after save is
-a path the box is known to survive. That is the plan: **save, then reload the panel**.
+a path the box is known to survive. That is the plan: **save, reload the backend,
+then reload the panel**.
 
 ## Design decision to make first
 
@@ -258,13 +278,40 @@ Size: ~1.5 days.
 ### P4 — Applying a change
 
 - [x] ~~`api/config.ts` on the panel: `getConfig`~~ — shipped in P3
-- [ ] `api/config.ts` on the panel: `saveConfig`, and Save stops being disabled
-- [ ] After a successful save: log it, wait for the response, then `window.location.reload()`
-- [ ] `POST /reload` on the backend: re-run `fetchConfig()`, reassign the exported
-      `config`, return the new values it could not apply (port, prefix)
-- [ ] Panel calls the backend reload before reloading itself
-- [ ] If the backend reload fails, say so in the log and still reload the panel
-- [ ] A field in the restart tier shows a persistent "restart required" banner after save
+- [x] `api/config.ts` on the panel: `saveConfig`, and Save stops being disabled.
+      One `PATCH /config/main` carrying the whole parsed config, not a diff: a PUT
+      merges over `base.json`, so a stored key the form draws no row for would go
+      back to its default, and configer returns early on a body that changes
+      nothing. A 400 resolves rather than throws, so its `{ path, msg }` errors land
+      on the fields that caused them instead of in one blob in the log
+- [x] After a successful save: log it, wait for the response, then `window.location.reload()`
+- [x] `POST /reload` on the backend: re-run `fetchConfig()`, reassign the exported
+      `config`, return the new values it could not apply (port, prefix). The swap is
+      guarded by a hand-written structural check of the five fields the backend
+      reads — it cannot run zod, its `dist` is installed outside the workspace. On
+      any failure it keeps the config it has and answers 503. See decisions.md
+- [x] Panel calls the backend reload before reloading itself
+- [x] If the backend reload fails, say so in the log and still reload the panel
+- [x] A field in the restart tier shows a persistent "restart required" banner after
+      save. The marker goes to `sessionStorage`, because the save ends in a reload
+      that wipes every component, and its wording comes from the reload's answer,
+      not from the tier. See decisions.md
+- [x] Move `units.engine.ip`, `units.thermal.ip` and `pc.os` off the backend-restart
+      tier: `POST /reload` applies them, so the old tier is now a promise the box
+      does not keep. New `backendReload` tier in `packages/config-schema/src/form.ts`
+- [x] Tests: the reload route (success, a `fetchConfig` failure keeping the old
+      config, a structurally bad config refused, the unapplied list); the save body;
+      the banner for each save outcome; the tier table against the readers
+
+Not in P4, deliberately:
+
+- Seeding the form from the raw body when the stored config fails the schema. P3
+  flagged it here; on the code it is not small — `loaded`, `toFormValues`,
+  `defaultFormValues`, `formState` and `buildConfig` all take a `MainConfig` today
+  and would have to take a draft, and the form would need a rule for a section that
+  is missing outright. It is not on this checklist and a half-done repair path is
+  worse than none (motto 1). See decisions.md for what reverses it.
+- Auth on the write endpoint, confirm dialogs and the component test: those are P5.
 
 Size: ~0.5 day.
 
