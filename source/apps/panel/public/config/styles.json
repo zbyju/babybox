@@ -12,6 +12,10 @@
     "error": "#F44336",
     "error-hover": "#c23329",
     "active": "#F44336",
+    "message": {
+      "warning": "#FFFC31",
+      "error": "#e01c0d"
+    },
     "text": {
       "white": "#FFFFFF",
       "white-error": "#FCC3C0",
