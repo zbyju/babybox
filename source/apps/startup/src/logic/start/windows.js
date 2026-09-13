@@ -217,13 +217,13 @@ module.exports = async function onStartup() {
     for (let i = 0; i < 5; ++i) {
       try {
         await start();
-        logger.info("start", withRetryIndex(strings.startRetrySucceeded, i));
+        logger.info("start", withRetryIndex(strings.startRetrySucceeded, i + 1));
         setTimeout(5000);
         return true;
       } catch (retryErr) {
         logger.error(
           "start",
-          withRetryIndex(strings.startRetryFailed, i),
+          withRetryIndex(strings.startRetryFailed, i + 1),
           retryErr
         );
       }
