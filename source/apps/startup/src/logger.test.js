@@ -126,14 +126,14 @@ describe("rotateLogFile", () => {
     rotateLogFile(logsDir, date);
 
     expect(fs.existsSync(livePath)).toBe(false);
-    expect(fs.existsSync(path.join(logsDir, formatBackupName(date)))).toBe(
+    expect(fs.existsSync(path.join(logsDir, "startup-20260913-151600.log"))).toBe(
       true
     );
     const backups = fs
       .readdirSync(logsDir)
       .filter((name) => name.startsWith("startup-") && name.endsWith(".log"));
     expect(backups).toHaveLength(5);
-    expect(backups).toContain(formatBackupName(date));
+    expect(backups).toContain("startup-20260913-151600.log");
   });
 
   it("adds -2 when the backup name already exists", () => {
@@ -144,7 +144,7 @@ describe("rotateLogFile", () => {
 
     rotateLogFile(logsDir, date);
 
-    expect(fs.existsSync(path.join(logsDir, formatBackupName(date, 2)))).toBe(
+    expect(fs.existsSync(path.join(logsDir, "startup-20260913-151600-2.log"))).toBe(
       true
     );
   });
