@@ -1,11 +1,4 @@
-import type { MainConfig } from "../types/config.types";
-
-/** A field the reload read from the file but could not put into effect. */
-export interface UnappliedField {
-  path: string;
-  running: string | number;
-  stored: string | number;
-}
+import type { MainConfig, UnappliedField } from "../types/config.types";
 
 /**
  * The address the server really bound, taken when it started listening.
