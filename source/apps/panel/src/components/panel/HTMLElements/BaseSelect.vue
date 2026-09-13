@@ -1,5 +1,6 @@
 <template>
   <select
+    class="base-select"
     :value="props.modelValue"
     :class="classState"
     :disabled="props.disabled"
@@ -44,8 +45,12 @@
   );
 </script>
 
+<!--
+  Scoped to the class, not to bare `select`: the style block is global, so a bare
+  rule would follow every other select in the app once this chunk's CSS has loaded.
+-->
 <style lang="stylus">
-  select
+  select.base-select
     background-color color-bg-black
     border 1px solid color-border-secondary
     border-radius 5px
@@ -54,16 +59,16 @@
     flex-grow 1
     font-size 1.1em
 
-  select.border-accent
+  select.base-select.border-accent
     border 1px solid color-border-accent
-  select.border-success
+  select.base-select.border-success
     border 1px solid color-border-success
-  select.border-warning
+  select.base-select.border-warning
     border 1px solid color-border-warning
-  select.border-error
+  select.base-select.border-error
     border 1px solid color-border-error
 
-  select:disabled
+  select.base-select:disabled
     color color-text-secondary
     cursor not-allowed
 </style>
