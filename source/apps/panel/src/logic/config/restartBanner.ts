@@ -1,4 +1,4 @@
-import type { ConfigError, UnappliedField } from "@babybox/config-schema";
+import type { UnappliedField } from "@babybox/config-schema";
 
 /*
  * The save ends in window.location.reload(), which wipes every component, so the
@@ -12,8 +12,8 @@ const BANNER_KEY = "babybox.config.restartRequired";
 export type SaveOutcome =
   /** Nothing left the browser: the form had errors, or configer was unreachable. */
   | { kind: "notSent" }
-  /** configer refused the body and named the fields. */
-  | { kind: "rejected"; errors: ConfigError[] }
+  /** configer refused the body. The fields it named go next to the inputs. */
+  | { kind: "rejected" }
   /** configer wrote it and the backend read it again. */
   | { kind: "applied"; unapplied: UnappliedField[] }
   /** configer wrote it, the backend did not read it. */
@@ -31,12 +31,13 @@ const BACKEND_FIELDS =
  * then every field the backend reads is still on the old value, whatever its tier
  * says.
  *
- * The two outcomes that send nothing return null because they change nothing about
- * what needs a restart; the caller does not write the marker on those paths at all.
+ * Only the two outcomes that reached configer can be passed in. A save that sent
+ * nothing changes nothing about what needs a restart, so the caller does not write
+ * the marker on those paths at all.
  */
-export function bannerFor(outcome: SaveOutcome): string | null {
-  if (outcome.kind === "notSent" || outcome.kind === "rejected") return null;
-
+export function bannerFor(
+  outcome: Extract<SaveOutcome, { kind: "applied" } | { kind: "reloadFailed" }>,
+): string | null {
   if (outcome.kind === "reloadFailed") {
     return `Backend novou konfiguraci nenačetl. Dokud ho nerestartuješ, běží dál na staré hodnotě: ${BACKEND_FIELDS}.`;
   }
@@ -48,7 +49,6 @@ export function bannerFor(outcome: SaveOutcome): string | null {
     .join(", ");
   return `Restartuj backend, tyto hodnoty se použijí až potom: ${fields}.`;
 }
-
 /** Writes the banner for the page to pick up after the reload; null clears it. */
 export function rememberBanner(text: string | null): void {
   if (text === null) sessionStorage.removeItem(BANNER_KEY);

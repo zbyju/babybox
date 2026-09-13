@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
-  type SaveOutcome,
   bannerFor,
   clearBanner,
   readBanner,
@@ -9,19 +8,6 @@ import {
 } from "@/logic/config/restartBanner";
 
 describe("bannerFor", () => {
-  it("says nothing when the form sent nothing", () => {
-    expect(bannerFor({ kind: "notSent" })).toBeNull();
-  });
-
-  it("says nothing when configer refused the body", () => {
-    const outcome: SaveOutcome = {
-      kind: "rejected",
-      errors: [{ path: "backend.port", msg: "must be an integer" }],
-    };
-
-    expect(bannerFor(outcome)).toBeNull();
-  });
-
   /*
    * The tier says backendRestart for the two address fields, but a save that did
    * not touch them leaves nothing to restart for. The banner follows the answer,
