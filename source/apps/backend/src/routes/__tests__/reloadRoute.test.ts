@@ -28,7 +28,7 @@ function storedConfig(): MainConfig {
     pc: { os: "windows" },
     app: { password: "pass" },
     startup: {},
-  } as MainConfig;
+  };
 }
 
 /*

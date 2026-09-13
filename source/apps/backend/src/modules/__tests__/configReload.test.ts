@@ -29,7 +29,7 @@ function storedConfig(): MainConfig {
     pc: { os: "windows" },
     app: { password: "pass" },
     startup: {},
-  } as MainConfig;
+  };
 }
 
 const bound: BoundAddress = { port: 5000, prefix: "/api/v1" };
@@ -55,7 +55,7 @@ describe("isBackendReadableConfig", () => {
   it("accepts a value the write path would refuse but the backend never reads", () => {
     const config = storedConfig();
     config.units.requestDelay = 0;
-    config.camera.cameraType = "something else" as MainConfig["camera"]["cameraType"];
+    (config.camera as Record<string, unknown>).cameraType = "something else";
 
     expect(isBackendReadableConfig(config)).toBe(true);
   });
