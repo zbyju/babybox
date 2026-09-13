@@ -76,11 +76,8 @@
     formState,
     toFormValues,
   } from "@/logic/config/configForm";
-  import {
-    type SaveOutcome,
-    bannerFor,
-    rememberBanner,
-  } from "@/logic/config/restartBanner";
+  import { bannerFor, rememberBanner } from "@/logic/config/restartBanner";
+  import { type SaveFlowResult, runSave } from "@/logic/config/saveFlow";
   import {
     type LogEntry,
     type SettingsResult,
@@ -151,88 +148,43 @@
   }
 
   /*
-   * Send, then apply. The whole config goes in one PATCH: configer deep-equals it
-   * against the running one, so a save that changes nothing writes nothing.
-   */
-  async function runSave(): Promise<SaveOutcome> {
-    const current = state.value;
-    if (loaded.value === null || current === null) return { kind: "notSent" };
-
-    if (current.hasErrors) {
-      addLogMessage(
-        "Formulář obsahuje chyby, neodesílám nic.",
-        LogEntryType.Error,
-      );
-      return { kind: "notSent" };
-    }
-
-    const parsed = parseMainConfig(buildConfig(loaded.value, values.value));
-    if (!parsed.ok) {
-      addLogMessage("Konfigurace neodpovídá schématu.", LogEntryType.Error);
-      for (const error of parsed.errors) {
-        addLogMessage(`${error.path}: ${error.msg}`, LogEntryType.Error);
-      }
-      serverErrors.value = parsed.errors;
-      return { kind: "notSent" };
-    }
-
-    addLogMessage("Ukládám konfiguraci do configeru");
-
-    let saved;
-    try {
-      saved = await saveConfig(parsed.config);
-    } catch {
-      addLogMessage(
-        "Configer neodpovídá, konfigurace se neuložila.",
-        LogEntryType.Error,
-      );
-      return { kind: "notSent" };
-    }
-
-    if (!saved.ok) {
-      addLogMessage(
-        `Configer konfiguraci odmítl (HTTP ${saved.status}).`,
-        LogEntryType.Error,
-      );
-      for (const error of saved.errors) {
-        addLogMessage(`${error.path}: ${error.msg}`, LogEntryType.Error);
-      }
-      serverErrors.value = saved.errors;
-      return { kind: "rejected", errors: saved.errors };
-    }
-
-    addLogMessage("Konfigurace uložena", LogEntryType.Success);
-
-    const reload = await reloadBackendConfig();
-    if (!reload.ok) {
-      addLogMessage(
-        "Backend novou konfiguraci nenačetl, restartuj ho.",
-        LogEntryType.Warning,
-      );
-      return { kind: "reloadFailed" };
-    }
-
-    addLogMessage("Backend načetl novou konfiguraci", LogEntryType.Success);
-    return { kind: "applied", unapplied: reload.unapplied };
-  }
-
-  /*
-   * The reload is what makes the panel-tier changes take effect, so it happens even
-   * when the backend did not answer. The banner goes to sessionStorage first,
-   * because the reload wipes every component.
+   * Only the Vue side of a save: the re-entrancy guard, the log, the banner and the
+   * reload. Everything the save decides is in logic/config/saveFlow.ts.
+   *
+   * The draft is built before the first await, so the body sent is the form as it
+   * was when Save was pressed. The inputs are disabled meanwhile, so a later edit
+   * cannot be lost without the maintainer noticing.
    */
   async function onSave() {
     if (saving.value) return;
+
+    const current = state.value;
+    if (loaded.value === null || current === null) return;
+
+    const draft = buildConfig(loaded.value, values.value);
     saving.value = true;
-    let outcome: SaveOutcome;
+    result.value = {
+      type: LogEntryType.Info,
+      message: "Ukládám konfiguraci",
+    };
+
+    let flow: SaveFlowResult;
     try {
-      outcome = await runSave();
+      flow = await runSave(draft, current.hasErrors, {
+        saveConfig,
+        reloadBackendConfig,
+      });
     } finally {
       saving.value = false;
     }
 
+    for (const line of flow.log) addLogMessage(line.message, line.type);
+    serverErrors.value = flow.serverErrors;
+
+    const outcome = flow.outcome;
     if (outcome.kind === "notSent" || outcome.kind === "rejected") return;
 
+    /* The banner goes to sessionStorage first, because the reload wipes it all. */
     rememberBanner(bannerFor(outcome));
     window.location.reload();
   }
