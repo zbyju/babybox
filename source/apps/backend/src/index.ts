@@ -5,14 +5,16 @@ import * as morgan from "morgan";
 import * as path from "path";
 import open = require("open");
 import { fetchConfig } from "./fetch/fetchConfig";
-import type { BoundAddress } from "./modules/configReload";
+import type {
+  BackendReadableConfig,
+  BoundAddress,
+} from "./modules/configReload";
 import { modulesObject } from "./modules/init";
 import { router as engineRoute } from "./routes/engineRoute";
 import { router as reloadRoute } from "./routes/reloadRoute";
 import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
-import type { MainConfig } from "./types/config.types";
 import { wait } from "./utils/wait";
 
 const CONFIG_RETRY_DELAY_MS = 5000;
@@ -52,7 +54,7 @@ dotenv.config();
 
 export const modules = modulesObject();
 
-export let config: MainConfig | null = null;
+export let config: BackendReadableConfig | null = null;
 
 /*
  * What the server is really listening on, set when it starts listening. Null until
@@ -66,7 +68,7 @@ export let bound: BoundAddress | null = null;
  * of the binding. Consumers read `config.x` inside their functions, so the new
  * value reaches them on their next call.
  */
-export function applyConfig(next: MainConfig): void {
+export function applyConfig(next: BackendReadableConfig): void {
   config = next;
 }
 
