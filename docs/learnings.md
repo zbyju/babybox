@@ -103,6 +103,18 @@ lesson: what happened, what to do instead.
   `testPathIgnorePatterns` to `["/node_modules/", "/dist/"]`. Review finding on the P4
   PR. Check the CI step order before writing down that a step never sees a build.
 
+- **Both servers answer every interface and every origin.** `app.listen(port, cb)`
+  with no host binds `0.0.0.0` in the backend and in configer, and both mount
+  `cors()` with no `origin`, so both send `Access-Control-Allow-Origin: *`. Anything
+  that can route to the box can call any endpoint, and so can any web page open in a
+  browser that can. Do not write down "only the LAN can reach it" without checking
+  both of those.
+- **Opening the doors is an unauthenticated `GET`.**
+  `GET <prefix>/units/actions/opendoors` goes through `unitsRoute`, not
+  `engineRoute`, and `Action` in `types/units.types.ts` is the whole list. Any
+  argument about how much a config endpoint needs protecting has to be made next to
+  this one.
+
 ## Startup
 
 - **The backend's `dist` is installed standalone.** `startup` copies
@@ -164,6 +176,14 @@ lesson: what happened, what to do instead.
   moment the component is imported anywhere in the chunk. A new page that wants the
   settings buttons has to bring its own rules: `SettingsFormActions.vue` defines them
   and a page that does not import it does not get them.
+
+- **The panel's browser is always on the box.** `CONFIGER_API_URL` in `api/base.ts`
+  and `backendApi()` both build `http://localhost:...`, compiled into the bundle. A
+  browser on another machine loading the panel would resolve `localhost` to itself
+  and never reach configer, so it fails at boot with "Config file error". The
+  "remote maintenance" `CLAUDE.md` talks about is a remote session on the box, not a
+  browser pointed at it. That is what makes a loopback bind safe to consider and a
+  `window.confirm` safe to rely on.
 
 ## Tests
 

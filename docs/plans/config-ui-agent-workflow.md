@@ -1,6 +1,6 @@
 # Config UI — agent workflow
 
-Status: **P3 merged, P4 in review**
+Status: **P0-P5 merged. Every phase of config-ui.md is built.**
 Last updated: 2026-09-13
 
 How each phase of [config-ui.md](config-ui.md) gets built. Same pipeline for every
@@ -199,4 +199,38 @@ docs updated. Merging is a human decision.
   - Out of scope, in P5: auth on the configer write endpoint, confirm dialogs for
     dangerous fields, the component test.
   - PR title `feat: apply a saved config without editing the file`.
-- P5 — written when P4 is merged.
+- **P5** — the guard rails on the config page. Brief: the P5 checklist in
+  config-ui.md, plus:
+  - **The auth suggestion in the plan is circular, and resolving that is the phase.**
+    `GET /config/main` has no auth and returns `app.password`, so a header checked on
+    the write path stops nobody who can read it first. Check what is actually between
+    the box and the hospital network before deciding — there is no nginx, no
+    firewall, no VLAN in the repo, both servers bind every interface, and `cors()`
+    with no `origin` answers `*`. Then weigh it against the unauthenticated
+    `GET <prefix>/units/actions/opendoors` on the same host. The deliverable is the
+    decision entry, whichever way it goes; the code is the smaller half.
+  - Masking the passwords in `GET` is not a costlier option, it is a broken one. The
+    panel puts that body into its pinia store at boot and `TheNav.vue` compares the
+    typed password against it, so the sentinel becomes the panel password on every
+    box, and `useCamera` loses the camera. Check who reads a field before proposing
+    to change what the endpoint returns for it.
+  - The confirm dialog is per-field metadata — `confirm?: string` on `FormField` —
+    not a list of paths in the component, so the table and the schema stay in one
+    place and `form.test.ts` can cover it. One dialog for the whole save, not one per
+    field: the form sends every field in one `PATCH`. It names each dangerous field
+    that really changed, with its old and new value, and it never prints a secret.
+  - `window.confirm`, not a component: no dependency, nothing to mount, works on the
+    kiosk. A field marked `readOnly` can never be `changed`, so it must not carry a
+    question — check that before copying the checklist's list of fields.
+  - The component test is a dependency decision. Find what `saveFlow.ts` and
+    `configForm.ts` already cover before adding `@vue/test-utils`; if the rule is
+    already proved on both halves, close the item with the reason rather than paying
+    a lockfile change every box applies unattended.
+  - `CLAUDE.md` and `README.md` get the config page and, after the auth decision, an
+    honest note about what the box's network exposure is.
+  - PR title `feat: add the guard rails to the config page`.
+
+## Exit, for the whole feature
+
+P0-P5 are merged. What is left is the config history open question in config-ui.md,
+which no phase ever covered. It needs its own plan.

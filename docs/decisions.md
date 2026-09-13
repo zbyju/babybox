@@ -574,3 +574,114 @@ Context · Decision · Why · Gave up · Where
   belongs in the read-only set.
 - Where: `configForm` in `source/packages/config-schema/src/form.ts`, `bannerFor` in
   `source/apps/panel/src/logic/config/restartBanner.ts`.
+
+## 2026-09-13 — No auth on the configer write endpoint, and why a password header is theatre
+
+- Context: the P5 checklist says "decide on auth for the configer write endpoint",
+  and [config-ui.md](plans/config-ui.md) risk 4 suggests the cheapest honest option
+  is to require `app.password` as a header, checked server-side.
+- Evidence, checked against the code on this branch:
+  - `GET /api/v1/config/main` (`configer/src/routes/configRoute.ts:19`) has no auth
+    and returns the whole config, `app.password` and `camera.password` in clear.
+  - Both servers call `app.listen(port, cb)` with no host
+    (`configer/src/index.ts:43`, `backend/src/index.ts:155`), so both are on every
+    interface, not on loopback.
+  - Both mount `cors()` with no `origin` option, so both answer
+    `Access-Control-Allow-Origin: *`. The reach is therefore wider than the LAN: any
+    web page open in any browser that can route to the box can read the config and
+    send a `PATCH`.
+  - `GET <prefix>/units/actions/opendoors` (`backend/src/routes/unitsRoute.ts:34`,
+    `Action` in `backend/src/types/units.types.ts:12`) opens the babybox doors with
+    no auth, over a `GET`. (The P5 brief put this on `engineRoute`; it is
+    `unitsRoute`. `engineRoute` has `GET /data` and `PUT /watchdog` only.)
+- Decision: no auth. The P5 checklist item is closed as **decided against**, not
+  skipped, and the exposure is written down here and in `CLAUDE.md`.
+- Why: a header checked on the write path is circular. Whoever can send the header
+  can first `GET /config/main` and read the password out of the answer, so the check
+  costs a round trip and stops nobody. And the config endpoint is not the weakest
+  thing on that network: the same caller can already open the doors of a babybox
+  with one unauthenticated `GET`. Locking the config while the doors stay open would
+  buy the appearance of security and none of it.
+- Why not option (b), masking the two passwords in `GET` and verifying server-side:
+  it is not merely expensive, it breaks every box. The panel boots by putting the
+  `GET /config/main` body straight into the pinia store
+  (`panel/src/logic/panel/panelLoop.ts:217`). `TheNav.vue:43` unlocks the nav by
+  comparing the typed password against `app.password` from that store, so a
+  sentinel in the answer **becomes the panel password on every box** — strictly
+  worse than today. `useCamera.ts:68` builds `http://user:password@ip/...`, so the
+  camera image dies with it. Masking only for some callers needs a way to tell them
+  apart, which is the circular problem again.
+- Gave up: anything on the network can still change the unit IPs and the app
+  password. A confirm dialog in the form does not help there — it is in the browser,
+  and an attacker does not use the browser.
+- What reverses it: the box moving onto a network we do not trust, or auth landing
+  on the backend's action routes. The two go together, and the real fix is not a
+  header. Every client of configer is on the box itself — the panel's bundle and the
+  backend both have `http://localhost:5001` compiled in
+  (`panel/src/api/base.ts:5`, `backend/src/fetch/constants.ts:1`) — so binding
+  configer to `127.0.0.1` closes the whole hole, read included, for one argument.
+  It is left out of P5 on purpose: it changes the network behaviour of every
+  deployed box on an unattended update (motto 3), it belongs in the same phase as
+  the door-control routes, and shipped alone it would say the box is protected when
+  it is not.
+- Where: this entry, the P5 checklist in [config-ui.md](plans/config-ui.md), the
+  "Network exposure" section of `CLAUDE.md`.
+
+## 2026-09-13 — Still no `@vue/test-utils`; the Save rule is tested without mounting
+
+- Context: P3 and P4 both refused the dependency and pushed the component test to
+  P5. P5 is where that runs out, so this is the decision, not another deferral.
+- Decision: no `@vue/test-utils`. The P5 item "a component test that a bad value
+  blocks Save" is closed as covered by two tests that already exist.
+- Why: the rule is already tested end to end, on both halves and in the layer that
+  owns it. `configForm.test.ts` "blocks the form when one field is invalid" proves
+  a bad value sets `hasErrors`; `saveFlow.test.ts` "sends nothing when the form has
+  errors" proves `hasErrors` makes `runSave` return without calling `saveConfig`.
+  P4 extracted `saveFlow.ts` from the component precisely so this needs no mount.
+  What a mounted test would add over those two is the single line in `onSave` that
+  hands `current.hasErrors` to `runSave` — and buying that costs a `pnpm-lock.yaml`
+  change, which every box applies through `pnpm install --frozen-lockfile` on an
+  unattended update (motto 3). A lockfile risk on every deployed box, for one
+  argument, is the wrong trade.
+- Gave up: nothing mounts a Vue component in this repo, so the wiring between a
+  component and its logic module is never checked by a test. That is a real gap and
+  it now applies to the confirm dialog too.
+- What reverses it: a phase that needs the rendered output itself — a widget that
+  picks its input from the descriptor, or a keyboard flow. Then the dependency pays
+  for more than one line and goes in with the lockfile diff shown in the PR.
+- Where: `logic/config/saveFlow.ts` and its test, `logic/config/configForm.ts` and
+  its test.
+
+## 2026-09-13 — The confirm dialog is field metadata, asked once, and never prints a secret
+
+- Context: the P5 checklist asks for a confirm dialog on `app.password`,
+  `backend.port`, `configer.port` and both unit IPs.
+- Decision: `FormField` gains `confirm?: string`, the Czech reason the field is
+  dangerous. `logic/config/confirmSave.ts` turns the form state into one question;
+  `ConfigForm.onSave` puts it through `window.confirm`.
+- One dialog, not one per field: the form sends every field in a single `PATCH`, so
+  one press of Save is one action. Five dialogs would ask five times about it. The
+  question names each dangerous field **that actually changed**, with the value the
+  box runs on and the value it would move to, so answering does not depend on
+  remembering what was typed.
+- `window.confirm`, not a component: no dependency, no new component, and it works
+  on the kiosk. It also cannot be tested without mounting, which is why the rule
+  that builds the text is a pure function with its own test and the component only
+  passes the string on.
+- **`configer.port` gets no dialog.** It is `readOnly`, and `formState` sets
+  `changed: !field.readOnly && ...`, so it can never be reported as changed and the
+  question could never appear. A row in the table for it would be dead metadata; a
+  test asserts no read-only field carries one.
+- **`backend.url` gets one, which the checklist did not ask for.** It strands the
+  panel exactly the way `backend.port` does — `backendApi()` builds
+  `http://localhost:${port}${url}` — and the plan's own table puts both on the same
+  `backendRestart` tier for the same reason. Asking about one and not the other
+  would be arbitrary.
+- **A secret is named but never printed.** `app.password` shows as "mění se,
+  hodnota se nezobrazuje". The panel is a screen in a hospital room; putting the old
+  and the new password on it to confirm a save would leak more than the save does.
+- Gave up: the dialog is browser-side, so it guards a maintainer's slip and nothing
+  else. See the auth entry above — it is not a security control.
+- Where: `confirm` in `packages/config-schema/src/form.ts`,
+  `panel/src/logic/config/confirmSave.ts`, `onSave` in
+  `panel/src/components/config/ConfigForm.vue`.
