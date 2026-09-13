@@ -9,7 +9,9 @@ lesson: what happened, what to do instead.
   `npx pnpm@7.5.0`. CI and every babybox install with `--frozen-lockfile` from that
   version; a lockfile in another format means the box does not start.
 - **A green build proves little for the panel.** `pnpm typecheck` on the panel is red
-  with 17 pre-existing errors and the build's type gate checks zero files.
+  with 20 pre-existing errors and the build's type gate checks zero files. The docs
+  said 17 until P3 counted them on `origin/main` at 1927135. Record your own baseline
+  before you start; the bar is no new errors, not a green run.
 - **The startup app treats any stderr from `pnpm run build` as a failed build.**
   A warning printed by `tsc` or a package script fails the update on the box.
 - **`tsc` picks up `bun-types` from a parent `node_modules`** (TS1005/TS1139 noise).
@@ -89,6 +91,13 @@ lesson: what happened, what to do instead.
 
 - **A PR branch checked out in the main checkout cannot be committed to from a
   worktree.** Use a side branch and fast-forward push.
+- **A test a brief asks for can invent the function.** The P3 brief asked for a test of
+  "the diff between the loaded config and the edited config", so P3 shipped
+  `changedPaths`. Nothing called it: `formState` already decides `changed` per field
+  and returns the list, so the panel had the rule twice and the UI used the other copy.
+  Review finding on the P3 PR; it is gone. Find the caller before you write the helper
+  a test needs. What brings it back: nothing as written — a PATCH body that carries
+  only the changed keys needs a nested partial builder, not a list of paths.
 
 ## Shared package
 
@@ -104,6 +113,26 @@ lesson: what happened, what to do instead.
   `@babybox/config-schema` to its gitignored `dist/`, so on a fresh clone they cannot
   find it, and after an edit to `src/` they run against the previous build. Run
   `pnpm run build:schema` from `source/` first.
+
+## Panel
+
+- **The config store is set once at boot, so no field is "live".** `setConfig()` runs
+  in `initializeConfig()` and nowhere else. A component that reads the store
+  reactively still follows a value that never changes, and `BabyboxName.vue` copies
+  its value into a const at setup. Before you call a field live, find the write that
+  would update the store — there isn't one.
+- **Check who reads a field before you write down its apply tier.** The config-ui
+  plan carried a live tier of seven fields for two phases; every one of them was
+  wrong. `configer.requestTimeout` is the other side of the same coin: it is in the
+  schema, in `base.json` and on every box, and nothing in `source/` reads it.
+- **`eslint --fix` on the whole panel is safe, CI's run is not.** CI runs eslint with
+  no `--fix`, and `prettier/prettier` is an error, so an unformatted new file fails
+  the build. `main` is clean, so running the `lint` script locally only rewrites the
+  files you added. Check `git status` after it to be sure.
+- **`BaseInput` and `BaseSelect` styles are global, not scoped.** They apply from the
+  moment the component is imported anywhere in the chunk. A new page that wants the
+  settings buttons has to bring its own rules: `SettingsFormActions.vue` defines them
+  and a page that does not import it does not get them.
 
 ## Tests
 

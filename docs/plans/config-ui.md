@@ -1,6 +1,6 @@
 # Config UI page
 
-Status: **P1 merged, P2 in review**
+Status: **P2 merged, P3 in review**
 Owner: —
 Last updated: 2026-09-13
 
@@ -77,16 +77,50 @@ These are the reason this project is not just "add a form".
 ## How a saved value actually reaches the running system
 
 There is no single answer, and the UI has to say which case a field is in.
-Three tiers:
 
-| Tier | Applies on | Fields |
+Checked field by field against the code that reads it, 2026-09-13, for P3. **The
+live tier is empty** and is not shown. It was listed here before with seven fields,
+which was wrong: those fields are read from the pinia config store, and the panel
+sets that store once at boot and never again (risk 5). Nothing updates the store
+after a save, so a reactive read follows nothing.
+
+Every line number below is the line in this branch, not on `main`: the config page
+adds lines to `api/base.ts` and `TheNav.vue`, both of which the table cites.
+
+| Field | Reader | Tier |
 |---|---|---|
-| **Live** | next poll, no action | `units.requestDelay`, `units.warningThreshold`, `units.errorThreshold`, `units.voltage.*`, `app.password`, `app.refreshRequestLimit`, `babybox.name` |
-| **Panel reload** | `window.location.reload()` after save | `camera.*` (captured by `useCamera` at mount), unit IPs in the nav links (a plain const array) |
-| **Backend restart** | someone restarts the process | `backend.port`, `backend.url` |
+| `babybox.name` | `panel/components/panel/elements/BabyboxName.vue:16` (const at setup) | Panel reload |
+| `backend.url` | `backend/src/index.ts:91` at listen; `panel/src/api/base.ts:20` | Backend restart |
+| `backend.port` | `backend/src/index.ts:74` at listen; `panel/src/api/base.ts:20` | Backend restart |
+| `backend.requestTimeout` | `panel/src/api/base.ts:21`, `panel/src/logic/panel/tables.ts:74` | Panel reload |
+| `configer.url` | `configer/src/index.ts:30` at bind | Configer restart, not writable |
+| `configer.port` | `configer/src/index.ts:42` at bind | Configer restart, not writable |
+| `configer.requestTimeout` | nothing | No reader |
+| `units.engine.ip` | `backend/src/fetch/fetchFromUnits.ts:25,149`, `backend/src/utils/url.ts:37`; `panel/src/components/TheNav.vue:67` | Backend restart |
+| `units.thermal.ip` | `backend/src/fetch/fetchFromUnits.ts:25`, `backend/src/utils/url.ts:38`; `panel/src/components/TheNav.vue:73` | Backend restart |
+| `units.requestDelay` | `panel/src/logic/panel/panelLoop.ts:295`, `panel/src/logic/panel/state.ts:19` | Panel reload |
+| `units.warningThreshold` | `panel/src/logic/panel/state.ts:17` | Panel reload |
+| `units.errorThreshold` | `panel/src/logic/panel/state.ts:18` | Panel reload |
+| `units.voltage.divider` | `panel/src/utils/panel/conversions.ts:25`, `panel/src/utils/settings/conversions.ts:27` | Panel reload |
+| `units.voltage.multiplier` | `panel/src/utils/panel/conversions.ts:25`, `panel/src/utils/settings/conversions.ts:28` | Panel reload |
+| `units.voltage.addition` | `panel/src/utils/panel/conversions.ts:26` | Panel reload |
+| `camera.ip` | `panel/src/composables/useCamera.ts:72` (captured at mount) | Panel reload |
+| `camera.username` | `panel/src/composables/useCamera.ts:71` | Panel reload |
+| `camera.password` | `panel/src/composables/useCamera.ts:71` | Panel reload |
+| `camera.updateDelay` | `panel/src/composables/useCamera.ts:60` | Panel reload |
+| `camera.cameraType` | `panel/src/composables/useCamera.ts:73`, `panel/src/components/panel/elements/CameraView.vue:3` | Panel reload |
+| `pc.os` | `backend/src/modules/restart.ts:35,45` | Backend restart |
+| `app.password` | `panel/src/components/TheNav.vue:43` | Panel reload |
+| `app.refreshRequestLimit` | `panel/src/logic/panel/panelLoop.ts:165` | Panel reload |
 
-A backend `POST /reload` that re-runs `fetchConfig()` and reassigns `config` covers
-the unit IPs and `pc.os` without a restart. Port and prefix stay in the restart tier.
+`units.engine.ip` and `units.thermal.ip` are read on both sides. The nav links are a
+plain const array, so the panel needs a reload; the backend loads its config once at
+boot, so it needs a restart. The higher of the two is what the form shows.
+
+A backend `POST /reload` that re-runs `fetchConfig()` and reassigns `config` would
+move the unit IPs and `pc.os` down to the panel-reload tier. It has not shipped, so
+the table above is the tier as the box behaves today. `backend.port` and
+`backend.url` stay in the restart tier even then, and `POST /reload` cannot help.
 
 The panel already reloads itself on `refreshRequestLimit`, so a reload after save is
 a path the box is known to survive. That is the plan: **save, then reload the panel**.
@@ -183,33 +217,48 @@ Size: ~0.5 day.
 
 ### P3 — Panel UI
 
-- [ ] Route `/config` in `src/router/index.ts`, lazy-loaded like the others
-- [ ] Nav entry "Konfigurace" in `TheNav.vue`, `secured: true`
-- [ ] `views/ConfigView.vue` — same frame as `SettingsView.vue`, including the 10-minute
+- [x] Route `/config` in `src/router/index.ts`, lazy-loaded like the others
+- [x] Nav entry "Konfigurace" in `TheNav.vue`, `secured: true`
+- [x] `views/ConfigView.vue` — same frame as `SettingsView.vue`, including the 10-minute
       bounce back to the panel
-- [ ] Per field, carry the form metadata alongside the schema: Czech label, widget
+- [x] Per field, carry the form metadata alongside the schema: Czech label, widget
       (`text` / `number` / `password` / `select` / `ip`), options, unit suffix, hint,
-      apply tier (live / panel reload / backend restart). Moved here from P1.
-- [ ] `components/config/ConfigForm.vue` — renders sections from the schema descriptor
-- [ ] `components/config/ConfigFormSection.vue` — one card per top-level key
+      apply tier. Moved here from P1. It is `packages/config-schema/src/form.ts`, an
+      explicit table keyed by dotted path, with a package test that its paths are
+      exactly the leaf paths of `mainConfigSchema`. There is no live tier; see the
+      table above
+- [x] `api/config.ts` on the panel: `getConfig` only. Moved up from P4, because a form
+      with no data cannot be reviewed. `saveConfig` stays in P4
+- [x] `components/config/ConfigForm.vue` — renders sections from the schema descriptor
+- [x] `components/config/ConfigFormSection.vue` — one card per top-level key
       (babybox, backend, configer, units, camera, pc, app)
-- [ ] `components/config/ConfigFormField.vue` — picks the widget from the descriptor
-- [ ] Widgets: reuse `BaseInput` for text/number/password; add `BaseSelect.vue`
-      (needed for `camera.cameraType` and `pc.os`); add IP validation as a pattern on
-      the text widget rather than a new component
-- [ ] Show the current value, the edited value and the default, per field
-- [ ] Mark changed fields with `BaseInputState.Accent`, invalid with `.Error` — the
-      same states the settings table already uses
-- [ ] Show the apply tier on every field that is not live
-- [ ] Actions row: Save, Discard, Reset to defaults — matching `SettingsFormActions.vue`
-- [ ] Result and log panes, reusing `SettingsFormResult.vue` and `SettingsFormLog.vue`
-- [ ] Mask `app.password` and `camera.password` behind a reveal toggle
+- [x] `components/config/ConfigFormField.vue` — picks the widget from the descriptor
+- [x] Widgets: reuse `BaseInput` for text/number/password; add `BaseSelect.vue`
+      (needed for `camera.cameraType` and `pc.os`); IP validation is a pattern on the
+      text widget, and a warning rather than an error, because the schema takes any
+      string there and a hostname does reach the unit
+- [x] `configer.port` and `configer.url` are rendered read-only: `save()` rejects a
+      write to either. `configer.requestTimeout` is rendered with a hint that nothing
+      reads it. `startup` gets no row and survives a round trip untouched
+- [x] Show the current value, the edited value and the default, per field
+- [x] Mark changed fields with `BaseInputState.Accent`, invalid with `.Error` — the
+      same states the settings table already uses. A field with a warning shows
+      `.Warning`, which wins over `.Accent`; see decisions.md
+- [x] Show the apply tier on every field
+- [x] Actions row: Save, Discard, Reset to defaults — matching `SettingsFormActions.vue`.
+      Save ships disabled with a Czech hint until P4 wires it
+- [x] Result and log panes, reusing `SettingsFormResult.vue` and `SettingsFormLog.vue`
+      unchanged
+- [x] Mask `app.password` and `camera.password` behind a reveal toggle
+- [x] Unit tests: the descriptor covers the schema, the changed / unchanged / invalid
+      decision per field, the built config including `startup`, discard and reset
 
 Size: ~1.5 days.
 
 ### P4 — Applying a change
 
-- [ ] `api/config.ts` on the panel: `getConfig`, `saveConfig`
+- [x] ~~`api/config.ts` on the panel: `getConfig`~~ — shipped in P3
+- [ ] `api/config.ts` on the panel: `saveConfig`, and Save stops being disabled
 - [ ] After a successful save: log it, wait for the response, then `window.location.reload()`
 - [ ] `POST /reload` on the backend: re-run `fetchConfig()`, reassign the exported
       `config`, return the new values it could not apply (port, prefix)
@@ -244,8 +293,10 @@ need is "see what this box is set to" more often than "change it".
 
 ## Known constraints
 
-- `pnpm typecheck` on the panel is already red with 17 pre-existing errors, and the
-  build's type gate checks zero files. Do not treat a green build as proof.
+- `pnpm typecheck` on the panel is already red with 20 pre-existing errors, and the
+  build's type gate checks zero files. Do not treat a green build as proof. The count
+  said 17 until P3 measured it on `origin/main` (1927135); measure it yourself before
+  and after, the requirement is no new errors.
 - Pin `pnpm@7.5.0`. A newer pnpm rewrites the lockfile format wholesale.
 - The panel is on Vue 3.2, Vite 2 and TypeScript 4.7. Pick a select/form approach that
   does not need anything newer.
