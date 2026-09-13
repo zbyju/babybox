@@ -12,6 +12,7 @@
     "echo": "echo 'Hello from panel'"
   },
   "dependencies": {
+    "@babybox/config-schema": "workspace:*",
     "axios": "^0.27.2",
     "howler": "^2.2.3",
     "lodash": "^4.17.21",

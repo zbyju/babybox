@@ -149,4 +149,75 @@ Context · Decision · Why · Gave up · Where
   one thing, and nothing ever has to rewrite what a maintainer typed.
 - Gave up: the panel is wider than the check. `Dahua IPC` works in the panel but a
   PUT with it gets a 400. No deployed file has such a value.
-- Where: `source/apps/configer/src/types/main.types.ts`.
+- Where: `cameraTypes` in `source/packages/config-schema/src/schema.ts`.
+
+## 2026-09-12 — The config shape is one zod schema in a shared package
+
+- Context: the config shape was written five times: configer's types and validator,
+  the backend's types, the panel's types, guards and defaults. They already disagreed:
+  `cameraType` is a union in one and a `string` in two, the panel's default voltage
+  divider is 3400 where `base.json` says 63, and the panel has an `app.version` that
+  nothing sets. The [config-ui plan](plans/config-ui.md) left zod versus hand-written
+  guards open until P0 was merged.
+- Decision: one zod schema in `source/packages/config-schema`
+  (`@babybox/config-schema`). `MainConfig` is `z.infer` of it. Configer and the panel
+  validate with it, the backend imports the type only. zod pinned to `3.23.8`.
+- Why: one source for the type, the validation, the defaults and, in P3, the form
+  descriptor. `3.23.8` is the last 3.x before zod started shipping v4 next to v3
+  (3.25), and it runs on TypeScript 4.7, which all three apps use; zod 4 needs 5.5.
+- Constraints found on the way, each of them shapes the package:
+  1. The package is ESM and built with `tsc` to `dist/`. Configer runs the built JS on
+     Node 18, which cannot load `.ts`, so every consumer resolves `main` and `types`
+     from `dist/` and the package is built first: root `build` and `dev` scripts, CI.
+  2. The backend imports the type only, through a tsconfig `paths` entry and
+     `import type`, and lists the package nowhere in its `package.json`. Why it
+     cannot: learnings.md, Startup.
+- Gave up: a hand-written validator we already had and understood; about 60 KB of zod
+  in the panel bundle; one more build step in every box's update path. The form
+  metadata moved from P1 to P3, where it is first read.
+- Where: [config-ui plan, P1](plans/config-ui.md), PR "feat: share one config schema
+  across the apps".
+
+## 2026-09-12 — The panel accepts a config with a key it does not know
+
+- Superseded the same day by "The panel checks the shape it reads, not the whole
+  schema". Unknown keys were only the smallest part of what a stored config can get
+  wrong, and the rest stopped the panel just as hard.
+
+## 2026-09-12 — defaultConfig is a function, not a constant
+
+- Context: the package exports the defaults that base.json holds on disk. The panel
+  puts them straight into a pinia store, which is reactive and mutable.
+- Decision: `defaultConfig()` builds a fresh object on every call.
+- Why: a shared constant that one store mutates changes what every later caller reads,
+  and nothing in the type system stops it. The cost is one object per call, at boot.
+- Gave up: nothing.
+- Where: `source/packages/config-schema/src/defaults.ts`.
+
+## 2026-09-12 — The panel checks the shape it reads, not the whole schema
+
+- Context: the panel's guard was the shared schema with unknown keys forgiven. Every
+  other rule then applied to a file no write path had ever checked — configer only
+  warns about a bad stored value and serves it. A `refreshRequestLimit` of 0 (the only
+  way to turn the reload off), a delay of 0, a `pc.os` the panel never reads: each one
+  kept `AppState` short of `Ok`, so `MainView` never mounted, the loop never started
+  and the engine watchdog never ran. A box that blocks itself (motto 3). Review
+  finding on the P1 PR.
+- Decision: the panel's guard is structural. The five sections it reads must be there
+  and be objects, and each field it reads must be a string where it reads a string and
+  a number where it reads a number. No ranges, no name lists; `refreshRequestLimit`
+  may be missing or null. `isInstanceOfConfig` first logs the full
+  `validateMainConfig` result with `console.warn`, so a maintainer still sees the bad
+  value. `PUT /config/main` keeps every rule.
+- Why: rejecting is a write-path job. The read path only needs the shape it reads.
+- The check lives in the panel, not in the package: the field list is the panel's, not
+  the file's, and the package should not have to know which sections a consumer reads.
+  `isMainConfig` is gone from the package, it had no other caller.
+- `camera.cameraType` is checked as a string only. `getURLPostfix` falls back to the
+  dahua url and warns, which is what the old `stringToCameraType` did with a name it
+  did not know. A wrong snapshot url costs one camera; refusing the config costs the
+  whole panel.
+- Gave up: a hand-written guard beside the schema, so the two can drift; the panel's
+  tests are what hold them together. A field of the wrong type still stops the panel,
+  and a hand-typed `backend.port: "5000"` is the realistic case.
+- Where: `isInstanceOfConfig` in `apps/panel/src/utils/panel/instanceCheck.ts`.

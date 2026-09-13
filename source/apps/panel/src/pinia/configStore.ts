@@ -1,30 +1,14 @@
+import { defaultConfig } from "@babybox/config-schema";
 import { defineStore } from "pinia";
 
-import {
-  getDefaultAppConfig,
-  getDefaultBabyboxConfig,
-  getDefaultBackendConfig,
-  getDefaultCameraConfig,
-  getDefaultUnitsConfig,
-} from "@/defaults/config.default";
-import type {
-  AppConfig,
-  BabyboxConfig,
-  BackendConfig,
-  CameraConfig,
-  Config,
-  UnitsConfig,
-} from "@/types/panel/config.types";
+import type { Config } from "@/types/panel/config.types";
 
 export const useConfigStore = defineStore("config", {
-  state: () => ({
-    initialised: false as boolean,
-    backend: getDefaultBackendConfig() as BackendConfig,
-    app: getDefaultAppConfig() as AppConfig,
-    babybox: getDefaultBabyboxConfig() as BabyboxConfig,
-    camera: getDefaultCameraConfig() as CameraConfig,
-    units: getDefaultUnitsConfig() as UnitsConfig,
-  }),
+  /* The schema's defaults, so nothing shows a number no box would ever hold. */
+  state: () => {
+    const { app, babybox, backend, camera, units } = defaultConfig();
+    return { initialised: false, app, babybox, backend, camera, units };
+  },
   actions: {
     setConfig(config: Config) {
       this.initialised = true;

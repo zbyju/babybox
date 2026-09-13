@@ -1,6 +1,6 @@
 # Config UI page
 
-Status: **P0 in review**
+Status: **P0 merged, P1 in review**
 Owner: —
 Last updated: 2026-09-12
 
@@ -26,16 +26,16 @@ What the form buys us over editing JSON:
 | Defaults | `source/apps/configer/configs/base.json` | merged over the file on every configer boot |
 | Read endpoint | `GET /api/v1/config/main` | works |
 | Write endpoint | `PUT /api/v1/config/main` | exists, unused, and unsafe — see Risks |
-| Validation | `validateMainConfig` in `src/types/main.types.ts` | hand-written, returns field-level errors |
+| Validation | `validateMainConfig` in `@babybox/config-schema` | zod, returns field-level errors |
 | Panel config store | `src/pinia/configStore.ts` | set once at boot, never again |
-| Panel config types | `src/types/panel/config.types.ts` | a second hand-written copy of the shape |
-| Panel validation | `src/utils/panel/instanceCheck.ts` | a third hand-written copy |
-| Panel defaults | `src/defaults/config.default.ts` | a fourth copy |
+| Panel config types | `src/types/panel/config.types.ts` | derived from the shared type |
+| Panel validation | `src/utils/panel/instanceCheck.ts` | the shape the panel reads, warns about the rest |
+| Panel defaults | `src/pinia/configStore.ts` | the shared `defaultConfig()` |
 | Nav | `src/components/TheNav.vue` | already has a `secured` flag gated on `app.password` |
 | Settings page | `src/views/SettingsView.vue` | password-gated, returns to the panel after 10 min |
 
-The config shape is currently written out four times. Any new field means four edits,
-and they already disagree with each other (see the first two risks).
+The shape used to be written out four times, which is where the first two risks come
+from. Since P1 it is one zod schema in `source/packages/config-schema`.
 
 ## Risks to clear before the UI is worth building
 
@@ -108,8 +108,9 @@ bugs, and this feature adds a fifth consumer of the shape. Confidence: medium �
 main unknown is whether a shared workspace package fits the current pnpm/tsc setup
 without more work than it saves.
 
-Everything below assumes zod. If we go the other way, P1 and P2 get bigger and less
-useful; the rest is unchanged.
+Decided on 2026-09-12: zod 3.23.8 in `source/packages/config-schema`. The
+constraints we found on the way are in [decisions.md](../decisions.md), entry
+"The config shape is one zod schema in a shared package".
 
 ---
 
@@ -135,14 +136,16 @@ Size: ~1 day. Worth doing on its own even if the UI is dropped.
 
 ### P1 — Shared config schema
 
-- [ ] Create `source/packages/config-schema` (zod schema + inferred `MainConfig` type)
-- [ ] Wire it into the pnpm workspace and both tsconfigs
-- [ ] Per field, carry the form metadata alongside the schema: Czech label, widget
-      (`text` / `number` / `password` / `select` / `ip`), options, unit suffix, hint,
-      apply tier (live / panel reload / backend restart)
-- [ ] Point configer's `main.types.ts` at the shared type and delete the local guards
-- [ ] Point the panel's `config.types.ts` and `instanceCheck.ts` at the shared schema
-- [ ] Derive `base.json` defaults from the schema, or add a test that they match
+- [x] Create `source/packages/config-schema` (zod schema + inferred `MainConfig` type)
+- [x] Wire it into the pnpm workspace and both tsconfigs
+- [ ] ~~Per field, carry the form metadata alongside the schema~~ — moved to P3, where
+      it is first used. Nothing in P1 or P2 reads it (motto 1).
+- [x] Delete configer's `main.types.ts` with its local guards; `db/main.ts` imports
+      the package
+- [x] Point the panel's `config.types.ts` and `instanceCheck.ts` at the shared schema
+- [x] Point the backend's `types/config.types.ts` at the shared type. Type only: the
+      backend's `dist` is installed standalone, see decisions.md
+- [x] Derive `base.json` defaults from the schema, or add a test that they match
 
 Size: ~1 day. This is where most of the value is.
 
@@ -164,6 +167,9 @@ Size: ~0.5 day.
 - [ ] Nav entry "Konfigurace" in `TheNav.vue`, `secured: true`
 - [ ] `views/ConfigView.vue` — same frame as `SettingsView.vue`, including the 10-minute
       bounce back to the panel
+- [ ] Per field, carry the form metadata alongside the schema: Czech label, widget
+      (`text` / `number` / `password` / `select` / `ip`), options, unit suffix, hint,
+      apply tier (live / panel reload / backend restart). Moved here from P1.
 - [ ] `components/config/ConfigForm.vue` — renders sections from the schema descriptor
 - [ ] `components/config/ConfigFormSection.vue` — one card per top-level key
       (babybox, backend, configer, units, camera, pc, app)
@@ -227,7 +233,8 @@ need is "see what this box is set to" more often than "change it".
 
 ## Open questions
 
-- [ ] zod in a shared package, or keep the hand-written guards? (see above)
+- [x] zod in a shared package, or keep the hand-written guards? zod, decided 2026-09-12,
+      see decisions.md
 - [ ] Should the form edit `configer.*` at all? Changing the port of the service you are
       talking to through that service is a footgun. Read-only is defensible.
 - [ ] Do we want a config history — keep the last N versions, offer a rollback? The

@@ -4,7 +4,7 @@ import { onUnmounted, ref } from "vue";
 import type { Maybe } from "@/types/generic.types";
 import { CameraState } from "@/types/panel/camera.types";
 import { type CameraConfig } from "@/types/panel/config.types";
-import { getURLPostfix, stringToCameraType } from "@/utils/panel/camera";
+import { getURLPostfix } from "@/utils/panel/camera";
 
 const DEFAULT_UPDATE_DELAY = 1000;
 
@@ -67,11 +67,10 @@ export default function useCamera(
   let settled = true;
 
   const buildUrl = () => {
-    const cameraType = stringToCameraType(config.cameraType);
     const time = new Date().getTime().toString();
     return `http://${config.username}:${config.password}@${
       config.ip
-    }${getURLPostfix(cameraType)}${time}`;
+    }${getURLPostfix(config.cameraType)}${time}`;
   };
 
   const settle = (loaded: boolean, stalled = false) => {

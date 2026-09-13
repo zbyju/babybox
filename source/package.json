@@ -6,14 +6,15 @@
   "keywords": [],
   "packageManager": "pnpm@7.5.0",
   "scripts": {
-    "dev": "pnpm -F babybox-panel-configer dev & pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev",
+    "dev": "pnpm run build:schema && (pnpm -F babybox-panel-configer dev & pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev)",
     "dev:backend": "pnpm -F babybox-panel-backend dev",
     "dev:panel": "pnpm -F babybox-panel dev",
     "dev:configer": "pnpm -F babybox-panel-configer dev",
     "stop": "pm2 delete configer && pm2 delete babybox",
     "start:configer": "pnpm -F babybox-panel-configer start",
     "start:main": "cd \"../dist\" && pnpm install && pm2 start ../dist/index.js -n babybox",
-    "build": "pnpm install && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build",
+    "build:schema": "pnpm -F @babybox/config-schema build",
+    "build": "pnpm install && pnpm run build:schema && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build",
     "echo": "echo test"
   },
   "devDependencies": {

@@ -10,7 +10,7 @@ import { router as engineRoute } from "./routes/engineRoute";
 import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
-import { MainConfig } from "./types/config.types";
+import type { MainConfig } from "./types/config.types";
 import { wait } from "./utils/wait";
 
 const CONFIG_RETRY_DELAY_MS = 5000;

@@ -10,14 +10,13 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import merge from "lodash.merge";
 import {
   ConfigError,
   MainConfig,
-  isPlainObject,
   parseMainConfig,
   validateMainConfig,
-} from "../../types/main.types.js";
+} from "@babybox/config-schema";
+import merge from "lodash.merge";
 
 export type MainDb = ReturnType<typeof mainConfig>;
 
@@ -51,13 +50,19 @@ function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+type Fields = Record<string, unknown>;
+
+function isPlainObject(value: unknown): value is Fields {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 type StoredFile =
-  | { kind: "ok"; config: Record<string, unknown> }
+  | { kind: "ok"; config: Fields }
   | { kind: "corrupt" }
   | { kind: "unreadable"; error: unknown };
 
 // Only a JSON object is a config: lodash.merge would spread a string or an array.
-function parseObject(text: string): Record<string, unknown> | undefined {
+function parseObject(text: string): Fields | undefined {
   try {
     const value = JSON.parse(text) as unknown;
     return isPlainObject(value) ? value : undefined;

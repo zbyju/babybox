@@ -1,21 +1,25 @@
-import { CameraType } from "@/types/panel/config.types";
+import type { MainConfigCameraType } from "@babybox/config-schema";
 
-export const stringToCameraType = (s: string): CameraType => {
-  const lower = s.toLowerCase();
-  if (lower.includes("dahua")) return CameraType.dahua;
-  if (lower.includes("hikvision")) return CameraType.hikvision;
-  if (lower.includes("avtech") || lower.includes("avm"))
-    return CameraType.avtech;
-  if (lower.includes("vivotek")) return CameraType.vivotek;
-  return CameraType.dahua;
+const AVTECH_SNAPSHOT = "/cgi-bin/guest/Video.cgi?media=JPEG&channel=0/";
+
+/* avm cameras answer the avtech snapshot url. */
+const urlPostfixes: Record<MainConfigCameraType, string> = {
+  dahua: "/cgi-bin/snapshot.cgi?Channel=0/",
+  hikvision: "/ISAPI/Streaming/channels/101/picture?snapShotImageType=JPEG",
+  avtech: AVTECH_SNAPSHOT,
+  avm: AVTECH_SNAPSHOT,
+  vivotek: "/cgi-bin/viewer/video.jpg/",
 };
 
-export const getURLPostfix = (type: CameraType): string => {
-  if (type === CameraType.dahua) return "/cgi-bin/snapshot.cgi?Channel=0/";
-  if (type === CameraType.hikvision)
-    return "/ISAPI/Streaming/channels/101/picture?snapShotImageType=JPEG";
-  if (type === CameraType.avtech)
-    return "/cgi-bin/guest/Video.cgi?media=JPEG&channel=0/";
-  if (type === CameraType.vivotek) return "/cgi-bin/viewer/video.jpg/";
-  return "ERROR";
+/*
+ * The panel's config check only asks for a string, so the name can be one we do not
+ * know. Falling back to dahua is what the old stringToCameraType did, and a wrong
+ * snapshot url costs one camera; refusing the config costs the whole panel.
+ */
+export const getURLPostfix = (type: string): string => {
+  const postfix = (urlPostfixes as Record<string, string>)[type];
+  if (postfix !== undefined) return postfix;
+
+  console.warn(`Unknown camera type "${type}", using the dahua url`);
+  return urlPostfixes.dahua;
 };

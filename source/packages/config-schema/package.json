@@ -1,0 +1,22 @@
+{
+  "name": "@babybox/config-schema",
+  "version": "1.0.0",
+  "description": "The shape of configer's main.json, written once.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "vitest": "^0.9.3"
+  }
+}

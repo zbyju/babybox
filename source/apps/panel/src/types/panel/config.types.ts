@@ -1,57 +1,18 @@
-export interface Config {
-  app: AppConfig;
-  backend: BackendConfig;
-  babybox: BabyboxConfig;
-  camera: CameraConfig;
-  units: UnitsConfig;
-}
+import type { MainConfig } from "@babybox/config-schema";
 
-export interface BackendConfig {
-  url: string;
-  port: number;
-  requestTimeout: number;
-}
+/*
+ * The panel reads five of the eight sections of configer's config. The shape of each
+ * one comes from @babybox/config-schema, so the panel cannot drift from the file on
+ * the box.
+ */
+export type Config = Pick<
+  MainConfig,
+  "app" | "babybox" | "backend" | "camera" | "units"
+>;
 
-export interface AppConfig {
-  password: string;
-  version: string;
-  refreshRequestLimit?: number;
-}
-
-export interface BabyboxConfig {
-  name: string;
-}
-
-export interface CameraConfig {
-  ip: string;
-  username: string;
-  password: string;
-  updateDelay: number;
-  cameraType: string;
-}
-
-export enum CameraType {
-  dahua = "DAHUA",
-  avtech = "AVTECH",
-  vivotek = "VIVOTEK",
-  hikvision = "HIKVISION",
-}
-
-export interface UnitsConfig {
-  engine: UnitConfig;
-  thermal: UnitConfig;
-  requestDelay: number;
-  warningThreshold: number;
-  errorThreshold: number;
-  voltage: VoltageConfig;
-}
-
-export interface UnitConfig {
-  ip: string;
-}
-
-export interface VoltageConfig {
-  divider: number;
-  multiplier: number;
-  addition: number;
-}
+export type AppConfig = MainConfig["app"];
+export type BabyboxConfig = MainConfig["babybox"];
+export type BackendConfig = MainConfig["backend"];
+export type CameraConfig = MainConfig["camera"];
+export type UnitsConfig = MainConfig["units"];
+export type VoltageConfig = UnitsConfig["voltage"];

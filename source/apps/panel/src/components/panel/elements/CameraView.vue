@@ -1,5 +1,6 @@
 <template>
-  <VivotekCameraView v-if="cameraType === CameraType.vivotek" v-bind="props" />
+  <!-- Vivotek renders its own iframe, so it needs no snapshot polling. -->
+  <VivotekCameraView v-if="camera.cameraType === 'vivotek'" v-bind="props" />
   <SnapshotCameraView v-else v-bind="props" />
 </template>
 
@@ -7,8 +8,6 @@
   import { storeToRefs } from "pinia";
 
   import { useConfigStore } from "@/pinia/configStore";
-  import { CameraType } from "@/types/panel/config.types";
-  import { stringToCameraType } from "@/utils/panel/camera";
 
   import SnapshotCameraView from "./SnapshotCameraView.vue";
   import VivotekCameraView from "./VivotekCameraView.vue";
@@ -21,9 +20,6 @@
 
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);
-
-  // Vivotek renders its own iframe, so it needs no snapshot polling.
-  const cameraType = stringToCameraType(camera.value.cameraType);
 </script>
 
 <style lang="stylus">

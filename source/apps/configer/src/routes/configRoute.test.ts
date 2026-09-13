@@ -63,7 +63,7 @@ afterEach(async () => {
 async function put(body: unknown): Promise<{ status: number; body: unknown }> {
   const res = await fetch(url, {
     method: "PUT",
-    headers: { "content-type": "application/json", connection: "close" },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
   return { status: res.status, body: await res.json() };
@@ -86,7 +86,7 @@ describe("PUT /config/main", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ...base(), babybox: { name: "Brno" } });
 
-    const get = await fetch(url, { headers: { connection: "close" } });
+    const get = await fetch(url);
     expect(await get.json()).toEqual(res.body);
   });
 

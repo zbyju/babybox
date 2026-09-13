@@ -12,11 +12,17 @@ lesson: what happened, what to do instead.
   with 17 pre-existing errors and the build's type gate checks zero files.
 - **The startup app treats any stderr from `pnpm run build` as a failed build.**
   A warning printed by `tsc` or a package script fails the update on the box.
-- **Backend `tsc` picks up `bun-types` from a parent `node_modules`.** Pass
-  `--typeRoots ./node_modules/@types` when you get TS1005/TS1139 noise.
+- **`tsc` picks up `bun-types` from a parent `node_modules`** (TS1005/TS1139 noise).
+  A package that needs no ambient types sets `"types": []` in its tsconfig, as
+  config-schema does. The backend needs Node types, so pass
+  `--typeRoots ./node_modules/@types` there.
 - **pnpm 7.5.0 cannot reach the registry on Node 20+** (`ERR_INVALID_THIS` from
-  undici). Resolution works on CI's Node 18.12.1. On a newer machine, seed the metadata
-  cache under `~/Library/Caches/pnpm/metadata` or install from a machine with Node 18.
+  undici). Run it under Node 18 through npx instead:
+  `npx -y -p node@18.12.1 -p pnpm@7.5.0 pnpm install` from `source/`. npx puts a
+  Node 18 binary first on PATH and pnpm's shebang picks it up. Checked 2026-09-12.
+- **`pnpm view` is not a test of the above.** It shells out to the machine's npm, which
+  fails under Node 18 with `tracingChannel is not a function`. Test with
+  `pnpm install --lockfile-only` in a scratch folder.
 
 ## Configer
 
@@ -43,7 +49,38 @@ lesson: what happened, what to do instead.
 - **`lodash.merge` spreads a string source over the target** (`merge({}, "ab")` gives
   `{0:"a",1:"b"}`). Reject a non-object body before merging it over the defaults.
 
+## Startup
+
+- **The backend's `dist` is installed standalone.** `startup` copies
+  `apps/backend/dist` and `apps/backend/package.json` to the repo-root `dist/` and runs
+  `pnpm install` there, outside the workspace. A `workspace:*` dependency in the
+  backend's `package.json` breaks that install, so the backend can only share types.
+- **After `git pull` the box runs the root `build` script**, nothing else. A new build
+  step belongs there, or the box never runs it.
+
 ## Process
 
 - **A PR branch checked out in the main checkout cannot be committed to from a
   worktree.** Use a side branch and fast-forward push.
+
+## Shared package
+
+- **zod's strict object reports the unknown keys of one object as one issue.** It
+  carries a `keys` array, so expand it into one error per key before anyone sees it.
+- **`z.enum` needs an `errorMap` to carry a custom message.** `invalid_type_error`
+  only covers a value that is not a string; a string outside the list is
+  `invalid_enum_value` and keeps zod's own wording.
+- **zod's `safeParse` returns a copy, built in the order the schema declares.** The
+  written `main.json` follows the schema's key order, so declare the keys in the order
+  `base.json` has them or every box rewrites its file on the first PUT.
+- **Build the package before the configer or panel tests.** Both suites resolve
+  `@babybox/config-schema` to its gitignored `dist/`, so on a fresh clone they cannot
+  find it, and after an edit to `src/` they run against the previous build. Run
+  `pnpm run build:schema` from `source/` first.
+
+## Tests
+
+- **`fetch` on Node 18 refuses a request that sets `connection`.** undici calls it an
+  invalid connection header and the call fails with `TypeError: fetch failed`; Node 24
+  forwards the header, so a test written on Node 24 only goes red on CI. Let the agent
+  manage the connection and close the server with `closeAllConnections()`.

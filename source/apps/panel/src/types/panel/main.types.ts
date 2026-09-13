@@ -8,9 +8,3 @@ export interface PanelState {
   message?: Message;
   active: boolean;
 }
-
-export enum CameraType {
-  dahua = "DAHUA",
-  avtech = "AVTECH",
-  vivotek = "VIVOTEK",
-}
