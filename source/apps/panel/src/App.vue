@@ -1,7 +1,7 @@
 <template>
   <AppState>
     <router-view></router-view>
-    <ScrollToTop v-if="showScrollToTop" />
+    <FloatingActions v-if="showFloatingActions" />
   </AppState>
 </template>
 
@@ -13,11 +13,11 @@
 
   import { refreshRestartCooldown } from "./api/restart";
   import AppState from "./components/AppState.vue";
-  import ScrollToTop from "./components/ScrollToTop.vue";
+  import FloatingActions from "./components/FloatingActions.vue";
 
   const route = useRoute();
   /* The panel is one screen. Settings and config are long pages. */
-  const showScrollToTop = computed(() => route.name !== "Main");
+  const showFloatingActions = computed(() => route.name !== "Main");
 
   const appManager = new AppManager();
   onBeforeMount(async () => await appManager.initializeGlobal());

@@ -20,7 +20,7 @@ export function focusPanelPassword(doc: Document = document): void {
 
 /**
  * Scrolls the window to the top of the page.
- * Use it from the floating button on settings and config.
+ * Use it from the smaller floating button on settings and config.
  */
 export function scrollWindowToTop(
   win: Pick<Window, "scrollTo"> = window,
