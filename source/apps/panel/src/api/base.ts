@@ -4,6 +4,9 @@ import { useConfigStore } from "@/pinia/configStore";
 
 export const CONFIGER_API_URL = "http://localhost:5001/api/v1/config";
 
+/* configer runs on the same machine, so this only has to cover a slow boot. */
+export const CONFIGER_TIMEOUT = 10000;
+
 const DEFAULT_REQUEST_TIMEOUT = 5000;
 
 /*

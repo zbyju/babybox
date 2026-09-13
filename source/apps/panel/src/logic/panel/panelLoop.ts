@@ -3,7 +3,7 @@ import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
-import { CONFIGER_API_URL } from "@/api/base";
+import { CONFIGER_API_URL, CONFIGER_TIMEOUT } from "@/api/base";
 import { requestJson } from "@/api/http";
 import {
   getEngineData,
@@ -30,7 +30,6 @@ import {
 
 import { getNewState } from "./state";
 
-const CONFIGER_TIMEOUT = 10000;
 const FIRST_INIT_DELAY = 5000;
 const MAX_INIT_DELAY = 20000;
 
