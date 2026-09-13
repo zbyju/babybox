@@ -31,7 +31,6 @@ const NOT_AN_IP = "Nevypadá to jako IPv4 adresa. Uložit to ale jde.";
 
 const CANNOT_CLEAR = "Hodnotu nelze smazat, klíč se přes API odstranit nedá.";
 
-/* The two configer address fields; the API refuses to write them. */
 const editableFields = configFormFields.filter((field) => !field.readOnly);
 
 function isFields(value: unknown): value is Fields {
