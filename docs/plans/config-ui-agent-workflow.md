@@ -1,7 +1,7 @@
 # Config UI — agent workflow
 
-Status: **P0 merged, P1 in review**
-Last updated: 2026-09-12
+Status: **P1 merged, P2 in review**
+Last updated: 2026-09-13
 
 How each phase of [config-ui.md](config-ui.md) gets built. Same pipeline for every
 phase; only the implementation brief changes. Rules of the road are in
@@ -111,4 +111,27 @@ docs updated. Merging is a human decision.
     --frozen-lockfile` then `pnpm run build` from `source/`, both with empty stderr.
     Then the four test suites.
   - PR title `feat: share one config schema across the apps`.
-- P2 to P5 — written when P1 is merged.
+- **P2** — the configer write path gets a partial update. Brief: the P2 checklist in
+  config-ui.md, plus:
+  - `PATCH /config/main` merges the body over the config the process is running on,
+    where `PUT` merges it over `base.json`. That one difference is the whole feature:
+    a key left out of a `PATCH` keeps its stored value.
+  - The merge and the write live in `services/db/main.ts` beside `update()`, and both
+    writers go through one `save()`, so there is no second write path to keep atomic.
+    The route stays as thin as the existing one.
+  - The same rejections as `PUT`, with the same `{ path: "", msg }` errors: a
+    non-object body, because `lodash.merge` spreads a string over the target, and an
+    empty body, because `express.json()` leaves `req.body` as `{}` when the
+    Content-Type header is missing. Both are in learnings.md.
+  - Status codes and the response body match `PUT`: 200 with the saved config, 400
+    with field-level errors, 500 on a write failure.
+  - No array rule for `lodash.merge`: the schema has no array field.
+  - Not built: `GET /config/schema`, and no `restartRequired` in the response. Both
+    are in decisions.md with what would reverse them.
+  - Tests per validation branch in `routes/configRoute.test.ts` and
+    `services/db/main.test.ts`, in the style already there. The `PATCH` test that
+    proves the merge base changes a key away from its default first — a test that
+    starts from the defaults cannot tell which side the merge came from
+    (learnings.md). Key order in the written file and `main.json.bak` are checked too.
+  - PR title `feat: add a partial config update endpoint`.
+- P3 to P5 — written when P2 is merged.

@@ -62,9 +62,16 @@ Key configurable values:
 
 ## Configer (`apps/configer/src/`)
 
-- `routes/config.ts` - Config CRUD endpoints
+- `routes/configRoute.ts` - Config endpoints
 - `configs/main.json` - Runtime configuration
 - `configs/base.json` - Default values
+
+### API Routes
+
+- `GET /api/v1/config/main` - Current config
+- `PUT /api/v1/config/main` - Full replace; a key left out returns to its `base.json` default
+- `PATCH /api/v1/config/main` - Partial update; a key left out keeps its stored value
+- `GET /api/v1/config/versions` - Installed versions
 
 ## Domain Notes
 

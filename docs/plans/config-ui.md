@@ -1,8 +1,8 @@
 # Config UI page
 
-Status: **P0 merged, P1 in review**
+Status: **P1 merged, P2 in review**
 Owner: —
-Last updated: 2026-09-12
+Last updated: 2026-09-13
 
 ## Goal
 
@@ -151,13 +151,25 @@ Size: ~1 day. This is where most of the value is.
 
 ### P2 — Configer write path
 
-- [ ] `PUT /config/main` validates with the shared schema
-- [ ] Add `PATCH /config/main` for a partial update (the form sends only what changed)
-- [ ] `GET /config/schema` returns the form descriptor, so the panel does not need a
-      build-time copy — decide this against just importing the shared package
-- [ ] Reject a write that would change `configer.port` or `configer.url` out from under
-      the running process, or accept it and state clearly that it needs a restart
-- [ ] Tests for each validation branch
+- [x] `PUT /config/main` validates with the shared schema — since P1, through
+      `parseMainConfig`. P2 adds the missing branch tests
+- [x] Add `PATCH /config/main` for a partial update (the form sends only what changed).
+      Merges over the running config, so a key left out keeps its stored value, where
+      the same key left out of a `PUT` goes back to the `base.json` default
+- [x] ~~`GET /config/schema` returns the form descriptor~~ — decided against, not
+      skipped. The panel resolves `@babybox/config-schema` at build time, so the
+      endpoint would be a second copy of the shape with no reader today (motto 1).
+      See decisions.md, "No `GET /config/schema`"
+- [x] Reject a write that would change `configer.port` or `configer.url` out from under
+      the running process, or accept it and state clearly that it needs a restart —
+      accepted. Rejecting would leave hand-editing `main.json` as the only way to change
+      them. No `restartRequired` in the response; the apply tier is form metadata and
+      lands in P3. See decisions.md
+- [x] Tests for each validation branch
+
+Known edge case: a box whose stored `main.json` holds a value the schema rejects (boot
+only warns) has every `PATCH` rejected until that field is sent a valid value. The
+errors name the field, so it is recoverable over the API. No bypass.
 
 Size: ~0.5 day.
 
