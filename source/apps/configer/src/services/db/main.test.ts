@@ -139,7 +139,10 @@ describe("boot", () => {
       file("main.json.bak"),
       JSON.stringify({ babybox: { name: "ze zalohy" } })
     );
-    writeFileSync(file("main.json"), JSON.stringify({ babybox: { name: "x" } }));
+    writeFileSync(
+      file("main.json"),
+      JSON.stringify({ babybox: { name: "x" } })
+    );
     vi.mocked(readFileSync).mockImplementation(((path, options) => {
       if (String(path).endsWith("main.json")) {
         throw Object.assign(new Error("EACCES: permission denied"), {
@@ -148,7 +151,9 @@ describe("boot", () => {
       }
       return actual.readFileSync(path, options);
     }) as typeof readFileSync);
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
 
     const db = await mainConfig(configDir);
 
@@ -170,7 +175,9 @@ describe("boot", () => {
     writeFileSync(file("main.json"), "{ not json");
     writeFileSync(file("main.json.bak"), "also not json");
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
 
     const db = await mainConfig(configDir);
 

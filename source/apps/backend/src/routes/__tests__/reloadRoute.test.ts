@@ -62,7 +62,8 @@ async function stopRoute(server: http.Server) {
   await new Promise<void>((resolve) => server.close(() => resolve()));
 }
 
-const post = (url: string) => axios.post(url, {}, { validateStatus: () => true });
+const post = (url: string) =>
+  axios.post(url, {}, { validateStatus: () => true });
 
 describe("POST /reload", () => {
   let server: http.Server;

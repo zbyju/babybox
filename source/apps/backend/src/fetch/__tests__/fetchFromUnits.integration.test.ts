@@ -30,7 +30,9 @@ describe("fetchFromUnits.ts against a real server", () => {
       }, RESPONSE_DELAY);
     });
 
-    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve)
+    );
     const { port } = server.address() as AddressInfo;
 
     /*
@@ -166,7 +168,9 @@ describe("updateSettings against a unit that is ready", () => {
       return res.end();
     });
 
-    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve)
+    );
     const { port } = server.address() as AddressInfo;
 
     jest.resetModules();
