@@ -48,7 +48,9 @@ describe("formatLogLine", () => {
   it("prints timestamp, level, stage, and Czech message", () => {
     expect(
       formatLogLine(makeDate(), "info", "update", strings.updateSucceeded)
-    ).toBe("13.09.2026 15:16:00 INFO [update] Aktualizace z gitu byla dokončena.");
+    ).toBe(
+      "13.09.2026 15:16:00 INFO [update] Aktualizace z gitu byla dokončena."
+    );
   });
 
   it("appends Error.message and stdio without undefined", () => {
@@ -71,7 +73,13 @@ describe("formatLogLine", () => {
 
   it("omits the cause when it is missing", () => {
     expect(
-      formatLogLine(makeDate(), "error", "start", strings.startFailed, undefined)
+      formatLogLine(
+        makeDate(),
+        "error",
+        "start",
+        strings.startFailed,
+        undefined
+      )
     ).toBe(
       "13.09.2026 15:16:00 ERROR [start] Panel babyboxu se nepodařilo spustit."
     );
@@ -126,9 +134,9 @@ describe("rotateLogFile", () => {
     rotateLogFile(logsDir, date);
 
     expect(fs.existsSync(livePath)).toBe(false);
-    expect(fs.existsSync(path.join(logsDir, "startup-20260913-151600.log"))).toBe(
-      true
-    );
+    expect(
+      fs.existsSync(path.join(logsDir, "startup-20260913-151600.log"))
+    ).toBe(true);
     const backups = fs
       .readdirSync(logsDir)
       .filter((name) => name.startsWith("startup-") && name.endsWith(".log"));
@@ -144,9 +152,9 @@ describe("rotateLogFile", () => {
 
     rotateLogFile(logsDir, date);
 
-    expect(fs.existsSync(path.join(logsDir, "startup-20260913-151600-2.log"))).toBe(
-      true
-    );
+    expect(
+      fs.existsSync(path.join(logsDir, "startup-20260913-151600-2.log"))
+    ).toBe(true);
   });
 
   it("leaves a small live file in place", () => {

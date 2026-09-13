@@ -35,15 +35,23 @@ function pad2(value) {
 
 function formatTimestamp(date) {
   return (
-    `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()} ` +
-    `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`
+    `${pad2(date.getDate())}.${pad2(
+      date.getMonth() + 1
+    )}.${date.getFullYear()} ` +
+    `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(
+      date.getSeconds()
+    )}`
   );
 }
 
 function formatBackupName(date, suffix) {
   const stamp =
-    `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}-` +
-    `${pad2(date.getHours())}${pad2(date.getMinutes())}${pad2(date.getSeconds())}`;
+    `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(
+      date.getDate()
+    )}-` +
+    `${pad2(date.getHours())}${pad2(date.getMinutes())}${pad2(
+      date.getSeconds()
+    )}`;
   if (suffix === undefined) {
     return `startup-${stamp}.log`;
   }
@@ -148,7 +156,9 @@ function listBackupFiles(logsDir) {
       .readdirSync(logsDir)
       .filter((name) => BACKUP_NAME_RE.test(name))
       .map((name) => ({ name, filePath: path.join(logsDir, name) }))
-      .sort((a, b) => backupSortKey(b.name).localeCompare(backupSortKey(a.name)));
+      .sort((a, b) =>
+        backupSortKey(b.name).localeCompare(backupSortKey(a.name))
+      );
   } catch (err) {
     return [];
   }
@@ -202,8 +212,7 @@ function createLogger(options = {}) {
   const logsDir = options.logsDir || defaultLogsDir();
   const stdout = options.stdout || process.stdout;
   const now = options.now || (() => new Date());
-  const pinoLib =
-    options.pinoLib === undefined ? loadPino() : options.pinoLib;
+  const pinoLib = options.pinoLib === undefined ? loadPino() : options.pinoLib;
   const livePath = path.join(logsDir, LIVE_LOG_NAME);
 
   let fileEnabled = false;
@@ -236,13 +245,7 @@ function createLogger(options = {}) {
       if (!warnedFileUnavailable) {
         warnedFileUnavailable = true;
         writeStdout(
-          formatLogLine(
-            now(),
-            "warn",
-            "start",
-            strings.logFileUnavailable,
-            err
-          )
+          formatLogLine(now(), "warn", "start", strings.logFileUnavailable, err)
         );
       }
     }
@@ -353,8 +356,7 @@ module.exports = {
   collapseStdio,
   createLogger,
   defaultLogsDir,
-  error: (stage, message, err) =>
-    getDefaultLogger().error(stage, message, err),
+  error: (stage, message, err) => getDefaultLogger().error(stage, message, err),
   formatBackupName,
   formatCause,
   formatLogLine,

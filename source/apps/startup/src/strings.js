@@ -26,6 +26,5 @@ module.exports = {
   startFailed: "Panel babyboxu se nepodařilo spustit.",
   startConfigerFailed: "Službu configer se nepodařilo spustit.",
   startRetrySucceeded: "Panel babyboxu byl spuštěn na pokus číslo {n}.",
-  startRetryFailed:
-    "Panel babyboxu se nepodařilo spustit na pokus číslo {n}.",
+  startRetryFailed: "Panel babyboxu se nepodařilo spustit na pokus číslo {n}.",
 };

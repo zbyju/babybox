@@ -27,7 +27,9 @@ router.post("/", async (req: Request, res: Response) => {
 
   const result = await reloadConfig(fetchConfig, bound);
   if (result.status === "failed") {
-    console.error(`Config reload failed, keeping the old config: ${result.msg}`);
+    console.error(
+      `Config reload failed, keeping the old config: ${result.msg}`
+    );
     res.status(503).send({ msg: result.msg });
     return;
   }

@@ -149,8 +149,11 @@ describe("unitGate.ts", () => {
       ).rejects.toBe("boom");
 
       expect(
-        (await queue.runShared("settings:5000", () => Promise.resolve(reading("ok"))))
-          .data
+        (
+          await queue.runShared("settings:5000", () =>
+            Promise.resolve(reading("ok"))
+          )
+        ).data
       ).toBe("ok");
     });
   });

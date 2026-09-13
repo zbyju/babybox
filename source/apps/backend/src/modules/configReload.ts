@@ -142,7 +142,10 @@ export async function reloadConfig(
   try {
     answer = await fetchConfig();
   } catch (error) {
-    return { status: "failed", msg: `configer request threw: ${describe(error)}` };
+    return {
+      status: "failed",
+      msg: `configer request threw: ${describe(error)}`,
+    };
   }
 
   if (!isObject(answer) || answer.data === undefined) {

@@ -107,7 +107,10 @@ describe("configForm field metadata", () => {
         const [section, key] = field.path.split(".");
         const value = {
           ...config,
-          [section]: { ...config[section as keyof typeof config], [key]: option },
+          [section]: {
+            ...config[section as keyof typeof config],
+            [key]: option,
+          },
         };
         expect(mainConfigSchema.safeParse(value).success).toBe(true);
       }

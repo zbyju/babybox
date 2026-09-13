@@ -9,11 +9,11 @@ export const cameraTypes = [
   "vivotek",
 ] as const;
 
-export type MainConfigCameraType = (typeof cameraTypes)[number];
+export type MainConfigCameraType = typeof cameraTypes[number];
 
 export const pcOsTypes = ["windows", "ubuntu"] as const;
 
-export type MainConfigPcOs = (typeof pcOsTypes)[number];
+export type MainConfigPcOs = typeof pcOsTypes[number];
 
 const objectMessage = {
   invalid_type_error: "must be an object",

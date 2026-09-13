@@ -61,12 +61,35 @@ describe("isBackendReadableConfig", () => {
   });
 
   it.each([
-    ["units.engine.ip missing", (c: MainConfig) => delete (c.units.engine as Partial<MainConfig["units"]["engine"]>).ip],
-    ["units.thermal.ip missing", (c: MainConfig) => delete (c.units.thermal as Partial<MainConfig["units"]["thermal"]>).ip],
-    ["pc.os missing", (c: MainConfig) => delete (c.pc as Partial<MainConfig["pc"]>).os],
-    ["backend.port a string", (c: MainConfig) => ((c.backend as unknown as Record<string, unknown>).port = "5000")],
-    ["backend.url missing", (c: MainConfig) => delete (c.backend as Partial<MainConfig["backend"]>).url],
-    ["units not an object", (c: MainConfig) => ((c as unknown as Record<string, unknown>).units = "nope")],
+    [
+      "units.engine.ip missing",
+      (c: MainConfig) =>
+        delete (c.units.engine as Partial<MainConfig["units"]["engine"]>).ip,
+    ],
+    [
+      "units.thermal.ip missing",
+      (c: MainConfig) =>
+        delete (c.units.thermal as Partial<MainConfig["units"]["thermal"]>).ip,
+    ],
+    [
+      "pc.os missing",
+      (c: MainConfig) => delete (c.pc as Partial<MainConfig["pc"]>).os,
+    ],
+    [
+      "backend.port a string",
+      (c: MainConfig) =>
+        ((c.backend as unknown as Record<string, unknown>).port = "5000"),
+    ],
+    [
+      "backend.url missing",
+      (c: MainConfig) =>
+        delete (c.backend as Partial<MainConfig["backend"]>).url,
+    ],
+    [
+      "units not an object",
+      (c: MainConfig) =>
+        ((c as unknown as Record<string, unknown>).units = "nope"),
+    ],
   ])("refuses a config with %s", (_name, breakIt) => {
     const config = storedConfig();
     breakIt(config);
@@ -134,9 +157,9 @@ describe("unappliedFields", () => {
   });
 
   it("does not report a port the environment bound as a string", () => {
-    expect(unappliedFields(storedConfig(), { port: "5000", prefix: "/api/v1" })).toEqual(
-      []
-    );
+    expect(
+      unappliedFields(storedConfig(), { port: "5000", prefix: "/api/v1" })
+    ).toEqual([]);
   });
 });
 
