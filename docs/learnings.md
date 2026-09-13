@@ -91,6 +91,13 @@ lesson: what happened, what to do instead.
 
 - **A PR branch checked out in the main checkout cannot be committed to from a
   worktree.** Use a side branch and fast-forward push.
+- **A test a brief asks for can invent the function.** The P3 brief asked for a test of
+  "the diff between the loaded config and the edited config", so P3 shipped
+  `changedPaths`. Nothing called it: `formState` already decides `changed` per field
+  and returns the list, so the panel had the rule twice and the UI used the other copy.
+  Review finding on the P3 PR; it is gone. Find the caller before you write the helper
+  a test needs. What brings it back: nothing as written — a PATCH body that carries
+  only the changed keys needs a nested partial builder, not a list of paths.
 
 ## Shared package
 

@@ -403,3 +403,17 @@ Context · Decision · Why · Gave up · Where
 - What reverses it: P4. Once a save can reach configer, seed the form from the raw
   body so the bad field can be corrected in the browser.
 - Where: `load()` in `source/apps/panel/src/components/config/ConfigForm.vue`.
+
+## 2026-09-13 — A field that is both changed and warned shows the warning
+
+- Context: `ConfigFormField` picks one `BaseInputState` per field. It tested `changed`
+  before `warning`, so typing a hostname into a unit IP turned the border accent and
+  the yellow warning border was only reachable on a value the form had not touched —
+  that is, on a stored config that already held one. Review finding on the P3 PR.
+- Decision: the order is error, warning, changed, neutral. Worst first.
+- Why: the maintainer is told the field changed by the `Uloženo:` line under it, by the
+  card's change count and by the summary. The warning has no second place to appear, so
+  the edit must not hide it.
+- Gave up: nothing. A warned field no longer shows that it was edited by its border.
+- Where: `inputState` in
+  `source/apps/panel/src/components/config/ConfigFormField.vue`.

@@ -242,7 +242,8 @@ Size: ~0.5 day.
       reads it. `startup` gets no row and survives a round trip untouched
 - [x] Show the current value, the edited value and the default, per field
 - [x] Mark changed fields with `BaseInputState.Accent`, invalid with `.Error` — the
-      same states the settings table already uses
+      same states the settings table already uses. A field with a warning shows
+      `.Warning`, which wins over `.Accent`; see decisions.md
 - [x] Show the apply tier on every field
 - [x] Actions row: Save, Discard, Reset to defaults — matching `SettingsFormActions.vue`.
       Save ships disabled with a Czech hint until P4 wires it
