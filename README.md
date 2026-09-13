@@ -20,8 +20,9 @@ fields are live at that point. Two are not:
   serving nothing. Edit `main.json` and restart configer.
 
 The form asks for confirmation before saving a change to the app password, the
-backend port or prefix, or a unit IP — the fields that can leave a maintainer unable
-to reach the box.
+backend port or prefix, a unit IP, the operating system or the refresh limit — the
+fields that can leave a maintainer unable to reach the box. It shows the question on
+the page and waits for a second press of Save, so the panel keeps running.
 
 ## Who can reach the box
 
@@ -34,7 +35,10 @@ decision and it assumes the box sits on a trusted hospital network — see
 
 ## Development
 
+Both commands run from `source/`, which is where the only `package.json` lives.
+
 ```bash
+cd source
 pnpm dev     # start all services
 pnpm build   # build for production
 ```

@@ -219,9 +219,16 @@ docs updated. Merging is a human decision.
     place and `form.test.ts` can cover it. One dialog for the whole save, not one per
     field: the form sends every field in one `PATCH`. It names each dangerous field
     that really changed, with its old and new value, and it never prints a secret.
-  - `window.confirm`, not a component: no dependency, nothing to mount, works on the
-    kiosk. A field marked `readOnly` can never be `changed`, so it must not carry a
-    question — check that before copying the checklist's list of fields.
+  - **Do not use `window.confirm`, and do not trust "it works on the kiosk".** It
+    blocks the tab's event loop, `App.vue` heartbeats the backend every 5s, and
+    `restart.ts` reboots the PC after 9 missed ticks — an unanswered dialog reboots
+    the box in about three minutes, and it freezes `ConfigView`'s ten-minute bounce
+    too. Ask in the page and take a second press of Save. Whatever a phase adds to
+    the panel, check what runs on a timer underneath it first.
+  - Check every field on the checklist's list against the code that reads it, and
+    look for ones the list is missing. A `readOnly` field can never be `changed`, so
+    it must not carry a question; `pc.os` and `app.refreshRequestLimit` were not on
+    the list and both can force a site visit.
   - The component test is a dependency decision. Find what `saveFlow.ts` and
     `configForm.ts` already cover before adding `@vue/test-utils`; if the rule is
     already proved on both halves, close the item with the reason rather than paying

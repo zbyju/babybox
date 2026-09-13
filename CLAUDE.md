@@ -50,9 +50,12 @@ backend to re-read it, then reloads the panel. What that reaches:
 | Configer restart | Edit `main.json` by hand and restart configer. Only `configer.port` and `configer.url`; the API refuses to write them. |
 
 Before saving, the form asks once about the fields that can cut a maintainer off
-from the box — `app.password`, `backend.port`, `backend.url` and the two unit IPs —
-naming each one that changed with its old and new value. The metadata is `confirm`
-in `packages/config-schema/src/form.ts`.
+from the box — `app.password`, `backend.port`, `backend.url`, the two unit IPs,
+`pc.os` and `app.refreshRequestLimit` — naming each one that changed with its old and
+new value. It shows the question in the page and waits for a second press of Save.
+Nothing in the panel may block the event loop: the backend reboots the PC after nine
+missed heartbeats, so `window.confirm` would reboot the box. The metadata is
+`confirm` in `packages/config-schema/src/form.ts`.
 
 ### Network exposure
 

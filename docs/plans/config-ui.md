@@ -329,13 +329,25 @@ Size: ~0.5 day.
       the typed password against it, so a sentinel would become the panel password.
       See decisions.md for the evidence and for what reverses it — the real fix is
       binding configer to `127.0.0.1`, in the same phase as the door routes
-- [x] Confirm dialog for `app.password`, `backend.port` and both unit IPs.
-      `configer.port` is dropped: it is `readOnly`, so `formState` can never report it
-      as changed and the dialog could not appear. `backend.url` is added, because it
-      strands the panel exactly the way `backend.port` does. It is per-field
-      metadata (`confirm` on `FormField`), not a list in the component, and it is one
-      dialog for the whole save naming each dangerous field that really changed, with
-      its old and new value. A secret is named, never printed. See decisions.md
+- [x] Confirm before saving `app.password`, `backend.port`, `backend.url`, both unit
+      IPs, `pc.os` and `app.refreshRequestLimit`. It is per-field metadata (`confirm`
+      on `FormField`), not a list in the component, and it is one question for the
+      whole save naming each dangerous field that really changed, with its old and
+      new value. A secret is named, never printed, and being cleared reads
+      differently from being changed. Four changes to the checklist's list, each
+      checked against the reader:
+      - `configer.port` dropped — it is `readOnly`, so `formState` can never report
+        it as changed and the question could never appear.
+      - `backend.url` added — it strands the panel exactly the way `backend.port`
+        does.
+      - `pc.os` added — `restart.ts` picks the reboot *and the cancel* command from
+        it, so a wrong value means a reboot the panel cannot call off. "Vrátit
+        výchozí hodnoty" flips it to `windows` on an Ubuntu box.
+      - `app.refreshRequestLimit` added — a low value reloads the panel every few
+        seconds, leaving almost no time to undo it.
+      **Not `window.confirm`**: it blocks the event loop, which stops the heartbeat
+      the backend watches, and the box reboots after about three minutes. The
+      question is shown in the page and Save is pressed twice. See decisions.md
 - [x] Unit tests for the schema, the merge and the diff — already covered by P0-P4 and
       checked field by field before adding anything: the schema in
       `packages/config-schema/src/validate.test.ts` (42 cases), the merge in

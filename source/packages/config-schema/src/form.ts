@@ -59,13 +59,10 @@ export interface FormField {
   /** Masked behind a reveal toggle. */
   secret?: boolean;
   /**
-   * Why this field can cut the maintainer off from the box, if they change it.
+   * Why this change can cut the maintainer off from the box.
    *
-   * A field that carries one joins the confirm dialog the form shows before a
-   * save, and only when its value actually changed. The sentence is the reason,
-   * not a question: `confirmSave.ts` on the panel builds the question around it.
-   *
-   * A `readOnly` field never changes, so it must not carry one.
+   * Write a reason, not a question: `confirmSave.ts` on the panel builds the
+   * question around it. A `readOnly` field never changes, so it must not carry one.
    */
   confirm?: string;
   /** The schema allows the key to be missing, so an empty input is a valid state. */
@@ -285,6 +282,8 @@ export const configForm: readonly FormSection[] = [
         options: pcOsTypes,
         tier: "backendReload",
         hint: "Backend podle něj volí příkaz pro restart počítače a načte ho při uložení.",
+        confirm:
+          "Backend podle něj volí příkaz na restart i na jeho zrušení. Se špatnou hodnotou restart spustí, ale už ho nezruší.",
       },
     ],
   },
@@ -300,7 +299,7 @@ export const configForm: readonly FormSection[] = [
         secret: true,
         hint: "Odemyká Nastavení a Konfiguraci. Kontroluje se jen v prohlížeči.",
         confirm:
-          "Novým heslem se odemyká Nastavení i Konfigurace. Když ho zapomeneš, zbyde jen úprava main.json na počítači babyboxu.",
+          "Když heslo zapomeneš, zbyde jen úprava main.json na počítači babyboxu. Prázdné heslo odemkne panel komukoli.",
       },
       {
         path: "app.refreshRequestLimit",
@@ -309,6 +308,8 @@ export const configForm: readonly FormSection[] = [
         tier: "panelReload",
         optional: true,
         hint: "Po tolika dotazech na jednotku se panel sám obnoví. Hodnotu nelze smazat; vypnout obnovování jde jen velkým číslem.",
+        confirm:
+          "Při velmi nízké hodnotě se panel obnovuje pořád dokola a nemusí zbýt čas dostat se zpět do Konfigurace a hodnotu vrátit.",
       },
     ],
   },

@@ -182,8 +182,12 @@ lesson: what happened, what to do instead.
   browser on another machine loading the panel would resolve `localhost` to itself
   and never reach configer, so it fails at boot with "Config file error". The
   "remote maintenance" `CLAUDE.md` talks about is a remote session on the box, not a
-  browser pointed at it. That is what makes a loopback bind safe to consider and a
-  `window.confirm` safe to rely on.
+  browser pointed at it. That is what makes a loopback bind safe to consider.
+
+- **Nothing in the panel may block the event loop.** `App.vue` heartbeats the backend
+  every 5s and `restart.ts` reboots the machine after 9 missed ticks, so a
+  `window.confirm`, an `alert` or a sync XHR reboots the box in about three minutes.
+  Ask in the page instead; `ConfigForm.vue` does it with a two-step Save.
 
 ## Tests
 

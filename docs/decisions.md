@@ -633,19 +633,28 @@ Context · Decision · Why · Gave up · Where
   P5. P5 is where that runs out, so this is the decision, not another deferral.
 - Decision: no `@vue/test-utils`. The P5 item "a component test that a bad value
   blocks Save" is closed as covered by two tests that already exist.
-- Why: the rule is already tested end to end, on both halves and in the layer that
-  owns it. `configForm.test.ts` "blocks the form when one field is invalid" proves
-  a bad value sets `hasErrors`; `saveFlow.test.ts` "sends nothing when the form has
+- Why: both halves of the rule are tested in the layer that owns them.
+  `configForm.test.ts` "blocks the form when one field is invalid" proves a bad
+  value sets `hasErrors`; `saveFlow.test.ts` "sends nothing when the form has
   errors" proves `hasErrors` makes `runSave` return without calling `saveConfig`.
   P4 extracted `saveFlow.ts` from the component precisely so this needs no mount.
-  What a mounted test would add over those two is the single line in `onSave` that
-  hands `current.hasErrors` to `runSave` — and buying that costs a `pnpm-lock.yaml`
-  change, which every box applies through `pnpm install --frozen-lockfile` on an
-  unattended update (motto 3). A lockfile risk on every deployed box, for one
-  argument, is the wrong trade.
+  What is left uncovered is the wire between them — the argument `onSave` hands to
+  `runSave` — and buying that costs a `pnpm-lock.yaml` change, which every box
+  applies through `pnpm install --frozen-lockfile` on an unattended update
+  (motto 3). A lockfile risk on every deployed box, for one argument, is the wrong
+  trade.
+- **An earlier draft of this entry said the rule was "tested end to end". That was
+  overstated and a reviewer caught it.** Both ends are proved; the wire is not. Hard
+  code that argument to `false` and a bad config would go out with every test green.
+  The honest claim is the one above.
+- What shrank the gap instead of a dependency: the confirm logic went into
+  `nextSaveStep`, a pure function over `(state, pending)` with a case per branch, so
+  the component decides nothing on its own. That was the reviewer's suggestion and
+  it is the same shape P4 used for `runSave`'s injected calls.
 - Gave up: nothing mounts a Vue component in this repo, so the wiring between a
-  component and its logic module is never checked by a test. That is a real gap and
-  it now applies to the confirm dialog too.
+  component and its logic module is never checked by a test. Two lines in `onSave`
+  now sit on that gap: the argument to `runSave`, and the `pendingQuestion` it
+  passes to `nextSaveStep`.
 - What reverses it: a phase that needs the rendered output itself — a widget that
   picks its input from the descriptor, or a keyboard flow. Then the dependency pays
   for more than one line and goes in with the lockfile diff shown in the PR.
@@ -664,10 +673,9 @@ Context · Decision · Why · Gave up · Where
   question names each dangerous field **that actually changed**, with the value the
   box runs on and the value it would move to, so answering does not depend on
   remembering what was typed.
-- `window.confirm`, not a component: no dependency, no new component, and it works
-  on the kiosk. It also cannot be tested without mounting, which is why the rule
-  that builds the text is a pure function with its own test and the component only
-  passes the string on.
+- The rule that builds the text is a pure function with its own test, so the
+  component only passes the string on and needs no mounting to be checked. See the
+  entry below: `window.confirm` was the first way it was shown, and it was wrong.
 - **`configer.port` gets no dialog.** It is `readOnly`, and `formState` sets
   `changed: !field.readOnly && ...`, so it can never be reported as changed and the
   question could never appear. A row in the table for it would be dead metadata; a
@@ -678,10 +686,34 @@ Context · Decision · Why · Gave up · Where
   `backendRestart` tier for the same reason. Asking about one and not the other
   would be arbitrary.
 - **A secret is named but never printed.** `app.password` shows as "mění se,
-  hodnota se nezobrazuje". The panel is a screen in a hospital room; putting the old
-  and the new password on it to confirm a save would leak more than the save does.
+  hodnota se nezobrazuje", or "maže se, zůstane prázdné" when it is being cleared.
+  The panel is a screen in a hospital room; putting the old and the new password on
+  it to confirm a save would leak more than the save does. Clearing it is called out
+  separately because an empty `app.password` unlocks the nav for anyone: `TheNav`
+  compares the typed password against the stored one, and both are empty strings at
+  boot, so every locked page opens with no password typed.
 - Gave up: the dialog is browser-side, so it guards a maintainer's slip and nothing
   else. See the auth entry above — it is not a security control.
 - Where: `confirm` in `packages/config-schema/src/form.ts`,
   `panel/src/logic/config/confirmSave.ts`, `onSave` in
   `panel/src/components/config/ConfigForm.vue`.
+
+## 2026-09-13 — The confirmation is two presses of Save, not `window.confirm`
+
+- Context: `App.vue` sends a heartbeat every 5s to `GET <prefix>/restart/refresh`.
+  `backend/src/modules/restart.ts` ticks every 20s and runs `shutdown -r` after 9
+  misses in a row.
+- Problem: `window.confirm` blocks the tab's event loop, so an open dialog stops the
+  heartbeat and the box reboots in about three minutes. It also froze `ConfigView`'s
+  ten-minute bounce. The dialog meant to prevent an outage caused one.
+- Decision: no dialog and no new component. `nextSaveStep` in `confirmSave.ts` turns
+  one press of Save into `ask` or `send`, and `ConfigForm` renders the question in
+  the page with "Ano, uložit" and "Zrušit". Nothing blocks.
+- The pending question is matched as **text**, not as a flag: editing another
+  dangerous field while the question is up rewrites it, so the maintainer is asked
+  again about what they would actually save.
+- A save the form already blocks goes straight to `send`. `runSave` stops on
+  `hasErrors` and reports it, so asking first would ask about a save that cannot go.
+- This supersedes the `window.confirm` part of the entry above.
+- Where: `nextSaveStep` in `panel/src/logic/config/confirmSave.ts`, `onSave` and
+  `onCancelConfirm` in `panel/src/components/config/ConfigForm.vue`.

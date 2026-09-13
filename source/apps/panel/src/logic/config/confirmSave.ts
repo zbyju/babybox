@@ -3,57 +3,76 @@ import type { FieldState, FormState } from "@/logic/config/configForm";
 /** Shown when a field holds no value, so the dialog never prints an empty side. */
 const EMPTY = "(prázdné)";
 
-/** Stands in for a secret's value, which must not go on a screen in a hospital. */
-const HIDDEN = "mění se, hodnota se nezobrazuje";
+/** Stands in for a secret that moves to another value. */
+export const SECRET_CHANGED = "mění se, hodnota se nezobrazuje";
 
-export interface DangerousChange {
+/** Stands in for a secret that is being emptied. */
+export const SECRET_CLEARED = "maže se, zůstane prázdné";
+
+export type DangerousChange = {
   path: string;
   label: string;
-  /** The field's `confirm` text: why this change can cut the box off. */
+  /** The field's `confirm` text. */
   reason: string;
-  /** What the box runs on now, and what the form would save. */
-  from: string;
-  to: string;
-  /** A secret, so `from` and `to` are masked rather than real values. */
-  secret: boolean;
+} & (
+  | {
+      secret: false;
+      /** What the box runs on now, and what the form would save. */
+      from: string;
+      to: string;
+    }
+  /* No value is carried at all, so nothing can put it on a screen in a hospital. */
+  | { secret: true; cleared: boolean }
+);
+
+/*
+ * Only the exact empty string counts as empty. Everything else is quoted, so a
+ * trailing space on an ip is visible instead of reading like the value beside it.
+ */
+function displayValue(value: string): string {
+  return value === "" ? EMPTY : `„${value}“`;
 }
 
-function shown(value: string): string {
-  return value.trim() === "" ? EMPTY : value;
-}
-
-function toChange(state: FieldState): DangerousChange {
+function toChange(state: FieldState, reason: string): DangerousChange {
   const { field } = state;
-  const secret = field.secret === true;
+  const shared = { path: field.path, label: field.label, reason };
+
+  if (field.secret === true) {
+    return {
+      ...shared,
+      secret: true,
+      cleared: state.value === "" && state.current !== "",
+    };
+  }
 
   return {
-    path: field.path,
-    label: field.label,
-    reason: field.confirm ?? "",
-    from: secret ? HIDDEN : shown(state.current),
-    to: secret ? HIDDEN : shown(state.value),
-    secret,
+    ...shared,
+    secret: false,
+    from: displayValue(state.current),
+    to: displayValue(state.value),
   };
 }
 
 /**
  * The fields carrying a `confirm` whose value the maintainer actually changed.
  *
- * In the form's order, so the dialog reads top to bottom like the page. Empty when
- * the save is routine, which is the normal case and shows no dialog at all.
- *
- * @example
- * const risky = dangerousChanges(formState(loaded, values));
+ * In the form's order, so the dialog reads top to bottom like the page.
  */
 export function dangerousChanges(state: FormState): DangerousChange[] {
-  return state.fields
-    .filter((f) => f.changed && f.field.confirm !== undefined)
-    .map(toChange);
+  /*
+   * flatMap, not filter then map: filter does not narrow the element type, so the
+   * reason would need a fallback for a case the filter already ruled out.
+   */
+  return state.fields.flatMap((f) =>
+    f.changed && f.field.confirm !== undefined
+      ? [toChange(f, f.field.confirm)]
+      : [],
+  );
 }
 
-function line(change: DangerousChange): string {
+function lineFor(change: DangerousChange): string {
   const values = change.secret
-    ? `${change.label}: ${change.from}`
+    ? `${change.label}: ${change.cleared ? SECRET_CLEARED : SECRET_CHANGED}`
     : `${change.label}: ${change.from} → ${change.to}`;
   return `• ${values}\n  ${change.reason}`;
 }
@@ -62,16 +81,12 @@ function line(change: DangerousChange): string {
  * The one question to ask before a save, or `null` when nothing risky changed.
  *
  * One dialog for the whole save, not one per field: the form sends every field in a
- * single PATCH, so five dialogs would ask five times about one action. It names each
- * dangerous field that really changed, with the value the box runs on and the value
- * it would move to, so the answer does not depend on remembering what was typed.
+ * single PATCH, so five dialogs would ask five times about one action. It names the
+ * value the box runs on and the value it would move to, so the answer does not
+ * depend on remembering what was typed.
  *
  * A secret is named but never printed. Call it only when the form has no errors;
  * a save that cannot be sent has nothing to confirm.
- *
- * @example
- * const question = confirmQuestion(state);
- * if (question !== null && !window.confirm(question)) return;
  */
 export function confirmQuestion(state: FormState): string | null {
   const changes = dangerousChanges(state);
@@ -80,8 +95,42 @@ export function confirmQuestion(state: FormState): string | null {
   return [
     "Měníš nastavení, po kterém se babybox může stát nedostupným:",
     "",
-    changes.map(line).join("\n\n"),
+    changes.map(lineFor).join("\n\n"),
     "",
     "Opravdu uložit?",
   ].join("\n");
+}
+
+/** What one press of Save should do: put the question on the page, or send it. */
+export type SaveStep = { kind: "ask"; question: string } | { kind: "send" };
+
+/**
+ * Turns one press of Save into the next step, given the question already on screen.
+ *
+ * Use it in place of a blocking dialog: the panel sends a heartbeat the backend
+ * watches, so anything that stops the event loop reboots the machine.
+ *
+ * @param pending the question shown right now, or `null` when none is shown.
+ *
+ * @example
+ * const step = nextSaveStep(state, pendingQuestion.value);
+ * if (step.kind === "ask") pendingQuestion.value = step.question;
+ */
+export function nextSaveStep(
+  state: FormState,
+  pending: string | null,
+): SaveStep {
+  /* A save with errors never leaves the form, so there is nothing to ask about. */
+  if (state.hasErrors) return { kind: "send" };
+
+  const question = confirmQuestion(state);
+  if (question === null) return { kind: "send" };
+
+  /*
+   * Matched as text, not as a flag: editing another dangerous field while the
+   * question is up rewrites it, and then the maintainer is asked again.
+   */
+  if (question === pending) return { kind: "send" };
+
+  return { kind: "ask", question };
 }
