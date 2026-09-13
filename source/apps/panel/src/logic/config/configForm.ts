@@ -128,14 +128,6 @@ export function buildConfig(
   return next;
 }
 
-/** The fields whose input differs from the loaded config. Read-only fields never do. */
-export function changedPaths(loaded: MainConfig, values: FormValues): string[] {
-  const current = toFormValues(loaded);
-  return editableFields
-    .filter((field) => (values[field.path] ?? "") !== current[field.path])
-    .map((field) => field.path);
-}
-
 export interface FieldState {
   field: FormField;
   /** What the input holds now. */

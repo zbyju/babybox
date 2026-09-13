@@ -8,7 +8,6 @@ import { describe, expect, it } from "vitest";
 import {
   type FormValues,
   buildConfig,
-  changedPaths,
   defaultFormValues,
   formState,
   toFormValues,
@@ -126,32 +125,6 @@ describe("buildConfig", () => {
   });
 });
 
-describe("changedPaths", () => {
-  it("is empty for an untouched form", () => {
-    const loaded = loadedConfig();
-    expect(changedPaths(loaded, toFormValues(loaded))).toEqual([]);
-  });
-
-  it("names only the fields whose input differs", () => {
-    const loaded = loadedConfig();
-    const values = {
-      ...toFormValues(loaded),
-      "babybox.name": "Brno",
-      "camera.updateDelay": "2000",
-    };
-    expect(changedPaths(loaded, values)).toEqual([
-      "babybox.name",
-      "camera.updateDelay",
-    ]);
-  });
-
-  it("never names a read-only field", () => {
-    const loaded = loadedConfig();
-    const values = { ...toFormValues(loaded), "configer.url": "/api/v2" };
-    expect(changedPaths(loaded, values)).toEqual([]);
-  });
-});
-
 describe("formState marks a field", () => {
   it("unchanged when the input equals the stored value", () => {
     const loaded = loadedConfig();
@@ -259,8 +232,26 @@ describe("formState", () => {
 
   it("lists the changed paths", () => {
     const loaded = loadedConfig();
-    const values = { ...toFormValues(loaded), "babybox.name": "Brno" };
-    expect(formState(loaded, values).changed).toEqual(["babybox.name"]);
+    const values = {
+      ...toFormValues(loaded),
+      "babybox.name": "Brno",
+      "camera.updateDelay": "2000",
+    };
+    expect(formState(loaded, values).changed).toEqual([
+      "babybox.name",
+      "camera.updateDelay",
+    ]);
+  });
+
+  it("lists no changed path for an untouched form", () => {
+    const loaded = loadedConfig();
+    expect(formState(loaded, toFormValues(loaded)).changed).toEqual([]);
+  });
+
+  it("never lists a read-only field as changed", () => {
+    const loaded = loadedConfig();
+    const values = { ...toFormValues(loaded), "configer.url": "/api/v2" };
+    expect(formState(loaded, values).changed).toEqual([]);
   });
 });
 
@@ -275,7 +266,7 @@ describe("discard and reset to defaults", () => {
     expect(formState(loaded, edited).hasErrors).toBe(true);
 
     const discarded = toFormValues(loaded);
-    expect(changedPaths(loaded, discarded)).toEqual([]);
+    expect(formState(loaded, discarded).changed).toEqual([]);
     expect(formState(loaded, discarded).hasErrors).toBe(false);
     expect(builtConfig(loaded, discarded)).toEqual(loaded);
   });
