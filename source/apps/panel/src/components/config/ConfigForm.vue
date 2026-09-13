@@ -6,7 +6,7 @@
         <div class="action-wrapper">
           <button
             class="btn-success"
-            :disabled="loaded === null || saving"
+            :disabled="loaded === null || saving || pendingQuestion !== null"
             @click="onSave"
           >
             Uložit konfiguraci
@@ -164,6 +164,12 @@
     serverErrors.value = serverErrors.value.filter(
       (error) => error.path !== path,
     );
+    /*
+     * Any edit drops the question on screen.
+     * A secret's line carries no value, so the text reads the same for every new
+     * password, and a second press would send a value nobody read.
+     */
+    pendingQuestion.value = null;
   }
 
   function onCancelConfirm() {

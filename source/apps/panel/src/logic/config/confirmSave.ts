@@ -127,8 +127,9 @@ export function nextSaveStep(
   if (question === null) return { kind: "send" };
 
   /*
-   * Matched as text, not as a flag: editing another dangerous field while the
-   * question is up rewrites it, and then the maintainer is asked again.
+   * Matched as text, not as a flag, so a rewritten question asks again.
+   * A backstop only: the form drops the question on any edit, because a secret's
+   * line reads the same for every new value and text alone cannot tell them apart.
    */
   if (question === pending) return { kind: "send" };
 
