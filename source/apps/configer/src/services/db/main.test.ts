@@ -325,7 +325,7 @@ describe("update", () => {
     expect(rename).toBeLessThan(dirSync);
   });
 
-  it("keeps the config before the last PUT in main.json.bak across a reboot", async () => {
+  it("keeps the config before the last write in main.json.bak across a reboot", async () => {
     writeFileSync(
       file("main.json"),
       JSON.stringify({ babybox: { name: "Praha" } })

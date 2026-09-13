@@ -161,10 +161,10 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   }
 
   /*
-   * Boot only reads. Nothing on disk changes until a PUT, so main.json.bak always
-   * holds the config before the last PUT, and a reboot cannot lose it.
+   * Boot only reads. Nothing on disk changes until a write, so main.json.bak always
+   * holds the config before the last write, and a reboot cannot lose it.
    * Boot never rejects: an odd stored value must not stop the box. It warns, so a
-   * value PUT would refuse shows in the log before the UI trips on it.
+   * value a write would refuse shows in the log before the UI trips on it.
    */
   let data = merge(freshBase(), loadStored(mainFile, backupFile)) as MainConfig;
   for (const { path, msg } of validateMainConfig(data)) {

@@ -30,8 +30,8 @@ Context · Decision · Why · Gave up · Where
   so configer does not start. Both backend and panel refuse to start without a config.
 - Decision: write to `main.json.tmp`, `fsync`, rename over `main.json`. Before the
   rename, copy the current file to `main.json.bak`. On boot, if `main.json` does not
-  parse, load `main.json.bak` and log it. Only a PUT writes, see
-  "Boot reads main.json and never writes it" below.
+  parse, load `main.json.bak` and log it. Only a request to the write endpoints
+  writes, see "Boot reads main.json and never writes it" below.
 - Why: the rename was already atomic; the `fsync` is what makes the renamed file whole.
   One backup covers the failure we actually see. A history with N versions is a later
   decision.
@@ -124,14 +124,18 @@ Context · Decision · Why · Gave up · Where
   The backup copy sat inside the write, so every boot copied the current file over
   `main.json.bak`. A valid but wrong PUT followed by a reboot lost the good config
   from both files. Review finding on the P0 PR.
-- Decision: boot merges in memory only. The only writer is `PUT /config/main`, so
-  `main.json.bak` is always the config before the last PUT. `main.json.corrupt` is
+- Decision: boot merges in memory only. The only writers are the write endpoints, so
+  `main.json.bak` is always the config before the last write. `main.json.corrupt` is
   gone. Confirmed on 2026-09-12: nothing outside this repo reads or writes
   `main.json`.
+- Amended on 2026-09-13 (P2): `PATCH /config/main` is a second write endpoint, so
+  "before the last PUT" is now "before the last write". The decision itself stands:
+  boot still never writes, and both endpoints go through one `save()`. A save that
+  changes nothing does not write at all, so it does not rotate the backup either.
 - Why: one backup that means one thing, and a reboot can no longer destroy it.
 - Gave up: after a boot `main.json` on disk shows only the keys someone typed, not
   the full merged shape. `GET /config/main` and `base.json` still show the full
-  shape. A fresh box has no `main.json` until the first PUT.
+  shape. A fresh box has no `main.json` until the first write.
 - Where: `mainConfig()` in `source/apps/configer/src/services/db/main.ts`.
 
 ## 2026-09-12 — The camera type list is the panel's list, matched exactly

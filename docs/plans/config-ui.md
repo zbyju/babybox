@@ -126,7 +126,8 @@ Nothing in the UI should be built on the current `PUT`.
 - [x] Write atomically: write to `main.json.tmp`, `fsync`, then rename over `main.json`
 - [x] Keep the previous file as `main.json.bak` before the rename
 - [x] On boot, fall back to `main.json.bak` when `main.json` fails to parse, and log it
-- [x] Boot only reads `main.json`, so `main.json.bak` is the config before the last PUT
+- [x] Boot only reads `main.json`, so `main.json.bak` is the config before the last
+      write (a `PUT` or a `PATCH`; P2 added the second one)
 - [x] Reject an empty `PUT` body instead of writing `base.json` over the config
 - [x] Return field-level errors from `PUT`, not `JSON.stringify` of the whole body
 - [x] Tests: a partial body does not lose keys; a corrupt file boots from the backup;
