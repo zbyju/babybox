@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import {
   ConfigError,
   MainConfig,
@@ -54,6 +55,26 @@ type Fields = Record<string, unknown>;
 
 function isPlainObject(value: unknown): value is Fields {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+type CheckedBody =
+  | { ok: true; body: Fields }
+  | { ok: false; errors: ConfigError[] };
+
+/*
+ * Both writers merge the body over something, and lodash.merge spreads a string
+ * or an array over the target, so neither may reach the merge.
+ * express.json() also leaves req.body as {} when the Content-Type is not JSON:
+ * without this a PUT with a forgotten header would reset the whole box to
+ * base.json, and a PATCH would rewrite the file for nothing.
+ * It returns the narrowed body, so the merge never takes an unknown.
+ */
+function checkBody(body: unknown): CheckedBody {
+  if (!isPlainObject(body))
+    return { ok: false, errors: [{ path: "", msg: "must be an object" }] };
+  if (Object.keys(body).length === 0)
+    return { ok: false, errors: [{ path: "", msg: "must not be empty" }] };
+  return { ok: true, body };
 }
 
 type StoredFile =
@@ -140,10 +161,10 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   }
 
   /*
-   * Boot only reads. Nothing on disk changes until a PUT, so main.json.bak always
-   * holds the config before the last PUT, and a reboot cannot lose it.
+   * Boot only reads. Nothing on disk changes until a write, so main.json.bak always
+   * holds the config before the last write, and a reboot cannot lose it.
    * Boot never rejects: an odd stored value must not stop the box. It warns, so a
-   * value PUT would refuse shows in the log before the UI trips on it.
+   * value a write would refuse shows in the log before the UI trips on it.
    */
   let data = merge(freshBase(), loadStored(mainFile, backupFile)) as MainConfig;
   for (const { path, msg } of validateMainConfig(data)) {
@@ -151,33 +172,44 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   }
 
   /*
-   * A full replace. The body is filled in from base.json first, so a client that
-   * leaves a key out gets the default, never a missing key.
+   * index.ts binds these two once when it starts, and nothing else reads them: the
+   * backend (fetch/constants.ts) and the panel (api/base.ts) have the address
+   * compiled in. Storing another one would send the box to a configer nobody talks
+   * to after the next restart: the backend would retry fetchConfig() forever, never
+   * reach app.listen, and in production that process serves the panel too. Fixing
+   * that needs someone on site, so the field changes in main.json and by a restart.
+   * A body that repeats the running values changes nothing and passes.
    */
-  async function update(body: unknown): Promise<UpdateResult> {
-    if (!isPlainObject(body)) {
-      return {
-        status: "invalid",
-        errors: [{ path: "", msg: "must be an object" }],
-      };
-    }
-    /*
-     * express.json() leaves req.body as {} when the Content-Type is not JSON, so a
-     * PUT with a forgotten header would merge nothing and reset the whole box to
-     * base.json. A real reset sends the full default body.
-     */
-    if (Object.keys(body).length === 0) {
-      return {
-        status: "invalid",
-        errors: [{ path: "", msg: "must not be empty" }],
-      };
-    }
+  function rejectAddressChange(config: MainConfig): ConfigError[] {
+    const running = data.configer;
+    return (["port", "url"] as const)
+      .filter((field) => config.configer[field] !== running[field])
+      .map((field) => ({
+        path: `configer.${field}`,
+        msg: `must stay ${String(
+          running[field]
+        )}: it changes only by editing main.json and restarting configer`,
+      }));
+  }
 
-    const parsed = parseMainConfig(merge(freshBase(), body));
+  // The one path that changes the config, so PUT and PATCH cannot drift apart.
+  function save(merged: Fields): UpdateResult {
+    const parsed = parseMainConfig(merged);
     if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
 
-    // Disk first: memory must never hold a config the disk does not have.
+    const blocked = rejectAddressChange(parsed.config);
+    if (blocked.length > 0) return { status: "invalid", errors: blocked };
+
     const config = parsed.config;
+    /*
+     * A save that changes nothing must not reach the disk: write() copies main.json
+     * over main.json.bak first, so a no-op save would drop the one undo copy. The
+     * form saves with a PATCH every time, so no-op saves are the normal case.
+     */
+    if (isDeepStrictEqual(config, data))
+      return { status: "saved", config: data };
+
+    // Disk first: memory must never hold a config the disk does not have.
     try {
       write(config);
     } catch (error) {
@@ -191,8 +223,39 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
     return { status: "saved", config: data };
   }
 
+  /*
+   * A full replace. The body is filled in from base.json first, so a client that
+   * leaves a key out gets the default, never a missing key.
+   */
+  async function update(body: unknown): Promise<UpdateResult> {
+    const checked = checkBody(body);
+    if (!checked.ok) return { status: "invalid", errors: checked.errors };
+
+    return save(merge(freshBase(), checked.body));
+  }
+
+  /*
+   * A partial update. The body is merged over the config we are running, so a key
+   * the body leaves out keeps the value it has now. That is the whole difference
+   * from update(), where the same missing key goes back to its base.json default.
+   *
+   * The merge cannot delete a key, and it cannot always fix one either. A stored
+   * value the schema rejects (boot only warns about it) makes every patch fail until
+   * someone sends that field a valid value. A stored key the schema does not know has
+   * no value to send, so no patch clears it and every patch stays rejected; a PUT
+   * does clear it, because it merges over base.json instead of over the stored
+   * config.
+   */
+  async function patch(body: unknown): Promise<UpdateResult> {
+    const checked = checkBody(body);
+    if (!checked.ok) return { status: "invalid", errors: checked.errors };
+
+    return save(merge({}, data, checked.body));
+  }
+
   return {
     data: () => data,
     update,
+    patch,
   };
 }

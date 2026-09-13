@@ -1,8 +1,8 @@
 # Config UI page
 
-Status: **P0 merged, P1 in review**
+Status: **P1 merged, P2 in review**
 Owner: —
-Last updated: 2026-09-12
+Last updated: 2026-09-13
 
 ## Goal
 
@@ -126,7 +126,8 @@ Nothing in the UI should be built on the current `PUT`.
 - [x] Write atomically: write to `main.json.tmp`, `fsync`, then rename over `main.json`
 - [x] Keep the previous file as `main.json.bak` before the rename
 - [x] On boot, fall back to `main.json.bak` when `main.json` fails to parse, and log it
-- [x] Boot only reads `main.json`, so `main.json.bak` is the config before the last PUT
+- [x] Boot only reads `main.json`, so `main.json.bak` is the config before the last
+      write (a `PUT` or a `PATCH`; P2 added the second one)
 - [x] Reject an empty `PUT` body instead of writing `base.json` over the config
 - [x] Return field-level errors from `PUT`, not `JSON.stringify` of the whole body
 - [x] Tests: a partial body does not lose keys; a corrupt file boots from the backup;
@@ -151,13 +152,32 @@ Size: ~1 day. This is where most of the value is.
 
 ### P2 — Configer write path
 
-- [ ] `PUT /config/main` validates with the shared schema
-- [ ] Add `PATCH /config/main` for a partial update (the form sends only what changed)
-- [ ] `GET /config/schema` returns the form descriptor, so the panel does not need a
-      build-time copy — decide this against just importing the shared package
-- [ ] Reject a write that would change `configer.port` or `configer.url` out from under
-      the running process, or accept it and state clearly that it needs a restart
-- [ ] Tests for each validation branch
+- [x] `PUT /config/main` validates with the shared schema — since P1, through
+      `parseMainConfig`. P2 adds the missing branch tests
+- [x] Add `PATCH /config/main` for a partial update (the form sends only what changed).
+      Merges over the running config, so a key left out keeps its stored value, where
+      the same key left out of a `PUT` goes back to the `base.json` default
+- [x] ~~`GET /config/schema` returns the form descriptor~~ — decided against, not
+      skipped. The panel resolves `@babybox/config-schema` at build time, so the
+      endpoint would be a second copy of the shape with no reader today (motto 1).
+      See decisions.md, "No `GET /config/schema`"
+- [x] Reject a write that would change `configer.port` or `configer.url` out from under
+      the running process, or accept it and state clearly that it needs a restart —
+      rejected, one field-level 400 per field. Nothing outside configer reads either
+      field: the backend and the panel have the address compiled in, so a stored change
+      survives the restart and leaves the backend retrying a configer that moved, with
+      the box serving nothing. A body that repeats the running values is not a change
+      and passes. No `restartRequired` in the response; the apply tier is form metadata
+      and lands in P3. See decisions.md
+- [x] Tests for each validation branch
+
+Known edge case: a box whose stored `main.json` holds a value the schema rejects (boot
+only warns) has every `PATCH` rejected. A bad value of a known field is recoverable
+over the API: the error names the field and a `PATCH` that sends a valid value for it
+gets through. A key the schema does not know is not: there is no value to send and
+`lodash.merge` cannot delete, so only a full `PUT` clears it, because a `PUT` merges
+over `base.json`. No bypass, and no stripping of unknown keys — that would delete
+what someone put in the file.
 
 Size: ~0.5 day.
 
@@ -235,8 +255,11 @@ need is "see what this box is set to" more often than "change it".
 
 - [x] zod in a shared package, or keep the hand-written guards? zod, decided 2026-09-12,
       see decisions.md
-- [ ] Should the form edit `configer.*` at all? Changing the port of the service you are
-      talking to through that service is a footgun. Read-only is defensible.
+- [x] Should the form edit `configer.*` at all? Answered for two of the three fields in
+      P2: `configer.port` and `configer.url` are read-only, because no client follows a
+      change and the box is dead after the next restart. `configer.requestTimeout` is
+      still editable. See decisions.md, "A write cannot change `configer.port` or
+      `configer.url`"
 - [ ] Do we want a config history — keep the last N versions, offer a rollback? The
       atomic write from P0 makes this nearly free, and it is the real answer to
       "someone typed the wrong IP and now nobody can reach the box".

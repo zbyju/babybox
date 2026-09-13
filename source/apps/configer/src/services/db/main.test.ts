@@ -15,6 +15,7 @@ import {
   parseMainConfig,
   validateMainConfig,
 } from "@babybox/config-schema";
+import type { MainConfig } from "@babybox/config-schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultConfigDir, mainConfig } from "./main";
 
@@ -44,8 +45,8 @@ function readJson(name: string): Record<string, unknown> {
   >;
 }
 
-function base(): Record<string, unknown> {
-  return JSON.parse(readFileSync(repoBase, "utf-8")) as Record<string, unknown>;
+function base(): MainConfig {
+  return JSON.parse(readFileSync(repoBase, "utf-8")) as MainConfig;
 }
 
 beforeEach(() => {
@@ -192,6 +193,28 @@ describe("update", () => {
     });
   });
 
+  /* The one way out of a stored key the schema does not know: a patch merges over
+   * the stored config and cannot delete it, an update merges over base.json. */
+  it("clears a stored key the schema does not know, which no patch can", async () => {
+    writeFileSync(file("main.json"), JSON.stringify({ camera: { zoom: 2 } }));
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const db = await mainConfig(configDir);
+
+    const blocked = await db.patch({ babybox: { name: "Brno" } });
+    expect(blocked).toEqual({
+      status: "invalid",
+      errors: [{ path: "camera.zoom", msg: "unknown key" }],
+    });
+
+    const result = await db.update({ babybox: { name: "Brno" } });
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json")).toEqual({
+      ...base(),
+      babybox: { name: "Brno" },
+    });
+  });
+
   it("rejects an invalid body and writes nothing", async () => {
     const db = await mainConfig(configDir);
 
@@ -203,6 +226,47 @@ describe("update", () => {
     });
     expect(existsSync(file("main.json"))).toBe(false);
     expect(db.data()).toEqual(base());
+  });
+
+  it("rejects an integer outside its range", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.update({ configer: { port: 70000 } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [{ path: "configer.port", msg: "must be between 1 and 65535" }],
+    });
+  });
+
+  it("rejects a value outside the enum", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.update({ camera: { cameraType: "foscam" } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        {
+          path: "camera.cameraType",
+          msg: "must be one of: dahua, hikvision, avtech, avm, vivotek",
+        },
+      ],
+    });
+  });
+
+  it("reports one error per unknown key, with a dotted path", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.update({ camera: { zoom: 2, ip2: "10.1.1.8" } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        { path: "camera.zoom", msg: "unknown key" },
+        { path: "camera.ip2", msg: "unknown key" },
+      ],
+    });
   });
 
   it("rejects a non-object body and writes nothing", async () => {
@@ -283,7 +347,7 @@ describe("update", () => {
     expect(rename).toBeLessThan(dirSync);
   });
 
-  it("keeps the config before the last PUT in main.json.bak across a reboot", async () => {
+  it("keeps the config before the last write in main.json.bak across a reboot", async () => {
     writeFileSync(
       file("main.json"),
       JSON.stringify({ babybox: { name: "Praha" } })
@@ -316,6 +380,290 @@ describe("update", () => {
     await db.update({ babybox: { name: "Brno" } });
 
     expect(existsSync(file("main.json.tmp"))).toBe(false);
+  });
+
+  /* A PUT of the config the box already runs on is the form saving an untouched
+   * page. It must not rotate main.json.bak away either. */
+  it("writes nothing for a body that changes nothing", async () => {
+    const db = await mainConfig(configDir);
+    await db.update({ babybox: { name: "prvni" } });
+    await db.update({ babybox: { name: "druhy" } });
+
+    const result = await db.update(db.data());
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json.bak").babybox).toEqual({ name: "prvni" });
+    expect(readJson("main.json").babybox).toEqual({ name: "druhy" });
+  });
+
+  it("rejects a change to configer.port and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.update({
+      ...base(),
+      configer: { ...base().configer, port: 5555 },
+    });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        {
+          path: "configer.port",
+          msg: "must stay 5001: it changes only by editing main.json and restarting configer",
+        },
+      ],
+    });
+    expect(existsSync(file("main.json"))).toBe(false);
+  });
+});
+
+describe("patch", () => {
+  /* The counterpart of update's "fills a partial body from base.json": same two
+   * writes, and camera.ip survives the second one instead of going back. */
+  it("keeps the stored value of a key the body leaves out", async () => {
+    const db = await mainConfig(configDir);
+    await db.update({ camera: { ip: "10.1.1.99" } });
+
+    const result = await db.patch({ babybox: { name: "Brno" } });
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json")).toEqual({
+      ...base(),
+      babybox: { name: "Brno" },
+      camera: { ...base().camera, ip: "10.1.1.99" },
+    });
+  });
+
+  it("writes the keys in the schema's order", async () => {
+    writeFileSync(
+      file("main.json"),
+      JSON.stringify({ app: { password: "x" }, babybox: { name: "Praha" } })
+    );
+    const db = await mainConfig(configDir);
+
+    await db.patch({ babybox: { name: "Brno" } });
+
+    expect(readFileSync(file("main.json"), "utf-8")).toBe(
+      JSON.stringify(
+        {
+          ...base(),
+          babybox: { name: "Brno" },
+          app: { ...base().app, password: "x" },
+        },
+        null,
+        2
+      )
+    );
+  });
+
+  it("keeps the config from before the write in main.json.bak", async () => {
+    const db = await mainConfig(configDir);
+    await db.patch({ babybox: { name: "prvni" } });
+
+    await db.patch({ babybox: { name: "druhy" } });
+
+    expect(readJson("main.json.bak")).toEqual({
+      ...base(),
+      babybox: { name: "prvni" },
+    });
+    expect(readJson("main.json")).toEqual({
+      ...base(),
+      babybox: { name: "druhy" },
+    });
+  });
+
+  it("rejects a non-object body and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch("babybox");
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [{ path: "", msg: "must be an object" }],
+    });
+    expect(existsSync(file("main.json"))).toBe(false);
+  });
+
+  it("rejects an empty body and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+    await db.patch({ babybox: { name: "Brno" } });
+    const before = readFileSync(file("main.json"), "utf-8");
+
+    const result = await db.patch({});
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [{ path: "", msg: "must not be empty" }],
+    });
+    expect(readFileSync(file("main.json"), "utf-8")).toBe(before);
+  });
+
+  it("rejects a value of the wrong type and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({ units: { engine: { ip: 5 } } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [{ path: "units.engine.ip", msg: "must be a string" }],
+    });
+    expect(existsSync(file("main.json"))).toBe(false);
+    expect(db.data()).toEqual(base());
+  });
+
+  it("rejects an integer outside its range", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({ units: { requestDelay: 0 } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [{ path: "units.requestDelay", msg: "must be at least 1" }],
+    });
+  });
+
+  it("rejects a value outside the enum", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({ pc: { os: "debian" } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [{ path: "pc.os", msg: "must be one of: windows, ubuntu" }],
+    });
+  });
+
+  it("reports one error per unknown key, with a dotted path", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({ camera: { zoom: 2, ip2: "10.1.1.8" } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        { path: "camera.zoom", msg: "unknown key" },
+        { path: "camera.ip2", msg: "unknown key" },
+      ],
+    });
+  });
+
+  /*
+   * Nothing follows a stored configer.port or configer.url: index.ts binds them at
+   * start, and the backend and the panel have the address compiled in. A stored
+   * change would leave the box serving nothing after the next restart.
+   */
+  it("rejects a change to configer.port and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({ configer: { port: 5555 } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        {
+          path: "configer.port",
+          msg: "must stay 5001: it changes only by editing main.json and restarting configer",
+        },
+      ],
+    });
+    expect(existsSync(file("main.json"))).toBe(false);
+  });
+
+  it("rejects a change to configer.url and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({ configer: { url: "/api/v2" } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        {
+          path: "configer.url",
+          msg: "must stay /api/v1: it changes only by editing main.json and restarting configer",
+        },
+      ],
+    });
+    expect(existsSync(file("main.json"))).toBe(false);
+  });
+
+  /* rejectBody only looked at the top level, so a body like { camera: {} } reached
+   * the write, and the write rotated the one undo copy away. */
+  it("writes nothing for a body that changes nothing", async () => {
+    const db = await mainConfig(configDir);
+    await db.patch({ babybox: { name: "prvni" } });
+    await db.patch({ babybox: { name: "druhy" } });
+
+    const result = await db.patch({ camera: {} });
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json.bak").babybox).toEqual({ name: "prvni" });
+    expect(readJson("main.json").babybox).toEqual({ name: "druhy" });
+  });
+
+  /* The form sends every field it shows, so a save that does not touch the address
+   * still carries the running values. That is not a change. */
+  it("accepts a body that repeats the running configer values", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({
+      configer: { port: 5001, url: "/api/v1" },
+      babybox: { name: "Brno" },
+    });
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
+  });
+
+  /*
+   * Boot only warns about a stored value the schema rejects, so a box can run on
+   * one. Every patch merges over it and fails until someone sends that field a
+   * valid value; the error names the field, so it is recoverable over the API.
+   */
+  it("fails while the stored config holds a value the schema rejects", async () => {
+    writeFileSync(
+      file("main.json"),
+      JSON.stringify({ backend: { port: "8080" } })
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const db = await mainConfig(configDir);
+
+    const blocked = await db.patch({ babybox: { name: "Brno" } });
+
+    expect(blocked).toEqual({
+      status: "invalid",
+      errors: [{ path: "backend.port", msg: "must be an integer" }],
+    });
+
+    const fixed = await db.patch({
+      backend: { port: 5000 },
+      babybox: { name: "Brno" },
+    });
+
+    expect(fixed.status).toBe("saved");
+    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
+  });
+
+  it("keeps the old config in memory and on disk when the write fails", async () => {
+    const db = await mainConfig(configDir);
+    await db.patch({ babybox: { name: "prvni" } });
+    vi.mocked(fsyncSync).mockImplementationOnce(() => {
+      throw Object.assign(new Error("no space left on device"), {
+        code: "ENOSPC",
+      });
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await db.patch({ babybox: { name: "druhy" } });
+
+    expect(result).toEqual({
+      status: "write-failed",
+      msg: "cannot write main.json: no space left on device",
+    });
+    expect(db.data().babybox.name).toBe("prvni");
+    expect(readJson("main.json")).toEqual({
+      ...base(),
+      babybox: { name: "prvni" },
+    });
   });
 });
 

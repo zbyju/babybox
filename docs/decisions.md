@@ -30,8 +30,8 @@ Context · Decision · Why · Gave up · Where
   so configer does not start. Both backend and panel refuse to start without a config.
 - Decision: write to `main.json.tmp`, `fsync`, rename over `main.json`. Before the
   rename, copy the current file to `main.json.bak`. On boot, if `main.json` does not
-  parse, load `main.json.bak` and log it. Only a PUT writes, see
-  "Boot reads main.json and never writes it" below.
+  parse, load `main.json.bak` and log it. Only a request to the write endpoints
+  writes, see "Boot reads main.json and never writes it" below.
 - Why: the rename was already atomic; the `fsync` is what makes the renamed file whole.
   One backup covers the failure we actually see. A history with N versions is a later
   decision.
@@ -124,14 +124,18 @@ Context · Decision · Why · Gave up · Where
   The backup copy sat inside the write, so every boot copied the current file over
   `main.json.bak`. A valid but wrong PUT followed by a reboot lost the good config
   from both files. Review finding on the P0 PR.
-- Decision: boot merges in memory only. The only writer is `PUT /config/main`, so
-  `main.json.bak` is always the config before the last PUT. `main.json.corrupt` is
+- Decision: boot merges in memory only. The only writers are the write endpoints, so
+  `main.json.bak` is always the config before the last write. `main.json.corrupt` is
   gone. Confirmed on 2026-09-12: nothing outside this repo reads or writes
   `main.json`.
+- Amended on 2026-09-13 (P2): `PATCH /config/main` is a second write endpoint, so
+  "before the last PUT" is now "before the last write". The decision itself stands:
+  boot still never writes, and both endpoints go through one `save()`. A save that
+  changes nothing does not write at all, so it does not rotate the backup either.
 - Why: one backup that means one thing, and a reboot can no longer destroy it.
 - Gave up: after a boot `main.json` on disk shows only the keys someone typed, not
   the full merged shape. `GET /config/main` and `base.json` still show the full
-  shape. A fresh box has no `main.json` until the first PUT.
+  shape. A fresh box has no `main.json` until the first write.
 - Where: `mainConfig()` in `source/apps/configer/src/services/db/main.ts`.
 
 ## 2026-09-12 — The camera type list is the panel's list, matched exactly
@@ -221,3 +225,77 @@ Context · Decision · Why · Gave up · Where
   tests are what hold them together. A field of the wrong type still stops the panel,
   and a hand-typed `backend.port: "5000"` is the realistic case.
 - Where: `isInstanceOfConfig` in `apps/panel/src/utils/panel/instanceCheck.ts`.
+
+## 2026-09-13 — No `GET /config/schema`; the form descriptor is a build-time import
+
+- Context: the [config-ui plan](plans/config-ui.md) lists `GET /config/schema` in P2
+  and leaves it open against "just importing the shared package".
+- Decision: do not build it. The panel resolves `@babybox/config-schema` at build
+  time, as it has since P1, and the P3 form metadata comes from that same import.
+- Why: a runtime descriptor is a second copy of the shape with no reader today
+  (motto 1). It would also have to stay in step with the package, and a box serving
+  an old descriptor from an old configer to a newly built panel is a drift we would
+  then have to detect.
+- Gave up: a consumer that cannot compile against the package has no way to learn the
+  shape. Nothing is in that position; configer, the backend and the panel all build
+  from the same checkout.
+- What reverses it: a reader outside this repo, or a panel build that has to run
+  against a configer of another version. Then add the endpoint and serve it from the
+  same zod schema, so there is still one source.
+- Where: [config-ui plan, P2](plans/config-ui.md).
+
+## 2026-09-13 — A write may change `configer.port` and `configer.url`
+
+- Superseded on 2026-09-13 by "A write cannot change `configer.port` or
+  `configer.url`" below. The reasoning stopped at configer: nobody checked who else
+  reads the two fields, and nothing does.
+- Context: P2 asked to either reject a write that changes the port or the prefix of
+  the running configer, or accept it and state that it needs a restart.
+- Decision: accept it. Both fields are checked like any other field and written.
+  The API response says nothing about a restart.
+- Why: rejecting leaves hand-editing `main.json` as the only way to change them, and
+  removing that is why this feature exists. `index.ts` reads both once when it starts
+  listening, so the write does not disturb the running service; it takes effect on the
+  next start.
+- Gave up: a maintainer can store a port the box only uses after a restart, and can
+  store a port nothing can bind. The previous value is in `main.json.bak`.
+- No `restartRequired` field in the response: the apply tier is form metadata and
+  belongs with the rest of it in P3, where something reads it (motto 1).
+- Where: `update()` and `patch()` in `source/apps/configer/src/services/db/main.ts`.
+
+## 2026-09-13 — A write cannot change `configer.port` or `configer.url`
+
+- Context: this reverses "A write may change `configer.port` and `configer.url`"
+  above, made earlier the same day. That entry said accepting the write costs only a
+  restart, because `index.ts` reads both once when it starts listening. Review
+  finding on the P2 PR.
+- Evidence it was wrong: nothing outside configer reads either field. The backend
+  has the address compiled in
+  (`source/apps/backend/src/fetch/constants.ts:1`,
+  `CONFIGER_API_URL = "http://localhost:5001/api/v1/config"`) and so does the panel
+  (`source/apps/panel/src/api/base.ts:5`). The only reader is
+  `source/apps/configer/src/index.ts:30` and `:42`, at bind time. So a stored change
+  survives the restart and the readers do not follow it: configer comes up on the new
+  address, `fetchConfig()` fails, and the retry loop at
+  `source/apps/backend/src/index.ts:61-70` runs every 5s with no cap, so `app.listen`
+  is never reached. In production that same backend serves the panel, so the box
+  serves nothing and pm2 keeps the stuck process alive. Someone has to go to the box.
+  `backend.port` is not in this position: the panel builds its URL from the config at
+  `source/apps/panel/src/api/base.ts:17`.
+- Decision: `save()` rejects a write, `PUT` or `PATCH`, that moves `configer.port` or
+  `configer.url` away from the value the process is running on. One field-level
+  `{ path, msg }` error per field, in the same shape as every other rejection:
+  `must stay <value>: it changes only by editing main.json and restarting configer`.
+  A body that repeats the running values is not a change and passes, so the P3 form
+  can keep sending the whole config.
+- Why: the old entry weighed "hand-editing `main.json` is the only way to change
+  them" against nothing, because it never found the failure. A dead box that needs
+  someone on site is worse than a field the API will not write (motto 2).
+- Gave up: the two fields can only be changed by editing `main.json` and restarting.
+  That includes fixing a stored value the schema rejects: boot warns and keeps
+  running on it, and the guard then blocks the fix over the API too.
+- What reverses it: one address, read at runtime by both clients — the backend and
+  the panel building the configer URL from a value they share with configer, rather
+  than from a constant in each. Then the field has a reader and can be written.
+- Where: `rejectAddressChange()` and `save()` in
+  `source/apps/configer/src/services/db/main.ts`.
