@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import {
   ConfigError,
   MainConfig,
@@ -199,8 +200,16 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
     const blocked = rejectAddressChange(parsed.config);
     if (blocked.length > 0) return { status: "invalid", errors: blocked };
 
-    // Disk first: memory must never hold a config the disk does not have.
     const config = parsed.config;
+    /*
+     * A save that changes nothing must not reach the disk: write() copies main.json
+     * over main.json.bak first, so a no-op save would drop the one undo copy. The
+     * form saves with a PATCH every time, so no-op saves are the normal case.
+     */
+    if (isDeepStrictEqual(config, data))
+      return { status: "saved", config: data };
+
+    // Disk first: memory must never hold a config the disk does not have.
     try {
       write(config);
     } catch (error) {

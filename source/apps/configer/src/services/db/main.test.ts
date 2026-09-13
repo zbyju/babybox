@@ -360,6 +360,20 @@ describe("update", () => {
     expect(existsSync(file("main.json.tmp"))).toBe(false);
   });
 
+  /* A PUT of the config the box already runs on is the form saving an untouched
+   * page. It must not rotate main.json.bak away either. */
+  it("writes nothing for a body that changes nothing", async () => {
+    const db = await mainConfig(configDir);
+    await db.update({ babybox: { name: "prvni" } });
+    await db.update({ babybox: { name: "druhy" } });
+
+    const result = await db.update(db.data());
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json.bak").babybox).toEqual({ name: "prvni" });
+    expect(readJson("main.json").babybox).toEqual({ name: "druhy" });
+  });
+
   it("rejects a change to configer.port and writes nothing", async () => {
     const db = await mainConfig(configDir);
 
@@ -548,6 +562,20 @@ describe("patch", () => {
       ],
     });
     expect(existsSync(file("main.json"))).toBe(false);
+  });
+
+  /* rejectBody only looked at the top level, so a body like { camera: {} } reached
+   * the write, and the write rotated the one undo copy away. */
+  it("writes nothing for a body that changes nothing", async () => {
+    const db = await mainConfig(configDir);
+    await db.patch({ babybox: { name: "prvni" } });
+    await db.patch({ babybox: { name: "druhy" } });
+
+    const result = await db.patch({ camera: {} });
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json.bak").babybox).toEqual({ name: "prvni" });
+    expect(readJson("main.json").babybox).toEqual({ name: "druhy" });
   });
 
   /* The form sends every field it shows, so a save that does not touch the address
