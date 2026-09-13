@@ -523,3 +523,54 @@ Context · Decision · Why · Gave up · Where
   form seeded from a body with one bad field saves the corrected whole config. The
   save path it needs now exists, so it is a panel-only change.
 - Where: `load()` in `source/apps/panel/src/components/config/ConfigForm.vue`.
+
+## 2026-09-13 — The backend serves index.html for any unmatched GET in production
+
+- Context: the panel's router is `createWebHistory()`, so `/config` is a real URL
+  path. In production the backend serves the panel, and it registered
+  `express.static(PUBLIC_DIR)` and `app.get("/")` and nothing else. P4 is the first
+  phase that makes the browser hard-load a client route: `saveConfig` ends in
+  `window.location.reload()`, which issues `GET /config`.
+- Evidence: express matched nothing, so the box answered `Cannot GET /config`.
+  `ConfigView` never mounted, so the "restart required" banner never rendered
+  either — the one thing the reload exists to carry across. Vite's dev server has
+  its own SPA fallback, so none of this shows locally. Three of the six reviewers on
+  the P4 PR found it independently.
+- Decision: the production block registers `app.get("*")` after the static
+  middleware, and it sends `index.html` with the same `no-cache` header the `/`
+  route uses. It sits after every API mount, so it can only see a path nothing else
+  matched.
+- Why: it is the standard fallback for a history-mode SPA and it is four lines. The
+  alternatives were worse: hash-mode routing changes every URL on every box, and
+  listing the client routes by hand is a second copy of the router.
+- Gave up: an unknown API path under the prefix now answers the panel's HTML with a
+  200 instead of a 404. Nothing calls an unknown API path, and the panel's own
+  clients read the body, so a wrong shape surfaces at the caller.
+- What reverses it: serving the panel from something other than this express app.
+- Where: the `NODE_ENV === "production"` block in
+  `source/apps/backend/src/index.ts`, tested in
+  `source/apps/backend/src/__tests__/panelFallback.test.ts`.
+
+## 2026-09-13 — backend.port stays writable, unlike configer.port
+
+- Context: a reviewer on the P4 PR argued `backend.port` should be `readOnly` in the
+  form the way `configer.port` and `configer.url` are. In production the backend
+  serves the panel on that port, so once someone restarts it the open browser tab is
+  on an address nothing is listening on.
+- Decision: it stays writable. The save reports it in the reload's `unapplied` list
+  and the banner names both the change and the address the panel will be on.
+- Why: the two cases are not the same failure. A stored `configer.port` change binds
+  on the next **unattended** reboot; the backend then retries `fetchConfig()` for
+  ever, never reaches `app.listen`, and the box serves nothing with nobody in the
+  loop (learnings.md, Configer). A stored `backend.port` change binds only during a
+  restart a human performs on purpose after reading the banner, and it self-heals:
+  `index.ts` calls `open("http://localhost:" + port)` on every production start, so
+  the restart reopens the browser on the new port by itself.
+- Gave up: a maintainer who restarts the backend from a shell rather than letting it
+  come up on its own has to retype the address. The banner tells them which one.
+- What reverses it: production no longer calling `open()` on start — for example a
+  box where the browser is launched by something else, or a kiosk profile that
+  ignores it. Then a port change strands the screen with no way back and the field
+  belongs in the read-only set.
+- Where: `configForm` in `source/packages/config-schema/src/form.ts`, `bannerFor` in
+  `source/apps/panel/src/logic/config/restartBanner.ts`.
