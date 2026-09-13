@@ -13,6 +13,14 @@ export type FormValues = Record<string, string>;
 
 type Fields = Record<string, unknown>;
 
+/**
+ * An edited config nothing has checked yet: a cleared number is `NaN` here and a
+ * select can hold a value the schema does not allow.
+ *
+ * `parseMainConfig` stays the one place this becomes a `MainConfig`.
+ */
+export type DraftConfig = Fields;
+
 /** Four numbers 0-255. Also used as the `pattern` of the ip input. */
 export const IPV4_PATTERN =
   "((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)";
@@ -73,7 +81,7 @@ function toStored(field: FormField, raw: string): unknown {
 
 /** The form's starting point: one input value per field, taken from the config. */
 export function toFormValues(config: MainConfig): FormValues {
-  const source = config as unknown as Fields;
+  const source: Fields = config;
   const values: FormValues = {};
   for (const field of configFormFields) {
     values[field.path] = toInput(readPath(source, field.path));
@@ -102,6 +110,9 @@ export function defaultFormValues(loaded: MainConfig): FormValues {
 /**
  * The loaded config with every edited field written over it.
  *
+ * The result is a draft, not a `MainConfig`: the inputs are strings a maintainer
+ * typed and nothing has checked them. Pass it to `parseMainConfig` before saving it.
+ *
  * Keys the form does not render are carried through untouched, which is how
  * `startup` survives a round trip: the schema takes any key there, so the form
  * draws no row for it and this function never writes to it.
@@ -109,12 +120,12 @@ export function defaultFormValues(loaded: MainConfig): FormValues {
 export function buildConfig(
   loaded: MainConfig,
   values: FormValues,
-): MainConfig {
-  const next = cloneDeep(loaded) as unknown as Fields;
+): DraftConfig {
+  const next: Fields = cloneDeep(loaded);
   for (const field of editableFields) {
     writePath(next, field.path, toStored(field, values[field.path] ?? ""));
   }
-  return next as unknown as MainConfig;
+  return next;
 }
 
 /** The fields whose input differs from the loaded config. Read-only fields never do. */
@@ -157,7 +168,8 @@ export interface FormState {
  *
  * @example
  * const state = formState(loaded, values);
- * if (!state.hasErrors) save(buildConfig(loaded, values));
+ * const draft = parseMainConfig(buildConfig(loaded, values));
+ * if (!state.hasErrors && draft.ok) save(draft.config);
  */
 export function formState(loaded: MainConfig, values: FormValues): FormState {
   const current = toFormValues(loaded);

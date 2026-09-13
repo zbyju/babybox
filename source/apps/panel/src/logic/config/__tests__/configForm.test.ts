@@ -1,7 +1,12 @@
-import { type MainConfig, defaultConfig } from "@babybox/config-schema";
+import {
+  type MainConfig,
+  defaultConfig,
+  parseMainConfig,
+} from "@babybox/config-schema";
 import { describe, expect, it } from "vitest";
 
 import {
+  type FormValues,
   buildConfig,
   changedPaths,
   defaultFormValues,
@@ -30,6 +35,18 @@ function stateOf(
   );
   if (field === undefined) throw new Error(`no field ${path}`);
   return field;
+}
+
+/*
+ * buildConfig returns a draft nothing has checked, so every assertion about a built
+ * value goes through the schema first. A config the schema rejects throws here.
+ */
+function builtConfig(loaded: MainConfig, values: FormValues): MainConfig {
+  const result = parseMainConfig(buildConfig(loaded, values));
+  if (!result.ok) {
+    throw new Error(result.errors.map((e) => `${e.path}: ${e.msg}`).join(", "));
+  }
+  return result.config;
 }
 
 describe("toFormValues", () => {
@@ -64,19 +81,19 @@ describe("buildConfig", () => {
   it("writes an edited value back at its path", () => {
     const loaded = loadedConfig();
     const values = { ...toFormValues(loaded), "babybox.name": "Brno" };
-    expect(buildConfig(loaded, values).babybox.name).toBe("Brno");
+    expect(builtConfig(loaded, values).babybox.name).toBe("Brno");
   });
 
   it("turns a number field back into a number", () => {
     const loaded = loadedConfig();
     const values = { ...toFormValues(loaded), "units.requestDelay": "4500" };
-    expect(buildConfig(loaded, values).units.requestDelay).toBe(4500);
+    expect(builtConfig(loaded, values).units.requestDelay).toBe(4500);
   });
 
   it("keeps startup untouched", () => {
     const loaded = loadedConfig();
     const values = { ...toFormValues(loaded), "babybox.name": "Brno" };
-    expect(buildConfig(loaded, values).startup).toEqual({
+    expect(builtConfig(loaded, values).startup).toEqual({
       branch: "main",
       autoUpdate: true,
     });
@@ -92,20 +109,20 @@ describe("buildConfig", () => {
   it("ignores an edit to a read-only field", () => {
     const loaded = loadedConfig();
     const values = { ...toFormValues(loaded), "configer.port": "7000" };
-    expect(buildConfig(loaded, values).configer.port).toBe(6001);
+    expect(builtConfig(loaded, values).configer.port).toBe(6001);
   });
 
   it("drops an optional field that was cleared", () => {
     const loaded = loadedConfig();
     const values = { ...toFormValues(loaded), "app.refreshRequestLimit": "" };
-    expect("refreshRequestLimit" in buildConfig(loaded, values).app).toBe(
+    expect("refreshRequestLimit" in builtConfig(loaded, values).app).toBe(
       false,
     );
   });
 
   it("builds a config the schema accepts when nothing was edited", () => {
     const loaded = loadedConfig();
-    expect(buildConfig(loaded, toFormValues(loaded))).toEqual(loaded);
+    expect(builtConfig(loaded, toFormValues(loaded))).toEqual(loaded);
   });
 });
 
@@ -260,7 +277,7 @@ describe("discard and reset to defaults", () => {
     const discarded = toFormValues(loaded);
     expect(changedPaths(loaded, discarded)).toEqual([]);
     expect(formState(loaded, discarded).hasErrors).toBe(false);
-    expect(buildConfig(loaded, discarded)).toEqual(loaded);
+    expect(builtConfig(loaded, discarded)).toEqual(loaded);
   });
 
   it("reset puts every editable input on its base.json default", () => {
@@ -278,7 +295,7 @@ describe("discard and reset to defaults", () => {
 
   it("reset builds a config the schema accepts", () => {
     const loaded = loadedConfig();
-    const built = buildConfig(loaded, defaultFormValues(loaded));
+    const built = builtConfig(loaded, defaultFormValues(loaded));
     expect(formState(loaded, defaultFormValues(loaded)).hasErrors).toBe(false);
     expect(built.startup).toEqual({ branch: "main", autoUpdate: true });
   });
