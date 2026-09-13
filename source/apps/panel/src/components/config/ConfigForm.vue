@@ -30,16 +30,8 @@
         <div v-if="pendingQuestion !== null" class="config-confirm">
           <pre class="config-confirm-text">{{ pendingQuestion }}</pre>
           <div class="action-wrapper">
-            <button class="btn-warning" :disabled="saving" @click="onSave">
-              Ano, uložit
-            </button>
-            <button
-              class="btn-primary"
-              :disabled="saving"
-              @click="onCancelConfirm"
-            >
-              Zrušit
-            </button>
+            <button class="btn-warning" @click="onSave">Ano, uložit</button>
+            <button class="btn-primary" @click="onCancelConfirm">Zrušit</button>
           </div>
         </div>
       </div>
