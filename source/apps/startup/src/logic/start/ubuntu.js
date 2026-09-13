@@ -87,6 +87,7 @@ async function override() {
     }
     try {
       if (fs.existsSync("../../../dist/node_modules")) {
+        // node_modules is read-only on Windows and blocks rename
         fs.rmSync("../../../dist/node_modules", {
           maxRetries: 3,
           recursive: true,
