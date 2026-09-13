@@ -170,10 +170,34 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
     console.warn(`${mainFile}: ${path} ${msg}`);
   }
 
+  /*
+   * index.ts binds these two once when it starts, and nothing else reads them: the
+   * backend (fetch/constants.ts) and the panel (api/base.ts) have the address
+   * compiled in. Storing another one would send the box to a configer nobody talks
+   * to after the next restart: the backend would retry fetchConfig() forever, never
+   * reach app.listen, and in production that process serves the panel too. Fixing
+   * that needs someone on site, so the field changes in main.json and by a restart.
+   * A body that repeats the running values changes nothing and passes.
+   */
+  function rejectAddressChange(config: MainConfig): ConfigError[] {
+    const running = data.configer;
+    return (["port", "url"] as const)
+      .filter((field) => config.configer[field] !== running[field])
+      .map((field) => ({
+        path: `configer.${field}`,
+        msg: `must stay ${String(
+          running[field]
+        )}: it changes only by editing main.json and restarting configer`,
+      }));
+  }
+
   // The one path that changes the config, so PUT and PATCH cannot drift apart.
   function save(merged: Fields): UpdateResult {
     const parsed = parseMainConfig(merged);
     if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
+
+    const blocked = rejectAddressChange(parsed.config);
+    if (blocked.length > 0) return { status: "invalid", errors: blocked };
 
     // Disk first: memory must never hold a config the disk does not have.
     const config = parsed.config;

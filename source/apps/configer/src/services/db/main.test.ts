@@ -359,6 +359,26 @@ describe("update", () => {
 
     expect(existsSync(file("main.json.tmp"))).toBe(false);
   });
+
+  it("rejects a change to configer.port and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.update({
+      ...base(),
+      configer: { ...base().configer, port: 5555 },
+    });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        {
+          path: "configer.port",
+          msg: "must stay 5001: it changes only by editing main.json and restarting configer",
+        },
+      ],
+    });
+    expect(existsSync(file("main.json"))).toBe(false);
+  });
 });
 
 describe("patch", () => {
@@ -491,17 +511,57 @@ describe("patch", () => {
     });
   });
 
-  it("accepts a change to configer.port, which only a restart applies", async () => {
+  /*
+   * Nothing follows a stored configer.port or configer.url: index.ts binds them at
+   * start, and the backend and the panel have the address compiled in. A stored
+   * change would leave the box serving nothing after the next restart.
+   */
+  it("rejects a change to configer.port and writes nothing", async () => {
     const db = await mainConfig(configDir);
 
     const result = await db.patch({ configer: { port: 5555 } });
 
-    expect(result.status).toBe("saved");
-    expect(readJson("main.json").configer).toEqual({
-      url: "/api/v1",
-      port: 5555,
-      requestTimeout: 10000,
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        {
+          path: "configer.port",
+          msg: "must stay 5001: it changes only by editing main.json and restarting configer",
+        },
+      ],
     });
+    expect(existsSync(file("main.json"))).toBe(false);
+  });
+
+  it("rejects a change to configer.url and writes nothing", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({ configer: { url: "/api/v2" } });
+
+    expect(result).toEqual({
+      status: "invalid",
+      errors: [
+        {
+          path: "configer.url",
+          msg: "must stay /api/v1: it changes only by editing main.json and restarting configer",
+        },
+      ],
+    });
+    expect(existsSync(file("main.json"))).toBe(false);
+  });
+
+  /* The form sends every field it shows, so a save that does not touch the address
+   * still carries the running values. That is not a change. */
+  it("accepts a body that repeats the running configer values", async () => {
+    const db = await mainConfig(configDir);
+
+    const result = await db.patch({
+      configer: { port: 5001, url: "/api/v1" },
+      babybox: { name: "Brno" },
+    });
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
   });
 
   /*
@@ -512,7 +572,7 @@ describe("patch", () => {
   it("fails while the stored config holds a value the schema rejects", async () => {
     writeFileSync(
       file("main.json"),
-      JSON.stringify({ configer: { port: "8080" } })
+      JSON.stringify({ backend: { port: "8080" } })
     );
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const db = await mainConfig(configDir);
@@ -521,11 +581,11 @@ describe("patch", () => {
 
     expect(blocked).toEqual({
       status: "invalid",
-      errors: [{ path: "configer.port", msg: "must be an integer" }],
+      errors: [{ path: "backend.port", msg: "must be an integer" }],
     });
 
     const fixed = await db.patch({
-      configer: { port: 5001 },
+      backend: { port: 5000 },
       babybox: { name: "Brno" },
     });
 

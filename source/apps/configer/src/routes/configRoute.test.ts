@@ -162,6 +162,23 @@ describe("PATCH /config/main", () => {
     expect(await get.json()).toEqual(res.body);
   });
 
+  /* The one rejection that does not come from the schema. P3 shows its text in the
+   * form, so it has to reach the client as it is written. */
+  it("answers 400 for a change to the running configer address", async () => {
+    const res = await patch({ configer: { port: 5555 } });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      msg: "Body is not a valid MainConfig",
+      errors: [
+        {
+          path: "configer.port",
+          msg: "must stay 5001: it changes only by editing main.json and restarting configer",
+        },
+      ],
+    });
+  });
+
   it("answers 500 when the write fails", async () => {
     vi.mocked(fsyncSync).mockImplementationOnce(() => {
       throw new Error("no space left on device");
