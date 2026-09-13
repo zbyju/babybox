@@ -1,9 +1,9 @@
 <template>
   <div id="SettingsLogsHeader">
     <h2>Log</h2>
-    <button class="btn-error btn-small" @click="$emit('click:deleteLog')">
+    <BaseButton variant="error" size="small" @click="$emit('click:deleteLog')">
       Smazat log
-    </button>
+    </BaseButton>
   </div>
   <div id="SettingsLog">
     <div
@@ -19,6 +19,7 @@
 </template>
 
 <script lang="ts" setup>
+  import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
   import type { LogEntry } from "@/types/settings/manager.types";
 
   const props = defineProps<{

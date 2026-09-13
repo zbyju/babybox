@@ -25,14 +25,15 @@
         :disabled="disabled"
         @update:model-value="(value: string) => emit('update', value)"
       />
-      <button
+      <BaseButton
         v-if="props.state.field.secret"
-        class="btn-reveal"
+        variant="accent"
+        size="small"
         type="button"
         @click="revealed = !revealed"
       >
         {{ revealed ? "Skrýt" : "Zobrazit" }}
-      </button>
+      </BaseButton>
     </div>
 
     <div class="field-values">
@@ -57,6 +58,7 @@
   import { applyTierLabels } from "@babybox/config-schema";
   import { computed, ref } from "vue";
 
+  import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
   import BaseInput from "@/components/panel/HTMLElements/BaseInput.vue";
   import BaseSelect from "@/components/panel/HTMLElements/BaseSelect.vue";
   import { type FieldState, IPV4_PATTERN } from "@/logic/config/configForm";
@@ -128,7 +130,6 @@
     flex-direction column
     gap 4px
     padding 10px 0
-    border-bottom 1px solid color-border-primary
 
     .field-label
       font-weight 700
@@ -143,20 +144,6 @@
       flex-direction row
       align-items center
       gap 8px
-
-    button.btn-reveal
-      flex-shrink 0
-      padding 5px 8px
-      border 0
-      border-radius 5px
-      background-color color-primary
-      color color-text-white
-      font-size 0.75em
-      font-weight 600
-      cursor pointer
-
-    button.btn-reveal:hover
-      background-color color-primary-hover
 
     .field-values
       display flex

@@ -263,6 +263,7 @@
       margin-bottom 20px
       gap 30px
       flex-wrap wrap
+      align-items flex-start
     h2
       margin-top 0
 </style>
