@@ -67,6 +67,24 @@ describe("configForm field metadata", () => {
     }
   });
 
+  /*
+   * The tier is a promise to a maintainer standing at a hospital box. A wrong one
+   * sends them to restart a process that did not need it, or nothing at all.
+   */
+  it("puts the fields POST /reload applies on the backendReload tier", () => {
+    const byTier = configFormFields
+      .filter((field) => field.tier === "backendReload")
+      .map((field) => field.path);
+    expect(byTier).toEqual(["units.engine.ip", "units.thermal.ip", "pc.os"]);
+  });
+
+  it("leaves only the two fields bound at listen on the backendRestart tier", () => {
+    const byTier = configFormFields
+      .filter((field) => field.tier === "backendRestart")
+      .map((field) => field.path);
+    expect(byTier).toEqual(["backend.url", "backend.port"]);
+  });
+
   it("marks only the two configer address fields read-only", () => {
     const readOnly = configFormFields
       .filter((field) => field.readOnly)

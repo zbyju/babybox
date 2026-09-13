@@ -31,7 +31,6 @@ const NOT_AN_IP = "Nevypadá to jako IPv4 adresa. Uložit to ale jde.";
 
 const CANNOT_CLEAR = "Hodnotu nelze smazat, klíč se přes API odstranit nedá.";
 
-/* The two configer address fields; the API refuses to write them. */
 const editableFields = configFormFields.filter((field) => !field.readOnly);
 
 function isFields(value: unknown): value is Fields {
@@ -158,16 +157,27 @@ export interface FormState {
  * The schema runs once over the whole edited config, so a field sees only its own
  * errors and the maintainer reads them next to the input that caused them.
  *
+ * @param serverErrors what configer refused on the last save. They land on the same
+ * fields as the schema's own, because a maintainer reads a rejection next to the
+ * input, not as one blob in the log.
+ *
  * @example
  * const state = formState(loaded, values);
  * const draft = parseMainConfig(buildConfig(loaded, values));
  * if (!state.hasErrors && draft.ok) save(draft.config);
  */
-export function formState(loaded: MainConfig, values: FormValues): FormState {
+export function formState(
+  loaded: MainConfig,
+  values: FormValues,
+  serverErrors: readonly ConfigError[] = [],
+): FormState {
   const current = toFormValues(loaded);
   const defaults = toFormValues(defaultConfig());
 
-  const schemaErrors = validateMainConfig(buildConfig(loaded, values));
+  const schemaErrors = [
+    ...validateMainConfig(buildConfig(loaded, values)),
+    ...serverErrors,
+  ];
   const byPath = new Map<string, string[]>();
   for (const error of schemaErrors) {
     byPath.set(error.path, [...(byPath.get(error.path) ?? []), error.msg]);

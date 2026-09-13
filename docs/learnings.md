@@ -78,6 +78,31 @@ lesson: what happened, what to do instead.
   The form saves with a PATCH every time, so `save()` returns early when the parsed
   config deep-equals the running one.
 
+## Backend
+
+- **`fetchConfig()` returns no `data` key when it fails.** It answers
+  `{ status: 408, msg }`, so `config = (await fetchConfig()).data` sets `undefined`
+  and the next poll throws on `config.units.engine.ip`. Check for the key before any
+  assignment; boot's retry loop happens to survive it only because it loops on
+  `!c.data`.
+- **`prefix` is `config.backend.url || process.env.API_PREFIX`.** The prefix the
+  process really serves may never have come from the config. Anything that compares
+  a new config against "what we are running" has to compare against a value captured
+  at listen time, not against `config.backend`.
+- **The backend's tests land in `dist`.** `tsconfig.json` includes all of `src` with
+  no test exclusion, unlike configer's. A test file that imports the schema for real
+  would fail CI's `! grep -rl config-schema apps/backend/dist`, so use `import type`
+  in tests too.
+- **Lint the backend before you build it in a clone.** eslint picks up
+  `apps/backend/dist` once it exists, which produces phantom failures. CI lints
+  before it builds, so it never sees them.
+- **jest ran every backend test twice on CI, and this file said it did not.** The
+  claim above used to cover jest as well. It was wrong: CI's order is install, lint,
+  build, grep, tests, so the jest step runs after `dist` exists and `jest --listTests`
+  found both copies — 172 cases where `src` alone has 86. `jest.config.json` now sets
+  `testPathIgnorePatterns` to `["/node_modules/", "/dist/"]`. Review finding on the P4
+  PR. Check the CI step order before writing down that a step never sees a build.
+
 ## Startup
 
 - **The backend's `dist` is installed standalone.** `startup` copies
@@ -129,6 +154,12 @@ lesson: what happened, what to do instead.
   no `--fix`, and `prettier/prettier` is an error, so an unformatted new file fails
   the build. `main` is clean, so running the `lint` script locally only rewrites the
   files you added. Check `git status` after it to be sure.
+- **A client route of the panel only exists in production if express serves it.**
+  The router is `createWebHistory()`, so `/config` is a real URL, and the backend
+  served `express.static` plus `app.get("/")` and nothing else. A hard load of
+  `/config` answered `Cannot GET /config`. Vite's dev server has an SPA fallback, so
+  no amount of local testing shows it. Any phase that makes the browser load a client
+  route by URL — a reload, a bookmark, a link from outside — has to check production.
 - **`BaseInput` and `BaseSelect` styles are global, not scoped.** They apply from the
   moment the component is imported anywhere in the chunk. A new page that wants the
   settings buttons has to bring its own rules: `SettingsFormActions.vue` defines them
@@ -140,3 +171,17 @@ lesson: what happened, what to do instead.
   invalid connection header and the call fails with `TypeError: fetch failed`; Node 24
   forwards the header, so a test written on Node 24 only goes red on CI. Let the agent
   manage the connection and close the server with `closeAllConnections()`.
+- **jest 28's node environment does not expose the global `fetch`** that Node 18 has.
+  A backend test that needs an HTTP client uses `axios`, which the backend already
+  depends on, or `node:http` directly.
+- **A backend route that reads `index.ts` needs `jest.doMock("../..")`.** Importing
+  `index.ts` for real starts the whole server, `main()` runs on import. Mock it and
+  the route's own `fetchConfig`, then mount the router on a bare express app.
+- **The panel's vitest run is `--environment jsdom`, so `sessionStorage` is there.**
+  A test of it has to `sessionStorage.clear()` between cases; the store is shared
+  across the file.
+- **A `vi.mock` factory cannot close over a `const` of the test file.** vitest hoists
+  the `vi.mock` call above the imports and runs the factory when the mocked module is
+  first pulled in, which is before the `const` exists. Build the `vi.fn()` inside the
+  factory, import the mocked symbol normally and take it back with `vi.mocked(...)`.
+  vitest 0.9.4 has `vi.mocked`; it has no `vi.hoisted`.

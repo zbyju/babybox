@@ -324,6 +324,11 @@ Context · Decision · Why · Gave up · Where
 - What reverses it: a save path that re-sets the config store, or the backend
   `POST /reload` from P4 — that one moves the unit IPs and `pc.os` from backend
   restart down to panel reload.
+- Amendment, P4: it did not move them to panel reload. `POST /reload` is a call to
+  the backend, and a panel reload on its own does nothing for a field only the
+  backend reads, so "panel reload" would have been the wrong promise. P4 added a
+  fourth tier, `backendReload`, and put `units.engine.ip`, `units.thermal.ip` and
+  `pc.os` in it.
 - Where: the tier table in [config-ui plan](plans/config-ui.md), `applyTierLabels`
   and `configForm` in `source/packages/config-schema/src/form.ts`.
 
@@ -346,6 +351,10 @@ Context · Decision · Why · Gave up · Where
 
 ## 2026-09-13 — Save ships disabled in P3
 
+- Reversed on 2026-09-13 by P4, exactly as the entry said it would be. `saveConfig`
+  landed, the `disabled` attribute and the Czech line under the row are gone, and
+  the button is disabled only while a save is in flight. The rest of the entry is
+  kept for the record.
 - Context: the P3 checklist asks for the actions row. The write path is P4.
 - Decision: Save is rendered, disabled, with a Czech line under the row saying the
   form sends nothing yet. Discard and reset to defaults work; they only change local
@@ -417,3 +426,151 @@ Context · Decision · Why · Gave up · Where
 - Gave up: nothing. A warned field no longer shows that it was edited by its border.
 - Where: `inputState` in
   `source/apps/panel/src/components/config/ConfigFormField.vue`.
+
+## 2026-09-13 — POST /reload keeps the old config on any failure
+
+- Context: P4 needs the backend to pick up a saved unit IP without a restart. That
+  means reassigning the exported `config` binding in `backend/src/index.ts`, which
+  every consumer reads through at call time.
+- Evidence that an unguarded swap is lethal: `fetchConfig()` returns `Promise<any>`
+  and its failure branch returns `{ status: 408, msg }` with **no `data` key**.
+  Assigning that to `config` gives `undefined`, and the next poll throws on
+  `config.units.engine.ip`. In production the same process serves the panel, so the
+  box serves nothing and pm2 keeps the stuck process alive. Someone drives to the
+  hospital.
+- Decision: the route swaps nothing until it has a config it checked. A failure to
+  fetch, a fetch that throws, or a config missing a field the backend reads all
+  leave `config` exactly as it was and answer 503. Only a checked config reaches
+  `applyConfig()`, the one writer of the binding.
+- The check is hand-written in the backend and covers **only the five fields the
+  backend reads**: `units.engine.ip`, `units.thermal.ip`, `pc.os`, `backend.port`,
+  `backend.url`. It cannot be zod — the backend's `dist` is installed standalone
+  outside the workspace, so the shared package is a type there and nothing more
+  (learnings.md, Startup). It is not the whole schema for the same reason as "The
+  panel checks the shape it reads, not the whole schema": a stored value the write
+  path would refuse but the backend never touches must not block the reload.
+- Boot's `fetchConfig()` is unguarded and stays that way. It is not the same case:
+  boot loops until configer answers and the box visibly does not come up, where a
+  bad hot-swap breaks a box that was working, silently, in the middle of a shift.
+- Gave up: a reload cannot repair a stored config the backend cannot read. It says
+  so in the 503 and the box keeps running on the config it had, which is the outcome
+  we want.
+- Where: `isBackendReadableConfig` and `reloadConfig` in
+  `source/apps/backend/src/modules/configReload.ts`,
+  `source/apps/backend/src/routes/reloadRoute.ts`.
+
+## 2026-09-13 — The reload compares against what the server bound, not against the config
+
+- Context: `POST /reload` has to report the fields it could not apply. Those are
+  `backend.port` and `backend.url`, bound at `index.ts:92` and `:109` when the server
+  starts listening.
+- Decision: `index.ts` keeps a module-level `bound = { port, prefix }`, set at listen
+  time, and the reload compares the stored values against that.
+- Why: two reasons, and the second is the one that bites. The prefix the process
+  really serves is `config.backend.url || process.env.API_PREFIX`, so it may never
+  have come from the config at all. And comparing the new config against
+  `config.backend.port` after the swap compares a value to itself, so every change
+  reports as applied — the easiest bug to write in this phase, and it fails silently
+  in the direction that makes the box look fine.
+- The port is compared as a string, because `process.env.PORT` is one and the config
+  holds a number.
+- Gave up: nothing. `bound` is null until the server listens, and the route answers
+  503 in that window.
+- Where: `bound` in `source/apps/backend/src/index.ts`, `unappliedFields` in
+  `source/apps/backend/src/modules/configReload.ts`.
+
+## 2026-09-13 — The "restart required" banner lives in sessionStorage
+
+- Context: the P4 checklist asks for a persistent banner after a save. The save ends
+  in `window.location.reload()`, which wipes every component, so the plan contradicts
+  itself: component state cannot outlive the thing that makes the save take effect.
+- Decision: before reloading, the panel writes the banner text to `sessionStorage`.
+  `ConfigView` reads it on the way up and renders it, dismissible.
+- `sessionStorage`, not `localStorage`: it survives `location.reload()` in the same
+  tab and dies with the session. A `localStorage` banner would still be on screen
+  days after someone restarted the backend.
+- **The text comes from the reload's answer, not from the field's apply tier.** If
+  the reload applied the unit IPs there is nothing left to restart for them, whatever
+  the tier says; if the reload failed, every backend-read field is on the old value,
+  not just the two in the restart tier. A tier is a promise made before the save; the
+  banner is a report of what the box did.
+- A save that reaches the reload always writes the marker, and a null text removes
+  it, so a save that needs no restart clears what an earlier one left. The two
+  outcomes that send nothing do not write it, because a save that did not happen
+  changes nothing about what still needs a restart.
+- Gave up: the banner is per tab. Another tab on the same box does not show it. The
+  panel runs one tab on a box, so nobody is in that position.
+- Where: `source/apps/panel/src/logic/config/restartBanner.ts`,
+  `source/apps/panel/src/views/ConfigView.vue`.
+
+## 2026-09-13 — The form still draws only a config the schema accepts
+
+- Context: "The config page draws only a config the schema accepts" above says P4
+  reverses it — once a save can reach configer, seed the form from the raw body so a
+  bad stored field can be fixed in the browser. P4 looked at the code and did not.
+- Decision: leave it. `ConfigForm` keeps refusing to draw a config `parseMainConfig`
+  rejects, and prints the errors.
+- Why: it is not the small change the earlier entry assumed. `loaded`,
+  `toFormValues`, `defaultFormValues`, `formState` and `buildConfig` all take a
+  `MainConfig`; seeding from a raw body means every one of them takes a draft, and
+  the form needs a rule for a section that is missing outright, not just wrong. It is
+  not on the P4 checklist, and a half-done repair path is worse than none (motto 1).
+  P4 already touches the one code path that can kill a running box; this is not the
+  phase to widen it.
+- Gave up: the case where the form would help most, still. The errors name the field
+  and `main.json` plus a configer restart is still the way.
+- What reverses it: a phase that owns the draft type end to end, with a test that a
+  form seeded from a body with one bad field saves the corrected whole config. The
+  save path it needs now exists, so it is a panel-only change.
+- Where: `load()` in `source/apps/panel/src/components/config/ConfigForm.vue`.
+
+## 2026-09-13 — The backend serves index.html for any unmatched GET in production
+
+- Context: the panel's router is `createWebHistory()`, so `/config` is a real URL
+  path. In production the backend serves the panel, and it registered
+  `express.static(PUBLIC_DIR)` and `app.get("/")` and nothing else. P4 is the first
+  phase that makes the browser hard-load a client route: `saveConfig` ends in
+  `window.location.reload()`, which issues `GET /config`.
+- Evidence: express matched nothing, so the box answered `Cannot GET /config`.
+  `ConfigView` never mounted, so the "restart required" banner never rendered
+  either — the one thing the reload exists to carry across. Vite's dev server has
+  its own SPA fallback, so none of this shows locally. Three of the six reviewers on
+  the P4 PR found it independently.
+- Decision: the production block registers `app.get("*")` after the static
+  middleware, and it sends `index.html` with the same `no-cache` header the `/`
+  route uses. It sits after every API mount, so it can only see a path nothing else
+  matched.
+- Why: it is the standard fallback for a history-mode SPA and it is four lines. The
+  alternatives were worse: hash-mode routing changes every URL on every box, and
+  listing the client routes by hand is a second copy of the router.
+- Gave up: an unknown API path under the prefix now answers the panel's HTML with a
+  200 instead of a 404. Nothing calls an unknown API path, and the panel's own
+  clients read the body, so a wrong shape surfaces at the caller.
+- What reverses it: serving the panel from something other than this express app.
+- Where: the `NODE_ENV === "production"` block in
+  `source/apps/backend/src/index.ts`, tested in
+  `source/apps/backend/src/__tests__/panelFallback.test.ts`.
+
+## 2026-09-13 — backend.port stays writable, unlike configer.port
+
+- Context: a reviewer on the P4 PR argued `backend.port` should be `readOnly` in the
+  form the way `configer.port` and `configer.url` are. In production the backend
+  serves the panel on that port, so once someone restarts it the open browser tab is
+  on an address nothing is listening on.
+- Decision: it stays writable. The save reports it in the reload's `unapplied` list
+  and the banner names both the change and the address the panel will be on.
+- Why: the two cases are not the same failure. A stored `configer.port` change binds
+  on the next **unattended** reboot; the backend then retries `fetchConfig()` for
+  ever, never reaches `app.listen`, and the box serves nothing with nobody in the
+  loop (learnings.md, Configer). A stored `backend.port` change binds only during a
+  restart a human performs on purpose after reading the banner, and it self-heals:
+  `index.ts` calls `open("http://localhost:" + port)` on every production start, so
+  the restart reopens the browser on the new port by itself.
+- Gave up: a maintainer who restarts the backend from a shell rather than letting it
+  come up on its own has to retype the address. The banner tells them which one.
+- What reverses it: production no longer calling `open()` on start — for example a
+  box where the browser is launched by something else, or a kiosk profile that
+  ignores it. Then a port change strands the screen with no way back and the field
+  belongs in the read-only set.
+- Where: `configForm` in `source/packages/config-schema/src/form.ts`, `bannerFor` in
+  `source/apps/panel/src/logic/config/restartBanner.ts`.

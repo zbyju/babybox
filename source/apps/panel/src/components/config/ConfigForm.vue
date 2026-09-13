@@ -4,26 +4,28 @@
       <div id="ConfigActions">
         <h2>Akce</h2>
         <div class="action-wrapper">
-          <button class="btn-success" disabled>Uložit konfiguraci</button>
+          <button
+            class="btn-success"
+            :disabled="loaded === null || saving"
+            @click="onSave"
+          >
+            Uložit konfiguraci
+          </button>
           <button
             class="btn-primary"
-            :disabled="loaded === null"
+            :disabled="loaded === null || saving"
             @click="onDiscard"
           >
             Zahodit změny
           </button>
           <button
             class="btn-warning"
-            :disabled="loaded === null"
+            :disabled="loaded === null || saving"
             @click="onResetToDefaults"
           >
             Vrátit výchozí hodnoty
           </button>
         </div>
-        <p class="save-disabled">
-          Ukládání zatím není zapojené. Formulář nic neodesílá, změny zůstávají
-          jen v prohlížeči.
-        </p>
       </div>
       <SettingsFormResult :result="result" />
     </div>
@@ -35,12 +37,28 @@
       </span>
     </p>
 
+    <div
+      v-if="state !== null && state.otherErrors.length > 0"
+      class="config-other-errors"
+    >
+      <p>Chyby v polích, která formulář nezobrazuje:</p>
+      <ul>
+        <li
+          v-for="error in state.otherErrors"
+          :key="`${error.path}: ${error.msg}`"
+        >
+          {{ error.path }}: {{ error.msg }}
+        </li>
+      </ul>
+    </div>
+
     <div v-if="state !== null" class="config-sections">
       <ConfigFormSection
         v-for="group in sections"
         :key="group.section.key"
         :section="group.section"
         :states="group.states"
+        :saving="saving"
         @update="onFieldUpdate"
       />
     </div>
@@ -54,6 +72,7 @@
 
 <script lang="ts" setup>
   import {
+    type ConfigError,
     type MainConfig,
     configForm,
     parseMainConfig,
@@ -61,16 +80,20 @@
   import moment from "moment";
   import { type Ref, computed, ref } from "vue";
 
-  import { getConfig } from "@/api/config";
+  import { getConfig, saveConfig } from "@/api/config";
+  import { reloadBackendConfig } from "@/api/reload";
   import ConfigFormSection from "@/components/config/ConfigFormSection.vue";
   import SettingsFormLog from "@/components/settings/form/SettingsFormLog.vue";
   import SettingsFormResult from "@/components/settings/form/SettingsFormResult.vue";
   import {
     type FormValues,
+    buildConfig,
     defaultFormValues,
     formState,
     toFormValues,
   } from "@/logic/config/configForm";
+  import { bannerFor, rememberBanner } from "@/logic/config/restartBanner";
+  import { type SaveFlowResult, runSave } from "@/logic/config/saveFlow";
   import {
     type LogEntry,
     type SettingsResult,
@@ -79,9 +102,15 @@
 
   const loaded: Ref<MainConfig | null> = ref(null);
   const values: Ref<FormValues> = ref({});
+  const saving = ref(false);
+
+  /* What configer refused last time, shown on the fields it named. */
+  const serverErrors: Ref<ConfigError[]> = ref([]);
 
   const state = computed(() =>
-    loaded.value === null ? null : formState(loaded.value, values.value),
+    loaded.value === null
+      ? null
+      : formState(loaded.value, values.value, serverErrors.value),
   );
 
   const sections = computed(() => {
@@ -112,21 +141,68 @@
 
   function onFieldUpdate(path: string, value: string) {
     values.value = { ...values.value, [path]: value };
+    serverErrors.value = serverErrors.value.filter(
+      (error) => error.path !== path,
+    );
   }
 
   function onDiscard() {
     if (loaded.value === null) return;
     values.value = toFormValues(loaded.value);
+    serverErrors.value = [];
     addLogMessage("Změny zahozeny");
   }
 
   function onResetToDefaults() {
     if (loaded.value === null) return;
     values.value = defaultFormValues(loaded.value);
+    serverErrors.value = [];
     addLogMessage(
-      "Vloženy výchozí hodnoty. Zatím se nikam neukládají.",
+      "Vloženy výchozí hodnoty. Uloží se, až stiskneš Uložit konfiguraci.",
       LogEntryType.Warning,
     );
+  }
+
+  /*
+   * Only the Vue side of a save: the re-entrancy guard, the log, the banner and the
+   * reload. Everything the save decides is in logic/config/saveFlow.ts.
+   *
+   * The draft is built before the first await, so the body sent is the form as it
+   * was when Save was pressed. The inputs are disabled meanwhile, so a later edit
+   * cannot be lost without the maintainer noticing.
+   */
+  async function onSave() {
+    if (saving.value) return;
+
+    const current = state.value;
+    if (loaded.value === null || current === null) return;
+
+    const draft = buildConfig(loaded.value, values.value);
+    saving.value = true;
+    result.value = {
+      type: LogEntryType.Info,
+      message: "Ukládám konfiguraci",
+    };
+
+    let flow: SaveFlowResult;
+    try {
+      flow = await runSave(draft, current.hasErrors, {
+        saveConfig,
+        reloadBackendConfig,
+      });
+    } finally {
+      saving.value = false;
+    }
+
+    for (const line of flow.log) addLogMessage(line.message, line.type);
+    serverErrors.value = flow.serverErrors;
+
+    const outcome = flow.outcome;
+    if (outcome.kind === "notSent" || outcome.kind === "rejected") return;
+
+    /* The banner goes to sessionStorage first, because the reload wipes it all. */
+    rememberBanner(bannerFor(outcome));
+    window.location.reload();
   }
 
   /*
@@ -189,12 +265,6 @@
         flex-wrap wrap
         gap 10px
 
-      p.save-disabled
-        margin 8px 0 0 0
-        max-width 420px
-        font-size 0.8em
-        color color-text-warning
-
     button
       display inline-block
       padding 10px 12px
@@ -241,6 +311,19 @@
     .summary-error
       font-weight 700
       color color-text-error
+
+    .config-other-errors
+      margin 0 0 16px 0
+      font-size 0.9em
+      color color-text-error
+
+      p
+        margin 0
+        font-weight 700
+
+      ul
+        margin 4px 0 0 0
+        padding-left 20px
 
     .config-sections
       display grid

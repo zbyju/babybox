@@ -13,7 +13,7 @@
         :options="props.state.field.options ?? []"
         :model-value="props.state.value"
         :state="inputState"
-        :disabled="props.state.field.readOnly"
+        :disabled="disabled"
         @update:model-value="(value: string) => emit('update', value)"
       />
       <BaseInput
@@ -22,7 +22,7 @@
         :pattern="pattern"
         :model-value="props.state.value"
         :state="inputState"
-        :disabled="props.state.field.readOnly"
+        :disabled="disabled"
         @update:model-value="(value: string) => emit('update', value)"
       />
       <button
@@ -64,6 +64,8 @@
 
   const props = defineProps<{
     state: FieldState;
+    /** A save is in flight, so an edit made now would be lost by the reload. */
+    saving: boolean;
   }>();
 
   const emit = defineEmits<{
@@ -71,6 +73,10 @@
   }>();
 
   const revealed = ref(false);
+
+  const disabled = computed(
+    () => props.state.field.readOnly === true || props.saving,
+  );
 
   const inputType = computed(() => {
     if (props.state.field.widget === "number") return "number";

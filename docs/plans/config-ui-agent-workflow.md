@@ -1,6 +1,6 @@
 # Config UI — agent workflow
 
-Status: **P2 merged, P3 in review**
+Status: **P3 merged, P4 in review**
 Last updated: 2026-09-13
 
 How each phase of [config-ui.md](config-ui.md) gets built. Same pipeline for every
@@ -164,4 +164,39 @@ docs updated. Merging is a human decision.
     are enforced in CI. Panel typecheck has to gain no error over the baseline on
     `origin/main`, which is 20, not the 17 the docs said.
   - PR title `feat: add the config page to the panel`.
-- P4 and P5 — written when P3 is merged.
+- **P4** — a saved config is applied without editing the file. Brief: the P4
+  checklist in config-ui.md, plus:
+  - The save is one `PATCH /config/main` carrying the whole built config, not a
+    minimal diff. `parseMainConfig(buildConfig(loaded, values))` and send `.config`.
+    PATCH, not PUT: a PUT merges over `base.json`, so a stored key the form draws no
+    row for would go back to its default. A body that repeats the running values is
+    not a change and `save()` returns early on it, so no-op saves do not rotate
+    `main.json.bak`. Do not bring back a `changedPaths` helper (learnings.md,
+    Process).
+  - `POST /reload` on the backend must never leave `config` worse than it found it.
+    On any failure keep the old config and change nothing. Guard the swap with a
+    hand-written structural check of only the five fields the backend reads: it
+    cannot use zod, its `dist` is installed standalone outside the workspace.
+  - The reload reports what it could not apply, and the panel believes that over the
+    static tier. `backend.port` and `backend.url` are bound at listen, and the prefix
+    may have come from `API_PREFIX` rather than the config, so capture what was
+    really bound in a module-level binding at listen time. Comparing the new config
+    against `config.backend` after the swap compares a value to itself.
+  - Three fields move tier. Once the panel calls `POST /reload`, `units.engine.ip`,
+    `units.thermal.ip` and `pc.os` are applied by the save, so they leave
+    `backendRestart`. Add the tier to `ApplyTier` and `applyTierLabels` and update
+    the per-field table in config-ui.md with the reader that proves each row.
+  - The banner cannot be component state: the save ends in
+    `window.location.reload()`. It goes to `sessionStorage`, `ConfigView` reads it
+    after the reload, and its content comes from the reload's answer, not the tier.
+    Do not delay the panel reload to show it. In decisions.md.
+  - Order and failure paths: a build or `hasErrors` failure sends nothing; a 400
+    shows its `{ path, msg }` errors next to the fields, not as one blob; a failed
+    reload says so in the log, sets the banner and still reloads the panel.
+  - No new dependency, so the panel tests stay plain vitest with no component
+    mounting. Backend tests are jest in the style already there; a route test mocks
+    `index.ts` and closes its server with `closeAllConnections()`.
+  - Out of scope, in P5: auth on the configer write endpoint, confirm dialogs for
+    dangerous fields, the component test.
+  - PR title `feat: apply a saved config without editing the file`.
+- P5 — written when P4 is merged.
