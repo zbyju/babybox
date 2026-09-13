@@ -239,9 +239,12 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
    * the body leaves out keeps the value it has now. That is the whole difference
    * from update(), where the same missing key goes back to its base.json default.
    *
-   * The merge cannot delete a key, and it cannot fix one either: a stored value the
-   * schema rejects (boot only warns about it) makes every patch fail until someone
-   * sends that field a valid value.
+   * The merge cannot delete a key, and it cannot always fix one either. A stored
+   * value the schema rejects (boot only warns about it) makes every patch fail until
+   * someone sends that field a valid value. A stored key the schema does not know has
+   * no value to send, so no patch clears it and every patch stays rejected; a PUT
+   * does clear it, because it merges over base.json instead of over the stored
+   * config.
    */
   async function patch(body: unknown): Promise<UpdateResult> {
     const checked = checkBody(body);

@@ -171,8 +171,12 @@ Size: ~1 day. This is where most of the value is.
 - [x] Tests for each validation branch
 
 Known edge case: a box whose stored `main.json` holds a value the schema rejects (boot
-only warns) has every `PATCH` rejected until that field is sent a valid value. The
-errors name the field, so it is recoverable over the API. No bypass.
+only warns) has every `PATCH` rejected. A bad value of a known field is recoverable
+over the API: the error names the field and a `PATCH` that sends a valid value for it
+gets through. A key the schema does not know is not: there is no value to send and
+`lodash.merge` cannot delete, so only a full `PUT` clears it, because a `PUT` merges
+over `base.json`. No bypass, and no stripping of unknown keys — that would delete
+what someone put in the file.
 
 Size: ~0.5 day.
 

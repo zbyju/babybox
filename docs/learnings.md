@@ -56,9 +56,25 @@ lesson: what happened, what to do instead.
   so a box can be running on it, and a PATCH merges over that config and fails the
   check. The errors name the field, so a PATCH that sends a valid value for it gets
   through. Do not add a bypass; it would write a config nothing checked.
+- **A stored key the schema does not know blocks every PATCH, and only a PUT clears
+  it.** There is no value to send for it and `lodash.merge` cannot delete, so no PATCH
+  body gets past the check. A PUT merges over `base.json`, not over the stored config,
+  so the unknown key is simply not there. Do not strip unknown keys to make a PATCH
+  succeed: that silently deletes what someone put in the file (mottos 1 and 2).
 - **No write can remove a key.** PUT fills a missing key from `base.json`, PATCH keeps
   the stored value, and `lodash.merge` cannot delete. `app.refreshRequestLimit` is the
   only optional field and there is no way to clear it through the API.
+- **`configer.port` and `configer.url` have no reader but configer.** The backend
+  (`fetch/constants.ts`) and the panel (`api/base.ts`) have `localhost:5001/api/v1`
+  compiled in, and `index.ts` reads the config only to bind. A stored change survives
+  the restart, nothing follows it, and the backend then retries `fetchConfig()` for
+  ever without reaching `app.listen` — in production that process serves the panel, so
+  the box serves nothing. A write that moves either field is rejected. Check who reads
+  a field before calling it restart-tier.
+- **A no-op write costs the backup.** `write()` copies `main.json` over
+  `main.json.bak` first, so saving the same config again replaces the one undo copy.
+  The form saves with a PATCH every time, so `save()` returns early when the parsed
+  config deep-equals the running one.
 
 ## Startup
 
