@@ -56,6 +56,26 @@ function isPlainObject(value: unknown): value is Fields {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+type CheckedBody =
+  | { ok: true; body: Fields }
+  | { ok: false; errors: ConfigError[] };
+
+/*
+ * Both writers merge the body over something, and lodash.merge spreads a string
+ * or an array over the target, so neither may reach the merge.
+ * express.json() also leaves req.body as {} when the Content-Type is not JSON:
+ * without this a PUT with a forgotten header would reset the whole box to
+ * base.json, and a PATCH would rewrite the file for nothing.
+ * It returns the narrowed body, so the merge never takes an unknown.
+ */
+function checkBody(body: unknown): CheckedBody {
+  if (!isPlainObject(body))
+    return { ok: false, errors: [{ path: "", msg: "must be an object" }] };
+  if (Object.keys(body).length === 0)
+    return { ok: false, errors: [{ path: "", msg: "must not be empty" }] };
+  return { ok: true, body };
+}
+
 type StoredFile =
   | { kind: "ok"; config: Fields }
   | { kind: "corrupt" }
@@ -150,22 +170,8 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
     console.warn(`${mainFile}: ${path} ${msg}`);
   }
 
-  /*
-   * Both writers merge the body over something, and lodash.merge spreads a string
-   * or an array over the target, so neither may reach the merge.
-   * express.json() also leaves req.body as {} when the Content-Type is not JSON:
-   * without this a PUT with a forgotten header would reset the whole box to
-   * base.json, and a PATCH would rewrite the file for nothing.
-   */
-  function rejectBody(body: unknown): ConfigError[] {
-    if (!isPlainObject(body)) return [{ path: "", msg: "must be an object" }];
-    if (Object.keys(body).length === 0)
-      return [{ path: "", msg: "must not be empty" }];
-    return [];
-  }
-
   // The one path that changes the config, so PUT and PATCH cannot drift apart.
-  function save(merged: unknown): UpdateResult {
+  function save(merged: Fields): UpdateResult {
     const parsed = parseMainConfig(merged);
     if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
 
@@ -189,10 +195,10 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
    * leaves a key out gets the default, never a missing key.
    */
   async function update(body: unknown): Promise<UpdateResult> {
-    const rejected = rejectBody(body);
-    if (rejected.length > 0) return { status: "invalid", errors: rejected };
+    const checked = checkBody(body);
+    if (!checked.ok) return { status: "invalid", errors: checked.errors };
 
-    return save(merge(freshBase(), body));
+    return save(merge(freshBase(), checked.body));
   }
 
   /*
@@ -205,10 +211,10 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
    * sends that field a valid value.
    */
   async function patch(body: unknown): Promise<UpdateResult> {
-    const rejected = rejectBody(body);
-    if (rejected.length > 0) return { status: "invalid", errors: rejected };
+    const checked = checkBody(body);
+    if (!checked.ok) return { status: "invalid", errors: checked.errors };
 
-    return save(merge({}, data, body));
+    return save(merge({}, data, checked.body));
   }
 
   return {
