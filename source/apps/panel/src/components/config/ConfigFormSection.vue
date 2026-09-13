@@ -10,6 +10,7 @@
       v-for="state in props.states"
       :key="state.field.path"
       :state="state"
+      :saving="props.saving"
       @update="(value: string) => emit('update', state.field.path, value)"
     />
   </div>
@@ -25,6 +26,8 @@
   const props = defineProps<{
     section: FormSection;
     states: FieldState[];
+    /** A save is in flight, so the inputs are locked. */
+    saving: boolean;
   }>();
 
   const emit = defineEmits<{

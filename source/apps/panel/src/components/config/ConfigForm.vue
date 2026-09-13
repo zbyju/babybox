@@ -43,6 +43,7 @@
         :key="group.section.key"
         :section="group.section"
         :states="group.states"
+        :saving="saving"
         @update="onFieldUpdate"
       />
     </div>
