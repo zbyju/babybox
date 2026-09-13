@@ -84,17 +84,20 @@ which was wrong: those fields are read from the pinia config store, and the pane
 sets that store once at boot and never again (risk 5). Nothing updates the store
 after a save, so a reactive read follows nothing.
 
+Every line number below is the line in this branch, not on `main`: the config page
+adds lines to `api/base.ts` and `TheNav.vue`, both of which the table cites.
+
 | Field | Reader | Tier |
 |---|---|---|
 | `babybox.name` | `panel/components/panel/elements/BabyboxName.vue:16` (const at setup) | Panel reload |
-| `backend.url` | `backend/src/index.ts:91` at listen; `panel/src/api/base.ts:17` | Backend restart |
-| `backend.port` | `backend/src/index.ts:74` at listen; `panel/src/api/base.ts:17` | Backend restart |
-| `backend.requestTimeout` | `panel/src/api/base.ts:18`, `panel/src/logic/panel/tables.ts:74` | Panel reload |
+| `backend.url` | `backend/src/index.ts:91` at listen; `panel/src/api/base.ts:20` | Backend restart |
+| `backend.port` | `backend/src/index.ts:74` at listen; `panel/src/api/base.ts:20` | Backend restart |
+| `backend.requestTimeout` | `panel/src/api/base.ts:21`, `panel/src/logic/panel/tables.ts:74` | Panel reload |
 | `configer.url` | `configer/src/index.ts:30` at bind | Configer restart, not writable |
 | `configer.port` | `configer/src/index.ts:42` at bind | Configer restart, not writable |
 | `configer.requestTimeout` | nothing | No reader |
-| `units.engine.ip` | `backend/src/fetch/fetchFromUnits.ts:25,149`, `backend/src/utils/url.ts:37`; `panel/src/components/TheNav.vue:61` | Backend restart |
-| `units.thermal.ip` | `backend/src/fetch/fetchFromUnits.ts:25`, `backend/src/utils/url.ts:38`; `panel/src/components/TheNav.vue:67` | Backend restart |
+| `units.engine.ip` | `backend/src/fetch/fetchFromUnits.ts:25,149`, `backend/src/utils/url.ts:37`; `panel/src/components/TheNav.vue:67` | Backend restart |
+| `units.thermal.ip` | `backend/src/fetch/fetchFromUnits.ts:25`, `backend/src/utils/url.ts:38`; `panel/src/components/TheNav.vue:73` | Backend restart |
 | `units.requestDelay` | `panel/src/logic/panel/panelLoop.ts:295`, `panel/src/logic/panel/state.ts:19` | Panel reload |
 | `units.warningThreshold` | `panel/src/logic/panel/state.ts:17` | Panel reload |
 | `units.errorThreshold` | `panel/src/logic/panel/state.ts:18` | Panel reload |
