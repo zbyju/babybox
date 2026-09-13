@@ -263,9 +263,7 @@ function createLogger(options = {}) {
         writeFile(stack);
       }
     } catch (writeErr) {
-      try {
-        stdout.write(`${String(message)}\n`);
-      } catch (consoleErr) {}
+      writeStdout(String(message));
     }
   }
 
