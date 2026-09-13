@@ -324,6 +324,11 @@ Context · Decision · Why · Gave up · Where
 - What reverses it: a save path that re-sets the config store, or the backend
   `POST /reload` from P4 — that one moves the unit IPs and `pc.os` from backend
   restart down to panel reload.
+- Amendment, P4: it did not move them to panel reload. `POST /reload` is a call to
+  the backend, and a panel reload on its own does nothing for a field only the
+  backend reads, so "panel reload" would have been the wrong promise. P4 added a
+  fourth tier, `backendReload`, and put `units.engine.ip`, `units.thermal.ip` and
+  `pc.os` in it.
 - Where: the tier table in [config-ui plan](plans/config-ui.md), `applyTierLabels`
   and `configForm` in `source/packages/config-schema/src/form.ts`.
 

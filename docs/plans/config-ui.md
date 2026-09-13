@@ -85,8 +85,9 @@ These are the reason this project is not just "add a form".
 
 There is no single answer, and the UI has to say which case a field is in.
 
-Checked field by field against the code that reads it, 2026-09-13, for P3. **The
-live tier is empty** and is not shown. It was listed here before with seven fields,
+Checked field by field against the code that reads it, 2026-09-13. P3 checked every
+row; P4 moved `units.engine.ip`, `units.thermal.ip` and `pc.os` to **Backend reload**
+when `POST /reload` shipped. **The live tier is empty** and is not shown. It was listed here before with seven fields,
 which was wrong: those fields are read from the pinia config store, and the panel
 sets that store once at boot and never again (risk 5). Nothing updates the store
 after a save, so a reactive read follows nothing.
