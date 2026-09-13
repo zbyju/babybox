@@ -747,3 +747,16 @@ Context · Decision · Why · Gave up · Where
   to green and red.
 - Where: `public/config/styles.json`, `types/base/baseButton.types.ts`,
   `components/panel/HTMLElements/BaseButton.vue`.
+
+## 2026-09-13 — Panel message keeps the old yellow and red
+
+- Context: warning fill and text both moved to orange so buttons, table cells
+  and the highlight message changed together. The message on the main panel
+  still has to read as the old neon yellow and the old error red.
+- Decision: `color.message.warning` is `#FFFC31` and `color.message.error` is
+  `#e01c0d`. `HighlightMessage` applies those on the message. `BaseButton` and
+  the shared warning/error fills stay on the new orange/red gradients.
+- Why: nurses already know the old message colours. The restyle was for the
+  action buttons, not the banner.
+- Gave up: one warning/error pair for every surface.
+- Where: `public/config/styles.json`, `components/panel/elements/HighlightMessage.vue`.

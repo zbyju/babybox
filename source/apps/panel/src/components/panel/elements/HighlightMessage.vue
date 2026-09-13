@@ -38,6 +38,15 @@
       padding 5px 0 5px 0
       overflow hidden
 
+      /*
+       * The panel message keeps the pre-restyle yellow and red. Button fills
+       * and other warning/error text follow the new tokens in styles.json.
+       */
+      &.color-text-warning
+        color color-message-warning
+      &.color-text-error
+        color color-message-error
+
   #Message.hidden
     animation-name heightOut
     animation-duration 1s
