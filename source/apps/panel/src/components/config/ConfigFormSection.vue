@@ -6,9 +6,6 @@
         Změn: {{ changedCount }}
       </span>
     </div>
-    <p v-if="props.section.hint" class="section-hint">
-      {{ props.section.hint }}
-    </p>
     <ConfigFormField
       v-for="state in props.states"
       :key="state.field.path"
@@ -61,11 +58,6 @@
       background-color color-primary
       font-size 0.75em
       font-weight 700
-
-    .section-hint
-      margin 0 0 8px 0
-      font-size 0.8em
-      color color-text-secondary
 
     .config-field:last-child
       border-bottom 0

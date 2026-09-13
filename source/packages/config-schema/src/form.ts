@@ -59,7 +59,6 @@ export interface FormField {
 export interface FormSection {
   key: keyof MainConfig;
   label: string;
-  hint?: string;
   fields: readonly FormField[];
 }
 
