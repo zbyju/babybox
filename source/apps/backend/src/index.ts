@@ -106,7 +106,7 @@ async function main() {
   // Parse JSON in POST requests
   app.use(express.json());
 
-  const prefix = config.backend.url || process.env.API_PREFIX;
+  const prefix = config.backend.url || process.env.API_PREFIX || "";
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
@@ -148,7 +148,7 @@ async function main() {
     open("http://localhost:" + port);
   }
 
-  bound = { port, prefix: prefix ?? "" };
+  bound = { port, prefix };
 
   app.listen(port, () => {
     const color =
