@@ -77,11 +77,11 @@ function formatCause(err) {
   }
   if (err instanceof Error) {
     if (err.message) {
-      return err.message;
+      return collapseStdio(err.message);
     }
-    return String(err);
+    return collapseStdio(String(err));
   }
-  return String(err);
+  return collapseStdio(String(err));
 }
 
 function collectStdio(err) {
@@ -95,14 +95,20 @@ function collectStdio(err) {
   );
 }
 
-function formatDetails(err) {
+function formatDetails(err, message) {
   const cause = formatCause(err);
   const stdio = collectStdio(err);
   const parts = [];
-  if (cause) {
+  if (cause && cause !== message) {
     parts.push(cause);
   }
-  if (stdio && stdio !== cause && cause.includes(stdio) === false) {
+  if (
+    stdio &&
+    stdio !== cause &&
+    stdio !== message &&
+    cause.includes(stdio) === false &&
+    message.includes(stdio) === false
+  ) {
     parts.push(stdio);
   }
   return parts.join(" ");
@@ -112,7 +118,7 @@ function formatLogLine(date, level, stage, message, err) {
   const label = LEVEL[level] || String(level).toUpperCase();
   const stageTag = stage ? `[${stage}]` : "";
   const text = message === undefined || message === null ? "" : String(message);
-  const details = formatDetails(err);
+  const details = formatDetails(err, text);
   const body = details ? `${text} ${details}` : text;
   return `${formatTimestamp(date)} ${label} ${stageTag} ${body}`.replace(
     / +/g,
