@@ -309,6 +309,7 @@
       .config-confirm-text
         margin 0 0 12px 0
         white-space pre-wrap
+        overflow-wrap anywhere
         font-family inherit
         font-size 0.9em
         line-height 1.4
