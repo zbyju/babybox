@@ -2,10 +2,12 @@
   <div id="QuickActions">
     <h2>Rychlé akce</h2>
     <div class="action-wrapper">
-      <button class="card-button" @click="openBabybox">Otevřít Babybox</button>
-      <button class="card-button" @click="openServiceDoors">
+      <BaseButton variant="error" size="card" @click="openBabybox">
+        Otevřít Babybox
+      </BaseButton>
+      <BaseButton variant="warning" size="card" @click="openServiceDoors">
         Otevřít servisní dveře
-      </button>
+      </BaseButton>
       <CameraWrapper :max-h="100" :max-w="200" :display-doors="false" />
     </div>
   </div>
@@ -13,6 +15,7 @@
 
 <script lang="ts" setup>
   import { openDoors, resetBabybox } from "@/api/units";
+  import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
 
   import CameraWrapper from "../panel/containers/CameraWrapper.vue";
 
@@ -33,25 +36,15 @@
 </script>
 
 <style lang="stylus">
-  .card-button
-    padding 10px
-    min-width 230px
-    min-height 100px
-    background-color color-bg-primary
-    border 1px solid color-border-secondary
-    border-radius 20px
-    margin-right 30px
-    font-size 1.1em
-    font-weight 100
-  .card-button:hover
-    background-color color-bg-primary-hover
-
   #QuickActions
     h2
       margin 0 0 10px 0
     .action-wrapper
-      display: flex
-      flex-direction: row
-      justify-content: flex-start
+      display flex
+      flex-direction row
+      align-items stretch
+      justify-content flex-start
+      flex-wrap wrap
+      gap 16px
       margin-bottom 15px
 </style>

@@ -717,3 +717,33 @@ Context · Decision · Why · Gave up · Where
 - This supersedes the `window.confirm` part of the entry above.
 - Where: `nextSaveStep` in `panel/src/logic/config/confirmSave.ts`, `onSave` and
   `onCancelConfirm` in `panel/src/components/config/ConfigForm.vue`.
+
+## 2026-09-13 — Config sections are full-width and open on a click of the heading
+
+- Context: the config page laid sections in a wrapping grid. The units card is
+  eight fields and the pc card is one, so a row's short cards sat in empty space
+  under the tall one.
+- Decision: each section is a full-width block. The heading is a button. The
+  fields stay hidden until that heading is pressed. The first section starts
+  open so the pattern is visible. Open fields sit in a wrapping grid inside the
+  block, so a long section still uses the width instead of growing down the page.
+- Why: every heading is then the same height, so nothing is pushed down by a
+  neighbour. A maintainer opens only the block they came to edit.
+- Gave up: seeing every field at once. The heading still shows the change count.
+- Where: `ConfigFormSection.vue`, `.config-sections` in `ConfigForm.vue`.
+
+## 2026-09-13 — Warning colour is orange, and buttons share one variant union
+
+- Context: `styles.json` used `#FFFF00` for warning. The reset button, the log
+  date, the result pane and the dashboard warning cells all picked it up. The
+  action buttons were also copied as global `button.btn-*` rules in two pages.
+- Decision: warning is `#E07A1F` (hover `#C45A12`, text `#F0A04B`). `BaseButton`
+  takes a `variant` of `"primary" | "success" | "error" | "warning" | "accent"`.
+  Hover runs a looping gradient on that accent. Disabled stops the animation.
+- Why: neon yellow on a near-black panel is unreadable and does not match the
+  indigo/purple palette. One component is one set of colours; a union is the
+  closed set the template can pass.
+- Gave up: a warning that shouts in yellow. Orange still reads as warning next
+  to green and red.
+- Where: `public/config/styles.json`, `types/base/baseButton.types.ts`,
+  `components/panel/HTMLElements/BaseButton.vue`.

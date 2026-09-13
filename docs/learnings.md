@@ -172,11 +172,11 @@ lesson: what happened, what to do instead.
   `/config` answered `Cannot GET /config`. Vite's dev server has an SPA fallback, so
   no amount of local testing shows it. Any phase that makes the browser load a client
   route by URL — a reload, a bookmark, a link from outside — has to check production.
-- **`BaseInput` and `BaseSelect` styles are global, not scoped.** They apply from the
-  moment the component is imported anywhere in the chunk. A new page that wants the
-  settings buttons has to bring its own rules: `SettingsFormActions.vue` defines them
-  and a page that does not import it does not get them.
-
+- **`BaseButton` owns the action-button styles.** Import it wherever a coloured
+  action is drawn. Its rules are scoped to `.base-button`, so a bare `button` is
+  not restyled. `SettingsFormActions.vue` used to define a global `button` rule
+  that only applied after that file loaded; a page that did not import it (the
+  config page) had to copy the rules.
 - **The panel's browser is always on the box.** `CONFIGER_API_URL` in `api/base.ts`
   and `backendApi()` both build `http://localhost:...`, compiled into the bundle. A
   browser on another machine loading the panel would resolve `localhost` to itself

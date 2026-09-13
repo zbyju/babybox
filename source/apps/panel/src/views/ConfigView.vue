@@ -4,7 +4,9 @@
     <div id="ConfigWrapper">
       <p v-if="banner !== null" id="RestartBanner">
         <span>{{ banner }}</span>
-        <button @click="onDismiss">Skrýt</button>
+        <BaseButton variant="primary" size="small" @click="onDismiss">
+          Skrýt
+        </BaseButton>
       </p>
       <ConfigForm></ConfigForm>
     </div>
@@ -18,6 +20,7 @@
   import router from "@/router";
 
   import ConfigForm from "../components/config/ConfigForm.vue";
+  import BaseButton from "../components/panel/HTMLElements/BaseButton.vue";
   import TheNav from "../components/TheNav.vue";
 
   /*
@@ -57,17 +60,6 @@
         padding 12px 16px
         border-radius 8px
         background-color color-warning
-        color color-bg-black
+        color color-text-white
         font-weight 700
-
-        button
-          padding 8px 12px
-          border 0
-          border-radius 8px
-          background-color color-bg-black
-          color color-text-white
-          font-weight 700
-          font-size 0.9em
-        button:hover
-          cursor pointer
 </style>

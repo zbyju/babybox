@@ -4,34 +4,38 @@
       <div id="ConfigActions">
         <h2>Akce</h2>
         <div class="action-wrapper">
-          <button
-            class="btn-success"
+          <BaseButton
+            variant="success"
             :disabled="loaded === null || saving || pendingQuestion !== null"
             @click="onSave"
           >
             Uložit konfiguraci
-          </button>
-          <button
-            class="btn-primary"
+          </BaseButton>
+          <BaseButton
+            variant="primary"
             :disabled="loaded === null || saving"
             @click="onDiscard"
           >
             Zahodit změny
-          </button>
-          <button
-            class="btn-warning"
+          </BaseButton>
+          <BaseButton
+            variant="warning"
             :disabled="loaded === null || saving"
             @click="onResetToDefaults"
           >
             Vrátit výchozí hodnoty
-          </button>
+          </BaseButton>
         </div>
 
         <div v-if="pendingQuestion !== null" class="config-confirm">
           <pre class="config-confirm-text">{{ pendingQuestion }}</pre>
           <div class="action-wrapper">
-            <button class="btn-warning" @click="onSave">Ano, uložit</button>
-            <button class="btn-primary" @click="onCancelConfirm">Zrušit</button>
+            <BaseButton variant="success" @click="onSave">
+              Ano, uložit
+            </BaseButton>
+            <BaseButton variant="primary" @click="onCancelConfirm">
+              Zrušit
+            </BaseButton>
           </div>
         </div>
       </div>
@@ -60,13 +64,18 @@
       </ul>
     </div>
 
+    <p v-if="state !== null" class="config-expand-hint">
+      Klepni na nadpis sekce, otevře se její formulář.
+    </p>
+
     <div v-if="state !== null" class="config-sections">
       <ConfigFormSection
-        v-for="group in sections"
+        v-for="(group, index) in sections"
         :key="group.section.key"
         :section="group.section"
         :states="group.states"
         :saving="saving"
+        :initially-open="index === 0"
         @update="onFieldUpdate"
       />
     </div>
@@ -91,6 +100,7 @@
   import { getConfig, saveConfig } from "@/api/config";
   import { reloadBackendConfig } from "@/api/reload";
   import ConfigFormSection from "@/components/config/ConfigFormSection.vue";
+  import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
   import SettingsFormLog from "@/components/settings/form/SettingsFormLog.vue";
   import SettingsFormResult from "@/components/settings/form/SettingsFormResult.vue";
   import {
@@ -288,6 +298,7 @@
       margin-bottom 20px
       gap 30px
       flex-wrap wrap
+      align-items flex-start
 
     h2
       margin-top 0
@@ -314,48 +325,14 @@
         font-size 0.9em
         line-height 1.4
 
-    button
-      display inline-block
-      padding 10px 12px
-      border 0
-      background-color color-bg-primary
-      color color-text-white
-      transition all 0.5s ease-in-out
-      font-weight 700
-      font-size 0.9em
-      border-radius 8px
-      height 40px
-    button:hover
-      cursor pointer
-
-    button.btn-primary
-      background-color color-primary
-    button.btn-success
-      background-color color-success
-    button.btn-error
-      background-color color-error
-    button.btn-warning
-      background-color color-warning
-      color color-bg-black
-    button.btn-primary:hover
-      background-color color-primary-hover
-    button.btn-success:hover
-      background-color color-success-hover
-    button.btn-error:hover
-      background-color color-error-hover
-    button.btn-warning:hover
-      background-color color-warning-hover
-    button:disabled
-      background-color color-bg-primary-hover
-      color color-text-secondary
-      cursor not-allowed
-    button:disabled:hover
-      background-color color-bg-primary-hover
-      cursor not-allowed
-
     p.config-summary
-      margin 0 0 16px 0
+      margin 0 0 8px 0
       font-size 0.9em
+
+    p.config-expand-hint
+      margin 0 0 16px 0
+      font-size 0.8em
+      color color-text-secondary
 
     .summary-error
       font-weight 700
@@ -375,8 +352,7 @@
         padding-left 20px
 
     .config-sections
-      display grid
-      grid-template-columns repeat(auto-fill, minmax(360px, 1fr))
-      gap 16px
-      align-items start
+      display flex
+      flex-direction column
+      gap 10px
 </style>
