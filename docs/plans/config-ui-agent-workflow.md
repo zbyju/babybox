@@ -1,6 +1,6 @@
 # Config UI — agent workflow
 
-Status: **P1 merged, P2 in review**
+Status: **P2 merged, P3 in review**
 Last updated: 2026-09-13
 
 How each phase of [config-ui.md](config-ui.md) gets built. Same pipeline for every
@@ -138,4 +138,30 @@ docs updated. Merging is a human decision.
     starts from the defaults cannot tell which side the merge came from
     (learnings.md). Key order in the written file and `main.json.bak` are checked too.
   - PR title `feat: add a partial config update endpoint`.
-- P3 to P5 — written when P2 is merged.
+- **P3** — the panel gets a config page. Brief: the P3 checklist in config-ui.md,
+  plus:
+  - The form descriptor is `packages/config-schema/src/form.ts`, exported from
+    `src/index.ts`: an explicit table keyed by dotted path, not derived from zod's
+    `_def`, so a zod patch bump cannot move it. A package test walks the schema's
+    `.shape` and asserts the descriptor's paths are exactly the schema's leaf paths.
+    `startup` has an empty shape, so it yields no leaf and gets no row.
+  - Every apply tier is checked against the reader, not copied from the plan's old
+    table. The live tier turned out to be empty; the table in config-ui.md now names
+    the reader per field.
+  - `api/config.ts` gets `getConfig` only. It reuses `CONFIGER_API_URL` and
+    `requestJson`, the same pair `panelLoop.ts` uses. The `CONFIGER_TIMEOUT` constant
+    moved from `panelLoop.ts` to `api/base.ts` so both callers share one value.
+    `getConfig` must not touch the pinia config store; the panel sets it once at boot
+    on purpose.
+  - The form keeps its own copy of the whole config, because the store only holds
+    five of the eight sections.
+  - Save ships rendered, disabled, with a Czech hint. Discard and reset only change
+    local state and work. In decisions.md with what reverses it.
+  - No new dependency, not even `@vue/test-utils`. A lockfile change is update-path
+    risk and the component test is P5's job. Tests are plain vitest over the pure
+    form logic in `logic/config/configForm.ts`.
+  - Panel eslint with no `--fix` has to be clean; `simple-import-sort` and `prettier`
+    are enforced in CI. Panel typecheck has to gain no error over the baseline on
+    `origin/main`, which is 20, not the 17 the docs said.
+  - PR title `feat: add the config page to the panel`.
+- P4 and P5 — written when P3 is merged.

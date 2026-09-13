@@ -299,3 +299,107 @@ Context · Decision · Why · Gave up · Where
   than from a constant in each. Then the field has a reader and can be written.
 - Where: `rejectAddressChange()` and `save()` in
   `source/apps/configer/src/services/db/main.ts`.
+
+## 2026-09-13 — The live apply tier is empty, so the form does not show one
+
+- Context: the [config-ui plan](plans/config-ui.md) listed `units.requestDelay`, the
+  two thresholds, `units.voltage.*`, `app.password`, `app.refreshRequestLimit` and
+  `babybox.name` as **Live**: "next poll, no action". P3 had to render the tier, so
+  it checked every reader.
+- Evidence it was wrong: each of those fields is read off the pinia config store, and
+  `initializeConfig()` in `panelLoop.ts` calls `setConfig()` once at boot and never
+  again — see "The panel deliberately never re-reads the config" in the plan. Nothing
+  in the save path updates the store, so a reactive read follows a value that cannot
+  change. `babybox.name` is worse than that: `BabyboxName.vue:16` copies it into a
+  plain const at setup.
+- Decision: there is no live tier. Every field the panel reads is **panel reload**,
+  every field the backend reads is **backend restart**, `configer.port` and
+  `configer.url` are **configer restart** and the API refuses them anyway, and
+  `configer.requestTimeout` has **no reader**. The per-field table with the reader
+  that proves each one is in the plan.
+- Why: a tier is a promise to the maintainer. "Applies on the next poll" would be a
+  promise the box does not keep, and the maintainer would walk away believing a new
+  password was live.
+- Gave up: nothing. A tier that says "reload the panel" is what the save path does.
+- What reverses it: a save path that re-sets the config store, or the backend
+  `POST /reload` from P4 — that one moves the unit IPs and `pc.os` from backend
+  restart down to panel reload.
+- Where: the tier table in [config-ui plan](plans/config-ui.md), `applyTierLabels`
+  and `configForm` in `source/packages/config-schema/src/form.ts`.
+
+## 2026-09-13 — The form descriptor is a hand-written table beside the schema
+
+- Context: P3 needs a Czech label, a widget, a hint and an apply tier per field. The
+  two options were deriving them from the zod schema or writing them out.
+- Decision: `source/packages/config-schema/src/form.ts`, an explicit table keyed by
+  dotted path. A package test walks `mainConfigSchema.shape` and asserts the
+  descriptor's paths are exactly the schema's leaf paths.
+- Why: deriving means reading zod's `_def`, which is internal and can move on a patch
+  bump — and none of the four things we need is in the schema anyway. The test is
+  what keeps the two in step, and it is the reason the table lives in the package
+  rather than in the panel.
+- Gave up: the Czech label strings ship in configer's and the backend's `dist`, where
+  nothing reads them. About 2 KB. Splitting the package into two entry points to
+  avoid that costs more than it saves (motto 1).
+- Where: `configForm` in `source/packages/config-schema/src/form.ts`,
+  `source/packages/config-schema/src/form.test.ts`.
+
+## 2026-09-13 — Save ships disabled in P3
+
+- Context: the P3 checklist asks for the actions row. The write path is P4.
+- Decision: Save is rendered, disabled, with a Czech line under the row saying the
+  form sends nothing yet. Discard and reset to defaults work; they only change local
+  state.
+- Why: a row with a missing button reads as a bug, and a working-looking Save that
+  does nothing is worse than either. The disabled button plus the sentence is the
+  only version where a maintainer cannot come away thinking they saved.
+- Gave up: nothing. P4 removes the `disabled` and the sentence in the same commit
+  that adds `saveConfig`.
+- Where: `#ConfigActions` in
+  `source/apps/panel/src/components/config/ConfigForm.vue`.
+
+## 2026-09-13 — A bad IP is a warning, not an error
+
+- Context: the plan asks for "IP validation as a pattern on the text widget". The
+  shared schema types both unit IPs and the camera IP as plain strings.
+- Decision: a value that is not a dotted quad colours the field
+  `BaseInputState.Warning` and prints a Czech line under it. It does not block a
+  save. The `pattern` attribute is set too, as a browser hint.
+- Why: an error would be the mirror of the bug the read-only `configer.port` avoids —
+  a form refusing what the API accepts. `PUT` and `PATCH` take any string here and
+  the backend builds `http://${ip}/`, so a hostname works today. Blocking it would
+  make the form worse than hand-editing the file for that one case (motto 2).
+- Gave up: the form does not stop a typo that only an exact check would catch.
+- What reverses it: an IP rule in the shared schema. Then the check is one thing in
+  both places and the form can colour it Error.
+- Where: `formState` in `source/apps/panel/src/logic/config/configForm.ts`.
+
+## 2026-09-13 — Clearing app.refreshRequestLimit is a form error
+
+- Context: `app.refreshRequestLimit` is the one optional field. No write can remove a
+  key: `PATCH` merges and `lodash.merge` cannot delete, and `PUT` fills the key from
+  `base.json`, which holds 50000 (learnings.md, Configer).
+- Decision: an empty input on a field that holds a stored value is a field-level
+  error, "Hodnotu nelze smazat, klíč se přes API odstranit nedá." A field that was
+  never set stays empty with no error.
+- Why: the alternative is a form that silently drops the edit at save time. The check
+  is three lines and it names the one thing the maintainer has to do differently.
+- Gave up: turning the refresh off through the form. Setting it to a huge number is
+  the way; removing the key still means editing `main.json`.
+- Where: `formState` in `source/apps/panel/src/logic/config/configForm.ts`.
+
+## 2026-09-13 — The config page draws only a config the schema accepts
+
+- Context: configer's boot only warns about a stored value the schema rejects and
+  serves it anyway, so a box can be running on one.
+- Decision: `ConfigForm` parses the body with `parseMainConfig`. On a failure it
+  draws no fields and prints one log line per error instead, with the note to fix
+  `main.json` by hand and restart configer.
+- Why: such a box already has every `PATCH` rejected (learnings.md), so an editable
+  form could not repair it in P3 either, and the errors are the useful output. It
+  also keeps the form's model a real `MainConfig` rather than a bag of unknowns.
+- Gave up: the case where the form would help most. A field-level error would let a
+  maintainer fix exactly the bad field once Save exists.
+- What reverses it: P4. Once a save can reach configer, seed the form from the raw
+  body so the bad field can be corrected in the browser.
+- Where: `load()` in `source/apps/panel/src/components/config/ConfigForm.vue`.
