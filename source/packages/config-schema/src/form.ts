@@ -283,7 +283,7 @@ export const configForm: readonly FormSection[] = [
         widget: "number",
         tier: "panelReload",
         optional: true,
-        hint: "Po tolika dotazech na jednotku se panel sám obnoví. Prázdné pole znamená 50000.",
+        hint: "Po tolika dotazech na jednotku se panel sám obnoví. Hodnotu nelze smazat; vypnout obnovování jde jen velkým číslem.",
       },
     ],
   },
