@@ -33,8 +33,13 @@ function isUnappliedField(value: unknown): value is UnappliedField {
   );
 }
 
-function readUnapplied(body: unknown): UnappliedField[] {
-  if (!isObject(body) || !Array.isArray(body.unapplied)) return [];
+/*
+ * Null, not an empty list, for a body we cannot read. An empty list means "the
+ * backend applied everything", which clears the restart banner — so an answer the
+ * panel does not understand would wipe a warning it never checked.
+ */
+function readUnapplied(body: unknown): UnappliedField[] | null {
+  if (!isObject(body) || !Array.isArray(body.unapplied)) return null;
   return body.unapplied.filter(isUnappliedField);
 }
 
@@ -47,7 +52,8 @@ function readUnapplied(body: unknown): UnappliedField[] {
  * way and only the wording changes.
  *
  * @returns on success the fields the backend could not apply — only
- * `backend.port` and `backend.url` can be in it
+ * `backend.port` and `backend.url` can be in it. A 200 whose body the panel cannot
+ * read is `ok: false`, the same as no answer at all.
  */
 export async function reloadBackendConfig(): Promise<ReloadResult> {
   const { baseUrl, isConfigured } = backendApi();
@@ -58,7 +64,9 @@ export async function reloadBackendConfig(): Promise<ReloadResult> {
       method: "POST",
       timeout: RELOAD_TIMEOUT,
     });
-    return { ok: true, unapplied: readUnapplied(data) };
+    const unapplied = readUnapplied(data);
+    if (unapplied === null) return { ok: false };
+    return { ok: true, unapplied };
   } catch {
     return { ok: false };
   }
