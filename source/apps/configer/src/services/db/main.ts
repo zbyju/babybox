@@ -151,29 +151,22 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   }
 
   /*
-   * A full replace. The body is filled in from base.json first, so a client that
-   * leaves a key out gets the default, never a missing key.
+   * Both writers merge the body over something, and lodash.merge spreads a string
+   * or an array over the target, so neither may reach the merge.
+   * express.json() also leaves req.body as {} when the Content-Type is not JSON:
+   * without this a PUT with a forgotten header would reset the whole box to
+   * base.json, and a PATCH would rewrite the file for nothing.
    */
-  async function update(body: unknown): Promise<UpdateResult> {
-    if (!isPlainObject(body)) {
-      return {
-        status: "invalid",
-        errors: [{ path: "", msg: "must be an object" }],
-      };
-    }
-    /*
-     * express.json() leaves req.body as {} when the Content-Type is not JSON, so a
-     * PUT with a forgotten header would merge nothing and reset the whole box to
-     * base.json. A real reset sends the full default body.
-     */
-    if (Object.keys(body).length === 0) {
-      return {
-        status: "invalid",
-        errors: [{ path: "", msg: "must not be empty" }],
-      };
-    }
+  function rejectBody(body: unknown): ConfigError[] {
+    if (!isPlainObject(body)) return [{ path: "", msg: "must be an object" }];
+    if (Object.keys(body).length === 0)
+      return [{ path: "", msg: "must not be empty" }];
+    return [];
+  }
 
-    const parsed = parseMainConfig(merge(freshBase(), body));
+  // The one path that changes the config, so PUT and PATCH cannot drift apart.
+  function save(merged: unknown): UpdateResult {
+    const parsed = parseMainConfig(merged);
     if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
 
     // Disk first: memory must never hold a config the disk does not have.
@@ -191,8 +184,36 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
     return { status: "saved", config: data };
   }
 
+  /*
+   * A full replace. The body is filled in from base.json first, so a client that
+   * leaves a key out gets the default, never a missing key.
+   */
+  async function update(body: unknown): Promise<UpdateResult> {
+    const rejected = rejectBody(body);
+    if (rejected.length > 0) return { status: "invalid", errors: rejected };
+
+    return save(merge(freshBase(), body));
+  }
+
+  /*
+   * A partial update. The body is merged over the config we are running, so a key
+   * the body leaves out keeps the value it has now. That is the whole difference
+   * from update(), where the same missing key goes back to its base.json default.
+   *
+   * The merge cannot delete a key, and it cannot fix one either: a stored value the
+   * schema rejects (boot only warns about it) makes every patch fail until someone
+   * sends that field a valid value.
+   */
+  async function patch(body: unknown): Promise<UpdateResult> {
+    const rejected = rejectBody(body);
+    if (rejected.length > 0) return { status: "invalid", errors: rejected };
+
+    return save(merge({}, data, body));
+  }
+
   return {
     data: () => data,
     update,
+    patch,
   };
 }
