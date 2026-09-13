@@ -88,10 +88,14 @@
     props.state.field.widget === "ip" ? IPV4_PATTERN : undefined,
   );
 
+  /*
+   * Ordered by how bad it is, so a warning is not hidden by the edit that caused it.
+   * The "Uloženo:" line and the section's change count already say the field changed.
+   */
   const inputState = computed(() => {
     if (props.state.errors.length > 0) return BaseInputState.Error;
-    if (props.state.changed) return BaseInputState.Accent;
     if (props.state.warning) return BaseInputState.Warning;
+    if (props.state.changed) return BaseInputState.Accent;
     return BaseInputState.Neutral;
   });
 
