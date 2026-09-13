@@ -143,6 +143,21 @@ describe("dangerousChanges", () => {
     );
     expect(change.cleared).toBe(true);
   });
+
+  /*
+   * A box shipped with no app password. Setting one is the opposite of clearing,
+   * and only a loaded secret that is already empty proves the two are told apart.
+   */
+  it("does not call it deleted when the box had no password to start with", () => {
+    const loaded = loadedConfig();
+    loaded.app.password = "";
+    const change = secretChange(
+      loaded,
+      { "app.password": "nové-heslo" },
+      "app.password",
+    );
+    expect(change.cleared).toBe(false);
+  });
 });
 
 describe("confirmQuestion", () => {

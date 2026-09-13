@@ -38,11 +38,11 @@ function toChange(state: FieldState, reason: string): DangerousChange {
   const shared = { path: field.path, label: field.label, reason };
 
   if (field.secret === true) {
-    return {
-      ...shared,
-      secret: true,
-      cleared: state.value === "" && state.current !== "",
-    };
+    /*
+     * Only a changed field gets here, and changed means the value differs from the
+     * stored one, so an empty value is always a secret that had something in it.
+     */
+    return { ...shared, secret: true, cleared: state.value === "" };
   }
 
   return {
