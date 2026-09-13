@@ -162,9 +162,12 @@ Size: ~1 day. This is where most of the value is.
       See decisions.md, "No `GET /config/schema`"
 - [x] Reject a write that would change `configer.port` or `configer.url` out from under
       the running process, or accept it and state clearly that it needs a restart —
-      accepted. Rejecting would leave hand-editing `main.json` as the only way to change
-      them. No `restartRequired` in the response; the apply tier is form metadata and
-      lands in P3. See decisions.md
+      rejected, one field-level 400 per field. Nothing outside configer reads either
+      field: the backend and the panel have the address compiled in, so a stored change
+      survives the restart and leaves the backend retrying a configer that moved, with
+      the box serving nothing. A body that repeats the running values is not a change
+      and passes. No `restartRequired` in the response; the apply tier is form metadata
+      and lands in P3. See decisions.md
 - [x] Tests for each validation branch
 
 Known edge case: a box whose stored `main.json` holds a value the schema rejects (boot
@@ -247,8 +250,11 @@ need is "see what this box is set to" more often than "change it".
 
 - [x] zod in a shared package, or keep the hand-written guards? zod, decided 2026-09-12,
       see decisions.md
-- [ ] Should the form edit `configer.*` at all? Changing the port of the service you are
-      talking to through that service is a footgun. Read-only is defensible.
+- [x] Should the form edit `configer.*` at all? Answered for two of the three fields in
+      P2: `configer.port` and `configer.url` are read-only, because no client follows a
+      change and the box is dead after the next restart. `configer.requestTimeout` is
+      still editable. See decisions.md, "A write cannot change `configer.port` or
+      `configer.url`"
 - [ ] Do we want a config history — keep the last N versions, offer a rollback? The
       atomic write from P0 makes this nearly free, and it is the real answer to
       "someone typed the wrong IP and now nobody can reach the box".

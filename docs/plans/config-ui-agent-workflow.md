@@ -126,6 +126,10 @@ docs updated. Merging is a human decision.
   - Status codes and the response body match `PUT`: 200 with the saved config, 400
     with field-level errors, 500 on a write failure.
   - No array rule for `lodash.merge`: the schema has no array field.
+  - `configer.port` and `configer.url` cannot be written: nothing outside configer
+    reads them, so a stored change would leave the box serving nothing after the next
+    restart. `save()` rejects a body that moves either one away from the running
+    value; a body that repeats them passes. In decisions.md.
   - Not built: `GET /config/schema`, and no `restartRequired` in the response. Both
     are in decisions.md with what would reverse them.
   - Tests per validation branch in `routes/configRoute.test.ts` and

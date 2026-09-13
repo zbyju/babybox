@@ -242,6 +242,9 @@ Context · Decision · Why · Gave up · Where
 
 ## 2026-09-13 — A write may change `configer.port` and `configer.url`
 
+- Superseded on 2026-09-13 by "A write cannot change `configer.port` or
+  `configer.url`" below. The reasoning stopped at configer: nobody checked who else
+  reads the two fields, and nothing does.
 - Context: P2 asked to either reject a write that changes the port or the prefix of
   the running configer, or accept it and state that it needs a restart.
 - Decision: accept it. Both fields are checked like any other field and written.
@@ -255,3 +258,40 @@ Context · Decision · Why · Gave up · Where
 - No `restartRequired` field in the response: the apply tier is form metadata and
   belongs with the rest of it in P3, where something reads it (motto 1).
 - Where: `update()` and `patch()` in `source/apps/configer/src/services/db/main.ts`.
+
+## 2026-09-13 — A write cannot change `configer.port` or `configer.url`
+
+- Context: this reverses "A write may change `configer.port` and `configer.url`"
+  above, made earlier the same day. That entry said accepting the write costs only a
+  restart, because `index.ts` reads both once when it starts listening. Review
+  finding on the P2 PR.
+- Evidence it was wrong: nothing outside configer reads either field. The backend
+  has the address compiled in
+  (`source/apps/backend/src/fetch/constants.ts:1`,
+  `CONFIGER_API_URL = "http://localhost:5001/api/v1/config"`) and so does the panel
+  (`source/apps/panel/src/api/base.ts:5`). The only reader is
+  `source/apps/configer/src/index.ts:30` and `:42`, at bind time. So a stored change
+  survives the restart and the readers do not follow it: configer comes up on the new
+  address, `fetchConfig()` fails, and the retry loop at
+  `source/apps/backend/src/index.ts:61-70` runs every 5s with no cap, so `app.listen`
+  is never reached. In production that same backend serves the panel, so the box
+  serves nothing and pm2 keeps the stuck process alive. Someone has to go to the box.
+  `backend.port` is not in this position: the panel builds its URL from the config at
+  `source/apps/panel/src/api/base.ts:17`.
+- Decision: `save()` rejects a write, `PUT` or `PATCH`, that moves `configer.port` or
+  `configer.url` away from the value the process is running on. One field-level
+  `{ path, msg }` error per field, in the same shape as every other rejection:
+  `must stay <value>: it changes only by editing main.json and restarting configer`.
+  A body that repeats the running values is not a change and passes, so the P3 form
+  can keep sending the whole config.
+- Why: the old entry weighed "hand-editing `main.json` is the only way to change
+  them" against nothing, because it never found the failure. A dead box that needs
+  someone on site is worse than a field the API will not write (motto 2).
+- Gave up: the two fields can only be changed by editing `main.json` and restarting.
+  That includes fixing a stored value the schema rejects: boot warns and keeps
+  running on it, and the guard then blocks the fix over the API too.
+- What reverses it: one address, read at runtime by both clients — the backend and
+  the panel building the configer URL from a value they share with configer, rather
+  than from a constant in each. Then the field has a reader and can be written.
+- Where: `rejectAddressChange()` and `save()` in
+  `source/apps/configer/src/services/db/main.ts`.
