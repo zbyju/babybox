@@ -118,8 +118,8 @@
 
   .floating-action.size-small
     position absolute
-    top -26px
-    right -26px
+    top -17px
+    right -17px
     z-index 1
     width 52px
     height 52px
