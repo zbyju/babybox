@@ -193,6 +193,28 @@ describe("update", () => {
     });
   });
 
+  /* The one way out of a stored key the schema does not know: a patch merges over
+   * the stored config and cannot delete it, an update merges over base.json. */
+  it("clears a stored key the schema does not know, which no patch can", async () => {
+    writeFileSync(file("main.json"), JSON.stringify({ camera: { zoom: 2 } }));
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const db = await mainConfig(configDir);
+
+    const blocked = await db.patch({ babybox: { name: "Brno" } });
+    expect(blocked).toEqual({
+      status: "invalid",
+      errors: [{ path: "camera.zoom", msg: "unknown key" }],
+    });
+
+    const result = await db.update({ babybox: { name: "Brno" } });
+
+    expect(result.status).toBe("saved");
+    expect(readJson("main.json")).toEqual({
+      ...base(),
+      babybox: { name: "Brno" },
+    });
+  });
+
   it("rejects an invalid body and writes nothing", async () => {
     const db = await mainConfig(configDir);
 
