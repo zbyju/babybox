@@ -226,15 +226,10 @@ describe("createLogger", () => {
   });
 
   it("writes through Pino to console and file when Pino is available", () => {
-    let pinoLib;
-    try {
-      pinoLib = {
-        pino: require("pino"),
-        pretty: require("pino-pretty"),
-      };
-    } catch (err) {
-      return;
-    }
+    const pinoLib = {
+      pino: require("pino"),
+      pretty: require("pino-pretty"),
+    };
     const chunks = [];
     const stdout = new Writable({
       write(chunk, _encoding, callback) {
