@@ -2,8 +2,8 @@ const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 const spawn = require("child_process").spawn;
 const fs = require("fs-extra");
-const winston = require("winston");
-const { getFulltimeFormatted } = require("../../utils/time");
+const logger = require("../../logger");
+const strings = require("../../strings");
 
 const Result = {
   Error: "ResultError",
@@ -16,63 +16,37 @@ const UpdateResult = {
   Unchanged: "UpdateUnchanged",
 };
 
-const updateLogger = winston.createLogger({
-  format: winston.format.json(),
-  defaultMeta: { module: "startup/update" },
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "../../logs/startup.update.log" }),
-  ],
-});
+function withRetryIndex(template, index) {
+  return template.replace("{n}", String(index));
+}
 
-const buildLogger = winston.createLogger({
-  format: winston.format.json(),
-  defaultMeta: { module: "startup/build" },
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "../../logs/startup.build.log" }),
-  ],
-});
-
-const overrideLogger = winston.createLogger({
-  format: winston.format.json(),
-  defaultMeta: { module: "startup/override" },
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({
-      filename: "../../logs/startup.override.log",
-    }),
-  ],
-});
-
-const startLogger = winston.createLogger({
-  format: winston.format.json(),
-  defaultMeta: { module: "startup/start" },
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "../../logs/startup.start.log" }),
-  ],
-});
+function collectStdio(child) {
+  const chunks = [];
+  if (child.stderr) {
+    child.stderr.on("data", (data) => {
+      chunks.push(Buffer.isBuffer(data) ? data.toString("utf8") : String(data));
+    });
+  }
+  return () => chunks.join("");
+}
 
 async function update() {
   try {
     const { stdout, stderr } = await exec("git pull", { cwd: "../../" });
     if (!stdout) {
-      updateLogger.error(
-        `${getFulltimeFormatted()} - stderror when updating (${stderr})`
-      );
+      const err = new Error(strings.updateFailed);
+      err.stderr = stderr;
+      logger.error("update", strings.updateFailed, err);
       return UpdateResult.Error;
     }
     if (stdout.toLowerCase().includes("already up to date")) {
-      updateLogger.info(`${getFulltimeFormatted()} - Already up to date`);
+      logger.info("update", strings.updateAlreadyCurrent);
       return UpdateResult.Unchanged;
     }
-    updateLogger.info(`${getFulltimeFormatted()} - Update successful!`);
+    logger.info("update", strings.updateSucceeded);
     return UpdateResult.Updated;
   } catch (err) {
-    updateLogger.error(
-      `${getFulltimeFormatted()} - Error when updating (${err})`
-    );
+    logger.error("update", strings.updateFailed, err);
     return UpdateResult.Error;
   }
 }
@@ -81,21 +55,20 @@ async function build() {
   try {
     const { stderr } = await exec("pnpm run build", { cwd: "../../" });
     if (stderr) {
-      buildLogger.error(
-        `${getFulltimeFormatted()} - Build stderror - ${stderr}`
-      );
+      const err = new Error(strings.buildFailed);
+      err.stderr = stderr;
+      logger.error("build", strings.buildFailed, err);
       return Result.Error;
     }
-    buildLogger.info(`${getFulltimeFormatted()} - Build successful!`);
+    logger.info("build", strings.buildSucceeded);
     return Result.Success;
   } catch (err) {
-    buildLogger.error(`${getFulltimeFormatted()} - Build error - ${err}`);
+    logger.error("build", strings.buildFailed, err);
     return Result.Error;
   }
 }
 
 async function override() {
-  // Rename dist to old
   const doesExistDist = fs.existsSync("../../../dist");
   if (doesExistDist) {
     const doesExistDist2 = fs.existsSync("../../../dist2");
@@ -103,14 +76,11 @@ async function override() {
       try {
         fs.rmSync("../../../dist2", { recursive: true, force: true });
       } catch (err) {
-        overrideLogger.error(
-          `${getFulltimeFormatted()} - Error when pre-removing dist2 - ${err}`
-        );
+        logger.error("override", strings.overrideRemoveDist2Failed, err);
         return Result.Error;
       }
     }
     try {
-      // Remove node_modules because they have read_only attributes and cant be moved
       if (fs.existsSync("../../../dist/node_modules")) {
         fs.rmSync("../../../dist/node_modules", {
           maxRetries: 3,
@@ -119,20 +89,16 @@ async function override() {
       }
       fs.renameSync("../../../dist", "../../../dist2");
     } catch (err) {
-      overrideLogger.error(
-        `${getFulltimeFormatted()} - Error when renaming dist to dist2 - ${err}`
-      );
+      logger.error("override", strings.overrideRenameFailed, err);
       return Result.Error;
     }
   }
-  // Check if build is ready
   const doesExistBuild =
     fs.existsSync("../backend/dist") && fs.existsSync("../panel/dist");
   if (!doesExistBuild) {
     await build();
   }
 
-  // Move dist build to root dir
   try {
     fs.copySync("../backend/dist", "../../../dist");
     fs.copySync("../panel/dist", "../../../dist/public");
@@ -140,28 +106,21 @@ async function override() {
     fs.copyFileSync("../backend/package.json", "../../../dist/package.json");
     await exec("pnpm install", { cwd: "../../../dist" });
 
-    overrideLogger.info(`${getFulltimeFormatted()} - Override successful!`);
+    logger.info("override", strings.overrideSucceeded);
 
     return Result.Success;
   } catch (err) {
-    overrideLogger.error(
-      `${getFulltimeFormatted()} - Error when moving built files - ${err}`
-    );
-    //Rollback
+    logger.error("override", strings.overrideCopyFailed, err);
     try {
       fs.rmSync("../../../dist", { recursive: true, force: true });
       fs.renameSync("../../../dist2", "../../../dist");
       await exec("pnpm install", { cwd: "../../dist" });
 
-      overrideLogger.info(
-        `${getFulltimeFormatted()} - Override not successful BUT rollback successful`
-      );
+      logger.warn("override", strings.overrideRollbackSucceeded);
 
       return Result.Success;
-    } catch (err) {
-      overrideLogger.error(
-        `${getFulltimeFormatted()} - Error when rollbacking - ${err}`
-      );
+    } catch (rollbackErr) {
+      logger.error("override", strings.overrideRollbackFailed, rollbackErr);
 
       return Result.Error;
     }
@@ -179,17 +138,22 @@ async function startConfiger() {
       cwd: "../../",
       detached: true,
     });
+    const readStdio = collectStdio(pnpm);
 
     pnpm.on("error", (err) => {
-      return reject("configer err - " + err);
+      err.stderr = readStdio();
+      logger.error("start", strings.startConfigerFailed, err);
+      return reject(err);
     });
 
     pnpm.on("close", (code) => {
       if (code === 0) {
         return resolve(code);
-      } else {
-        return reject("configer err - " + code);
       }
+      const err = new Error(`configer err - ${code}`);
+      err.stderr = readStdio();
+      logger.error("start", strings.startConfigerFailed, err);
+      return reject(err);
     });
   });
 }
@@ -205,59 +169,49 @@ async function start() {
       cwd: "../../",
       detached: true,
     });
+    const readStdio = collectStdio(pnpm);
 
     pnpm.on("error", (err) => {
+      err.stderr = readStdio();
       return reject(err);
     });
 
     pnpm.on("close", (code) => {
       if (code === 0) {
         return resolve(code);
-      } else {
-        return reject(code);
       }
+      const err = new Error(String(code));
+      err.stderr = readStdio();
+      return reject(err);
     });
   });
 }
 
 module.exports = async function onStartup() {
-  // Update
   const updateRes = await update();
   if (updateRes === UpdateResult.Updated || !fs.existsSync("../../../dist")) {
-    // Build new
     const buildRes = await build();
     if (buildRes === Result.Success) {
-      // Override old if success
-      const overrideRes = await override();
-      if (overrideRes === Result.Success) {
-        overrideLogger.info(`${getFulltimeFormatted()} - Override success!`);
-      } else if (overrideRes === Result.Error) {
-        overrideLogger.error(`${getFulltimeFormatted()} - Override error`);
-      }
+      await override();
     }
   }
-  // Start application in production
   try {
-    const configerCode = await startConfiger();
-    const mainCode = await start();
-    startLogger.info(
-      `${getFulltimeFormatted()} - Start success (code ${mainCode}, ${configerCode})`
-    );
+    await startConfiger();
+    await start();
     return true;
   } catch (err) {
-    startLogger.error(`${getFulltimeFormatted()} - Start error - ${err}`);
+    logger.error("start", strings.startFailed, err);
     for (let i = 0; i < 5; ++i) {
       try {
         await start();
-        startLogger.info(
-          `${getFulltimeFormatted()} - Start success on try number #${i}`
-        );
+        logger.info("start", withRetryIndex(strings.startRetrySucceeded, i));
         setTimeout(5000);
         return true;
-      } catch (err) {
-        // Do nothing, try again
-        startLogger.error(
-          `${getFulltimeFormatted()} - Start error on try number #${i} - ${err}`
+      } catch (retryErr) {
+        logger.error(
+          "start",
+          withRetryIndex(strings.startRetryFailed, i),
+          retryErr
         );
       }
     }
