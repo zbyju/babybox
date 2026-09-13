@@ -100,7 +100,13 @@ export function unappliedFields(
       stored: config.backend.port,
     });
   }
-  if (config.backend.url !== bound.prefix) {
+  /*
+   * A truthy stored prefix only. `index.ts` binds
+   * `config.backend.url || process.env.API_PREFIX`, so an empty stored value is
+   * never what a restart would take on, and reporting it would ask for a restart
+   * that cannot change anything.
+   */
+  if (config.backend.url && config.backend.url !== bound.prefix) {
     unapplied.push({
       path: "backend.url",
       running: bound.prefix,

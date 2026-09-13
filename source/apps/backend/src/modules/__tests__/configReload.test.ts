@@ -110,13 +110,27 @@ describe("unappliedFields", () => {
    * the stored one. Comparing the new config against config.backend.url would
    * compare a value to itself and call every change applied.
    */
-  it("reports the prefix as unapplied when the running one came from the env", () => {
+  it("reports a stored prefix the running process did not take from the config", () => {
+    const config = storedConfig();
+    config.backend.url = "/api/v2";
+
+    expect(unappliedFields(config, { port: 5000, prefix: "/api/v1" })).toEqual([
+      { path: "backend.url", running: "/api/v1", stored: "/api/v2" },
+    ]);
+  });
+
+  /*
+   * index.ts falls back to API_PREFIX when the stored prefix is empty, so a restart
+   * would bind the same fallback again. Reporting it would ask for a restart that
+   * cannot apply it.
+   */
+  it("does not report an empty stored prefix the restart could not bind", () => {
     const config = storedConfig();
     config.backend.url = "";
 
-    expect(unappliedFields(config, { port: 5000, prefix: "/api/v1" })).toEqual([
-      { path: "backend.url", running: "/api/v1", stored: "" },
-    ]);
+    expect(unappliedFields(config, { port: 5000, prefix: "/api/v1" })).toEqual(
+      []
+    );
   });
 
   it("does not report a port the environment bound as a string", () => {
