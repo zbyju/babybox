@@ -57,10 +57,11 @@ async function update() {
 
 async function build() {
   try {
-    const { stderr } = await exec("pnpm run build", { cwd: "../../" });
+    const { stderr, stdout } = await exec("pnpm run build", { cwd: "../../" });
     if (stderr) {
       const err = new Error(strings.buildFailed);
       err.stderr = stderr;
+      err.stdout = stdout;
       logger.error("build", strings.buildFailed, err);
       return Result.Error;
     }
