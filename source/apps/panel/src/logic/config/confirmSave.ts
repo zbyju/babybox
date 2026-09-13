@@ -17,7 +17,7 @@ export type DangerousChange = {
 } & (
   | {
       secret: false;
-      /** What the box runs on now, and what the form would save. */
+      /** What the box runs on now, and what the form would save. Raw, unquoted. */
       from: string;
       to: string;
     }
@@ -48,8 +48,8 @@ function toChange(state: FieldState, reason: string): DangerousChange {
   return {
     ...shared,
     secret: false,
-    from: displayValue(state.current),
-    to: displayValue(state.value),
+    from: state.current,
+    to: state.value,
   };
 }
 
@@ -73,7 +73,9 @@ export function dangerousChanges(state: FormState): DangerousChange[] {
 function lineFor(change: DangerousChange): string {
   const values = change.secret
     ? `${change.label}: ${change.cleared ? SECRET_CLEARED : SECRET_CHANGED}`
-    : `${change.label}: ${change.from} → ${change.to}`;
+    : `${change.label}: ${displayValue(change.from)} → ${displayValue(
+        change.to,
+      )}`;
   return `• ${values}\n  ${change.reason}`;
 }
 

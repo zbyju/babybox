@@ -91,31 +91,30 @@ describe("dangerousChanges", () => {
       { "units.engine.ip": "10.1.1.9" },
       "units.engine.ip",
     );
-    expect(change.from).toBe("„10.1.1.50“");
-    expect(change.to).toBe("„10.1.1.9“");
+    expect(change.from).toBe("10.1.1.50");
+    expect(change.to).toBe("10.1.1.9");
     expect(change.label).toBe("IP motorové jednotky");
     expect(change.reason).toContain("backend jednotku nenajde");
   });
 
-  it("shows a cleared value as (prázdné)", () => {
+  it("carries a cleared value as the empty string", () => {
     const change = shownChange(
       loadedConfig(),
       { "units.engine.ip": "" },
       "units.engine.ip",
     );
-    expect(change.from).toBe("„10.1.1.50“");
-    expect(change.to).toBe("(prázdné)");
+    expect(change.from).toBe("10.1.1.50");
+    expect(change.to).toBe("");
   });
 
   /* A trailing space on an ip is the slip this whole feature exists to catch. */
-  it("shows a space typed onto the end of an ip", () => {
+  it("keeps a space typed onto the end of an ip", () => {
     const change = shownChange(
       loadedConfig(),
       { "units.engine.ip": "10.1.1.50 " },
       "units.engine.ip",
     );
-    expect(change.from).toBe("„10.1.1.50“");
-    expect(change.to).toBe("„10.1.1.50 “");
+    expect(change.to).toBe("10.1.1.50 ");
     expect(change.to).not.toBe(change.from);
   });
 
@@ -184,6 +183,23 @@ describe("confirmQuestion", () => {
     expect(question).toContain(`Heslo do panelu: ${SECRET_CLEARED}`);
     expect(question).not.toContain(SECRET_CHANGED);
     expect(question).not.toContain("staré-heslo");
+  });
+
+  it("writes a cleared value as (prázdné)", () => {
+    const question = confirmQuestion(
+      stateWith(loadedConfig(), { "units.engine.ip": "" }),
+    );
+    expect(question).toContain("IP motorové jednotky: „10.1.1.50“ → (prázdné)");
+  });
+
+  /* Without the quotes the space reads like part of the line, not part of the ip. */
+  it("quotes a value so a trailing space is visible", () => {
+    const question = confirmQuestion(
+      stateWith(loadedConfig(), { "units.engine.ip": "10.1.1.50 " }),
+    );
+    expect(question).toContain(
+      "IP motorové jednotky: „10.1.1.50“ → „10.1.1.50 “",
+    );
   });
 
   it("gives every named field its reason", () => {
