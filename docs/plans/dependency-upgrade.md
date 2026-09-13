@@ -2,14 +2,15 @@
 
 Status: **not started** (no upgrade code on `main`)
 Owner: —
-Last updated: 2026-09-13 (inventory and "latest" versions re-checked this date;
-the jump design is unchanged from 2026-09-12)
+Last updated: 2026-09-13 (failure tracking and last-good `dist` launch added)
 
 ## Goal
 
 Move every package in `source/` to its latest published version, TypeScript
 included (7.0.2, the native compiler, not just a 5.x), without breaking the
-unattended update path on a single deployed babybox.
+unattended update path on a single deployed babybox. If a step fails, the box
+must record which step and the error, then start the last good build. A person
+on site is not required.
 
 This file is the one place where the upgrade is tracked. Tick the boxes here,
 record decisions in [decisions.md](../decisions.md), lessons in
@@ -42,6 +43,9 @@ checkboxes, and one unmerged branch that must not be mistaken for P1.
   `babybox-mono`'s pnpm 10; this repo goes to latest.
 - Backend ESM, Express 5, oxlint + oxfmt, vitest everywhere, Vite 8, panel on
   TypeScript 6.0.3 because `vue-tsc` 3.3.11 still crashes on 7.0.2.
+- A failed step must name itself and keep the error. The box must then start
+  the last good `dist`. Today's path does not keep that promise. See
+  "When an upgrade fails".
 
 ### Changed on main since 2026-09-12
 
@@ -139,8 +143,12 @@ On every boot the desktop autostart runs `apps/startup/scripts/ubuntu/startup.sh
    `build` script from **HEAD's** root `package.json`: `pnpm install &&
    build:schema && build panel && build backend && build configer`. Any stderr
    fails the build.
-3. On success: swap `dist`, `pnpm install` inside `dist`, restart both apps under pm2.
-4. On failure: keep the old `dist`, start the old apps. Try again next boot.
+3. On success: rename `dist` to `dist2`, copy the new build into `dist`,
+   `pnpm install` inside `dist`, restart both apps under pm2.
+4. On a failed **build**: leave `dist` in place and start it. On a failed
+   **copy**: try to rename `dist2` back. On a failed **start**: retry the
+   **new** apps five times and never restore `dist2`. That last case is a
+   dead box that compiled.
 
 Four consequences decide the shape of this plan:
 
@@ -160,6 +168,82 @@ Four consequences decide the shape of this plan:
 
 The startup app cannot upgrade Node or pnpm today.
 
+### When an upgrade fails
+
+Two rules, both required, for every phase from P1 on. A box that cannot name
+the failed step, or that cannot start the last good panel, is a person-on-site
+event (motto 2). The jump makes more steps that can fail, so the current path
+is not enough.
+
+**Previous version means the last good `dist`.** Not a `git reset`. HEAD stays
+where the pull left it, so the next boot retries the upgrade. The running
+panel, backend and configer come from `dist` / `dist2`. Windows 7/8 parking on
+`legacy` is the only checkout change in this plan.
+
+**Do not revert Node or pnpm on failure.** A half-finished bootstrap may leave
+Node 24 with pnpm 7. The last good `dist` must still start on whatever Node is
+now. Reverting the toolchain is a second failure mode. Old `dist` on new Node
+is the expected state after P3 anyway.
+
+#### What today does not do
+
+- **Which step.** `pnpm run build` is one blob: install, schema, panel,
+  backend, configer. A failure is one Czech line, "Sestavení aplikace se
+  nezdařilo," plus truncated stdio. `GET /status` still returns
+  `{ msg: "Alive." }`. A remote reader cannot tell PULL from BUILD_PANEL from
+  BOOTSTRAP_PNPM.
+- **Start failure.** After a successful swap, `startConfiger` / `start` retry
+  the new processes only. `override()`'s return value is ignored. `dist2` is
+  left behind.
+- **Configer vs panel.** A configer start failure retries only `start()` (the
+  panel). Configer stays down.
+- **Rollback install path.** The copy uses `cwd: "../../../dist"`. The
+  rollback `pnpm install` uses `cwd: "../../dist"`. One of those is wrong.
+- **No last-good until swap is proven.** `dist` is renamed to `dist2` before
+  the new copy and `pnpm install` finish. A crash in that window leaves
+  neither tree complete.
+
+#### Contract
+
+1. **Named steps**, a closed set, one in flight:
+
+   `PULL`, `BOOTSTRAP_NODE`, `BOOTSTRAP_PNPM`, `BOOTSTRAP_PM2`, `INSTALL`,
+   `BUILD_SCHEMA`, `BUILD_PANEL`, `BUILD_BACKEND`, `BUILD_CONFIGER`,
+   `DIST_PREPARE`, `SWAP`, `START_CONFIGER`, `START_PANEL`.
+
+   Root `build` becomes a small runner (`apps/startup/run-update.js` or the
+   same job inside `bootstrap.js`) that executes those build steps one by one.
+   The legacy startup still calls `pnpm run build`. Each step logs start and
+   end. A failure stops the chain.
+
+2. **The error stays with the step.** On failure write one record to
+   `source/logs/startup.last.json` (next to `startup.log`) and one Czech
+   one-line to `startup.log` in the #90 format. The record holds: `step`,
+   `ok`, `message` (the command's stderr/stdout, collapsed, max 2000 chars,
+   same cap as the logger), `at`, `node`, `pnpm`. No stack dump of
+   `node_modules`. `GET /status` on configer and the backend include this
+   record. A success writes `ok: true` and the last step that ran, so a later
+   boot does not keep a stale failure.
+
+3. **Last good `dist` stays intact until the new apps start.** Build into the
+   app `dist` folders and assemble `dist-next` (copy + `pnpm install` there).
+   Do not rename the live `dist` until `dist-next` is complete. Then stop pm2,
+   swap (`dist` → `dist2`, `dist-next` → `dist`), start configer, start
+   panel. If either start fails: swap back, start both from the restored
+   `dist`, record `START_CONFIGER` or `START_PANEL` with the error. If any
+   step before the swap fails: do not touch live `dist`, start it, record the
+   failed step. If there is no previous `dist` (first install), stop and
+   leave the record. There is nothing to restore.
+
+4. **The box is up.** After (3), both pm2 processes are running on either the
+   new build or the last good one. A failed upgrade is a logged retry next
+   boot, not a black screen.
+
+Falsifier: the legacy-image job. A forced failure at `BUILD_PANEL` (and a
+separate case at `START_PANEL` after a good build) must exit the runner with
+a last-result file for that step, a clean live `dist` that is the previous
+build, and both apps startable from it.
+
 ### Upgrading from any older version
 
 A box never sees phases. It sees HEAD, whenever it next has power and network. Boxes
@@ -176,19 +260,24 @@ legacy, and keep carrying it until the last box is known to have made the jump.
 Two mechanisms, both in HEAD, both required:
 
 1. **Bootstrap inside the root `build` script.** `"build": "node
-   apps/startup/bootstrap.js && pnpm install && ..."`. The legacy startup runs this on
-   boot one, before pnpm 7 ever touches the lockfile. `bootstrap.js` compares
-   `node -v`, `pnpm -v`, `pm2 -v` with `versions.env`, installs what differs (`n` on
-   Ubuntu, `npm install -g pnpm@…`, `pm2 update`), and exits 0. The `pnpm install`
-   that follows in the same `&&` chain is a fresh process and resolves to the new pnpm
-   binary from `PATH`; `vite build` and `tsc` start on the new Node. One boot.
+   apps/startup/run-update.js"`. That runner calls `bootstrap.js`, then
+   `pnpm install`, then each package build as its own named step. The legacy
+   startup still runs `pnpm run build` on boot one, before pnpm 7 ever touches
+   the lockfile. `bootstrap.js` compares `node -v`, `pnpm -v`, `pm2 -v` with
+   `versions.env`, installs what differs (`n` on Ubuntu, `npm install -g
+   pnpm@…`, `pm2 update`), and exits 0 on a no-op. The `pnpm install` that
+   follows is a fresh process and resolves to the new pnpm binary from
+   `PATH`; `vite build` and `tsc` start on the new Node. One boot. A failed
+   step writes `startup.last.json` and the runner exits non-zero without
+   touching live `dist`.
 2. **The new startup app as fallback, plus shell `ensure_*`.** If the bootstrap could
-   not run (bad permissions, no network for `n`), the build fails, the old apps
-   start, and on the next boot HEAD's `startup.sh` / `startup.bat` and the Node
-   startup app run on the old Node with the old `node_modules`. They repeat the
-   bootstrap with better logging and a `git checkout -- pnpm-lock.yaml` before
-   the pull, so a dirtied tree self-heals. Two boots. The shell functions are
-   what the unmerged pinning branch already drafted; they do not replace (1).
+   not run (bad permissions, no network for `n`), the build fails, the last good
+   `dist` starts (see "When an upgrade fails"), and on the next boot HEAD's
+   `startup.sh` / `startup.bat` and the Node startup app run on the old Node with
+   the old `node_modules`. They repeat the bootstrap with better logging and a
+   `git checkout -- pnpm-lock.yaml` before the pull, so a dirtied tree self-heals.
+   Two boots. The shell functions are what the unmerged pinning branch already
+   drafted; they do not replace (1).
 
 ### Windows boxes
 
@@ -475,7 +564,8 @@ what breaks, not for the boxes. Each phase must pass the legacy-image job on its
       allowed to fail. It shows what breaks per phase before the boxes move. The
       existing Node 18 job stays as the gate until P3.
 - [ ] Extend the existing `GET /status` bodies on configer and the backend with
-      `node -v` and `pnpm -v`. Do not add a new route.
+      `node -v` and `pnpm -v`. Do not add a new route. The last-upgrade record
+      lands in P1 once `startup.last.json` exists.
 - [x] Lint stack decided: oxlint + oxfmt (see "Decisions taken")
 - [ ] Remove dead weight: `lowdb` from the backend, `axios` from the panel, the
       unused `lowdb` import in `configer/src/index.ts`, global `typescript` and
@@ -488,8 +578,8 @@ Size: ~0.5 day.
 ### P1 — HEAD bootstraps the runtime from legacy
 
 At P1 `versions.env` still says Node 18.12.1 and pnpm 7.5.0, so the bootstrap is a
-no-op on every box. The phase ships the mechanism and proves it; P2 and P3 change
-the numbers.
+no-op on every box. The phase ships the mechanism, the named-step record, and
+the last-good `dist` start; P2 and P3 change the numbers.
 
 - [ ] `apps/startup/bootstrap.js`: dependency-free, oldest-field-Node syntax
       (assume 12 until the inventory says otherwise), reads `versions.env`,
@@ -509,25 +599,41 @@ the numbers.
 - [ ] Test on one Windows 10 box: does `nvm use` succeed from the autostart context
       without a UAC prompt? If not, decide between `sudo-prompt` (already a dependency)
       and a one-time on-site change, before P1 merges
-- [ ] Root `package.json`: `"build": "node apps/startup/bootstrap.js && pnpm install
-      && …"` in front of the existing `build:schema` chain
+- [ ] Root `package.json`: `"build": "node apps/startup/run-update.js"`. The
+      runner calls `bootstrap.js`, then each named step in "When an upgrade
+      fails". `pnpm run build` stays the one command the legacy startup runs.
+- [ ] `source/logs/startup.last.json`: write `step`, `ok`, `message`, `at`,
+      `node`, `pnpm` on every step end. Czech one-line in `startup.log` as well.
+      Success clears a previous failure. `GET /status` on configer and the
+      backend include this record.
+- [ ] Assemble the new tree in `dist-next`. Do not rename live `dist` until
+      `dist-next` is complete. Swap, then start configer and panel. If either
+      start fails, swap back, start both from the restored `dist`, record
+      `START_CONFIGER` or `START_PANEL`. If a step before the swap fails, start
+      live `dist` unchanged. Fix the rollback `pnpm install` cwd (today
+      `../../dist` vs `../../../dist`).
 - [ ] Startup app: run the bootstrap again before its own `git pull`, after a
-      `git checkout -- pnpm-lock.yaml` and with a working tree check; log the outcome
-      to `logs/startup.bootstrap.log`
-- [ ] Startup app: report `node -v`, `pnpm -v`, last bootstrap result on the
-      existing `GET /status` (or a small file the panel can show)
+      `git checkout -- pnpm-lock.yaml` and with a working tree check; log the
+      outcome through the same step record (not a second log file).
+- [ ] Startup app: report `node -v`, `pnpm -v`, and `startup.last.json` on the
+      existing `GET /status`.
 - [ ] Legacy-image job runs the P1 head and stays green (no-op path)
 - [ ] Legacy-image job runs the P1 head with a `versions.env` override to Node 24 and
       pnpm 12 and asserts the versions changed. This is the real proof; it runs on
       every PR from here on.
+- [ ] Legacy-image job: force `BUILD_PANEL` to fail, assert `startup.last.json`
+      names that step and carries the error, live `dist` is the previous build,
+      both apps start from it. Repeat with `START_PANEL` after a good build.
 - [ ] Ubuntu: `install-all.sh` installed Node with `n` and chowned `/usr/local` to
       the user, so `n <version>` works without sudo on every Ubuntu box. The
       bootstrap still checks it is writable and logs if not. `installAll.sh` is
       gone (#54); do not mention it in new code.
 
-Size: ~2.5 days, of which Windows is one. No fleet round-trip is required before the
-next phase, because the legacy-image job replaces it. Watch the `GET /status` fields
-anyway; they are the only inventory of what Node the Windows boxes actually run.
+Size: ~3.5 days, of which Windows is one and the failure/rollback contract is
+one. No fleet round-trip is required before the next phase, because the
+legacy-image job replaces it. Watch the `GET /status` fields anyway; they are
+the only inventory of what Node the Windows boxes actually run, and of which
+step last failed.
 
 ### P2 — pnpm 7.5.0 → 12.4.1
 
@@ -649,18 +755,22 @@ Size: ~0.5 day.
 
 ## Total
 
-Roughly **9 to 10 focused days**. No phase waits on the fleet, because the
-legacy-image job proves each commit is reachable from a legacy box. What does take
-calendar time is the tail: the bootstrap stays in HEAD for years, and the Windows 7/8
+Roughly **10 to 11 focused days**. No phase waits on the fleet, because the
+legacy-image job proves each commit is reachable from a legacy box, and that a
+forced failed step still starts the previous `dist`. What does take calendar
+time is the tail: the bootstrap stays in HEAD for years, and the Windows 7/8
 boxes need a new OS on site before they can leave the `legacy` branch.
 
 A cut-down version that removes the security exposure and unblocks tooling is P0
-through P4 with TypeScript 5.9.3 instead of 6.0.3, about 4.5 days. It stops short of
+through P4 with TypeScript 5.9.3 instead of 6.0.3, about 5.5 days. It stops short of
 "latest" for TS, Vite and the test runner, which is where most of the migration risk
 sits.
 
 ## Known constraints
 
+- A failed upgrade names the step and keeps the error in `startup.last.json`
+  and in `startup.log`. The last good `dist` starts. HEAD is not reset. Node
+  and pnpm are not reverted.
 - The box update path treats any stderr from `pnpm run build` as a failure. Every
   phase is verified by the legacy-image job (Node 18.12.1 + pnpm 7.5.0 + the
   `legacy-runtime` checkout) before it lands on `main`.
@@ -694,6 +804,7 @@ Copy into decisions.md in P0. `decisions.md` exists as of #85.
 | Lint stack? | oxlint + oxfmt | ESLint and Prettier family removed, not upgraded; configer first |
 | Volar on TypeScript 7? | Not required, use the latest tooling | Tested: `vue-tsc` 3.3.11 crashes on TS 7.0.2, works on 6.0.3. Still the latest Volar on 2026-09-13. The latest working tooling for the panel is TS 6.0.3; backend, configer and config-schema build with TS 7 |
 | Vite 8 or hold at 7? | Upgrade | Vite 8.3.0; 7.3.6 + `rolldown-vite` only as a documented fallback |
+| Failed upgrade? | Name the step and the error, start last good `dist` | `startup.last.json` + `GET /status`; no `git reset`; no toolchain revert |
 
 ## Open questions
 
@@ -716,3 +827,6 @@ One line per landed step: date, PR, what moved.
 - 2026-09-13 — plan reviewed against `origin/main` (`cee4df0`, #91). Jump design
   kept. Inventory updated for config-schema, pino, CI, dead axios, startup tests,
   and the unmerged pinning branch. No upgrade code landed.
+- 2026-09-13 — owner: a failed step must be named with its error, and the last
+  good `dist` must start. Recorded as "When an upgrade fails". P1 grows by
+  about a day.
