@@ -2,15 +2,27 @@
 
 Status: **not started** (no upgrade code on `main`)
 Owner: —
-Last updated: 2026-09-13 (failure tracking and last-good `dist` launch added)
+Last updated: 2026-09-14 (target is Bun, very strict TypeScript, oxlint, oxfmt)
 
 ## Goal
 
-Move every package in `source/` to its latest published version, TypeScript
-included (7.0.2, the native compiler, not just a 5.x), without breaking the
-unattended update path on a single deployed babybox. If a step fails, the box
-must record which step and the error, then start the last good build. A person
-on site is not required.
+Move every package in `source/` to its latest published version, and move the
+boxes onto this toolchain, without breaking the unattended update path on a
+single deployed babybox:
+
+1. **Bun 1.4.2** (pinned) is the runtime and the package manager. It replaces
+   Node 24 and pnpm 12. The serving apps, `vite`, `tsc`, `vitest`, `oxlint`
+   and `oxfmt` run through Bun. Express stays Express. The panel stays Vite.
+   Tests stay vitest. This is not a rewrite onto `Bun.serve`.
+2. **Very strict TypeScript.** Every compile unit uses the flag set in
+   "TypeScript contract". No `any`. No non-null assertions. No `as` except a
+   tracked suppression. `tsc` 7.0.2 builds backend, configer and
+   config-schema. The panel stays on TypeScript 6.0.3 because `vue-tsc` 3.3.11
+   still crashes on 7.
+3. **oxlint + oxfmt** replace the ESLint and Prettier family. Warnings are
+   errors in CI (`oxlint --deny-warnings`, `oxfmt --check`).
+4. **If a step fails**, the box records which step and the error, then starts
+   the last good build. A person on site is not required.
 
 This file is the one place where the upgrade is tracked. Tick the boxes here,
 record decisions in [decisions.md](../decisions.md), lessons in
@@ -18,19 +30,80 @@ record decisions in [decisions.md](../decisions.md), lessons in
 
 This plan is for the deployed `zbyju/babybox` panel computers. The
 `babybox-mono` rewrite does not replace it. A box that is off for a year still
-has to boot from this repo.
+has to boot from this repo. `babybox-mono` keeps pnpm for the workspace and
+uses Bun only for some apps. This fleet repo uses Bun for both the runtime and
+the lockfile, because the alternative is a second Node plus a second pnpm to
+bootstrap from Node 18.
+
+## Target after the jump
+
+| Piece | Target | Not |
+|---|---|---|
+| Runtime for backend, configer, panel build, startup after boot 2 | Bun 1.4.2, pinned | Node 24 |
+| Package manager | `bun install`, `bun.lock` | pnpm 12, npm, yarn |
+| Legacy hook (boot 1, forever) | `pnpm run build` on the box's old pnpm 7 | changing autostart before the pull |
+| Process manager | pm2 7.0.4, apps spawned with interpreter `bun` | replacing pm2 |
+| Type-check | `tsc` / `vue-tsc`, very strict flags | `// @ts-ignore`, relaxing `strict` |
+| Lint | oxlint 1.82.0 (or latest at the time) | ESLint 10 |
+| Format | oxfmt 0.67.0 (or latest at the time) | Prettier 3 |
+| Tests | vitest 5 | `bun test`, jest |
+| Panel bundle | Vite 8 | `bun build` |
+| HTTP servers | Express 5 on Bun | Elysia / `Bun.serve` |
+
+Node 18 and pnpm 7 stay on disk as the bootstrap host and the `pnpm run build`
+hook. They are not upgraded. They stop serving HTTP after P3.
+
+## Review 2026-09-14
+
+Owner: also move to Bun, very strict TypeScript, oxlint and oxfmt.
+
+The jump design is unchanged. HEAD still bootstraps from the legacy runtime in
+one boot, two at most. The first hook is still HEAD's root `build` script,
+because today's autostart files call `pnpm run build`. What changed is the
+thing that script installs: one pinned Bun binary, not Node 24 plus pnpm 12.
+
+### Why Bun, not Node 24 + pnpm 12
+
+- Node 18 is end of life. pnpm 7 cannot reach the registry from Node 20+. The
+  2026-09-13 target solved that by installing two new tools. Bun is one zip,
+  one `PATH` entry, one version pin.
+- `n` / nvm-windows for Node 24 needs a writable `/usr/local` or a UAC prompt.
+  The Bun zip extracts under the user profile. No `nvm use`.
+- Vite 8, vitest 5, jsdom 30, oxlint and oxfmt refuse Node 18. They run under
+  Bun 1.4.2. oxfmt's worker bug with Bun is fixed as of Bun 1.3.11.
+- `bun --watch` replaces `tsx` + `nodemon`. One less JS API that TypeScript 7
+  would break.
+- A format-9 `pnpm-lock.yaml` is still how a box dies. P2 adds `bun.lock` and
+  stops calling `pnpm install`. The old lockfile 5.4 file stays in the tree
+  until P7 so an accidental `pnpm install` from pnpm 7 cannot rewrite it.
+
+Rejected: keep the 2026-09-13 Node 24 + pnpm 12.4.1 target. Rejected: follow
+`babybox-mono`'s pnpm 10 workspace and only use Bun for new services.
+
+### Still true from 2026-09-13
+
+- A box never sees phases. A fleet gate cannot be relied on.
+- `pnpm-lock.yaml` is lockfile 5.4. pnpm 7 that meets format 9 rewrites it.
+- Backend ESM, Express 5, vitest everywhere, Vite 8, panel on TypeScript
+  6.0.3 because `vue-tsc` 3.3.11 still crashes on 7.0.2.
+- A failed step must name itself and keep the error. The last good `dist`
+  must start. See "When an upgrade fails".
+- Windows 7/8 cannot follow. Park them on `legacy`. Bun needs Windows 10
+  1809+ (same cut as Node 24, for a different reason).
 
 ## Review 2026-09-13
 
 Checked against `origin/main` at `cee4df0` (#91) and against npm on this date.
-The jump design is still the whole plan. What changed is the inventory, a few
-checkboxes, and one unmerged branch that must not be mistaken for P1.
+The jump design is still the whole plan. What changed that day is the
+inventory, a few checkboxes, and one unmerged branch that must not be
+mistaken for P1. The 2026-09-13 target runtime (Node 24 LTS 24.21.0 and pnpm
+12.4.1) is superseded by the 2026-09-14 Bun target above.
 
 ### Still the core
 
 - Node 18 is end of life. pnpm 7.5.0 still cannot reach the registry from
   Node 20+. Vite 7+, Vitest 4+, ESLint 10, jsdom 21+, oxlint and oxfmt still
-  refuse Node 18.
+  refuse Node 18. Bun is how those tools run after the jump.
 - A box never sees phases. HEAD must bootstrap the runtime from the legacy
   Node and pnpm, in one boot, two at most. A fleet gate cannot be relied on.
 - The first-jump hook is still HEAD's root `build` script. Today's autostart
@@ -39,8 +112,6 @@ checkboxes, and one unmerged branch that must not be mistaken for P1.
   until the boot after that pull.
 - `pnpm-lock.yaml` is still lockfile 5.4. pnpm 7 that meets format 9 rewrites
   it and the dirty tree blocks every later pull.
-- Target runtime is still Node 24 LTS (24.21.0) and pnpm 12.4.1. Do not follow
-  `babybox-mono`'s pnpm 10; this repo goes to latest.
 - Backend ESM, Express 5, oxlint + oxfmt, vitest everywhere, Vite 8, panel on
   TypeScript 6.0.3 because `vue-tsc` 3.3.11 still crashes on 7.0.2.
 - A failed step must name itself and keep the error. The box must then start
@@ -53,15 +124,15 @@ checkboxes, and one unmerged branch that must not be mistaken for P1.
 |---|---|---|
 | `@babybox/config-schema` with `zod@3.23.8` | #86 | New package in the inventory. Already `module: node16` and `strict: true`. Backend imports the type only, through `baseUrl` + `paths`, because a `workspace:*` dep breaks the standalone `dist` install (learnings.md, Startup). TS 7 removes `baseUrl`; P4 must replace that path with a relative `paths` entry. Zod stays on 3.23.8 in this plan. Zod 4 is a separate project. |
 | Config write path, PATCH, panel config page, apply-on-save | #85 #88 #89 #91 | Manual run in P4 includes the config page, PUT and PATCH. Express 5 now has 11 async route handlers (7 backend, 4 configer), not 9. Empty-body tests exist for PUT and PATCH; they still assume Express 4's `req.body = {}` when the header is missing. |
-| Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. Do not upgrade pino until Node 24 (P4). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
+| Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. Do not upgrade pino until Bun is the runtime (P4). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
 | Startup has tests | #90 | `apps/startup/src/logger.test.js` runs under jest. P0 must not remove jest from startup. P5 moves those tests to vitest and puts them in CI. CI today lints startup and does not test it. |
 | `installAll.sh` removed | #54 | Ubuntu provisioning is `install-all.sh` only. Both `install-all.sh` and the old script used `n` and chowned `/usr/local`. |
 | Panel no longer imports axios | #76 | `axios` is still in `apps/panel/package.json` and the leftover `apps/panel/pnpm-lock.yaml`. Dead weight for P0. Backend still has one axios call site. |
 | Panel lodash is deep imports | #71 | `lodash/isEqual`, `cloneDeep`, `throttle`. Lodash 4.18.1 is still the bump. |
-| CI already matches the box | #77 | Node 18.12.1, pnpm 7.5.0, `pnpm install --frozen-lockfile`, lint, `build:schema`, panel/backend/configer build, tests. A comment claims `versions.env` exists. The file is not on `main`. No Node 24 job. No legacy-image job. |
-| `decisions.md` and `learnings.md` exist | #85 | Copy the 2026-09-12 upgrade decisions into `decisions.md` in P0. Panel typecheck is 20 errors, not 17, measured at 1927135; #89 and #91 landed after, so re-count at the start of P4. |
+| CI already matches the box | #77 | Node 18.12.1, pnpm 7.5.0, `pnpm install --frozen-lockfile`, lint, `build:schema`, panel/backend/configer build, tests. A comment claims `versions.env` exists. The file is not on `main`. No Bun job. No legacy-image job. |
+| `decisions.md` and `learnings.md` exist | #85 | Copy the 2026-09-12 and 2026-09-14 upgrade decisions into `decisions.md` in P0. Panel typecheck is 20 errors, not 17, measured at 1927135; #89 and #91 landed after, so re-count at the start of P4. |
 | GET `/status` exists | #80 | Backend and configer both return `{ msg: "Alive." }`. P0/P1 extend those bodies. They do not add new routes. |
-| Root `build` already builds the schema | #86 | `"build": "pnpm install && pnpm run build:schema && …"`. `bootstrap.js` still goes in front of `pnpm install`. |
+| Root `build` already builds the schema | #86 | `"build": "pnpm install && pnpm run build:schema && …"`. `bootstrap.js` still goes in front of `pnpm install` in P1. P2 changes that step to `bun install`. |
 
 ### Dropped or corrected
 
@@ -87,8 +158,11 @@ pull first, then `versions.env`, then `n` / `npm install -g`, then Node.
 
 Reuse from it:
 
-- The `versions.env` format and comments (NODE, PNPM, PM2, N).
+- The `versions.env` format and comments. Add `BUN_VERSION` and the zip
+  sha256 keys. Keep `NODE_VERSION` and `PNPM_VERSION` as the legacy values
+  we detect, not as upgrade targets.
 - `install-all.sh` reading those values instead of five hard-coded copies.
+  New Ubuntu boxes install Bun from the same pin.
 - Pinning pm2 to an exact version, not `@latest`.
 - `tests/startup.test.sh` for the shell branches.
 - Dropping global `typescript` and `ts-node` from the install scripts.
@@ -104,19 +178,23 @@ Do not treat it as the jump:
 - It is many commits behind `main` (#85–#91, pino, config-schema).
 
 P1 therefore ships both mechanisms: `bootstrap.js` at the front of `build`
-(the first jump), and the shell `ensure_*` functions (every later boot, and
-the two-boot fallback). Both read `versions.env`.
+(the first jump, which downloads Bun), and the shell `ensure_bun` /
+`ensure_pm2` functions (every later boot, and the two-boot fallback). Both
+read `versions.env`. Do not harvest `ensure_node` as the jump.
 
 ## Why now
 
-- Node 18 reached end of life on 2025-04-30. No security fixes since.
+- Node 18 reached end of life on 2025-04-30. No security fixes since. After
+  the jump the HTTP apps run on Bun. Node 18 stays only as the bootstrap host.
 - Most of the toolchain we are behind on now refuses Node 18: Vite 7+, Vitest 4+,
-  ESLint 10, jsdom 21+, oxlint, oxfmt.
+  ESLint 10, jsdom 21+, oxlint, oxfmt. Bun 1.4.2 runs them.
 - pnpm 7.5.0 cannot reach the registry from Node 20+, so every developer machine
-  already needs a workaround to install.
+  already needs a workaround to install. `bun install` is the replacement.
 - The panel typecheck is red with 20 pre-existing errors (last counted at
   1927135) and the build's type gate checks zero files. Newer `vue-tsc` and
-  `@vue/tsconfig` are how that gets fixed.
+  `@vue/tsconfig` plus the TypeScript contract are how that gets fixed.
+- ESLint 10 is a flat-config rewrite. oxlint and oxfmt are the decided lint
+  and format stack. They need a runtime newer than 18. Bun supplies it.
 
 ## What exists today
 
@@ -124,9 +202,10 @@ the two-boot fallback). Both read `versions.env`.
 
 | Piece | Today | Pinned where |
 |---|---|---|
-| Node on Ubuntu boxes (half the fleet) | 18.12.1 via `n`, `/usr/local` chowned to the user | `install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`. `apps/startup/versions.env` is named in the CI comment and does not exist. |
-| Node on Windows boxes (other half) | installed by hand with nvm-windows, "mimicking" 18.12.1; OS is Windows 7, 8, 10 or 11 | nowhere; `install.bat` only checks `node -v` |
-| pnpm | 7.5.0, lockfile `5.4` | `install-all.sh`, `install.sh`, `install.bat`, `src/logic/install/{ubuntu,windows}.js`, root `packageManager`, `ci.yml` |
+| Node on Ubuntu boxes (half the fleet) | 18.12.1 via `n`, `/usr/local` chowned to the user | `install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`. `apps/startup/versions.env` is named in the CI comment and does not exist. Stays as the bootstrap host. Not upgraded. |
+| Node on Windows boxes (other half) | installed by hand with nvm-windows, "mimicking" 18.12.1; OS is Windows 7, 8, 10 or 11 | nowhere; `install.bat` only checks `node -v`. Stays as the bootstrap host on Windows 10/11. |
+| pnpm | 7.5.0, lockfile `5.4` | `install-all.sh`, `install.sh`, `install.bat`, `src/logic/install/{ubuntu,windows}.js`, root `packageManager`, `ci.yml`. Stays as the `pnpm run build` hook. Not upgraded. |
+| Bun | absent | nowhere. P1 installs 1.4.2 from a pinned GitHub release zip. |
 | pm2 | `@latest` at install time | `src/logic/install/*.js` |
 | Global `typescript@4.7.4`, `ts-node@10.9.1` | installed on every box | `src/logic/install/*.js`; unused by the build (the workspace `tsc` is used) |
 | TypeScript in the workspace | `^4.7.4` (root, panel, backend); configer and config-schema use the workspace `tsc` | each `package.json` that lists it |
@@ -180,10 +259,11 @@ where the pull left it, so the next boot retries the upgrade. The running
 panel, backend and configer come from `dist` / `dist2`. Windows 7/8 parking on
 `legacy` is the only checkout change in this plan.
 
-**Do not revert Node or pnpm on failure.** A half-finished bootstrap may leave
-Node 24 with pnpm 7. The last good `dist` must still start on whatever Node is
-now. Reverting the toolchain is a second failure mode. Old `dist` on new Node
-is the expected state after P3 anyway.
+**Do not revert Bun, Node or pnpm on failure.** A half-finished bootstrap may
+leave Bun on PATH with the old Node still present. The last good `dist` must
+still start on whatever interpreter is now. Reverting the toolchain is a
+second failure mode. Old compiled `dist` on new Bun is the expected state
+after P3.
 
 #### What today does not do
 
@@ -207,27 +287,29 @@ is the expected state after P3 anyway.
 
 1. **Named steps**, a closed set, one in flight:
 
-   `PULL`, `BOOTSTRAP_NODE`, `BOOTSTRAP_PNPM`, `BOOTSTRAP_PM2`, `INSTALL`,
+   `PULL`, `BOOTSTRAP_BUN`, `BOOTSTRAP_PM2`, `INSTALL`,
    `BUILD_SCHEMA`, `BUILD_PANEL`, `BUILD_BACKEND`, `BUILD_CONFIGER`,
    `DIST_PREPARE`, `SWAP`, `START_CONFIGER`, `START_PANEL`.
 
-   Root `build` becomes a small runner (`apps/startup/run-update.js` or the
-   same job inside `bootstrap.js`) that executes those build steps one by one.
-   The legacy startup still calls `pnpm run build`. Each step logs start and
-   end. A failure stops the chain.
+   There is no `BOOTSTRAP_NODE` and no `BOOTSTRAP_PNPM`. Those tools stay at
+   the legacy versions. Root `build` becomes a small runner
+   (`apps/startup/run-update.js` or the same job inside `bootstrap.js`) that
+   executes those build steps one by one. The legacy startup still calls
+   `pnpm run build`. Each step logs start and end. A failure stops the chain.
 
 2. **The error stays with the step.** On failure write one record to
    `source/logs/startup.last.json` (next to `startup.log`) and one Czech
    one-line to `startup.log` in the #90 format. The record holds: `step`,
    `ok`, `message` (the command's stderr/stdout, collapsed, max 2000 chars,
-   same cap as the logger), `at`, `node`, `pnpm`. No stack dump of
+   same cap as the logger), `at`, `node`, `pnpm`, `bun`. No stack dump of
    `node_modules`. `GET /status` on configer and the backend include this
    record. A success writes `ok: true` and the last step that ran, so a later
    boot does not keep a stale failure.
 
 3. **Last good `dist` stays intact until the new apps start.** Build into the
-   app `dist` folders and assemble `dist-next` (copy + `pnpm install` there).
-   Do not rename the live `dist` until `dist-next` is complete. Then stop pm2,
+   app `dist` folders and assemble `dist-next` (copy + `bun install --omit
+   dev` there, `pnpm install` only before P2). Do not rename the live `dist`
+   until `dist-next` is complete. Then stop pm2,
    swap (`dist` → `dist2`, `dist-next` → `dist`), start configer, start
    panel. If either start fails: swap back, start both from the restored
    `dist`, record `START_CONFIGER` or `START_PANEL` with the error. If any
@@ -261,53 +343,58 @@ Two mechanisms, both in HEAD, both required:
 
 1. **Bootstrap inside the root `build` script.** `"build": "node
    apps/startup/run-update.js"`. That runner calls `bootstrap.js`, then
-   `pnpm install`, then each package build as its own named step. The legacy
+   install, then each package build as its own named step. The legacy
    startup still runs `pnpm run build` on boot one, before pnpm 7 ever touches
-   the lockfile. `bootstrap.js` compares `node -v`, `pnpm -v`, `pm2 -v` with
-   `versions.env`, installs what differs (`n` on Ubuntu, `npm install -g
-   pnpm@…`, `pm2 update`), and exits 0 on a no-op. The `pnpm install` that
-   follows is a fresh process and resolves to the new pnpm binary from
-   `PATH`; `vite build` and `tsc` start on the new Node. One boot. A failed
-   step writes `startup.last.json` and the runner exits non-zero without
-   touching live `dist`.
-2. **The new startup app as fallback, plus shell `ensure_*`.** If the bootstrap could
-   not run (bad permissions, no network for `n`), the build fails, the last good
-   `dist` starts (see "When an upgrade fails"), and on the next boot HEAD's
-   `startup.sh` / `startup.bat` and the Node startup app run on the old Node with
-   the old `node_modules`. They repeat the bootstrap with better logging and a
-   `git checkout -- pnpm-lock.yaml` before the pull, so a dirtied tree self-heals.
-   Two boots. The shell functions are what the unmerged pinning branch already
-   drafted; they do not replace (1).
+   the lockfile. `bootstrap.js` compares `bun -v` and `pm2 -v` with
+   `versions.env`. It does not install Node 24 or pnpm 12. For Bun it
+   downloads the pinned GitHub release zip with Node's `https` (no
+   `curl | bash`), checks the sha256, extracts under the user profile
+   (`$HOME/.bun/bin` or `%USERPROFILE%\.bun\bin`), and prepends that
+   directory to `PATH` for the rest of the runner. If the standard binary
+   exits with illegal instruction, it retries the `*-baseline` zip. Exit 0
+   when Bun already matches. After P2 the install that follows is `bun
+   install` in a fresh process; `vite build` and `tsc` run through `bun
+   run`. One boot. A failed step writes `startup.last.json` and the runner
+   exits non-zero without touching live `dist`.
+2. **The new startup app as fallback, plus shell `ensure_bun`.** If the
+   bootstrap could not run (bad permissions, no network for GitHub
+   releases), the build fails, the last good `dist` starts (see "When an
+   upgrade fails"), and on the next boot HEAD's `startup.sh` / `startup.bat`
+   and the Node startup app run on the old Node with the old `node_modules`.
+   They repeat the bootstrap with better logging and a `git checkout --
+   pnpm-lock.yaml` before the pull, so a dirtied tree self-heals. Two boots.
+   The shell functions are a Bun-shaped harvest of the unmerged pinning
+   branch. They do not replace (1).
 
 ### Windows boxes
 
 Half the fleet. Facts that shape the bootstrap there:
 
-- **Node 18 and later need Windows 10 or Server 2016** (Node's `BUILDING.md`, Tier 1
-  row; Windows 8.1 was "experimental" in 18 and is gone in 24; Windows 7 was last
-  supported by Node 13). So a Windows 7 or 8 box cannot run Node 24, and most likely
-  is not running 18.12.1 today either, whatever nvm-windows was asked for. These boxes
-  cannot follow this plan on their current OS. Confidence high on the support matrix,
+- **Bun needs Windows 10 version 1809 (build 17763) or later.** Windows 7 and
+  8 cannot run it. Those boxes also cannot run Node 18+. They cannot follow
+  this plan on their current OS. Confidence high on the support matrix,
   medium on what they actually run; the `GET /status` fields from P1 will tell.
-- **nvm-windows keeps global packages per Node version.** After `nvm use 24`, `pnpm`,
-  `pm2` and `nodemon` are gone until reinstalled. The bootstrap reinstalls them after
-  every switch, in that order.
-- **`nvm use` rewrites a symlink under Program Files and needs elevation.** The startup
-  runs from the user's Start Menu autostart. Whether `nvm use` succeeds without a UAC
-  prompt on the boxes (admin user, UAC off, or `sudo-prompt` already in the startup's
-  dependencies) has to be tested on one Windows 10 box before P1 lands. A UAC prompt
-  on a kiosk with nobody in front of it is a hung update.
+- **The Bun zip extracts under the user profile.** No `nvm use`, no Program
+  Files symlink, no global npm after a Node switch. That removes the UAC
+  prompt that Node 24 would have needed. P1 still tests that the autostart
+  user can write `%USERPROFILE%\.bun`.
+- **nvm-windows stays as the leftover Node host.** The jump does not call
+  `nvm use`. If pm2 cannot run as a Bun process, the daemon stays on the
+  existing Node and only the app interpreter changes in P3.
 
 What the bootstrap does on Windows:
 
-1. Windows 10 or 11: `nvm install <NODE_VERSION>`, `nvm use <NODE_VERSION>`, then
-   `npm install -g pnpm@… pm2@…`, then `pm2 update`. Same contract as Ubuntu.
-2. Windows 7 or 8: **do not attempt Node.** Log the OS and the Node version, switch
-   the checkout to the `legacy` branch (`git checkout legacy`), exit 0. From then on
-   the box pulls only that branch, which holds the last commit before P2 plus any
-   backport we choose to make. One boot, automatic, no dirty tree, and the box keeps
-   working. Getting such a box onto this plan means a new OS on site: Windows 10/11 if
-   the hardware allows, or Ubuntu via `install-all.sh`.
+1. Windows 10 or 11 (build ≥ 17763): download the pinned `bun-windows-x64`
+   zip (baseline fallback on illegal instruction), extract to
+   `%USERPROFILE%\.bun\bin`, put it on `PATH` for this process and later
+   boots. Then `pm2 update` if pm2 was upgraded. Same contract as Ubuntu.
+2. Windows 7 or 8: **do not attempt Bun.** Log the OS and the Node version,
+   switch the checkout to the `legacy` branch (`git checkout legacy`), exit
+   0. From then on the box pulls only that branch, which holds the last
+   commit before P2 plus any backport we choose to make. One boot,
+   automatic, no dirty tree, and the box keeps working. Getting such a box
+   onto this plan means a new OS on site: Windows 10/11 if the hardware
+   allows, or Ubuntu via `install-all.sh`.
 
 Decision needed from the owner: is parking Windows 7/8 boxes on `legacy` acceptable,
 and is there a plan to reinstall them? Until then the `legacy` branch is a supported
@@ -324,19 +411,20 @@ Rules that follow, and hold until the last legacy box is gone:
   itself uses nothing. New syntax and new packages are for the other apps.
 - The `legacy` branch and the `legacy-runtime` tag are never deleted. The offline
   tail is years.
-- `bootstrap.js` writes only to stdout and a log file. `npm install -g` and `n` both
-  chat on stderr; redirect it. Stderr fails the build.
+- `bootstrap.js` writes only to stdout and a log file. The zip download and
+  unzip both chat on stderr; redirect it. Stderr fails the build.
 - `bootstrap.js` is idempotent and fast when nothing differs; it runs on every update.
 - `.npmrc` gets `frozen-lockfile=true`, so a pnpm that cannot read the lockfile
   errors out instead of rewriting it. Fail loud, stay clean. Today `.npmrc` only
-  has `link-workspace-packages = true`.
+  has `link-workspace-packages = true`. The old lockfile 5.4 file stays until P7.
 - **CI proves the jump on every PR**, not a person on a spare box. A container with
   Node 18.12.1, pnpm 7.5.0 and a checkout of the tagged legacy commit runs the same
   two commands the legacy startup runs, `git pull` to the PR head and `pnpm run
-  build`, and asserts: exit 0, empty stderr, clean tree, `node -v` and `pnpm -v`
-  equal to `versions.env`. Windows gets the same check on a `windows-latest` runner
-  with nvm-windows installed, for the Windows 10/11 path. The Windows 7/8 path is
-  tested by faking the OS version and asserting the checkout ends on `legacy`.
+  build`, and asserts: exit 0, empty stderr, clean tree, `bun -v` equal to
+  `BUN_VERSION` (after P1), `pnpm-lock.yaml` still clean. Windows gets the same
+  check on a `windows-latest` runner for the Windows 10/11 path. The Windows 7/8
+  path is tested by faking the OS version and asserting the checkout ends on
+  `legacy`.
 
 Falsifier: the legacy-image job. If it fails, HEAD is not installable from a legacy
 box and the PR does not merge.
@@ -351,8 +439,8 @@ Latest numbers that did not move since 2026-09-12 are left as they were.
 | Package | Now | Latest | Node | Note |
 |---|---|---|---|---|
 | typescript | ^4.7.4 | 7.0.2 | ≥16.20 | native compiler; see P6 |
-| ts-node | ^10.9.1 | 10.9.2 | — | replace with `tsx` 4.23.13 (needs no TS JS API) |
-| @types/node | ^18.11.18 | 24.13.4 (match runtime) | — | npm's absolute latest is 26.5.1; do not follow it. P3 installs `@types/node@24` |
+| ts-node | ^10.9.1 | 10.9.2 | — | remove. `bun --watch` replaces ts-node, tsx and nodemon |
+| @types/node | ^18.11.18 | 24.13.4 | — | bun's Node compat layer. npm's absolute latest is 26.5.1; do not follow it. Also add `@types/bun`. P3. |
 | @types/cors, @types/express, @types/lodash.merge | | | | move to the apps that use them; root should hold nothing |
 
 **`@babybox/config-schema`** (new since the first draft)
@@ -430,7 +518,7 @@ Latest numbers that did not move since 2026-09-12 are left as they were.
 |---|---|---|---|---|
 | fs-extra | ^10.1.0 | 11.4.0 | ≥14.14 | |
 | moment | ^2.29.3 | 2.30.1 | — | |
-| pino | ^8.21.0 | 10.3.1 | — | loaded through try/catch. Upgrade in P4 after Node 24. Keep the Czech one-line file + rotation from #90. |
+| pino | ^8.21.0 | 10.3.1 | — | loaded through try/catch. Upgrade in P4 after Bun is the runtime. Keep the Czech one-line file + rotation from #90. |
 | pino-pretty | ^10.3.1 | 13.1.3 | — | with pino |
 | sudo-prompt | ^9.2.1 | 9.2.1 | — | last release 2024-12; no upgrade exists; still needed for Windows elevation |
 | eslint, eslint-config-prettier, plugins, prettier | as backend | as backend | | removed in P5 |
@@ -440,9 +528,10 @@ Latest numbers that did not move since 2026-09-12 are left as they were.
 
 | Tool | Now | Target | Node | Note |
 |---|---|---|---|---|
-| Node | 18.12.1 | 24.x LTS (24.21.0 today) | | Node 22 is already in maintenance (ends 2027-04-30); 24 is Active LTS until 2026-10, maintained to 2028-04-30 |
-| pnpm | 7.5.0 | 12.4.1 | ≥18 | runs on Node 18, so it can go first |
-| pm2 | `latest` | 7.0.4 | ≥18 | pin it; `latest` on an unattended install is a risk we already carry |
+| Bun | absent | 1.4.2 pinned | | Runtime and package manager. GitHub release zip, sha256 in `versions.env`. Baseline zip if the CPU lacks AVX2. |
+| Node | 18.12.1 | leave in place | | Bootstrap host and `pnpm run build` hook. Not upgraded. Stops serving HTTP after P3. |
+| pnpm | 7.5.0 | leave in place | ≥18 | Legacy `pnpm run build` only. Lockfile 5.4 stays until P7. Not upgraded. |
+| pm2 | `latest` | 7.0.4 | ≥18 | pin it; `latest` on an unattended install is a risk we already carry. P3 spawns apps with interpreter `bun`. |
 | typescript, ts-node (global) | 4.7.4, 10.9.1 | remove | | nothing uses them |
 
 ## Things that change behaviour, not just versions
@@ -477,9 +566,10 @@ without `baseUrl`), `moduleResolution: node10` (the backend gets it by default f
 `preserveValueImports` / `importsNotUsedAsValues` (from `@vue/tsconfig` 0.1.3;
 0.9 uses `verbatimModuleSyntax`). Also changed defaults in 6: `strict: true`,
 `module: esnext`, `target: es2025`, `noUncheckedSideEffectImports: true`; the backend
-has `noImplicitAny` only and would become fully strict — that is wanted, but it is a
-fix-errors step, not a version bump. `import x = require()` and `enum` are not
-deprecated. `tsc --build` and project references still work.
+has `noImplicitAny` only and would become fully strict — that is wanted, and
+the extra flags in "TypeScript contract" go on at the same time. `import x =
+require()` and `enum` are not deprecated. `tsc --build` and project
+references still work.
 
 **TypeScript 7 has no stable JS API.** The `typescript@7` package is a 2.5 MB
 launcher for a Go binary. Everything that today loads TypeScript as a library keeps
@@ -490,23 +580,60 @@ needing a 6.x: `vue-tsc` (Volar), `ts-jest` (peer `<7`), `ts-node`,
 Re-checked 2026-09-13: `vue-tsc` latest is still 3.3.11. So the latest tooling that
 can type-check `.vue` files is `vue-tsc` 3.3.11 on TypeScript 6.0.3; there is no
 newer combination to pick. "TypeScript 7 everywhere it runs" therefore means: `tsc`
-builds of backend, configer and config-schema on 7; dev runners on `tsx` (needs no
-TS at all); tests on vitest (transforms with esbuild/oxc, no TS needed); the panel
-keeps `typescript@6.0.3` as its own devDependency. pnpm gives each app its own
-`typescript`, so this is a per-`package.json` choice. Re-test `vue-tsc` on 7 at
-each Volar major; move the panel when it passes.
+builds of backend, configer and config-schema on 7; dev runners on `bun --watch`
+(needs no TS JS API); tests on vitest (transforms with esbuild/oxc, no TS needed);
+the panel keeps `typescript@6.0.3` as its own devDependency. Bun workspaces give
+each app its own `typescript`, so this is a per-`package.json` choice. Re-test
+`vue-tsc` on 7 at each Volar major; move the panel when it passes.
 
-**Dev runners.** `nodemon` in the backend uses `ts-node` under the hood, configer uses
-`nodemon --esm` (ts-node's ESM loader). Both go to `tsx`. Node 24 can also run `.ts`
-directly, but only erasable syntax; the backend has 3 `enum`s and `import = require`,
-so that is a later option gated on `erasableSyntaxOnly`.
+**TypeScript contract. Decided 2026-09-14: very strict, every compile unit.**
+`strict: true` is the floor, not the goal. Every `tsconfig` (backend, configer,
+config-schema, panel) also sets:
 
-**pnpm 10+.** Dependency lifecycle scripts do not run unless listed in
-`onlyBuiltDependencies` (`pnpm approve-builds`). `esbuild` (via Vite) is the usual
-one. Whether pnpm prints the "ignored build scripts" notice to stderr must be checked
-on a box image, because stderr fails the update. Pin the version with
-`devEngines.packageManager` (or keep `packageManager`); `link-workspace-packages`
-default flipped to false in pnpm 9, our `.npmrc` already sets it explicitly.
+- `noUncheckedIndexedAccess`
+- `exactOptionalPropertyTypes`
+- `noImplicitOverride`
+- `noPropertyAccessFromIndexSignature`
+- `noFallthroughCasesInSwitch`
+- `noImplicitReturns`
+- `verbatimModuleSyntax`
+- `isolatedModules`
+- `noUncheckedSideEffectImports` (TS 6+)
+- `forceConsistentCasingInFileNames`
+- `skipLibCheck` (keep on; do not type-check `node_modules`)
+
+No `any`. No `!` non-null assertion. No `as` except a tracked suppression next
+to the line. oxlint enforces the same with `typescript/no-explicit-any`,
+`typescript/no-non-null-assertion`, and
+`typescript/consistent-type-assertions` set to `never`. Configer goes first
+(already `strict: true`). Backend today has `noImplicitAny` only. Panel errors
+must not grow; P4 re-counts and then fixes down to zero under this contract.
+Do not turn a flag off to make a phase green.
+
+**Dev runners.** `nodemon` in the backend uses `ts-node` under the hood,
+configer uses `nodemon --esm`. Both go to `bun --watch`. Do not add `tsx`.
+`erasableSyntaxOnly` is not required while we still emit with `tsc` into
+`dist` (backend has 3 `enum`s). Revisit it only if a later change runs `.ts`
+in production without emit.
+
+**Bun as runtime and package manager. Decided 2026-09-14.** Replaces the
+2026-09-13 Node 24 + pnpm 12 target.
+
+- P1 downloads the pinned zip and puts `bun` on `PATH`. Builds and starts
+  still use pnpm and Node. A failed download starts last good `dist` on Node.
+- P2 writes `bun.lock`, sets `packageManager` to `bun@1.4.2`, copies
+  `bun.lock` into `dist-next`, and runs `bun install` / `bun run` from the
+  update runner. The old `pnpm-lock.yaml` (format 5.4) stays in the tree so
+  pnpm 7 cannot invent a format-9 file. Workspace layout stays `apps/*` and
+  `packages/*` via Bun workspaces in root `package.json`.
+- P3 starts pm2 apps with interpreter `bun`. Prove an old compiled `dist`
+  still starts. If the pm2 daemon cannot itself run on Bun, leave the daemon
+  on the existing Node and only switch the app interpreter.
+- Express stays. Vite stays. vitest stays. This is not Elysia and not
+  `bun test`.
+- `bun install` trusted-dependency / lifecycle scripts: record what must be
+  allowed (`esbuild` via Vite is the usual one). Whether `bun install` prints
+  on stderr must be checked on a box image, because stderr fails the update.
 
 **Vite 2 → 8.** Six majors. Our config is small (one plugin, one alias, a Stylus
 import via `__dirname`, an outDir). Vite bundles the config with `__dirname` defined,
@@ -516,33 +643,38 @@ run a current Chromium, so no `build.target` override is needed unless a box pro
 otherwise. Vite 8 has a compatibility layer for `rollupOptions` and `esbuild` options;
 we use neither. **Decided 2026-09-12: go to 8.** If 8 misbehaves, `vite@7.3.6` with
 `rolldown-vite` is the documented half-step, recorded here so nobody re-derives it.
+Run Vite through `bun run`.
 
-**Lint stack. Decided 2026-09-12: oxlint + oxfmt, not ESLint 10.** The ESLint family
+**Lint stack. Decided 2026-09-12: oxlint + oxfmt, not ESLint 10.** Confirmed
+2026-09-14 as a goal of this refactor, not a side effect. The ESLint family
 (`eslint`, `@typescript-eslint/*`, `eslint-plugin-vue`, `@vue/eslint-config-*`,
 `eslint-plugin-prettier`, `eslint-plugin-simple-import-sort`,
 `eslint-plugin-unused-imports`, `@rushstack/eslint-patch`, `prettier`) is removed, not
 upgraded. `oxfmt` covers formatting and import sorting; `oxlint` with the `import`,
 `promise`, `node`, `unicorn` and `vitest` plugins covers the rules we use today, and
-`oxlint-tsgolint` adds the type-aware rules. Both need Node ≥20.19, so they land after
-P3. Latest on 2026-09-13: `oxlint@1.82.0`, `oxfmt@0.67.0`. Configer goes first as its
-own PR (strict TypeScript flags, tracked suppressions, CI gate), then the same config
-is copied to the other apps. `.oxlintrc.json` and `.oxfmtrc.json` live once, at
-`source/`, with per-app overrides. Config-schema is a fifth target, not listed in the
-first draft.
+`oxlint-tsgolint` adds the type-aware rules. Both need a runtime newer than Node 18.
+They land after P2, when `bun run` exists. oxfmt workers need Bun ≥ 1.3.11; 1.4.2
+clears that. Latest on 2026-09-13: `oxlint@1.82.0`, `oxfmt@0.67.0`. Configer goes
+first as its own PR (TypeScript contract, tracked suppressions, CI gate), then the
+same config is copied to the other apps. `.oxlintrc.json` and `.oxfmtrc.json` live
+once, at `source/`, with per-app overrides. Config-schema is a fifth target, not
+listed in the first draft. CI: `oxlint --deny-warnings` and `oxfmt --check`.
+Warnings are errors.
 
 **Pino 8 → 10.** Startup's public log is a Czech one-line file with size rotation
 (#90, decisions live in that PR). `pino@10` and `pino-pretty@13` change the default
-shape. Upgrade only after Node 24, in the P4 library PR, and treat a broken log
-format as a failed phase. `bootstrap.js` never imports pino.
+shape. Upgrade only after Bun is the runtime, in the P4 library PR, and treat a
+broken log format as a failed phase. `bootstrap.js` never imports pino.
 
 **Zod.** Leave at `3.23.8`. A bump to 3.25 or 4 is not this project.
 
 ## Phases
 
 Order is fixed by the box update path: the bootstrap first, because every later
-commit depends on it being in HEAD; then the runtime versions it installs; then
-everything that needs the new runtime. Phases are for review size and for finding
-what breaks, not for the boxes. Each phase must pass the legacy-image job on its own.
+commit depends on it being in HEAD; then the Bun binary it installs; then the
+lockfile and interpreter switch; then everything that needs the new runtime.
+Phases are for review size and for finding what breaks, not for the boxes. Each
+phase must pass the legacy-image job on its own.
 
 ### P0 — Make the plan checkable
 
@@ -550,84 +682,92 @@ what breaks, not for the boxes. Each phase must pass the legacy-image job on its
       upgrades from, forever. Tag after this plan merges, so the tag includes
       #85–#91.
 - [ ] CI: legacy-image job (see "Upgrading from any older version"). At P0 it only
-      asserts the two legacy commands still succeed against the PR head; the version
-      assertions are added in P2 and P3.
+      asserts the two legacy commands still succeed against the PR head; the Bun
+      version assertions are added in P1–P3.
 - [ ] Add `engines.node` to every `package.json` (including config-schema) and
-      `engine-strict=false` on purpose, so a mismatch prints, never blocks, on a box
-- [ ] Fill `apps/startup/versions.env` with `NODE_VERSION`, `PNPM_VERSION`,
-      `PM2_VERSION`, `N_VERSION`, and read them from `install-all.sh`, `install.sh`,
-      `install.bat`, `src/logic/install/*.js` and `ci.yml` instead of five hard-coded
-      copies. Reuse the file from the unmerged pinning branch. The CI comment that
-      already names this file becomes true.
+      `engine-strict=false` on purpose, so a mismatch prints, never blocks, on a
+      box. Do not add `engines.bun` until P2.
+- [ ] Fill `apps/startup/versions.env` with `BUN_VERSION=1.4.2`, sha256 keys for
+      the four GitHub zips (linux/windows × standard/baseline), `PM2_VERSION`,
+      and the legacy `NODE_VERSION=18.12.1` / `PNPM_VERSION=7.5.0` as detect-only
+      values. P0 only writes the file. `install-all.sh` starts installing Bun
+      in P1, when `bootstrap.js` exists. Reuse the file from the unmerged
+      pinning branch. The CI comment that already names this file becomes true.
 - [ ] `.npmrc`: add `frozen-lockfile=true` next to `link-workspace-packages = true`
-- [ ] CI: add a second job on Node 24 that runs install, build and tests but is
+- [ ] CI: add a second job on Bun 1.4.2 that runs install, build and tests but is
       allowed to fail. It shows what breaks per phase before the boxes move. The
-      existing Node 18 job stays as the gate until P3.
+      existing Node 18 job stays as the gate until P2.
 - [ ] Extend the existing `GET /status` bodies on configer and the backend with
-      `node -v` and `pnpm -v`. Do not add a new route. The last-upgrade record
-      lands in P1 once `startup.last.json` exists.
+      `node -v`, `pnpm -v` and `bun -v` (empty string until P1). Do not add a
+      new route. The last-upgrade record lands in P1 once `startup.last.json`
+      exists.
 - [x] Lint stack decided: oxlint + oxfmt (see "Decisions taken")
+- [x] Runtime decided: Bun 1.4.2, not Node 24 + pnpm 12 (see "Review 2026-09-14")
+- [x] TypeScript contract decided: very strict flags (see "TypeScript contract")
 - [ ] Remove dead weight: `lowdb` from the backend, `axios` from the panel, the
       unused `lowdb` import in `configer/src/index.ts`, global `typescript` and
       `ts-node` from the install scripts. **Do not remove jest from startup.**
-- [ ] Copy the 2026-09-12 upgrade decisions from the table below into
-      `decisions.md`. That file exists now.
+- [ ] Copy the 2026-09-12 and 2026-09-14 upgrade decisions from the table below
+      into `decisions.md`. That file exists now.
 
 Size: ~0.5 day.
 
-### P1 — HEAD bootstraps the runtime from legacy
+### P1 — HEAD bootstraps Bun from legacy
 
-At P1 `versions.env` still says Node 18.12.1 and pnpm 7.5.0, so the bootstrap is a
-no-op on every box. The phase ships the mechanism, the named-step record, and
-the last-good `dist` start; P2 and P3 change the numbers.
+P1 is not a no-op. `BUN_VERSION` is 1.4.2, the boxes do not have Bun, so the
+first boot downloads it. Install, build and start still use pnpm and Node.
+A failed download starts last good `dist` on Node. P2 switches the lockfile.
+P3 switches the interpreter.
 
 - [ ] `apps/startup/bootstrap.js`: dependency-free, oldest-field-Node syntax
       (assume 12 until the inventory says otherwise), reads `versions.env`,
-      compares `node -v` / `pnpm -v` / `pm2 -v`, installs what differs, stdout
-      and a log file only, exit 0 when nothing to do
-- [ ] Ubuntu: Node via `n` (already used by `install-all.sh`; `/usr/local` is chowned
-      to the user there), pnpm and pm2 via `npm install -g`, then `pm2 update` so the
-      daemon runs on the new Node before it spawns the apps. Confirm pm2 spawns the
-      apps with the new `node`, not the daemon's old `process.execPath`. Harvest
-      `ensure_node` / `ensure_pnpm` / `ensure_pm2` from the unmerged pinning branch
-      into `startup.sh`, and probe `pino` not `winston` if `deps_ok` comes along.
-- [ ] Windows 10/11: `nvm install` + `nvm use` from nvm-windows, then reinstall
-      `pnpm`, `pm2`, `nodemon` globally (nvm-windows keeps globals per version), then
-      `pm2 update`. Same harvest into `startup.bat`.
+      compares `bun -v` / `pm2 -v`, downloads the pinned GitHub zip with
+      Node `https`, checks sha256, extracts under the user profile, prepends
+      `PATH`, retries `*-baseline` on illegal instruction, stdout and a log
+      file only, exit 0 when Bun already matches
+- [ ] Ubuntu: write to `$HOME/.bun/bin`. Do not call `n` or install pnpm 12.
+      Harvest a Bun-shaped `ensure_bun` / `ensure_pm2` from the unmerged
+      pinning branch into `startup.sh`, and probe `pino` not `winston` if
+      `deps_ok` comes along. `install-all.sh` installs the same pinned Bun
+      for new boxes.
+- [ ] Windows 10/11: same zip into `%USERPROFILE%\.bun\bin`. No `nvm use`.
+      Same harvest into `startup.bat`.
 - [ ] Windows 7/8: detect the OS version, log it, `git checkout legacy`, exit 0
 - [ ] Create the `legacy` branch from the last commit before P2 and protect it
-- [ ] Test on one Windows 10 box: does `nvm use` succeed from the autostart context
-      without a UAC prompt? If not, decide between `sudo-prompt` (already a dependency)
-      and a one-time on-site change, before P1 merges
+- [ ] Test on one Windows 10 box: can the autostart user write
+      `%USERPROFILE%\.bun` with no UAC prompt? If not, decide between
+      `sudo-prompt` (already a dependency) and a one-time on-site change,
+      before P1 merges
 - [ ] Root `package.json`: `"build": "node apps/startup/run-update.js"`. The
       runner calls `bootstrap.js`, then each named step in "When an upgrade
       fails". `pnpm run build` stays the one command the legacy startup runs.
+      P1 still calls `pnpm install` after Bun is on `PATH`.
 - [ ] `source/logs/startup.last.json`: write `step`, `ok`, `message`, `at`,
-      `node`, `pnpm` on every step end. Czech one-line in `startup.log` as well.
-      Success clears a previous failure. `GET /status` on configer and the
-      backend include this record.
+      `node`, `pnpm`, `bun` on every step end. Czech one-line in `startup.log`
+      as well. Success clears a previous failure. `GET /status` on configer
+      and the backend include this record.
 - [ ] Assemble the new tree in `dist-next`. Do not rename live `dist` until
       `dist-next` is complete. Swap, then start configer and panel. If either
       start fails, swap back, start both from the restored `dist`, record
       `START_CONFIGER` or `START_PANEL`. If a step before the swap fails, start
-      live `dist` unchanged. Fix the rollback `pnpm install` cwd (today
+      live `dist` unchanged. Fix the rollback install cwd (today
       `../../dist` vs `../../../dist`).
 - [ ] Startup app: run the bootstrap again before its own `git pull`, after a
       `git checkout -- pnpm-lock.yaml` and with a working tree check; log the
       outcome through the same step record (not a second log file).
-- [ ] Startup app: report `node -v`, `pnpm -v`, and `startup.last.json` on the
-      existing `GET /status`.
-- [ ] Legacy-image job runs the P1 head and stays green (no-op path)
-- [ ] Legacy-image job runs the P1 head with a `versions.env` override to Node 24 and
-      pnpm 12 and asserts the versions changed. This is the real proof; it runs on
-      every PR from here on.
+- [ ] Startup app: report `node -v`, `pnpm -v`, `bun -v`, and
+      `startup.last.json` on the existing `GET /status`.
+- [ ] Legacy-image job runs the P1 head and asserts `bun -v` = 1.4.2 after
+      `pnpm run build`, empty stderr, clean tree. This is the real proof; it
+      runs on every PR from here on.
 - [ ] Legacy-image job: force `BUILD_PANEL` to fail, assert `startup.last.json`
       names that step and carries the error, live `dist` is the previous build,
       both apps start from it. Repeat with `START_PANEL` after a good build.
-- [ ] Ubuntu: `install-all.sh` installed Node with `n` and chowned `/usr/local` to
-      the user, so `n <version>` works without sudo on every Ubuntu box. The
-      bootstrap still checks it is writable and logs if not. `installAll.sh` is
-      gone (#54); do not mention it in new code.
+      Repeat with `BOOTSTRAP_BUN` forced to fail (bad sha256): last good
+      `dist` starts on Node.
+- [ ] Ubuntu: the user profile must be writable so the zip can land. Do not
+      require a writable `/usr/local` for the jump. `installAll.sh` is gone
+      (#54); do not mention it in new code.
 
 Size: ~3.5 days, of which Windows is one and the failure/rollback contract is
 one. No fleet round-trip is required before the next phase, because the
@@ -635,86 +775,101 @@ legacy-image job replaces it. Watch the `GET /status` fields anyway; they are
 the only inventory of what Node the Windows boxes actually run, and of which
 step last failed.
 
-### P2 — pnpm 7.5.0 → 12.4.1
+### P2 — pnpm install → bun install
 
-- [ ] `PNPM_VERSION=12.4.1` in `versions.env`; CI `pnpm/action-setup` follows it
-- [ ] Root `packageManager` / `devEngines.packageManager` updated
-- [ ] Regenerate `pnpm-lock.yaml` with pnpm 12 (format 9); delete
-      `apps/panel/pnpm-lock.yaml`
-- [ ] `pnpm approve-builds` for whatever needs scripts today (expect `esbuild`)
-- [ ] Verify on the box image that `pnpm install` inside `pnpm run build` prints
-      nothing on stderr. If it does, either silence it (`--reporter`, config) or
-      change the startup's stderr rule to a non-empty-exit-code rule, and record why
-- [ ] `pnpm audit` baseline recorded in this file
-- [ ] Legacy-image job asserts `pnpm -v` = 12.4.1 after `pnpm run build`, and that
-      the tree is clean (pnpm 7 with `frozen-lockfile=true` must not have rewritten the
-      lockfile before the bootstrap replaced it)
+- [ ] Root `packageManager` = `bun@1.4.2`. Bun workspaces cover `apps/*` and
+      `packages/*`. Delete `apps/panel/pnpm-lock.yaml`.
+- [ ] Generate `bun.lock`. Keep `pnpm-lock.yaml` (format 5.4) in the tree so
+      pnpm 7 cannot rewrite it. The update runner never calls `pnpm install`
+      after this phase.
+- [ ] Runner steps `INSTALL` / `DIST_PREPARE` use `bun install`. Copy
+      `bun.lock` into `dist-next` with the backend `package.json`.
+- [ ] Record trusted lifecycle scripts (`esbuild` via Vite is the usual one).
+- [ ] Verify on the box image that `bun install` inside the runner prints
+      nothing on stderr. If it does, either silence it or change the startup's
+      stderr rule to a non-empty-exit-code rule, and record why.
+- [ ] `bun audit` baseline recorded in this file.
+- [ ] Legacy-image job asserts `bun -v` = 1.4.2 after `pnpm run build`, and
+      that the tree is clean (pnpm 7 with `frozen-lockfile=true` must not have
+      rewritten the lockfile before the bootstrap ran).
+- [ ] The Bun CI job from P0 becomes the only build job; the Node 18 job
+      remains only as the host of the legacy-image job.
 
-Size: ~0.5 day. Must be the same PR as, or a later PR than, P1: a lockfile in
-format 9 on `main` without the bootstrap in the `build` script is exactly the
-"dirty tree, no more pulls" failure.
+Size: ~0.5 day. Must be the same PR as, or a later PR than, P1: a `bun.lock`
+world on `main` without the bootstrap in the `build` script leaves pnpm 7 to
+run `pnpm install` and dirty the tree.
 
-### P3 — Node 18 → 24 on the boxes and in CI
+### P3 — Apps run on Bun
 
-- [ ] `NODE_VERSION=24.x` (latest 24 LTS at the time; 24.21.0 on 2026-09-13) in
-      `versions.env`; CI follows
-- [ ] `@types/node` → 24.x everywhere (24.13.4 today, not 26.x); remove the root
-      copy if no root code needs it
-- [ ] pm2 → 7.0.4 pinned
-- [ ] Legacy-image job asserts `node -v` = the pinned 24.x after `pnpm run build`
-- [ ] The Node 24 CI job from P0 becomes the only build job; the legacy-image job
-      stays
+- [ ] pm2 starts configer and the panel backend with interpreter `bun`.
+      `start:main` / `start:configer` stop calling Node.
+- [ ] `@types/node` → 24.x everywhere (24.13.4 today, not 26.x) plus
+      `@types/bun`. Remove the root copy if no root code needs it.
+- [ ] pm2 → 7.0.4 pinned. If the pm2 daemon cannot run on Bun, leave it on
+      the existing Node and only switch the app interpreter. Record which.
+- [ ] Prove last good `dist` (compiled JS from before this phase) still
+      starts when the interpreter is Bun.
+- [ ] After boot 2, `startup.sh` / `startup.bat` may call the runner with
+      `bun` or still `node`. Either is fine. Legacy autostart still uses
+      `pnpm run build`.
+- [ ] Legacy-image job asserts the spawned apps are Bun processes.
 
 Size: ~0.5 day.
 
-### P4 — TypeScript 4.7 → 6.0.3 and the libraries
+### P4 — TypeScript 4.7 → 6.0.3, the contract, and the libraries
 
-Still the JS compiler, so `vue-tsc`, `ts-jest`, `typescript-eslint` keep working.
-Fix everything TS 6 deprecates, so P6 is a swap of the binary, not a migration.
+Still the JS compiler, so `vue-tsc` keeps working. Fix everything TS 6
+deprecates, so P6 is a swap of the binary, not a migration. Turn on the
+TypeScript contract. Do not add `tsx`.
 
 - [ ] `typescript@6.0.3` in root, panel, backend; configer and config-schema use
       the workspace `tsc` (or their own 6.0.3, then 7 in P6)
+- [ ] Every compile unit: the TypeScript contract flags. Configer first, then
+      backend, config-schema, panel. Tracked suppressions only. No flag off.
 - [ ] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
       node16`, `.js` on relative imports, `import.meta.dirname`, drop every
-      `import x = require()`; accept `strict: true` and fix what it finds; the 6
-      jest test files move to vitest in the same PR because ts-jest is the last
-      CommonJS tool; replace `baseUrl` with a relative `paths` entry for
-      `@babybox/config-schema` so TS 7 can drop `baseUrl`
-- [ ] Panel: `@vue/tsconfig@0.9.1`, `vue-tsc@3.3.11`, remove `baseUrl`, make `paths`
-      relative, fix the known typecheck errors (re-count first; 20 at 1927135),
-      make `pnpm build` actually run the type gate over `src` (learnings.md says
-      it checks zero files today)
-- [ ] Configer: confirm with `tsc --noEmit`. Config-schema: confirm the same; it
-      is already on `node16` / `strict`
-- [ ] `ts-node` → `tsx@4.23.13` for `nodemon` in backend and configer
+      `import x = require()`; the 6 jest test files move to vitest in the same
+      PR because ts-jest is the last CommonJS tool; replace `baseUrl` with a
+      relative `paths` entry for `@babybox/config-schema` so TS 7 can drop
+      `baseUrl`
+- [ ] Panel: `@vue/tsconfig@0.9.1`, `vue-tsc@3.3.11`, remove `baseUrl`, make
+      `paths` relative, fix the known typecheck errors (re-count first; 20 at
+      1927135) down to zero under the contract, make `bun run build` actually
+      run the type gate over `src` (learnings.md says it checks zero files
+      today)
+- [ ] Configer: confirm with `tsc --noEmit` under the contract. Config-schema:
+      confirm the same; it is already on `node16` / `strict`
+- [ ] `ts-node` / `nodemon` → `bun --watch` for backend and configer
 - [ ] vue 3.5.42, vue-router 5.3.1, pinia 4.0.3 + `@vue/devtools-api`, lodash 4.18.1,
       howler 2.2.4, moment 2.30.1, stylus 0.64.0
 - [ ] axios 1.20.0 in the backend only
 - [ ] express 5.2.1 + `@types/express@5` in backend and configer; add a JSON error
       middleware to both; extend the empty-body and missing-Content-Type tests for
       `undefined` as well as `{}`
-- [ ] cors, dotenv 17 (`quiet: true`), morgan, winston, fs-extra 11, nodemon 3,
+- [ ] cors, dotenv 17 (`quiet: true`), morgan, winston, fs-extra 11,
       newman 6, pino 10.3.1, pino-pretty 13.1.3 (prove #90's file format and
-      rotation still hold)
+      rotation still hold). Remove nodemon.
 - [ ] `open@11` as a plain ESM import once the backend is ESM
 - [ ] lowdb 7 in configer (`versions.json` only)
 - [ ] Full manual run: panel against a real engine and thermal unit, camera feed,
       sound alerts, settings page, restart route, config page save (PUT and PATCH
       from #85/#88/#91)
 
-Size: ~2.5 days. The backend ESM conversion, express 5 and the panel typecheck are
-most of it. Pino is extra compared to the first draft; it is small next to those.
+Size: ~3 days. The contract, the backend ESM conversion, express 5 and the
+panel typecheck are most of it. Pino is extra compared to the first draft.
 
 ### P5 — Test and lint toolchain
 
 - [ ] vite 8.3.0, @vitejs/plugin-vue 6.0.8, vitest 5.0.0, jsdom 30.0.1 in the panel;
-      `vite.config.ts` to `import.meta.dirname`
+      `vite.config.ts` to `import.meta.dirname`; run through `bun run`
 - [ ] vitest 5 in the backend (moved in P4), configer, config-schema and startup;
       `jest`, `ts-jest`, `@types/jest` removed everywhere; note the 2026-09-11
       decision that accepted two runners as superseded. Put startup tests in CI.
+      Do not switch to `bun test`.
 - [ ] oxlint 1.82.0 + oxfmt 0.67.0 (or latest at the time): configer first (its own
-      PR, with the strict TypeScript flags and tracked suppressions), then panel
-      (`vue` plugin), backend, startup, config-schema
+      PR, with the TypeScript contract already on, type-aware oxlint rules,
+      tracked suppressions), then panel (`vue` plugin), backend, startup,
+      config-schema
 - [ ] Remove the ESLint and Prettier family from every `package.json`; delete the three
       `.eslintrc*` files and `.prettierrc.json`
 - [ ] CI: `oxlint --deny-warnings` and `oxfmt --check` replace the three eslint lines
@@ -732,18 +887,20 @@ Size: ~1.5 days.
       major and move when it passes
 - [ ] Remove any `ignoreDeprecations` left from P4
 - [ ] TS 7 pulls a platform binary (`@typescript/typescript-linux-x64`,
-      `-win32-x64`); the legacy-image job on Linux and the Windows runner both confirm
-      one resolves from the lockfile with `pnpm install --frozen-lockfile`
+      `-win32-x64`); the legacy-image job on Linux and the Windows runner both
+      confirm one resolves from the lockfile with `bun install --frozen-lockfile`
 
 Size: ~0.5 day.
 
 ### P7 — Keep it that way
 
-- [ ] Add Renovate or Dependabot with grouped, weekly PRs; CI on Node 24 and the
-      legacy-image job are the gate
-- [ ] `pnpm outdated` and `pnpm audit` in the CI summary
+- [ ] Add Renovate or Dependabot with grouped, weekly PRs; CI on Bun 1.4.2 and
+      the legacy-image job are the gate
+- [ ] `bun outdated` and `bun audit` in the CI summary
+- [ ] Delete `pnpm-lock.yaml` only when `GET /status` from every known box
+      shows Bun, or a box is written off
 - [ ] Decide when the legacy bootstrap may go: only when `GET /status` from every
-      known box shows the new runtime, or a box is written off. Until then the
+      known box shows Bun, or a box is written off. Until then the
       `legacy-runtime` tag and the job stay. Record the date in decisions.md.
 - [ ] Update `CLAUDE.md`, `README.md`, and the "Known constraints" section of
       [config-ui.md](config-ui.md) (it still says TypeScript 4.7, Vite 2, Node 18,
@@ -755,22 +912,21 @@ Size: ~0.5 day.
 
 ## Total
 
-Roughly **10 to 11 focused days**. No phase waits on the fleet, because the
+Roughly **11 to 12 focused days**. No phase waits on the fleet, because the
 legacy-image job proves each commit is reachable from a legacy box, and that a
 forced failed step still starts the previous `dist`. What does take calendar
 time is the tail: the bootstrap stays in HEAD for years, and the Windows 7/8
 boxes need a new OS on site before they can leave the `legacy` branch.
 
-A cut-down version that removes the security exposure and unblocks tooling is P0
-through P4 with TypeScript 5.9.3 instead of 6.0.3, about 5.5 days. It stops short of
-"latest" for TS, Vite and the test runner, which is where most of the migration risk
-sits.
+A cut-down version that unblocks the toolchain is P0 through P3 plus oxlint /
+oxfmt, about 6 days. It stops short of TypeScript 7, Vite 8 and the full
+contract, which is where most of the migration risk sits.
 
 ## Known constraints
 
 - A failed upgrade names the step and keeps the error in `startup.last.json`
-  and in `startup.log`. The last good `dist` starts. HEAD is not reset. Node
-  and pnpm are not reverted.
+  and in `startup.log`. The last good `dist` starts. HEAD is not reset. Bun,
+  Node and pnpm are not reverted.
 - The box update path treats any stderr from `pnpm run build` as a failure. Every
   phase is verified by the legacy-image job (Node 18.12.1 + pnpm 7.5.0 + the
   `legacy-runtime` checkout) before it lands on `main`.
@@ -780,7 +936,7 @@ sits.
   none of it.
 - Half the fleet is Windows. Every startup and bootstrap change is tested on both.
 - `pnpm@7.5.0` cannot reach the registry on Node 20+ (learnings.md). Until P2 lands,
-  lockfile changes are made from a Node 18 shell.
+  lockfile changes are made from a Node 18 shell. After P2, use `bun install`.
 - `configs/main.json` persists across updates. No phase changes its on-disk shape.
 - All UI text is Czech; version bumps must not alter rendered text (moment locale,
   number formatting, startup log lines).
@@ -788,7 +944,10 @@ sits.
 - The backend `dist` is installed standalone. No `workspace:*` in the backend
   `package.json`. Config-schema stays a type-only import.
 - Zod stays at 3.23.8. Zod 4 is out of scope.
-- `@types/node` follows the runtime major (24), not npm's latest (26).
+- `@types/node` is 24.x for Bun's Node compat. Do not follow npm's 26. Also
+  add `@types/bun`.
+- Express stays Express. Vite stays Vite. Tests stay vitest.
+- Do not turn a TypeScript contract flag off to make a phase green.
 
 ## Decisions taken (2026-09-12, owner)
 
@@ -796,26 +955,41 @@ Copy into decisions.md in P0. `decisions.md` exists as of #85.
 
 | Question | Answer | Consequence |
 |---|---|---|
-| Windows boxes in the field? | Yes, half the fleet, Windows 7/8/10/11, nvm-windows, installed by hand | Windows bootstrap path in P1; Windows 7/8 cannot run Node ≥18 and are parked on `legacy` |
-| Ubuntu provisioning? | `installAll.sh` (old) and `install-all.sh` (new); both use `n` with `/usr/local` owned by the user | Ubuntu Node step needs no sudo. Amended 2026-09-13: `installAll.sh` is gone (#54); only `install-all.sh` remains. The `n` + chown fact is unchanged. |
+| Windows boxes in the field? | Yes, half the fleet, Windows 7/8/10/11, nvm-windows, installed by hand | Windows bootstrap path in P1; Windows 7/8 cannot run Bun and are parked on `legacy` |
+| Ubuntu provisioning? | `installAll.sh` (old) and `install-all.sh` (new); both use `n` with `/usr/local` owned by the user | Amended 2026-09-13: `installAll.sh` is gone (#54); only `install-all.sh` remains. Amended 2026-09-14: new boxes install Bun from `versions.env`, not Node 24. |
 | Offline tail? | Months, sometimes years | Bootstrap stays in HEAD indefinitely; `legacy` branch and `legacy-runtime` tag are permanent |
 | Backend and ESM-only packages? | Convert the backend to ESM | P4 grows by ~0.5 day; `open@11` becomes a plain import |
-| Backend tests? | vitest | jest, ts-jest, @types/jest removed; one runner. Startup tests join in P5. |
-| Lint stack? | oxlint + oxfmt | ESLint and Prettier family removed, not upgraded; configer first |
+| Backend tests? | vitest | jest, ts-jest, @types/jest removed; one runner. Startup tests join in P5. Not `bun test`. |
+| Lint stack? | oxlint + oxfmt | ESLint and Prettier family removed, not upgraded; configer first; warnings are errors |
 | Volar on TypeScript 7? | Not required, use the latest tooling | Tested: `vue-tsc` 3.3.11 crashes on TS 7.0.2, works on 6.0.3. Still the latest Volar on 2026-09-13. The latest working tooling for the panel is TS 6.0.3; backend, configer and config-schema build with TS 7 |
 | Vite 8 or hold at 7? | Upgrade | Vite 8.3.0; 7.3.6 + `rolldown-vite` only as a documented fallback |
 | Failed upgrade? | Name the step and the error, start last good `dist` | `startup.last.json` + `GET /status`; no `git reset`; no toolchain revert |
+
+## Decisions taken (2026-09-14, owner)
+
+| Question | Answer | Consequence |
+|---|---|---|
+| Runtime after the jump? | Bun 1.4.2, pinned | Replaces Node 24 + pnpm 12. One zip, user-profile install, `bun.lock`. Node 18 and pnpm 7 stay as the bootstrap host and `pnpm run build` hook. |
+| TypeScript strictness? | The TypeScript contract | Extra flags on every compile unit. No `any`, no `!`, no `as` except a tracked suppression. Configer first. |
+| HTTP / bundle / tests? | Express 5, Vite 8, vitest 5 | Not Elysia, not `Bun.serve`, not `bun build`, not `bun test`. |
+| Dev runner? | `bun --watch` | ts-node, tsx and nodemon removed. |
 
 ## Open questions
 
 - [ ] Windows 7/8 boxes: is parking them on the `legacy` branch acceptable, and is
       there a plan to reinstall them (Windows 10/11 or Ubuntu) on site? Until answered,
       `legacy` is a supported branch with security backports only.
-- [ ] Does `nvm use` run without a UAC prompt from the autostart context on the
-      Windows 10/11 boxes? Test on one box before P1 merges.
+- [ ] Can the autostart user write `%USERPROFILE%\.bun` with no UAC prompt on the
+      Windows 10/11 boxes? Test on one box before P1 merges. The old `nvm use`
+      UAC question is gone unless pm2 cannot run on Bun and we have to switch Node.
 - [ ] What Node do the Windows boxes actually run? nvm-windows "mimicked" 18.12.1, but
       Node 18 does not install on Windows 7/8. Sets the syntax floor for
       `bootstrap.js`; assumed Node 12 until known.
+- [ ] Do any Ubuntu boxes lack AVX2, so they need the Bun baseline zip? The
+      bootstrap retries on illegal instruction. `GET /status` will show which
+      variant landed.
+- [ ] Can the pm2 daemon run on Bun, or only the apps? Decide in P3 with a
+      proof on one box.
 
 ## Progress log
 
@@ -830,3 +1004,7 @@ One line per landed step: date, PR, what moved.
 - 2026-09-13 — owner: a failed step must be named with its error, and the last
   good `dist` must start. Recorded as "When an upgrade fails". P1 grows by
   about a day.
+- 2026-09-14 — owner: also move to Bun, very strict TypeScript, oxlint and
+  oxfmt. Target runtime is Bun 1.4.2. Node 24 + pnpm 12 dropped. TypeScript
+  contract recorded. P2 is `bun install`. P3 is the interpreter switch. No
+  upgrade code landed.
