@@ -1,3 +1,4 @@
+import type { FetchConfigResult } from "../fetch/fetchConfig";
 import type { MainConfig, UnappliedField } from "../types/config.types";
 
 /**
@@ -121,11 +122,11 @@ export function unappliedFields(
  * Reads the config again and says whether the caller may swap it in.
  *
  * On any failure it returns `failed` and no config, so the caller keeps the one it
- * has. That is the whole point of the function: `fetchConfig()` answers a failure
- * with an object that has no `data` key, and assigning that would leave `config`
- * undefined. The next poll would throw on `config.units.engine.ip`, and in
- * production that same process serves the panel, so the box would serve nothing
- * while pm2 keeps it alive. Someone would have to drive to the hospital.
+ * has. That is the whole point of the function: a failed fetchConfig result is
+ * `{ ok: false }` with no data. Assigning that would leave `config` undefined. The next poll
+ * would throw on `config.units.engine.ip`, and in production that same process
+ * serves the panel, so the box would serve nothing while pm2 keeps it alive.
+ * Someone would have to drive to the hospital.
  *
  * @param fetchConfig `fetch/fetchConfig`, injected so a test can fail it
  * @param bound what the server is listening on, for the unapplied list
@@ -135,22 +136,24 @@ export function unappliedFields(
  * if (result.status === "reloaded") applyConfig(result.config);
  */
 export async function reloadConfig(
-  fetchConfig: () => Promise<{ data?: unknown; msg?: string }>,
+  fetchConfig: () => Promise<FetchConfigResult>,
   bound: BoundAddress
 ): Promise<ReloadResult> {
-  let answer: { data?: unknown; msg?: string };
+  let answer: FetchConfigResult;
   try {
     answer = await fetchConfig();
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       status: "failed",
       msg: `configer request threw: ${describe(error)}`,
     };
   }
 
-  if (!isObject(answer) || answer.data === undefined) {
-    const reason = isObject(answer) ? String(answer.msg) : "no answer";
-    return { status: "failed", msg: `configer returned no config: ${reason}` };
+  if (!answer.ok) {
+    return {
+      status: "failed",
+      msg: `configer returned no config: ${answer.msg}`,
+    };
   }
 
   if (!isBackendReadableConfig(answer.data)) {

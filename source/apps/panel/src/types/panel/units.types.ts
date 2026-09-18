@@ -1,5 +1,3 @@
-import type { Moment } from "moment";
-
 import type { Maybe } from "../generic.types";
 
 export type RawUnitVariable = {
@@ -36,7 +34,7 @@ export interface ThermalUnit {
       isServiceDoorOpened: UnitValue<boolean>;
     };
 
-    time: UnitValue<Moment>;
+    time: UnitValue<number>;
 
     isBlocked: UnitValue<boolean>;
     blockValue: UnitValue<number>;
@@ -88,7 +86,7 @@ export interface EngineUnit {
     misc: {
       inspectionNotDoneForDays: UnitValue<number>;
     };
-    time: UnitValue<Moment>;
+    time: UnitValue<number>;
     isBlocked: UnitValue<boolean>;
     blockValue: UnitValue<number>;
   };

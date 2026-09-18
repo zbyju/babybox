@@ -1,4 +1,3 @@
-import type { Moment } from "moment";
 import { defineStore } from "pinia";
 
 import {
@@ -17,12 +16,16 @@ import type {
 import { useConfigStore } from "./configStore";
 
 export const useUnitsStore = defineStore("engineUnit", {
-  state: () => ({
-    engineUnit: undefined as Maybe<EngineUnit>,
-    thermalUnit: undefined as Maybe<ThermalUnit>,
-    time: undefined as Maybe<Moment>,
+  state: (): {
+    engineUnit: Maybe<EngineUnit>;
+    thermalUnit: Maybe<ThermalUnit>;
+    time: Maybe<number>;
+  } => ({
+    engineUnit: undefined,
+    thermalUnit: undefined,
+    time: undefined,
   }),
-  getters: {}, // TODO: Add used getters
+  getters: {},
   actions: {
     setEngineUnit(engineUnit: EngineUnit) {
       this.engineUnit = engineUnit;
@@ -51,7 +54,7 @@ export const useUnitsStore = defineStore("engineUnit", {
         );
       }
     },
-    setTime(time: Maybe<Moment>) {
+    setTime(time: Maybe<number>) {
       this.time = time;
     },
   },

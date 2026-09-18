@@ -26,6 +26,7 @@ import {
   prettyNumber,
   secondsToTime,
 } from "../../utils/panel/dataDisplay";
+import { connectionQuality } from "./connections";
 
 export const getTableConnectionValues = (
   engineData: Maybe<EngineUnit>,
@@ -64,8 +65,8 @@ export const getTableConnectionValues = (
       quality: {
         state: TableRowState.Ok,
         value: displayTwoItems(
-          connection.engineUnit.getQuality(),
-          connection.thermalUnit.getQuality(),
+          connectionQuality(connection.engineUnit),
+          connectionQuality(connection.thermalUnit),
           displayPercentage,
         ),
       },
@@ -75,8 +76,11 @@ export const getTableConnectionValues = (
       },
       timeToInspection: maybeValueToTableRowValue(
         engineData?.data.timers.inspectionMessage,
-        secondsToTime,
-        [engineData?.data.misc.inspectionNotDoneForDays],
+        (seconds) =>
+          secondsToTime(
+            seconds,
+            engineData?.data.misc.inspectionNotDoneForDays ?? 0,
+          ),
       ),
     },
   };
@@ -120,8 +124,7 @@ export const getTableDoorsValues = (
       ),
       beamAboveContainer: maybeValueToTableRowValue(
         engineData?.data.door.isBarrierInterrupted,
-        displayCustomBoolean,
-        ["Překážka", "Volno"],
+        (bool) => displayCustomBoolean(bool, "Překážka", "Volno"),
       ),
     },
   };
@@ -208,7 +211,6 @@ export const getTableVoltageValues = (
       inVoltage: maybeValueToTableRowValue(
         thermalData?.data.voltage.in,
         displayVoltage,
-        [],
         isLower(
           thermalData?.data.voltage.in,
           thermalData?.settings.voltage.minimal,
@@ -219,7 +221,6 @@ export const getTableVoltageValues = (
       batteryVoltage: maybeValueToTableRowValue(
         thermalData?.data.voltage.battery,
         displayVoltage,
-        [],
         isLower(
           thermalData?.data.voltage.battery,
           thermalData?.settings.voltage.minimal,
@@ -230,7 +231,6 @@ export const getTableVoltageValues = (
       unitsVoltage: maybeValueToTableRowValue(
         thermalData?.data.voltage.units,
         displayVoltage,
-        [],
         isLower(
           thermalData?.data.voltage.units,
           thermalData?.settings.voltage.minimal,
@@ -241,7 +241,6 @@ export const getTableVoltageValues = (
       gsmVoltage: maybeValueToTableRowValue(
         thermalData?.data.voltage.gsm,
         displayVoltage,
-        [],
         isLower(
           thermalData?.data.voltage.gsm,
           thermalData?.settings.voltage.minimal,

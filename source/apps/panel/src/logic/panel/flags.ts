@@ -1,0 +1,25 @@
+export const ENGINE_BLOCK = {
+  ACTIVE: 1,
+  WAS_OPENED: 2,
+  TEMPERATURE_A: 4,
+  TEMPERATURE_B: 8,
+  SERVICE_DOORS: 64,
+  DOOR_FAULT: 128,
+  OUT_OF_SERVICE: 256,
+} as const;
+
+export const THERMAL_BLOCK = {
+  INPUT_VOLTAGE: 1,
+  BATTERY: 2,
+  STABILIZED_RAIL: 4,
+} as const;
+
+export const DOOR_STATE = {
+  OPENING_A: 1,
+  OPENING_B: 2,
+  OBSTACLE_A: 4,
+  OPEN: 8,
+  CLOSING_A: 16,
+  CLOSING_B: 32,
+  OBSTACLE_B: 64,
+} as const;

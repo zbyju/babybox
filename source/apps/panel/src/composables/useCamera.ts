@@ -3,7 +3,7 @@ import { onUnmounted, ref } from "vue";
 
 import type { Maybe } from "@/types/generic.types";
 import { CameraState } from "@/types/panel/camera.types";
-import { type CameraConfig } from "@/types/panel/config.types";
+import type { CameraConfig } from "@/types/panel/config.types";
 import { getURLPostfix } from "@/utils/panel/camera";
 
 const DEFAULT_UPDATE_DELAY = 1000;
@@ -48,7 +48,7 @@ const BLANK =
  */
 export default function useCamera(
   config: CameraConfig,
-  onUpdate?: () => any,
+  onUpdate?: () => void,
 ): {
   url: Ref<string>;
   state: Ref<CameraState>;

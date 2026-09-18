@@ -1,30 +1,39 @@
-import type { Moment } from "moment";
 import moment from "moment";
 
 import type { Maybe } from "@/types/generic.types";
 
-export const getHoursWithLeadingZeroes = (time: Maybe<Moment>): string => {
-  if (!time || !moment(time).isValid()) return "--";
-  const hours = time.hours().toString();
+function asMoment(time: Maybe<number>) {
+  if (time === undefined || !Number.isFinite(time)) return undefined;
+  const parsed = moment(time);
+  return parsed.isValid() ? parsed : undefined;
+}
+
+export const getHoursWithLeadingZeroes = (time: Maybe<number>): string => {
+  const parsed = asMoment(time);
+  if (!parsed) return "--";
+  const hours = parsed.hours().toString();
   return hours.length == 2 ? hours : "0" + hours;
 };
 
-export const getMinutesWithLeadingZeroes = (time: Maybe<Moment>): string => {
-  if (!time || !moment(time).isValid()) return "--";
-  const minutes = time.minutes().toString();
+export const getMinutesWithLeadingZeroes = (time: Maybe<number>): string => {
+  const parsed = asMoment(time);
+  if (!parsed) return "--";
+  const minutes = parsed.minutes().toString();
   return minutes.length == 2 ? minutes : "0" + minutes;
 };
 
-export const getFullTime = (time: Maybe<Moment>): string => {
-  if (!time || !moment(time).isValid()) return "--";
-  return time.format("HH:mm:ss");
+export const getFullTime = (time: Maybe<number>): string => {
+  const parsed = asMoment(time);
+  if (!parsed) return "--";
+  return parsed.format("HH:mm:ss");
 };
 
-export const getFullDate = (time: Maybe<Moment>): string => {
-  if (!time || !moment(time).isValid()) return "--";
-  return time.format("DD.MM.YYYY");
+export const getFullDate = (time: Maybe<number>): string => {
+  const parsed = asMoment(time);
+  if (!parsed) return "--";
+  return parsed.format("DD.MM.YYYY");
 };
 
-export const getCurrentTimePC = (): Moment => {
-  return moment();
+export const getCurrentTimePC = (): number => {
+  return moment().valueOf();
 };

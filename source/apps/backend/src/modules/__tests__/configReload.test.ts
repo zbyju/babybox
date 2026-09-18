@@ -35,14 +35,21 @@ function storedConfig(): MainConfig {
 const bound: BoundAddress = { port: 5000, prefix: "/api/v1" };
 
 function answerWith(config: unknown) {
-  return () => Promise.resolve({ status: 200, msg: "ok", data: config });
+  return () =>
+    Promise.resolve({
+      ok: true as const,
+      status: 200 as const,
+      msg: "ok",
+      data: config,
+    });
 }
 
-/* What fetchConfig really returns when configer does not answer: no data key. */
+/* What fetchConfig really returns when configer does not answer. */
 function answerWithNothing() {
   return () =>
     Promise.resolve({
-      status: 408,
+      ok: false as const,
+      status: 408 as const,
       msg: "Request timedout. The URL/IP might be wrong, check the config.",
     });
 }

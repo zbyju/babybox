@@ -1,3 +1,5 @@
+import type { JsonResponse } from "@/api/http";
+import { SettingsPutResponseSchema } from "@/schemas/api";
 import type {
   SettingsSendResult,
   SettingsToSend,
@@ -109,22 +111,19 @@ export const updateValueBasedOnResult = (
 };
 
 export const settingsSendToStates = (
-  response: any,
+  response: JsonResponse<unknown>,
   values: SettingsTableRowValue[],
   rows: SettingsTableRow[],
 ): SettingsTableRowValue[] => {
+  const parsed = SettingsPutResponseSchema.safeParse(response.data);
+  const results = parsed.success ? parsed.data.results : [];
   return values.map((value: SettingsTableRowValue, index: number) => {
     const row = rows[index];
-    const data = response.data;
     const resultEngine = row.engine
-      ? data.results.find(
-          (d: any) => d.index === row.engine && d.unit === "engine",
-        )
+      ? results.find((d) => d.index === row.engine && d.unit === "engine")
       : null;
     const resultThermal = row.thermal
-      ? data.results.find(
-          (d: any) => d.index === row.thermal && d.unit === "thermal",
-        )
+      ? results.find((d) => d.index === row.thermal && d.unit === "thermal")
       : null;
 
     return updateValueBasedOnResult(resultEngine, resultThermal, value);
@@ -138,12 +137,13 @@ export const settingsSendToStatesError = (
 ): SettingsTableRowValue[] => {
   return values.map((value: SettingsTableRowValue, index: number) => {
     const row = rows[index];
-    const data = changedValues;
     const resultEngine = row.engine
-      ? data.find((d: any) => d.index === row.engine && d.unit === "engine")
+      ? changedValues.find((d) => d.index === row.engine && d.unit === "engine")
       : null;
     const resultThermal = row.thermal
-      ? data.find((d: any) => d.index === row.thermal && d.unit === "thermal")
+      ? changedValues.find(
+          (d) => d.index === row.thermal && d.unit === "thermal",
+        )
       : null;
 
     if (resultEngine || resultThermal) {

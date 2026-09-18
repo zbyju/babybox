@@ -9,6 +9,7 @@ import type {
   BackendReadableConfig,
   BoundAddress,
 } from "./modules/configReload";
+import { isBackendReadableConfig } from "./modules/configReload";
 import { modulesObject } from "./modules/init";
 import { router as engineRoute } from "./routes/engineRoute";
 import { router as reloadRoute } from "./routes/reloadRoute";
@@ -80,18 +81,22 @@ async function main() {
    */
   let c = await fetchConfig();
   let attempt = 1;
-  while (!c.data) {
+  while (!c.ok || !isBackendReadableConfig(c.data)) {
+    const reason = !c.ok
+      ? c.msg
+      : "the stored config is missing a field the backend reads";
     console.log(
-      `Config not available (attempt ${attempt}): ${c.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
+      `Config not available (attempt ${attempt}): ${reason} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
     );
     await wait(CONFIG_RETRY_DELAY_MS);
     c = await fetchConfig();
     attempt++;
   }
-  config = c.data;
+  applyConfig(c.data);
+  const loaded = c.data;
 
   const app = express();
-  const port = config?.backend.port || process.env.PORT || 5000;
+  const port = loaded.backend.port || process.env.PORT || 5000;
 
   // Setup logger - morgan
   if (process.env.NODE_ENV === "development") {
@@ -108,7 +113,7 @@ async function main() {
   // Parse JSON in POST requests
   app.use(express.json());
 
-  const prefix = config.backend.url || process.env.API_PREFIX || "";
+  const prefix = loaded.backend.url || process.env.API_PREFIX || "";
 
   // Status route
   app.get(prefix + "/status", (req, res) => {

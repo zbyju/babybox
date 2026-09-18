@@ -8,10 +8,11 @@ lesson: what happened, what to do instead.
 - **Never run the machine's pnpm here.** It rewrites the lockfile format. Use
   `npx pnpm@7.5.0`. CI and every babybox install with `--frozen-lockfile` from that
   version; a lockfile in another format means the box does not start.
-- **A green build proves little for the panel.** `pnpm typecheck` on the panel is red
-  with 20 pre-existing errors and the build's type gate checks zero files. The docs
-  said 17 until P3 counted them on `origin/main` at 1927135. Record your own baseline
-  before you start; the bar is no new errors, not a green run.
+- **A green panel typecheck is a CI step, not the box `build`.** `pnpm typecheck`
+  on the panel runs `vue-tsc -p tsconfig.app.json`. The box `build` script must not
+  gain that command until it stays green: boxes run `pnpm build` with nobody there,
+  and a red typecheck would stop the update. The old `vue-tsc --noEmit` in `build`
+  used `tsconfig.json` with `"files": []` and checked nothing.
 - **The startup app treats any stderr from `pnpm run build` as a failed build.**
   A warning printed by `tsc` or a package script fails the update on the box.
 - **`tsc` picks up `bun-types` from a parent `node_modules`** (TS1005/TS1139 noise).
@@ -80,19 +81,19 @@ lesson: what happened, what to do instead.
 
 ## Backend
 
-- **`fetchConfig()` returns no `data` key when it fails.** It answers
-  `{ status: 408, msg }`, so `config = (await fetchConfig()).data` sets `undefined`
-  and the next poll throws on `config.units.engine.ip`. Check for the key before any
-  assignment; boot's retry loop happens to survive it only because it loops on
-  `!c.data`.
+- **`fetchConfig()` fails as `{ ok: false }`.** It used to answer
+  `{ status: 408, msg }` with no `data` key, so `config = (await fetchConfig()).data`
+  set `undefined` and the next poll threw on `config.units.engine.ip`. The result is
+  now a union. Loop on `!c.ok` (and `isBackendReadableConfig` at boot). Do not put
+  a unit-body schema inside `fetchFromUrl`: `fetchConfig` uses that helper too, and
+  a config JSON object is not `string | number`.
 - **`prefix` is `config.backend.url || process.env.API_PREFIX`.** The prefix the
   process really serves may never have come from the config. Anything that compares
   a new config against "what we are running" has to compare against a value captured
   at listen time, not against `config.backend`.
-- **The backend's tests land in `dist`.** `tsconfig.json` includes all of `src` with
-  no test exclusion, unlike configer's. A test file that imports the schema for real
-  would fail CI's `! grep -rl config-schema apps/backend/dist`, so use `import type`
-  in tests too.
+- **Backend `tsc` skips test files.** `tsconfig.json` excludes `*.test.ts` and
+  `__tests__`, so tests do not land in `dist`. A test that needs the schema at
+  runtime still must not import it: startup installs `dist` outside the workspace.
 - **Lint the backend before you build it in a clone.** eslint picks up
   `apps/backend/dist` once it exists, which produces phantom failures. CI lints
   before it builds, so it never sees them.
@@ -100,8 +101,9 @@ lesson: what happened, what to do instead.
   claim above used to cover jest as well. It was wrong: CI's order is install, lint,
   build, grep, tests, so the jest step runs after `dist` exists and `jest --listTests`
   found both copies — 172 cases where `src` alone has 86. `jest.config.json` now sets
-  `testPathIgnorePatterns` to `["/node_modules/", "/dist/"]`. Review finding on the P4
-  PR. Check the CI step order before writing down that a step never sees a build.
+  `testPathIgnorePatterns` to `["/node_modules/", "/dist/"]`, and `tsc` no longer
+  emits the tests. Review finding on the P4 PR. Check the CI step order before
+  writing down that a step never sees a build.
 
 - **Both servers answer every interface and every origin.** `app.listen(port, cb)`
   with no host binds `0.0.0.0` in the backend and in configer, and both mount

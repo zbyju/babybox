@@ -1,80 +1,98 @@
+import { ENGINE_RAM, RAM_FIELD_COUNT, THERMAL_RAM } from "@/logic/panel/ram";
 import type { VoltageConfig } from "@/types/panel/config.types";
 import type {
   EngineUnit,
   RawEngineUnit,
   RawThermalUnit,
+  RawUnitVariable,
   ThermalUnit,
 } from "@/types/panel/units.types";
 import {
-  partitionedTimeToMoment,
+  partitionedTimeToUnixMs,
   stringBooleanToBoolean,
   stringToNumber,
   stringToNumberWithDecimals,
   stringToVoltage,
 } from "@/utils/panel/conversions";
 
+function field(raw: RawUnitVariable[], index: number): string {
+  return raw[index].value;
+}
+
 export const rawEngineUnitToEngineUnit = (
   rawEngineUnit: RawEngineUnit,
-): EngineUnit => {
+): EngineUnit | undefined => {
+  if (rawEngineUnit.length < RAM_FIELD_COUNT) return undefined;
+  const v = (index: number) => field(rawEngineUnit, index);
   return {
     data: {
       temperature: {
-        inner: stringToNumberWithDecimals(rawEngineUnit[28].value),
+        inner: stringToNumberWithDecimals(v(ENGINE_RAM.INNER_TEMP)),
       },
       engine: {
         left: {
-          load: stringToNumber(rawEngineUnit[35].value),
-          position: stringToNumber(rawEngineUnit[37].value),
+          load: stringToNumber(v(ENGINE_RAM.LEFT_LOAD)),
+          position: stringToNumber(v(ENGINE_RAM.LEFT_POSITION)),
         },
         right: {
-          load: stringToNumber(rawEngineUnit[36].value),
-          position: stringToNumber(rawEngineUnit[38].value),
+          load: stringToNumber(v(ENGINE_RAM.RIGHT_LOAD)),
+          position: stringToNumber(v(ENGINE_RAM.RIGHT_POSITION)),
         },
       },
       door: {
-        state: stringToNumber(rawEngineUnit[48].value),
+        state: stringToNumber(v(ENGINE_RAM.DOOR_STATE)),
 
-        isBarrierInterrupted: stringBooleanToBoolean(rawEngineUnit[17].value),
-        isServiceDoorOpened: stringBooleanToBoolean(rawEngineUnit[23].value),
+        isBarrierInterrupted: stringBooleanToBoolean(v(ENGINE_RAM.BARRIER)),
+        isServiceDoorOpened: stringBooleanToBoolean(v(ENGINE_RAM.SERVICE_DOOR)),
       },
       timers: {
-        inspectionMessage: stringToNumber(rawEngineUnit[59].value),
-        serviceDoor: stringToNumber(rawEngineUnit[58].value),
+        inspectionMessage: stringToNumber(
+          v(ENGINE_RAM.INSPECTION_MESSAGE_TIMER),
+        ),
+        serviceDoor: stringToNumber(v(ENGINE_RAM.SERVICE_DOOR_TIMER)),
       },
       misc: {
-        inspectionNotDoneForDays: stringToNumber(rawEngineUnit[33].value),
+        inspectionNotDoneForDays: stringToNumber(
+          v(ENGINE_RAM.INSPECTION_NOT_DONE_DAYS),
+        ),
       },
-      time: partitionedTimeToMoment(
-        rawEngineUnit[39].value,
-        rawEngineUnit[40].value,
-        rawEngineUnit[41].value,
-        rawEngineUnit[42].value,
-        rawEngineUnit[43].value,
-        rawEngineUnit[44].value,
+      time: partitionedTimeToUnixMs(
+        v(ENGINE_RAM.TIME_DAY),
+        v(ENGINE_RAM.TIME_MONTH),
+        v(ENGINE_RAM.TIME_YEAR),
+        v(ENGINE_RAM.TIME_HOUR),
+        v(ENGINE_RAM.TIME_MINUTE),
+        v(ENGINE_RAM.TIME_SECOND),
       ),
-      isBlocked: stringBooleanToBoolean(rawEngineUnit[45].value),
-      blockValue: stringToNumber(rawEngineUnit[45].value),
+      isBlocked: stringBooleanToBoolean(v(ENGINE_RAM.BLOCK)),
+      blockValue: stringToNumber(v(ENGINE_RAM.BLOCK)),
     },
     settings: {
       temperature: {
-        minimalInner: stringToNumberWithDecimals(rawEngineUnit[6].value),
-        maximalInner: stringToNumberWithDecimals(rawEngineUnit[7].value),
+        minimalInner: stringToNumberWithDecimals(v(ENGINE_RAM.MIN_INNER_TEMP)),
+        maximalInner: stringToNumberWithDecimals(v(ENGINE_RAM.MAX_INNER_TEMP)),
       },
       engine: {
-        allowedLoad: stringToNumber(rawEngineUnit[0].value),
-        timeForEngineStart: stringToNumber(rawEngineUnit[1].value),
+        allowedLoad: stringToNumber(v(ENGINE_RAM.ALLOWED_LOAD)),
+        timeForEngineStart: stringToNumber(v(ENGINE_RAM.TIME_FOR_ENGINE_START)),
 
-        closedThreshold: stringToNumber(rawEngineUnit[2].value),
-        openedThreshold: stringToNumber(rawEngineUnit[3].value),
-        timeToBeOpenedInSeconds: stringToNumber(rawEngineUnit[4].value),
+        closedThreshold: stringToNumber(v(ENGINE_RAM.CLOSED_THRESHOLD)),
+        openedThreshold: stringToNumber(v(ENGINE_RAM.OPENED_THRESHOLD)),
+        timeToBeOpenedInSeconds: stringToNumber(
+          v(ENGINE_RAM.TIME_TO_BE_OPENED),
+        ),
       },
       misc: {
-        pcTimeoutConnection: stringToNumber(rawEngineUnit[5].value),
+        pcTimeoutConnection: stringToNumber(v(ENGINE_RAM.PC_TIMEOUT)),
 
-        emailPeriodInSeconds: stringToNumber(rawEngineUnit[9].value),
-        criticalEmailPeriodInSeconds: stringToNumber(rawEngineUnit[10].value),
+        emailPeriodInSeconds: stringToNumber(v(ENGINE_RAM.EMAIL_PERIOD)),
+        criticalEmailPeriodInSeconds: stringToNumber(
+          v(ENGINE_RAM.CRITICAL_EMAIL_PERIOD),
+        ),
 
-        inspectionPeriodInSeconds: stringToNumber(rawEngineUnit[11].value),
+        inspectionPeriodInSeconds: stringToNumber(
+          v(ENGINE_RAM.INSPECTION_PERIOD),
+        ),
       },
     },
   };
@@ -83,57 +101,65 @@ export const rawEngineUnitToEngineUnit = (
 export const rawThermalUnitToThermalUnit = (
   rawThermalUnit: RawThermalUnit,
   voltageConfig: VoltageConfig,
-): ThermalUnit => {
+): ThermalUnit | undefined => {
+  if (rawThermalUnit.length < RAM_FIELD_COUNT) return undefined;
+  const v = (index: number) => field(rawThermalUnit, index);
   return {
     data: {
       temperature: {
-        inner: stringToNumberWithDecimals(rawThermalUnit[29].value),
-        outside: stringToNumberWithDecimals(rawThermalUnit[28].value),
-        casing: stringToNumberWithDecimals(rawThermalUnit[30].value),
-        top: stringToNumberWithDecimals(rawThermalUnit[32].value),
-        bottom: stringToNumberWithDecimals(rawThermalUnit[31].value),
+        inner: stringToNumberWithDecimals(v(THERMAL_RAM.INNER_TEMP)),
+        outside: stringToNumberWithDecimals(v(THERMAL_RAM.OUTSIDE_TEMP)),
+        casing: stringToNumberWithDecimals(v(THERMAL_RAM.CASING_TEMP)),
+        top: stringToNumberWithDecimals(v(THERMAL_RAM.TOP_TEMP)),
+        bottom: stringToNumberWithDecimals(v(THERMAL_RAM.BOTTOM_TEMP)),
 
-        isHeatingCasing: stringBooleanToBoolean(rawThermalUnit[24].value),
-        isHeatingAir: stringBooleanToBoolean(rawThermalUnit[25].value),
-        isCoolingAir: stringBooleanToBoolean(rawThermalUnit[26].value),
+        isHeatingCasing: stringBooleanToBoolean(v(THERMAL_RAM.HEATING_CASING)),
+        isHeatingAir: stringBooleanToBoolean(v(THERMAL_RAM.HEATING_AIR)),
+        isCoolingAir: stringBooleanToBoolean(v(THERMAL_RAM.COOLING_AIR)),
       },
       voltage: {
-        in: stringToVoltage(rawThermalUnit[35].value, voltageConfig),
-        battery: stringToVoltage(rawThermalUnit[36].value, voltageConfig),
-        units: stringToVoltage(rawThermalUnit[37].value, voltageConfig),
-        gsm: stringToVoltage(rawThermalUnit[38].value, voltageConfig),
+        in: stringToVoltage(v(THERMAL_RAM.VOLTAGE_IN), voltageConfig),
+        battery: stringToVoltage(v(THERMAL_RAM.VOLTAGE_BATTERY), voltageConfig),
+        units: stringToVoltage(v(THERMAL_RAM.VOLTAGE_UNITS), voltageConfig),
+        gsm: stringToVoltage(v(THERMAL_RAM.VOLTAGE_GSM), voltageConfig),
       },
       door: {
-        isServiceDoorOpened: stringBooleanToBoolean(rawThermalUnit[23].value),
+        isServiceDoorOpened: stringBooleanToBoolean(
+          v(THERMAL_RAM.SERVICE_DOOR),
+        ),
       },
 
-      time: partitionedTimeToMoment(
-        rawThermalUnit[39].value,
-        rawThermalUnit[40].value,
-        rawThermalUnit[41].value,
-        rawThermalUnit[42].value,
-        rawThermalUnit[43].value,
-        rawThermalUnit[44].value,
+      time: partitionedTimeToUnixMs(
+        v(THERMAL_RAM.TIME_DAY),
+        v(THERMAL_RAM.TIME_MONTH),
+        v(THERMAL_RAM.TIME_YEAR),
+        v(THERMAL_RAM.TIME_HOUR),
+        v(THERMAL_RAM.TIME_MINUTE),
+        v(THERMAL_RAM.TIME_SECOND),
       ),
 
-      isBlocked: stringBooleanToBoolean(rawThermalUnit[46].value),
-      blockValue: stringToNumber(rawThermalUnit[46].value),
+      isBlocked: stringBooleanToBoolean(v(THERMAL_RAM.BLOCK)),
+      blockValue: stringToNumber(v(THERMAL_RAM.BLOCK)),
     },
     settings: {
       temperature: {
-        hysteresisHeating: stringToNumberWithDecimals(rawThermalUnit[1].value),
-        hysteresisCooling: stringToNumberWithDecimals(rawThermalUnit[2].value),
-        optimalInner: stringToNumberWithDecimals(rawThermalUnit[0].value),
-        minimalInner: stringToNumberWithDecimals(rawThermalUnit[3].value),
-        maximalInner: stringToNumberWithDecimals(rawThermalUnit[4].value),
-        maximalCasing: stringToNumberWithDecimals(rawThermalUnit[5].value),
-        maximalPeltier: stringToNumberWithDecimals(rawThermalUnit[7].value),
+        hysteresisHeating: stringToNumberWithDecimals(
+          v(THERMAL_RAM.HYSTERESIS_HEATING),
+        ),
+        hysteresisCooling: stringToNumberWithDecimals(
+          v(THERMAL_RAM.HYSTERESIS_COOLING),
+        ),
+        optimalInner: stringToNumberWithDecimals(v(THERMAL_RAM.OPTIMAL_INNER)),
+        minimalInner: stringToNumberWithDecimals(v(THERMAL_RAM.MIN_INNER)),
+        maximalInner: stringToNumberWithDecimals(v(THERMAL_RAM.MAX_INNER)),
+        maximalCasing: stringToNumberWithDecimals(v(THERMAL_RAM.MAX_CASING)),
+        maximalPeltier: stringToNumberWithDecimals(v(THERMAL_RAM.MAX_PELTIER)),
       },
       voltage: {
-        minimal: stringToVoltage(rawThermalUnit[6].value, voltageConfig),
+        minimal: stringToVoltage(v(THERMAL_RAM.MIN_VOLTAGE), voltageConfig),
       },
       misc: {
-        emailPeriodInSeconds: stringToNumber(rawThermalUnit[8].value),
+        emailPeriodInSeconds: stringToNumber(v(THERMAL_RAM.EMAIL_PERIOD)),
       },
     },
   };

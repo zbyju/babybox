@@ -24,11 +24,14 @@
 </template>
 
 <script lang="ts" setup>
-  import moment from "moment";
   import { type Ref, ref, watch } from "vue";
 
   import { type JsonResponse, HttpError } from "@/api/http";
-  import { getSettings, sendSettings } from "@/api/units";
+  import {
+    getSettings,
+    parseSettingsGetResponse,
+    sendSettings,
+  } from "@/api/units";
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
   import SettingsLog from "@/components/settings/form/SettingsFormLog.vue";
@@ -110,7 +113,7 @@
   const logEntries: Ref<LogEntry[]> = ref([
     {
       message: "Formulář inicializován",
-      date: moment(),
+      createdAt: Date.now(),
       type: LogEntryType.Info,
     },
   ]);
@@ -127,7 +130,7 @@
     logEntries.value.unshift({
       message,
       type,
-      date: moment(),
+      createdAt: Date.now(),
     });
     settingsResult.value = {
       type,
@@ -162,7 +165,7 @@
      * Reading the response is caught below, where an error means the panel
      * got an answer it could not use.
      */
-    let response: JsonResponse;
+    let response: JsonResponse<unknown>;
     try {
       response = await getSettings();
     } catch (err: unknown) {
@@ -188,10 +191,14 @@
 
     try {
       if (response.status >= 200 && response.status <= 299) {
+        const parsed = parseSettingsGetResponse(response.data);
+        if (!parsed.success) {
+          throw new Error("Settings body is not valid");
+        }
+        const engineData = (parsed.data.data.engine ?? "").split("|");
+        const thermalData = (parsed.data.data.thermal ?? "").split("|");
         values.value = values.value.map(
           (v: SettingsTableRowValue, i: number) => {
-            const engineData = response.data.data.engine.split("|");
-            const thermalData = response.data.data.thermal.split("|");
             const row = rows[i];
             const engine =
               row.engine !== null ? engineData[row.engine - 100] : null;
@@ -206,7 +213,7 @@
         );
         addLogMessage("Parametry úspěšně načteny", LogEntryType.Success);
       } else {
-        throw { msg: "Status code not OK" };
+        throw new Error("Status code not OK");
       }
     } catch {
       addLogMessage(
@@ -238,9 +245,9 @@
 
         values.value = settingsSendToStates(response, values.value, rows);
       } else {
-        throw { msg: "Status code is not OK" };
+        throw new Error("Status code is not OK");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       addLogMessage("Chyba při ukládání parametrů", LogEntryType.Error);
       onLoadAction();
       values.value = values.value = settingsSendToStatesError(

@@ -15,7 +15,7 @@ export class HttpError extends Error {
   }
 }
 
-export type JsonResponse<T = any> = {
+export type JsonResponse<T = unknown> = {
   status: number;
   data: T;
 };
@@ -32,7 +32,7 @@ export const request = async (
   return response;
 };
 
-export const requestJson = async <T = any>(
+export const requestJson = async <T = unknown>(
   url: string,
   options: FetchWithTimeoutOptions = {},
 ): Promise<JsonResponse<T>> => {

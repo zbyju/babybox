@@ -12,7 +12,7 @@ type Job<T> = () => Promise<T>;
 export type SharedRead = `data:${number}` | `settings:${number}`;
 
 /**
- * What a shared read resolves to: the axios response of `fetchFromUrl`.
+ * What a shared read resolves to: the `{ status, data }` of `fetchFromUrl`.
  *
  * Shared reads are keyed by a string, so a generic result type would let two
  * callers on one key ask for different types and get each other's value with
@@ -20,7 +20,7 @@ export type SharedRead = `data:${number}` | `settings:${number}`;
  */
 export interface UnitReadResult {
   status: number;
-  data: any;
+  data: unknown;
 }
 
 /**

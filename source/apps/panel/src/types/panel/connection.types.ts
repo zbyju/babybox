@@ -1,18 +1,14 @@
-import { ConnectionTracker } from "@/logic/panel/connections";
-
-export enum ConnectionResult {
-  Success = 1,
-  Fail = 0,
-}
+import type { ConnectionStats } from "@/logic/panel/connections";
+import { createConnectionStats } from "@/logic/panel/connections";
 
 export interface Connection {
-  engineUnit: ConnectionTracker;
-  thermalUnit: ConnectionTracker;
+  engineUnit: ConnectionStats;
+  thermalUnit: ConnectionStats;
 }
 
 export const getDefaultConnection = (): Connection => {
   return {
-    engineUnit: new ConnectionTracker(),
-    thermalUnit: new ConnectionTracker(),
+    engineUnit: createConnectionStats(),
+    thermalUnit: createConnectionStats(),
   };
 };

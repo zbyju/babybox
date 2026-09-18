@@ -1,5 +1,12 @@
 import { backendApi } from "@/api/base";
 import { type JsonResponse, request, requestJson } from "@/api/http";
+import {
+  type Setting,
+  RawUnitSchema,
+  SettingsGetResponseSchema,
+  SettingsPutResponseSchema,
+  UnitDataResponseSchema,
+} from "@/schemas/api";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
@@ -8,9 +15,22 @@ export const getStatus = async (): Promise<boolean> => {
   try {
     const response = await fetchWithTimeout(`${baseUrl}/status`, { timeout });
     return response.ok;
-  } catch (err) {
+  } catch (err: unknown) {
     return false;
   }
+};
+
+export const parseUnitDataBody = (
+  body: unknown,
+): RawEngineUnit | RawThermalUnit | undefined => {
+  const parsed = UnitDataResponseSchema.safeParse(body);
+  if (!parsed.success) return undefined;
+  const fields = parsed.data.data.split("|").map((value, index) => ({
+    index,
+    value,
+  }));
+  const raw = RawUnitSchema.safeParse(fields);
+  return raw.success ? raw.data : undefined;
 };
 
 export const getData = async (
@@ -19,11 +39,9 @@ export const getData = async (
 ): Promise<RawEngineUnit | RawThermalUnit | undefined> => {
   try {
     const { data: body } = await requestJson(url, { timeout });
-    return body.data.split("|").map((x: string, i: number) => {
-      return { index: i, value: x };
-    });
-  } catch (err) {
-    return Promise.reject(undefined);
+    return parseUnitDataBody(body);
+  } catch (err: unknown) {
+    return undefined;
   }
 };
 
@@ -48,7 +66,7 @@ export const updateWatchdog = async (): Promise<boolean> => {
       timeout,
     });
     return response.ok;
-  } catch (err) {
+  } catch (err: unknown) {
     return false;
   }
 };
@@ -78,13 +96,18 @@ export const resetBabybox = async (): Promise<void> => {
   });
 };
 
-export const getSettings = (): Promise<JsonResponse> => {
+export const getSettings = (): Promise<JsonResponse<unknown>> => {
   const { baseUrl, timeout } = backendApi();
 
   return requestJson(`${baseUrl}/units/settings`, { timeout });
 };
 
-export const sendSettings = (data: any[]): Promise<JsonResponse> => {
+export const parseSettingsGetResponse = (body: unknown) =>
+  SettingsGetResponseSchema.safeParse(body);
+
+export const sendSettings = (
+  data: Setting[],
+): Promise<JsonResponse<unknown>> => {
   const { baseUrl } = backendApi();
 
   /*
@@ -99,3 +122,6 @@ export const sendSettings = (data: any[]): Promise<JsonResponse> => {
     timeout: 60000,
   });
 };
+
+export const parseSettingsPutResponse = (body: unknown) =>
+  SettingsPutResponseSchema.safeParse(body);

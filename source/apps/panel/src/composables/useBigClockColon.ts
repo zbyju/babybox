@@ -1,5 +1,4 @@
 import throttle from "lodash/throttle";
-import type { Moment } from "moment";
 import type { Ref } from "vue";
 import { ref, watch } from "vue";
 
@@ -19,13 +18,12 @@ import type { Maybe } from "@/types/generic.types";
  * @returns boolean - should the colon be displayed
  */
 export default function useBigClockColon(
-  time: Ref<Maybe<Moment>>,
+  time: Ref<Maybe<number>>,
   active: Ref<boolean>,
   blinkDelay = 1000,
 ) {
   const showColon = ref(true);
 
-  // Colon blinks for @BLINK_DELAY miliseconds
   const blink = () => {
     showColon.value = !showColon.value;
     setTimeout(() => {
@@ -33,16 +31,18 @@ export default function useBigClockColon(
     }, blinkDelay);
   };
 
-  // Blink at max once every @BLINK_DELAY * 2 miliseconds
   const throttledBlink = throttle(blink, blinkDelay * 2);
 
-  // Blink when time changes
   watch(time, (newTime, oldTime) => {
     if (active.value) {
       showColon.value = true;
       return;
     }
-    if (newTime?.unix().toString() !== oldTime?.unix().toString()) {
+    const nextSecond =
+      newTime === undefined ? undefined : Math.floor(newTime / 1000);
+    const prevSecond =
+      oldTime === undefined ? undefined : Math.floor(oldTime / 1000);
+    if (nextSecond !== prevSecond) {
       throttledBlink();
     }
   });

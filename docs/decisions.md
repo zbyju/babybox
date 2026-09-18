@@ -760,3 +760,22 @@ Context · Decision · Why · Gave up · Where
   action buttons, not the banner.
 - Gave up: one warning/error pair for every surface.
 - Where: `public/config/styles.json`, `components/panel/elements/HighlightMessage.vue`.
+
+## 2026-09-18 — Incoming unit and API bodies are parsed with zod 3.23.8
+
+- Context: `fetchFromUrl` and `fetchConfig` returned `Promise<any>`. A failed
+  config fetch had no `data` key. Assigning that took the backend down. The panel
+  split RAM windows and settings replies the same way, with `any`.
+- Decision: pin zod at `3.23.8`, the version `@babybox/config-schema` already
+  uses, so TypeScript 4.7 still compiles. The backend depends on zod from npm,
+  not from a workspace package, because startup installs `apps/backend/dist`
+  outside the workspace. Parse at the caller. `fetchFromUrl` stays
+  `{ status, data: unknown }`. A unit body is `string | number`. A failed
+  `fetchConfig` is `{ ok: false }`. The panel parses backend JSON with its own
+  schemas in `apps/panel/src/schemas/api.ts`.
+- Why: one version, already on the lockfile path. The backend cannot import a
+  workspace package at runtime. Parsing at the caller keeps `fetchConfig` from
+  rejecting a JSON object.
+- Gave up: one shared schema package for the unit wire. The Setting object is
+  small and lives in both apps.
+- Where: `apps/backend/src/schemas/`, `apps/panel/src/schemas/api.ts`.

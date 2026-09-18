@@ -1,7 +1,4 @@
 import isEqual from "lodash/isEqual";
-import { storeToRefs } from "pinia";
-import type { Ref } from "vue";
-import { ref } from "vue";
 
 import { CONFIGER_API_URL, CONFIGER_TIMEOUT } from "@/api/base";
 import { requestJson } from "@/api/http";
@@ -18,10 +15,6 @@ import { usePanelStateStore } from "@/pinia/panelStateStore";
 import { useUnitsStore } from "@/pinia/unitsStore";
 import { useVersionsStore } from "@/pinia/versions";
 import type { Maybe } from "@/types/generic.types";
-import type { AppConfig, UnitsConfig } from "@/types/panel/config.types";
-import type { Connection } from "@/types/panel/connection.types";
-import type { PanelState } from "@/types/panel/main.types";
-import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import type { Versions } from "@/types/panel/versions.types";
 import {
   isInstanceOfConfig,
@@ -68,12 +61,6 @@ export class AppManager {
     engine: Number.NEGATIVE_INFINITY,
     thermal: Number.NEGATIVE_INFINITY,
   };
-  private unitsConfig: Ref<UnitsConfig>;
-  private appConfig: Ref<AppConfig>;
-  private panelState: Ref<PanelState>;
-  private engineUnit: Ref<Maybe<EngineUnit>>;
-  private thermalUnit: Ref<Maybe<ThermalUnit>>;
-  private connection: Ref<Connection>;
 
   private unitsStore;
   private versionsStore;
@@ -83,42 +70,24 @@ export class AppManager {
   private appStateStore;
 
   constructor() {
-    // TODO: Refactor
-    const configStore = useConfigStore();
-    const versionsStore = useVersionsStore();
-    const panelStateStore = usePanelStateStore();
-    const unitsStore = useUnitsStore();
-    const connectionStore = useConnectionStore();
-    const appStateStore = useAppStateStore();
-    const { units, app } = storeToRefs(configStore);
-    const { message, active } = storeToRefs(panelStateStore);
-    const { engineUnit, thermalUnit } = storeToRefs(unitsStore);
-    const { engineUnit: euc, thermalUnit: tuc } = storeToRefs(connectionStore);
-    this.unitsConfig = units;
-    this.appConfig = app;
-    this.panelState = ref({ message, active });
-    this.engineUnit = engineUnit;
-    this.thermalUnit = thermalUnit;
-    this.connection = ref({ engineUnit: euc, thermalUnit: tuc });
-
-    this.unitsStore = unitsStore;
-    this.versionsStore = versionsStore;
-    this.connectionStore = connectionStore;
-    this.configStore = configStore;
-    this.panelStateStore = panelStateStore;
-    this.appStateStore = appStateStore;
+    this.configStore = useConfigStore();
+    this.versionsStore = useVersionsStore();
+    this.panelStateStore = usePanelStateStore();
+    this.unitsStore = useUnitsStore();
+    this.connectionStore = useConnectionStore();
+    this.appStateStore = useAppStateStore();
   }
 
   private async updateEngineUnit() {
     try {
       const data = await getEngineData();
       this.unitsStore.setRawEngineUnit(data);
-      if (data !== undefined) {
+      if (this.unitsStore.engineUnit !== undefined) {
         this.connectionStore.incrementSuccessEngine();
       } else {
         this.connectionStore.incrementFailEngine();
       }
-    } catch (err) {
+    } catch (err: unknown) {
       this.connectionStore.incrementFailEngine();
     }
   }
@@ -126,27 +95,31 @@ export class AppManager {
     try {
       const data = await getThermalData();
       this.unitsStore.setRawThermalUnit(data);
-      if (data !== undefined) {
+      if (this.unitsStore.thermalUnit !== undefined) {
         this.connectionStore.incrementSuccessThermal();
       } else {
         this.connectionStore.incrementFailThermal();
       }
-    } catch (err) {
+    } catch (err: unknown) {
       this.connectionStore.incrementFailThermal();
     }
   }
   private updateClock() {
-    const time = this.engineUnit.value?.data.time;
+    const time = this.unitsStore.engineUnit?.data.time;
     this.unitsStore.setTime(time);
   }
   private updateState() {
     const newState = getNewState(
-      this.engineUnit.value,
-      this.thermalUnit.value,
-      this.connection.value,
-      this.unitsConfig.value,
+      this.unitsStore.engineUnit,
+      this.unitsStore.thermalUnit,
+      this.connectionStore.connection,
+      this.configStore.units,
     );
-    if (!isEqual(this.panelState.value, newState)) {
+    const current = {
+      message: this.panelStateStore.message,
+      active: this.panelStateStore.active,
+    };
+    if (!isEqual(current, newState)) {
       this.panelStateStore.setState(newState);
     }
     this.updateClock();
@@ -154,7 +127,7 @@ export class AppManager {
   private async updateWatchdogEngine() {
     try {
       await updateWatchdog();
-    } catch (err) {
+    } catch (err: unknown) {
       // Dont care about the error
     }
   }
@@ -162,7 +135,7 @@ export class AppManager {
   private checkRefreshLimit() {
     const DEFAULT_REFRESH_LIMIT = 50000;
     const limit =
-      this.appConfig.value.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
+      this.configStore.app.refreshRequestLimit ?? DEFAULT_REFRESH_LIMIT;
 
     // Disable refresh if limit is invalid (0, negative, NaN, etc.)
     if (limit <= 0 || !Number.isFinite(limit)) {
@@ -218,7 +191,7 @@ export class AppManager {
       if (versions !== undefined) this.versionsStore.setVersions(versions);
       return "Ok";
     } else {
-      throw "Config file error";
+      throw new Error("Config file error");
     }
   }
 
@@ -228,13 +201,13 @@ export class AppManager {
       if (status) {
         return "OK";
       } else {
-        throw "Status not ok";
+        throw new Error("Status not ok");
       }
-    } catch (err) {
-      if (typeof err === "string") {
+    } catch (err: unknown) {
+      if (err instanceof Error) {
         throw err;
       } else {
-        throw "Error when fetching backend status";
+        throw new Error("Error when fetching backend status");
       }
     }
   }
@@ -245,7 +218,7 @@ export class AppManager {
    * Each later attempt is scheduled after the current one settles,
    * so a hanging backend cannot collect overlapping status requests.
    */
-  async initializeGlobal(): Promise<any> {
+  async initializeGlobal(): Promise<void> {
     /*
      * Retries back off from 5 s to 20 s.
      * The old code meant to retry at 20 s but setInterval had already captured
@@ -269,7 +242,7 @@ export class AppManager {
           await this.initializeConfig();
           this.appStateStore.setConfigSuccess();
           configOk = true;
-        } catch (err) {
+        } catch (err: unknown) {
           this.appStateStore.setConfigError();
         }
       }
@@ -278,7 +251,7 @@ export class AppManager {
         await this.initializeBackend();
         this.appStateStore.setBackendSuccess();
         backendOk = true;
-      } catch (err) {
+      } catch (err: unknown) {
         this.appStateStore.setBackendError();
       }
 
@@ -292,8 +265,8 @@ export class AppManager {
   }
 
   private nextDelay(): number {
-    const delay = this.unitsConfig.value.requestDelay || 2000;
-    return this.panelState.value.message ? delay / 2 : delay;
+    const delay = this.configStore.units.requestDelay || 2000;
+    return this.panelStateStore.message ? delay / 2 : delay;
   }
 
   private async runEngineTick() {

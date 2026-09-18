@@ -43,6 +43,11 @@ jobs:
       - name: Build config schema
         run: pnpm -F @babybox/config-schema build
 
+      - name: Typecheck
+        run: |
+          pnpm -F babybox-panel exec vue-tsc --noEmit -p tsconfig.app.json --composite false
+          pnpm -F babybox-panel-backend exec tsc --noEmit --pretty false
+
       - name: Build
         run: pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build
 

@@ -83,7 +83,7 @@ describe("POST /reload", () => {
   it("swaps in the new config and reports nothing unapplied", async () => {
     const config = storedConfig();
     config.units.engine.ip = "10.1.1.99";
-    fetchConfig.mockResolvedValue({ status: 200, data: config });
+    fetchConfig.mockResolvedValue({ ok: true, status: 200, data: config });
 
     const response = await post(url);
 
@@ -93,7 +93,11 @@ describe("POST /reload", () => {
   });
 
   it("keeps the old config when configer does not answer", async () => {
-    fetchConfig.mockResolvedValue({ status: 408, msg: "Request timedout." });
+    fetchConfig.mockResolvedValue({
+      ok: false,
+      status: 408,
+      msg: "Request timedout.",
+    });
 
     const response = await post(url);
 
@@ -104,7 +108,7 @@ describe("POST /reload", () => {
   it("keeps the old config when the stored one lost a field the backend reads", async () => {
     const config = storedConfig();
     delete (config.units.engine as Partial<MainConfig["units"]["engine"]>).ip;
-    fetchConfig.mockResolvedValue({ status: 200, data: config });
+    fetchConfig.mockResolvedValue({ ok: true, status: 200, data: config });
 
     const response = await post(url);
 
@@ -118,7 +122,7 @@ describe("POST /reload", () => {
   it("names the address it bound at listen and cannot change", async () => {
     const config = storedConfig();
     config.backend.port = 5050;
-    fetchConfig.mockResolvedValue({ status: 200, data: config });
+    fetchConfig.mockResolvedValue({ ok: true, status: 200, data: config });
 
     const response = await post(url);
 

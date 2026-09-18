@@ -6,6 +6,8 @@ import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import { daysToString } from "@/utils/panel/dataDisplay";
 
+import { DOOR_STATE, ENGINE_BLOCK, THERMAL_BLOCK } from "./flags";
+
 export const getNewState = (
   engineUnit: Maybe<EngineUnit>,
   thermalUnit: Maybe<ThermalUnit>,
@@ -18,7 +20,6 @@ export const getNewState = (
   const errorThreshold = unitsConfig.errorThreshold || 25;
   const requestDelay = unitsConfig.requestDelay || 2000;
 
-  // X dni neprovedena zkouska
   const inspection = engineUnit?.data.misc.inspectionNotDoneForDays;
   if (inspection !== undefined && inspection > 0) {
     result = {
@@ -30,10 +31,9 @@ export const getNewState = (
     };
   }
 
-  // Different engine blockactions
   const engineBlock = engineUnit?.data.blockValue;
   if (engineBlock !== undefined) {
-    if (engineBlock & 256) {
+    if (engineBlock & ENGINE_BLOCK.OUT_OF_SERVICE) {
       result = {
         active: false,
         message: {
@@ -42,7 +42,10 @@ export const getNewState = (
         },
       };
     }
-    if (engineBlock & 4 || engineBlock & 8) {
+    if (
+      engineBlock & ENGINE_BLOCK.TEMPERATURE_A ||
+      engineBlock & ENGINE_BLOCK.TEMPERATURE_B
+    ) {
       result = {
         active: false,
         message: {
@@ -51,7 +54,7 @@ export const getNewState = (
         },
       };
     }
-    if (engineBlock & 128) {
+    if (engineBlock & ENGINE_BLOCK.DOOR_FAULT) {
       result = {
         active: false,
         message: {
@@ -62,10 +65,9 @@ export const getNewState = (
     }
   }
 
-  // Different thermal blockactions
   const thermalBlock = thermalUnit?.data.blockValue;
   if (thermalBlock !== undefined) {
-    if (thermalBlock & 4) {
+    if (thermalBlock & THERMAL_BLOCK.STABILIZED_RAIL) {
       result = {
         active: false,
         message: {
@@ -74,7 +76,7 @@ export const getNewState = (
         },
       };
     }
-    if (thermalBlock & 2) {
+    if (thermalBlock & THERMAL_BLOCK.BATTERY) {
       result = {
         active: false,
         message: {
@@ -83,7 +85,7 @@ export const getNewState = (
         },
       };
     }
-    if (thermalBlock & 1) {
+    if (thermalBlock & THERMAL_BLOCK.INPUT_VOLTAGE) {
       result = {
         active: false,
         message: {
@@ -94,9 +96,11 @@ export const getNewState = (
     }
   }
 
-  // Different engine states
   if (engineBlock !== undefined) {
-    if (engineBlock & 2 && !(engineBlock & 1)) {
+    if (
+      engineBlock & ENGINE_BLOCK.WAS_OPENED &&
+      !(engineBlock & ENGINE_BLOCK.ACTIVE)
+    ) {
       result = {
         active: false,
         message: {
@@ -106,7 +110,7 @@ export const getNewState = (
         },
       };
     }
-    if (engineBlock & 64) {
+    if (engineBlock & ENGINE_BLOCK.SERVICE_DOORS) {
       result = {
         active: false,
         message: {
@@ -117,10 +121,9 @@ export const getNewState = (
     }
   }
 
-  // Different door states
   const doorState = engineUnit?.data.door.state;
   if (doorState !== undefined) {
-    if (doorState & 1 || doorState & 2) {
+    if (doorState & DOOR_STATE.OPENING_A || doorState & DOOR_STATE.OPENING_B) {
       result = {
         active: false,
         message: {
@@ -130,7 +133,10 @@ export const getNewState = (
         },
       };
     }
-    if (doorState & 4 || doorState & 64) {
+    if (
+      doorState & DOOR_STATE.OBSTACLE_A ||
+      doorState & DOOR_STATE.OBSTACLE_B
+    ) {
       result = {
         active: false,
         message: {
@@ -139,7 +145,7 @@ export const getNewState = (
         },
       };
     }
-    if (doorState & 8) {
+    if (doorState & DOOR_STATE.OPEN) {
       result = {
         active: false,
         message: {
@@ -148,7 +154,7 @@ export const getNewState = (
         },
       };
     }
-    if (doorState & 16 || doorState & 32) {
+    if (doorState & DOOR_STATE.CLOSING_A || doorState & DOOR_STATE.CLOSING_B) {
       result = {
         active: false,
         message: {
@@ -159,8 +165,7 @@ export const getNewState = (
     }
   }
 
-  // Activation
-  if (engineBlock !== undefined && engineBlock & 1) {
+  if (engineBlock !== undefined && engineBlock & ENGINE_BLOCK.ACTIVE) {
     result = {
       active: true,
       message: {
@@ -207,6 +212,5 @@ export const getNewState = (
     };
   }
 
-  // Else return default state
   return result;
 };

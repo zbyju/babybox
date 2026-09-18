@@ -94,7 +94,6 @@
     configForm,
     parseMainConfig,
   } from "@babybox/config-schema";
-  import moment from "moment";
   import { type Ref, computed, ref } from "vue";
 
   import { getConfig, saveConfig } from "@/api/config";
@@ -157,7 +156,7 @@
     message: string,
     type: LogEntryType = LogEntryType.Info,
   ) {
-    logEntries.value.unshift({ message, type, date: moment() });
+    logEntries.value.unshift({ message, type, createdAt: Date.now() });
     result.value = { type, message };
   }
 

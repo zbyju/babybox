@@ -1,4 +1,3 @@
-import type { Moment } from "moment";
 import moment from "moment";
 
 import type { Maybe } from "@/types/generic.types";
@@ -47,14 +46,14 @@ const makeTwoCharPartitions = (part: string): string => {
   return "0" + part;
 };
 
-export const partitionedTimeToMoment = (
+export const partitionedTimeToUnixMs = (
   day: string,
   month: string,
   year: string,
   hour: string,
   minute: string,
   second: string,
-): Maybe<Moment> => {
+): Maybe<number> => {
   const res = moment(
     `${makeTwoCharPartitions(year)}-${makeTwoCharPartitions(
       month,
@@ -63,7 +62,7 @@ export const partitionedTimeToMoment = (
     )}:${makeTwoCharPartitions(minute)}:${makeTwoCharPartitions(second)}`,
   );
   if (!res.isValid()) return undefined;
-  return res;
+  return res.valueOf();
 };
 
 export const booleanToTableBlockState = (
@@ -77,8 +76,7 @@ export const booleanToTableBlockState = (
 
 export function maybeValueToTableRowValue<T>(
   val: Maybe<T>,
-  display: (value: T, ...args: any[]) => string,
-  args: any[] = [],
+  display: (value: T) => string,
   okState: TableRowState = TableRowState.Ok,
 ) {
   if (val === undefined)
@@ -88,7 +86,7 @@ export function maybeValueToTableRowValue<T>(
   else {
     return {
       state: okState,
-      value: display(val, ...args),
+      value: display(val),
     };
   }
 }

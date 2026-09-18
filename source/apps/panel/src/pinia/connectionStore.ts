@@ -1,12 +1,16 @@
 import { defineStore } from "pinia";
 
-import { ConnectionResult, ConnectionTracker } from "@/logic/panel/connections";
+import {
+  applyConnectionResult,
+  ConnectionResult,
+  createConnectionStats,
+} from "@/logic/panel/connections";
 import type { Connection } from "@/types/panel/connection.types";
 
 export const useConnectionStore = defineStore("connection", {
   state: (): Connection => ({
-    engineUnit: new ConnectionTracker() as ConnectionTracker,
-    thermalUnit: new ConnectionTracker() as ConnectionTracker,
+    engineUnit: createConnectionStats(),
+    thermalUnit: createConnectionStats(),
   }),
   getters: {
     connection: (state): Connection => ({
@@ -16,16 +20,16 @@ export const useConnectionStore = defineStore("connection", {
   },
   actions: {
     incrementSuccessEngine() {
-      this.engineUnit.addResult(ConnectionResult.Success);
+      applyConnectionResult(this.engineUnit, ConnectionResult.Success);
     },
     incrementFailEngine() {
-      this.engineUnit.addResult(ConnectionResult.Fail);
+      applyConnectionResult(this.engineUnit, ConnectionResult.Fail);
     },
     incrementSuccessThermal() {
-      this.thermalUnit.addResult(ConnectionResult.Success);
+      applyConnectionResult(this.thermalUnit, ConnectionResult.Success);
     },
     incrementFailThermal() {
-      this.thermalUnit.addResult(ConnectionResult.Fail);
+      applyConnectionResult(this.thermalUnit, ConnectionResult.Fail);
     },
   },
 });

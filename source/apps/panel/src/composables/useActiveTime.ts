@@ -1,4 +1,3 @@
-import type { Moment } from "moment";
 import type { Ref } from "vue";
 import { ref, watch } from "vue";
 
@@ -13,7 +12,7 @@ import type { Maybe } from "@/types/generic.types";
  * @returns
  */
 export default function useActiveTime(
-  time: Ref<Maybe<Moment>>,
+  time: Ref<Maybe<number>>,
   active: Ref<boolean>,
 ) {
   const result = ref(time.value);

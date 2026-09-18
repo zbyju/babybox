@@ -12,8 +12,8 @@
         <template v-for="(row, index) in rows" :key="row.label">
           <SettingsFormTableRow
             :value="props.values[index].value"
-            :engine="props.values[index].engine"
-            :thermal="values[index].thermal"
+            :engine="props.values[index].engine ?? null"
+            :thermal="values[index].thermal ?? null"
             :state="values[index].state"
             :row="row"
             @update:value="

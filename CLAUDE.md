@@ -83,12 +83,15 @@ Key configurable values:
 - `components/panel/` - Dashboard widgets displaying unit data
 - `pinia/` - State stores (config, connection, units data)
 - `logic/panelLoop.ts` - Core polling loop (fetches data every ~2s)
+- `logic/panel/ram.ts` / `flags.ts` - Named RAM indexes and block-bit masks
+- `schemas/api.ts` - zod schemas for backend JSON the panel reads
 - `composables/` - Camera feed, sound alerts, time utilities
 
 ## Backend (`apps/backend/src/`)
 
 - `routes/` - API endpoints (engine, thermal, units, restart)
 - `fetch/` - Hardware communication functions
+- `schemas/` - zod schemas for unit bodies and settings request bodies
 - Serves static panel files in production
 
 ### API Routes

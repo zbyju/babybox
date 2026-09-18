@@ -1,5 +1,3 @@
-import type { Moment } from "moment";
-
 export enum LogEntryType {
   Info = "info",
   Success = "success",
@@ -10,7 +8,7 @@ export enum LogEntryType {
 export interface LogEntry {
   message: string;
   type: LogEntryType;
-  date: Moment;
+  createdAt: number;
 }
 
 export interface SettingsResult {

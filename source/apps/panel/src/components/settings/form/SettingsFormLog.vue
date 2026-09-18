@@ -8,11 +8,11 @@
   <div id="SettingsLog">
     <div
       v-for="entry in props.entries"
-      :key="entry.date.toString()"
+      :key="entry.createdAt"
       class="log-entry"
       :class="entry.type"
     >
-      <span class="log-date">{{ entry.date.format("HH:mm:ss") }}</span>
+      <span class="log-date">{{ formatLogTime(entry.createdAt) }}</span>
       <span class="log-message">{{ entry.message }}</span>
     </div>
   </div>
@@ -21,6 +21,7 @@
 <script lang="ts" setup>
   import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
   import type { LogEntry } from "@/types/settings/manager.types";
+  import { getFullTime } from "@/utils/time";
 
   const props = defineProps<{
     entries: LogEntry[];
@@ -29,6 +30,8 @@
   const emit = defineEmits<{
     (e: "click:deleteLog"): void;
   }>();
+
+  const formatLogTime = (createdAt: number): string => getFullTime(createdAt);
 </script>
 
 <style lang="stylus">
