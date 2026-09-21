@@ -435,11 +435,11 @@ read `versions.env`. Do not harvest `ensure_node` as the jump.
 
 | Piece | Today | Pinned where |
 |---|---|---|
-| Node on Ubuntu boxes (half the fleet) | 18.12.1 via `n`, `/usr/local` chowned to the user | `install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`. `apps/startup/versions.env` is named in the CI comment and does not exist. Stays as the bootstrap host. Not upgraded. |
+| Node on Ubuntu boxes (half the fleet) | 18.12.1 via `n`, `/usr/local` chowned to the user | `install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`, and `apps/startup/versions.env` (`NODE_VERSION`, detect-only). Stays as the bootstrap host. Not upgraded. |
 | Node on Windows boxes (other half) | installed by hand with nvm-windows, "mimicking" 18.12.1; OS is Windows 7, 8, 10 or 11 | nowhere; `install.bat` only checks `node -v`. Stays as the bootstrap host on Windows 10/11. |
 | pnpm | 7.5.0, lockfile `5.4` | `install-all.sh`, `install.sh`, `install.bat`, `src/logic/install/{ubuntu,windows}.js`, root `packageManager`, `ci.yml`. Stays as the `pnpm run build` hook. Not upgraded. |
-| Bun | absent | nowhere. P1 installs 1.4.2 from a pinned GitHub release zip. |
-| pm2 | `@latest` at install time | `src/logic/install/*.js` |
+| Bun | absent | `apps/startup/versions.env` (`BUN_VERSION` 1.4.2 and the two x64 zip sha256 values). P1 installs the zip. |
+| pm2 | `@latest` at install time | `src/logic/install/*.js`. `apps/startup/versions.env` stores `PM2_VERSION` 7.0.4. Nothing reads that pin until P1. |
 | Global `typescript@4.7.4`, `ts-node@10.9.1` | installed on every box | `src/logic/install/*.js`; unused by the build (the workspace `tsc` is used) |
 | TypeScript in the workspace | `^4.7.4` (root, panel, backend); configer and config-schema use the workspace `tsc` | each `package.json` that lists it |
 
@@ -930,7 +930,7 @@ phase must pass the legacy-image job on its own.
 - [x] Add `engines.node` to every `package.json` (including config-schema) and
       `engine-strict=false` on purpose, so a mismatch prints, never blocks, on a
       box. Do not add `engines.bun` until P2.
-- [ ] Fill `apps/startup/versions.env` with `BUN_VERSION=1.4.2`, sha256 keys for
+- [x] Fill `apps/startup/versions.env` with `BUN_VERSION=1.4.2`, sha256 keys for
       `bun-linux-x64` and `bun-windows-x64` only, `PM2_VERSION`,
       and the legacy `NODE_VERSION=18.12.1` / `PNPM_VERSION=7.5.0` as detect-only
       values. P0 only writes the file. `install-all.sh` starts installing Bun
@@ -1306,3 +1306,6 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — #106 — every `package.json` declares `engines.node` `18.12.1`.
   `engine-strict` is false, so a mismatch prints and does not stop install.
   `engines.bun` stays out until P2.
+- 2026-09-21 — `apps/startup/versions.env` stores Bun 1.4.2, the two x64 zip
+  sha256 values, pm2 7.0.4, and detect-only Node 18.12.1 / pnpm 7.5.0.
+  No script reads the file yet. `install-all.sh` stays unchanged.
