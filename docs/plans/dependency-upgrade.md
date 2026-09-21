@@ -1303,6 +1303,6 @@ One line per landed step: date, PR, what moved.
   and checks that `git pull` and `pnpm run build` still succeed with empty
   stderr and a clean tree. Panel `*.tsbuildinfo` files are ignored so that
   build does not dirty the checkout. Bun checks stay for P1.
-- 2026-09-21 — every `package.json` declares `engines.node` `18.12.1`.
+- 2026-09-21 — #106 — every `package.json` declares `engines.node` `18.12.1`.
   `engine-strict` is false, so a mismatch prints and does not stop install.
   `engines.bun` stays out until P2.
