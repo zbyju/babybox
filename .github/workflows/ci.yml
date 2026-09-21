@@ -165,3 +165,56 @@ jobs:
             printf '%s\n' "${dirty}" >&2
             exit 1
           fi
+
+  # Bun 1.4.2. Instalace, build a testy. Job smi selhat.
+  # Ukazuje, co se rozbije, nez se z nej v P2 stane brana.
+  # Job verify na Node 18 zustava branou.
+  bun:
+    name: bun 1.4.2 (allowed to fail)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: source
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      # Stejna verze, jakou drzi apps/startup/versions.env
+      - name: Bun version
+        run: |
+          bun_version="$(bun -v)"
+          if [ "${bun_version}" != "1.4.2" ]; then
+            echo "bun is ${bun_version}, want 1.4.2" >&2
+            exit 1
+          fi
+
+      - name: Install
+        run: bun install
+
+      - name: Build config schema
+        run: bun --filter @babybox/config-schema build
+
+      - name: Build
+        run: bun --filter babybox-panel build && bun --filter babybox-panel-backend build && bun --filter babybox-panel-configer build
+
+      - name: Backend dist has no schema import
+        run: |
+          test -d apps/backend/dist
+          ! grep -rl "config-schema" apps/backend/dist
+
+      - name: Config schema tests
+        run: bun --filter @babybox/config-schema test
+
+      - name: Backend tests
+        run: bun --filter babybox-panel-backend test
+
+      - name: Panel tests
+        run: bun --filter babybox-panel test:unit -- --run
+
+      - name: Configer tests
+        run: bun --filter babybox-panel-configer test

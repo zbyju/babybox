@@ -944,7 +944,7 @@ phase must pass the legacy-image job on its own.
       resolved. A `workspace:` specifier stays only where this plan already
       allows it. The backend `package.json` still has no `workspace:*`.
       CI fails if a registry specifier still has a range.
-- [ ] CI: add a second job on Bun 1.4.2 that runs install, build and tests but is
+- [x] CI: add a second job on Bun 1.4.2 that runs install, build and tests but is
       allowed to fail. It shows what breaks per phase before the boxes move. The
       existing Node 18 job stays as the gate until P2.
 - [ ] Extend the existing `GET /status` bodies on configer and the backend with
@@ -1315,3 +1315,5 @@ One line per landed step: date, PR, what moved.
   to the version `pnpm-lock.yaml` already resolved. CI fails when a registry
   specifier is still a range. `workspace:*` stays on the panel and configer.
   The backend still has none.
+- 2026-09-21 — #110 — a second CI job runs install, build, and tests on Bun 1.4.2.
+  The job is allowed to fail. The Node 18 job stays the gate until P2.
