@@ -927,7 +927,7 @@ phase must pass the legacy-image job on its own.
 - [x] CI: legacy-image job (see "Upgrading from any older version"). At P0 it only
       asserts the two legacy commands still succeed against the PR head; the Bun
       version assertions are added in P1–P3.
-- [ ] Add `engines.node` to every `package.json` (including config-schema) and
+- [x] Add `engines.node` to every `package.json` (including config-schema) and
       `engine-strict=false` on purpose, so a mismatch prints, never blocks, on a
       box. Do not add `engines.bun` until P2.
 - [ ] Fill `apps/startup/versions.env` with `BUN_VERSION=1.4.2`, sha256 keys for
@@ -1303,3 +1303,6 @@ One line per landed step: date, PR, what moved.
   and checks that `git pull` and `pnpm run build` still succeed with empty
   stderr and a clean tree. Panel `*.tsbuildinfo` files are ignored so that
   build does not dirty the checkout. Bun checks stay for P1.
+- 2026-09-21 — every `package.json` declares `engines.node` `18.12.1`.
+  `engine-strict` is false, so a mismatch prints and does not stop install.
+  `engines.bun` stays out until P2.

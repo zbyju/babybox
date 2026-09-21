@@ -1,6 +1,9 @@
 {
   "name": "startup",
   "version": "1.0.0",
+  "engines": {
+    "node": "18.12.1"
+  },
   "description": "Small app to update and startup the app",
   "main": "src/index.js",
   "scripts": {
