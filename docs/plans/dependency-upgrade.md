@@ -1319,6 +1319,6 @@ One line per landed step: date, PR, what moved.
   The job is allowed to fail. The Node 18 job stays the gate until P2.
 - 2026-09-21 — #111 — GET /status on configer and the backend reports node, pnpm, and bun.
   bun is an empty string when that binary is not on PATH. The last-upgrade record stays in P1.
-- 2026-09-21 — the backend drops unused lowdb, the panel drops unused axios, and
+- 2026-09-21 — #112 — the backend drops unused lowdb, the panel drops unused axios, and
   configer drops the unused lowdb import. The install scripts no longer install
   global typescript or ts-node. Startup keeps jest. The lockfile stays format 5.4.
