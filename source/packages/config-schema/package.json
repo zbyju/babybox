@@ -1,6 +1,9 @@
 {
   "name": "@babybox/config-schema",
   "version": "1.0.0",
+  "engines": {
+    "node": "18.12.1"
+  },
   "description": "The shape of configer's main.json, written once.",
   "type": "module",
   "main": "./dist/index.js",
