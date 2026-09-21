@@ -440,7 +440,7 @@ read `versions.env`. Do not harvest `ensure_node` as the jump.
 | pnpm | 7.5.0, lockfile `5.4` | `install-all.sh`, `install.sh`, `install.bat`, `src/logic/install/{ubuntu,windows}.js`, root `packageManager`, `ci.yml`. Stays as the `pnpm run build` hook. Not upgraded. |
 | Bun | absent | `apps/startup/versions.env` (`BUN_VERSION` 1.4.2 and the two x64 zip sha256 values). P1 installs the zip. |
 | pm2 | `@latest` at install time | `src/logic/install/*.js`. `apps/startup/versions.env` stores `PM2_VERSION` 7.0.4. Nothing reads that pin until P1. |
-| Global `typescript@4.7.4`, `ts-node@10.9.1` | installed on every box | `src/logic/install/*.js`; unused by the build (the workspace `tsc` is used) |
+| Global `typescript`, `ts-node` | not installed by the scripts | Removed from `src/logic/install/*.js` in P0. The workspace `tsc` is what the build uses. |
 | TypeScript in the workspace | `^4.7.4` (root, panel, backend); configer and config-schema use the workspace `tsc` | each `package.json` that lists it |
 
 ### How a box updates
@@ -701,7 +701,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | vue | ^3.2.33 | 3.5.43 | — | minor line, low risk |
 | vue-router | ^4.0.14 | 5.3.1 | — | v5 has no breaking change for us (no file-based routing); v6 will be ESM-only |
 | pinia | ^2.0.13 | 4.0.3 | — | stores already use `defineStore("id", {…})`, which v3 kept. v4 is ESM-only and needs `@vue/devtools-api`, TS ≥5.6, vue ≥3.5.11. Vite bundles it. |
-| axios | ^0.27.2 | — | | **unused** in panel `src/` (PR #76). Remove in P0. Do not upgrade. |
+| axios | removed | — | | Removed in P0. It was unused in panel `src/` (PR #76). |
 | howler | ^2.2.3 | 2.2.4 | — | last release 2023-09; works |
 | lodash | ^4.17.21 | 4.18.1 | — | three deep imports (`isEqual`, `cloneDeep`, `throttle`) |
 | moment | ^2.29.3 | 2.31.0 | — | project is in maintenance mode; 17 call sites; replacing it is out of scope |
@@ -732,7 +732,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | express | ^4.18.1 | 5.2.1 | ≥18 | see "Express 5" below |
 | cors | ^2.8.5 | 2.8.6 | — | |
 | dotenv | ^16.0.1 | 18.0.2 | ≥12 | 18 is a major bump. Re-check the load banner before P4. Silence it or it lands on stdout. |
-| lowdb | ^3.0.0 | — | | **unused** (no import anywhere); remove in P0 |
+| lowdb | removed | — | | Removed in P0. No import in the backend. |
 | moment | ^2.29.3 | 2.31.0 | — | |
 | morgan | ^1.10.0 | 1.12.1 | — | |
 | open | ^8.4.0 | 11.0.4 | ≥20 | ESM-only since v9; backend is CommonJS; see "ESM-only packages" |
@@ -750,7 +750,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | Package | Now | Latest | Node | Note |
 |---|---|---|---|---|
 | express, cors, dotenv | as backend | as backend | | |
-| lowdb | ^3.0.0 | 7.0.1 | ≥18 | `versions.json` only. `index.ts` still imports `JSONFile`/`Low` and does not use them; drop that import in P0. |
+| lowdb | 3.0.0 | 7.0.1 | ≥18 | `versions.json` only. The unused `index.ts` import was removed in P0. |
 | lodash.merge, @types/lodash.merge | ^4.6.2, ^4.6.7 | 4.6.2, 4.6.9 | — | |
 | vitest | ^0.9.3 | 5.0.1 | ^22.12 ‖ ^24 | |
 | @babybox/config-schema | workspace:* | — | | built to `dist/` first; Node 18 cannot load `.ts` |
@@ -775,7 +775,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | Node | 18.12.1 | leave in place | | Bootstrap host and `pnpm run build` hook. Not upgraded. Stops serving HTTP after P3. |
 | pnpm | 7.5.0 | leave in place | ≥18 | Legacy `pnpm run build` only. Lockfile 5.4 stays until P7. Not upgraded. |
 | pm2 | `latest` | 7.0.4 | ≥18 | pin it; `latest` on an unattended install is a risk we already carry. P3 spawns apps with the absolute Bun path. |
-| typescript, ts-node (global) | 4.7.4, 10.9.1 | remove | | nothing uses them |
+| typescript, ts-node (global) | removed from the install scripts | — | | P0. Workspace `typescript` and `ts-node` stay until later phases. |
 
 ## Things that change behaviour, not just versions
 
@@ -954,7 +954,7 @@ phase must pass the legacy-image job on its own.
 - [x] Lint stack decided: oxlint + oxfmt (see "Decisions taken")
 - [x] Runtime decided: Bun 1.4.2, not Node 24 + pnpm 12 (see "Review 2026-09-14")
 - [x] TypeScript contract decided: very strict flags (see "TypeScript contract")
-- [ ] Remove dead weight: `lowdb` from the backend, `axios` from the panel, the
+- [x] Remove dead weight: `lowdb` from the backend, `axios` from the panel, the
       unused `lowdb` import in `configer/src/index.ts`, global `typescript` and
       `ts-node` from the install scripts. **Do not remove jest from startup.**
 - [ ] Copy the 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions from
@@ -1319,3 +1319,6 @@ One line per landed step: date, PR, what moved.
   The job is allowed to fail. The Node 18 job stays the gate until P2.
 - 2026-09-21 — #111 — GET /status on configer and the backend reports node, pnpm, and bun.
   bun is an empty string when that binary is not on PATH. The last-upgrade record stays in P1.
+- 2026-09-21 — the backend drops unused lowdb, the panel drops unused axios, and
+  configer drops the unused lowdb import. The install scripts no longer install
+  global typescript or ts-node. Startup keeps jest. The lockfile stays format 5.4.

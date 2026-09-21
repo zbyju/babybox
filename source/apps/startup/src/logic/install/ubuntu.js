@@ -32,8 +32,6 @@ async function installDeps() {
     await exec("npm install -g pnpm@7.5.0");
     await exec("npm install -g pm2@latest");
     await exec("npm install -g nodemon");
-    await exec("npm install -g typescript@4.7.4");
-    await exec("npm install -g ts-node@10.9.1");
   } catch (err) {
     logger.error("install", strings.installDepsFailed, err);
     throw err;
