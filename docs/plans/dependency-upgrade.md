@@ -1324,7 +1324,7 @@ One line per landed step: date, PR, what moved.
   global typescript or ts-node. Startup keeps jest. The lockfile stays format 5.4.
 - 2026-09-21 — #113 — the 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions are
   copied into `decisions.md`. P0 has no open box.
-- 2026-09-22 — bootstrap.js reads versions.env and installs the pinned Bun zip
+- 2026-09-22 — #114 — bootstrap.js reads versions.env and installs the pinned Bun zip
   under the user profile when that binary is missing or different. It exits 0
   when Bun already matches and the OS is not on hold. An illegal instruction
   is CPU_HOLD and does not download another zip.
