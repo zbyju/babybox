@@ -37,6 +37,7 @@ Hard stops:
 - Do not start phase N+1 while phase N still has an open box.
 - If the box depends on an open question in the plan, stop and ask. Do not guess.
 - A Windows 8 hold stays a hold. Exit non-zero. Do not swap `dist`. Do not change the git branch.
+- Write an exact version in `package.json`. Do not write `^`, `~`, `*`, `latest`, or a range.
 
 ## Finish the topic
 

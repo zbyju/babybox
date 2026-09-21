@@ -2,7 +2,7 @@
 
 Status: **not started** (no upgrade code on `main`)
 Owner: —
-Last updated: 2026-09-21 (safe release on Windows 8, 10, 11, and Ubuntu)
+Last updated: 2026-09-21 (exact dependency pins, safe release)
 
 ## Goal
 
@@ -666,7 +666,9 @@ box and the PR does not merge.
 
 Versions from `npm view` on 2026-09-21. "Node" is the package's own `engines.node`.
 Numbers that did not move since 2026-09-13 are left as they were. Re-check at
-the start of P4 and P5.
+the start of P4 and P5. The Latest column is the exact specifier to write in
+`package.json`. Write `1.2.3`. Do not write `^1.2.3`, `~1.2.3`, `*`, or
+`latest`.
 
 **Root (`source/package.json`)**
 
@@ -928,6 +930,13 @@ phase must pass the legacy-image job on its own.
       in P1, when `bootstrap.js` exists. Reuse the file from the unmerged
       pinning branch. The CI comment that already names this file becomes true.
 - [ ] `.npmrc`: add `frozen-lockfile=true` next to `link-workspace-packages = true`
+- [ ] Pin every registry dependency to one exact version in every `package.json`
+      under `source/`. The specifier is `1.2.3`. It is not `^1.2.3`, `~1.2.3`,
+      `*`, `latest`, or a range. Use the version this plan names. If this plan
+      does not bump that package yet, use the version the lockfile already
+      resolved. A `workspace:` specifier stays only where this plan already
+      allows it. The backend `package.json` still has no `workspace:*`.
+      CI fails if a registry specifier still has a range.
 - [ ] CI: add a second job on Bun 1.4.2 that runs install, build and tests but is
       allowed to fail. It shows what breaks per phase before the boxes move. The
       existing Node 18 job stays as the gate until P2.
@@ -1140,8 +1149,8 @@ Size: ~0.5 day.
 
 ### P7 — Keep it that way
 
-- [ ] Add Renovate or Dependabot with grouped, weekly PRs; CI on Bun 1.4.2 and
-      the legacy-image job are the gate
+- [ ] Add Renovate or Dependabot with grouped, weekly PRs. Each bump is an
+      exact version. CI on Bun 1.4.2 and the legacy-image job are the gate.
 - [ ] `bun outdated` and `bun audit` in the CI summary
 - [ ] Delete `pnpm-lock.yaml` only when `GET /status` from every known box
       shows Bun, or a box is written off
@@ -1198,6 +1207,9 @@ contract, which is where most of the migration risk sits.
   add `@types/bun`.
 - Express stays Express. Vite stays Vite. Tests stay vitest.
 - Do not turn a TypeScript contract flag off to make a phase green.
+- Every registry dependency is pinned to one exact version in `package.json`.
+  The lockfile records that same version. A bump writes the new exact version.
+  No caret, tilde, star, `latest`, or range.
 
 ## Decisions taken (2026-09-12, owner)
 
@@ -1234,6 +1246,7 @@ Copy into decisions.md in P0. `decisions.md` exists as of #85.
 | Windows 10 and 11? | Jump when the build is 17763 or newer | Older Windows 10 uses the same hold as Windows 8. |
 | Ubuntu? | Jump | `install-all.sh` already requires 22.04+ and installs `unzip`. |
 | Baseline Bun zip? | Do not use it | It is an alias of the same x64 binary. An illegal instruction is `CPU_HOLD`. |
+| How are dependencies declared? | Exact versions only | Every registry specifier in `package.json` is `1.2.3`. No `^`, `~`, `*`, `latest`, or range. The lockfile matches. P0 pins current packages. Later phases write the new exact version. Renovate bumps stay exact. |
 
 ## Open questions
 
@@ -1270,3 +1283,5 @@ One line per landed step: date, PR, what moved.
   not switch branch. The baseline zip retry is removed. Pins refreshed from
   `npm view`. No upgrade code landed. The execution branch is
   `feat/toolchain-jump`.
+- 2026-09-21 — owner: every registry dependency is an exact version. Recorded
+  as a known constraint, a decision, and a P0 box. No upgrade code landed.
