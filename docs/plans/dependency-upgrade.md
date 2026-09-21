@@ -1296,5 +1296,6 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — tagged `origin/main` `303b61e` (#100) as `legacy-runtime`.
   Rebased `feat/toolchain-jump` onto that commit. The tag is on origin. No
   upgrade code landed.
-- 2026-09-21 — owner: each topic is a pull request into `feat/toolchain-jump`.
-  The long-lived branch stays open. #102 stays the pull request into `main`.
+- 2026-09-21 — #104 — owner: each topic is a pull request into
+  `feat/toolchain-jump`. The long-lived branch stays open. #102 stays the
+  pull request into `main`.
