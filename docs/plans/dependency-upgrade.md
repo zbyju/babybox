@@ -1306,6 +1306,6 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — #106 — every `package.json` declares `engines.node` `18.12.1`.
   `engine-strict` is false, so a mismatch prints and does not stop install.
   `engines.bun` stays out until P2.
-- 2026-09-21 — `apps/startup/versions.env` stores Bun 1.4.2, the two x64 zip
+- 2026-09-21 — #107 — `apps/startup/versions.env` stores Bun 1.4.2, the two x64 zip
   sha256 values, pm2 7.0.4, and detect-only Node 18.12.1 / pnpm 7.5.0.
   No script reads the file yet. `install-all.sh` stays unchanged.
