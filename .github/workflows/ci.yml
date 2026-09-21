@@ -29,6 +29,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: source/pnpm-lock.yaml
 
+      # A registry specifier is one exact version. A range fails this job.
+      - name: Exact dependency versions
+        run: node scripts/check-exact-versions.js
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
