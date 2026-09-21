@@ -56,6 +56,8 @@ Context · Decision · Why · Gave up · Where
 - Why: configer is ESM (`"type": "module"`); vitest runs TS ESM without extra config.
   Jest would need a transform setup.
 - Gave up: one test runner across the monorepo (the backend stays on jest).
+- Amended on 2026-09-12: the backend moves to vitest too. See "Backend tests move
+  to vitest" below. Configer stays on vitest.
 
 ## 2026-09-11 — Work is done by an agent workflow with review on the PR
 
@@ -225,6 +227,107 @@ Context · Decision · Why · Gave up · Where
   tests are what hold them together. A field of the wrong type still stops the panel,
   and a hand-typed `backend.port: "5000"` is the realistic case.
 - Where: `isInstanceOfConfig` in `apps/panel/src/utils/panel/instanceCheck.ts`.
+
+## 2026-09-12 — Windows boxes are in the field
+
+- Context: about half the fleet is Windows 7, 8, 10, or 11. Those boxes were
+  installed by hand with nvm-windows. The jump has to cover them.
+- Decision: those boxes stay in the field. Windows 8 holds on the current panel
+  and does not switch branch. Windows 10 build 17763 or newer, and Windows 11,
+  take Bun.
+- Why: Bun 1.4.2 does not run on Windows 8. A branch switch would stop that box
+  from pulling `main`.
+- Gave up: one runtime for every Windows box on the first jump.
+- Amended 2026-09-21: the hold is `OS_HOLD`. The tree stays clean. A later OS
+  install plus a restart takes the jump.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+
+## 2026-09-12 — New Ubuntu boxes install Bun
+
+- Context: provisioning was `installAll.sh` (old) and `install-all.sh` (new).
+  Both used `n`, and `/usr/local` was owned by the user.
+- Decision: new boxes install Bun from `versions.env`.
+- Why: the jump runtime is Bun 1.4.2. Node 24 is not the target.
+- Gave up: a Node 24 install path for new boxes.
+- Amended 2026-09-13: `installAll.sh` is gone (#54). Only `install-all.sh`
+  remains.
+- Amended 2026-09-14: new boxes install Bun from `versions.env`, not Node 24.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md).
+
+## 2026-09-12 — The bootstrap stays in HEAD
+
+- Context: a box can be offline for months, sometimes years, then boot and pull.
+- Decision: the bootstrap stays in HEAD. The `legacy-runtime` tag is permanent.
+  There is no `legacy` branch.
+- Why: a box that missed the jump still has to install Bun from the legacy Node
+  and pnpm on the next restart.
+- Gave up: deleting the bootstrap after the fleet has moved.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+
+## 2026-09-12 — The backend becomes ESM
+
+- Context: some target packages are ESM-only. The backend is CommonJS.
+- Decision: convert the backend to ESM. `open@11` is then a plain import.
+- Why: that is how the backend can load the ESM-only packages in P4. P4 grows
+  by about half a day.
+- Gave up: staying on CommonJS and wrapping those packages.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-12 — Backend tests move to vitest
+
+- Context: the backend uses jest. The panel and configer use vitest. The
+  2026-09-11 entry above left the backend on jest.
+- Decision: vitest. Remove jest, ts-jest, and `@types/jest`. Startup tests join
+  in P5. The runner is not `bun test`.
+- Why: one test runner for the apps. This supersedes the "backend stays on
+  jest" line in "Configer tests run with vitest".
+- Gave up: jest on the backend.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and P5.
+
+## 2026-09-12 — Lint is oxlint and oxfmt
+
+- Context: the repo uses the ESLint and Prettier family.
+- Decision: oxlint and oxfmt. Remove that family. Do not upgrade it. Configer
+  goes first. Warnings are errors.
+- Why: that is the lint stack for the jump. Both tools need a runtime newer
+  than Node 18, so they land after Bun is the runner.
+- Gave up: an ESLint 10 upgrade.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5.
+
+## 2026-09-12 — The panel stays on TypeScript 6.0.3
+
+- Context: the question was whether the panel must use Volar on TypeScript 7.
+  The owner said to use the latest tooling that works.
+- Decision: the panel stays on TypeScript 6.0.3 with `vue-tsc` 3.3.11. The
+  backend, configer, and config-schema build with TypeScript 7.0.2.
+- Why: on 2026-09-12, `vue-tsc` 3.3.11 crashed on TypeScript 7.0.2 and worked
+  on 6.0.3. On 2026-09-13, 3.3.11 was still the latest Volar.
+- Gave up: TypeScript 7 on the panel until a later `vue-tsc` can load it.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript 6
+  and 7".
+
+## 2026-09-12 — Vite moves to 8
+
+- Context: the panel is on Vite 2. Holding at Vite 7 with `rolldown-vite` was
+  the other option.
+- Decision: upgrade to Vite 8.3.0. If 8 misbehaves, `vite@7.3.6` with
+  `rolldown-vite` is the documented fallback.
+- Why: the panel config is small, and the panel PCs run a current Chromium.
+- Gave up: holding at Vite 7.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Vite 2 → 8".
+
+## 2026-09-12 — A failed step names itself and starts the last good dist
+
+- Context: a failed `pnpm run build` does not record the step name next to a
+  last good tree.
+- Decision: name the step and the error, then start the last good `dist`. The
+  record is `startup.last.json`. `GET /status` includes it. No `git reset`. No
+  toolchain revert.
+- Why: a person on site is not required. The box has to come back on the
+  previous panel.
+- Gave up: reverting the git checkout when a step fails.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "When an
+  upgrade fails", and P1.
 
 ## 2026-09-13 — No `GET /config/schema`; the form descriptor is a build-time import
 
@@ -760,3 +863,140 @@ Context · Decision · Why · Gave up · Where
   action buttons, not the banner.
 - Gave up: one warning/error pair for every surface.
 - Where: `public/config/styles.json`, `components/panel/elements/HighlightMessage.vue`.
+
+## 2026-09-14 — The runtime is Bun 1.4.2
+
+- Context: the 2026-09-13 target was Node 24 and pnpm 12.
+- Decision: Bun 1.4.2, pinned. One zip, installed under the user profile, with
+  `bun.lock`. Node 18 and pnpm 7 stay as the bootstrap host and the
+  `pnpm run build` hook.
+- Why: one binary is the runtime and the package manager. The boxes do not
+  need a second Node and a second pnpm.
+- Gave up: Node 24 and pnpm 12.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Bun as
+  runtime and package manager".
+
+## 2026-09-14 — Every compile unit uses the TypeScript contract
+
+- Context: the apps do not share one strict flag set. The backend has
+  `noImplicitAny` only.
+- Decision: the TypeScript contract. Extra flags on every compile unit. No
+  `any`. No `!`. No `as` except a tracked suppression. Configer goes first.
+- Why: `strict: true` is the floor. A flag stays on when a phase is red.
+- Gave up: turning a flag off to make a phase green.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
+  contract".
+
+## 2026-09-14 — HTTP, the bundle, and tests stay Express, Vite, and vitest
+
+- Context: Bun can replace Express, Vite, and vitest with `Bun.serve`,
+  `bun build`, and `bun test`.
+- Decision: Express 5, Vite 8, and vitest 5.
+- Why: the jump changes the runtime and the libraries. It does not rewrite the
+  servers or the test runner.
+- Gave up: Elysia, `Bun.serve`, `bun build`, and `bun test`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md).
+
+## 2026-09-14 — Dev servers run under bun --watch
+
+- Context: the backend uses `ts-node` through nodemon. Configer uses
+  `nodemon --esm`.
+- Decision: `bun --watch`. Remove `ts-node`, `tsx`, and nodemon. Do not add
+  `tsx`.
+- Why: Bun is the runtime. `bun --watch` does not need the TypeScript
+  JavaScript API.
+- Gave up: `tsx` as a second dev runner.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Dev runners".
+
+## 2026-09-21 — Topic work lands on feat/toolchain-jump
+
+- Context: the upgrade is many commits. A box must not receive them one phase
+  at a time on `main`.
+- Decision: `feat/toolchain-jump` is the long-lived branch. Topic pull requests
+  merge into that branch. `main` gets one merge after the canary. Do not delete
+  the branch.
+- Why: a box on `main` then receives the whole tip in one `git pull`.
+- Gave up: merging each phase to `main` on its own.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+  #102 is the open pull request into `main`.
+
+## 2026-09-21 — Each topic is one pull request into feat/toolchain-jump
+
+- Context: the long-lived branch needs a reviewable record for each box in the
+  plan.
+- Decision: open one pull request into `feat/toolchain-jump` for every topic.
+  Do not merge it unless the owner asks. #102 stays the open pull request into
+  `main`.
+- Why: the topic pull request is the review. The merge to `main` waits for the
+  canary.
+- Gave up: committing a topic straight onto `feat/toolchain-jump`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+
+## 2026-09-21 — A restart is the release
+
+- Context: a box updates when it restarts. The startup app runs `git pull`,
+  then maybe `pnpm run build`.
+- Decision: a pull, or a checkout, done before the restart still builds, unless
+  the OS is on hold.
+- Why: both arrivals have to end with a panel on screen. Today a checkout that
+  is already up to date skips the build. P1 changes that rule.
+- Gave up: a fleet-wide command at merge time.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+
+## 2026-09-21 — Windows 8 holds in place
+
+- Context: Bun 1.4.2 needs Windows 10 build 17763 or later. Windows 8 cannot
+  run that binary.
+- Decision: `OS_HOLD`. The current panel stays up. The git branch does not
+  change. The tree stays clean.
+- Why: a branch switch stops later pulls of `main`. Exit code 0 would make the
+  old startup swap `dist`.
+- Gave up: parking a Windows 8 box on another branch.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Hold
+  operating systems".
+
+## 2026-09-21 — Windows 10 and 11 jump at build 17763
+
+- Context: Windows 10 and Windows 11 share the `10.0.` release string. The
+  build number is what Bun checks.
+- Decision: jump when the build is 17763 or newer. Older Windows 10 uses the
+  same hold as Windows 8.
+- Why: Bun 1.4.2 requires Windows 10 version 1809, which is build 17763.
+  Windows 11 is build 22000 or newer and takes the jump.
+- Gave up: treating every `10.0.` release as able to run Bun.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Hold
+  operating systems".
+
+## 2026-09-21 — Ubuntu takes the jump
+
+- Context: `install-all.sh` provisions new Ubuntu boxes.
+- Decision: Ubuntu takes the jump.
+- Why: `install-all.sh` already requires Ubuntu 22.04 or newer and installs
+  `unzip`.
+- Gave up: a separate Ubuntu hold.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Hold
+  operating systems".
+
+## 2026-09-21 — Do not download the baseline Bun zip
+
+- Context: Bun publishes a `*-baseline` zip. It looks like a fallback for an
+  older CPU.
+- Decision: do not use it. An illegal instruction is `CPU_HOLD`.
+- Why: the baseline zip is an alias of the same x64 binary. That binary still
+  needs SSE4.2.
+- Gave up: a second download when the first binary traps.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "CPU that
+  cannot run the Bun binary".
+
+## 2026-09-21 — Registry dependencies use exact versions
+
+- Context: `package.json` used ranges. A later install could move a package
+  without a commit.
+- Decision: every registry specifier is an exact version, `1.2.3`. No `^`,
+  `~`, `*`, `latest`, or range. The lockfile matches. P0 pins the packages
+  that are already installed. Later phases write the new exact version.
+  Renovate bumps stay exact.
+- Why: the version in `package.json` is the version that installs.
+- Gave up: caret and tilde ranges.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
+  constraints". The P0 pin is #109.
