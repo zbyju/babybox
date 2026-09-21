@@ -924,7 +924,7 @@ phase must pass the legacy-image job on its own.
 - [x] Tag the current `main` as `legacy-runtime` (`303b61e`, #100). That is the state the CI job
       upgrades from, forever. Tagged after this plan merged, so the tag includes
       #85–#91.
-- [ ] CI: legacy-image job (see "Upgrading from any older version"). At P0 it only
+- [x] CI: legacy-image job (see "Upgrading from any older version"). At P0 it only
       asserts the two legacy commands still succeed against the PR head; the Bun
       version assertions are added in P1–P3.
 - [ ] Add `engines.node` to every `package.json` (including config-schema) and
@@ -1299,3 +1299,7 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — #104 — owner: each topic is a pull request into
   `feat/toolchain-jump`. The long-lived branch stays open. #102 stays the
   pull request into `main`.
+- 2026-09-21 — #105 — legacy-image job starts from the `legacy-runtime` tag
+  and checks that `git pull` and `pnpm run build` still succeed with empty
+  stderr and a clean tree. Panel `*.tsbuildinfo` files are ignored so that
+  build does not dirty the checkout. Bun checks stay for P1.
