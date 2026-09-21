@@ -110,7 +110,7 @@ async function override() {
     fs.copySync("../panel/dist", "../../../dist/public");
     fs.copyFileSync("../backend/.env", "../../../dist/.env");
     fs.copyFileSync("../backend/package.json", "../../../dist/package.json");
-    await exec("pnpm install", { cwd: "../../../dist" });
+    await exec("pnpm install --prod", { cwd: "../../../dist" });
 
     logger.info("override", strings.overrideSucceeded);
 
@@ -120,7 +120,7 @@ async function override() {
     try {
       fs.rmSync("../../../dist", { recursive: true, force: true });
       fs.renameSync("../../../dist2", "../../../dist");
-      await exec("pnpm install", { cwd: "../../dist" });
+      await exec("pnpm install --prod", { cwd: "../../../dist" });
 
       logger.warn("override", strings.overrideRollbackSucceeded);
 
