@@ -1287,5 +1287,5 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — owner: every registry dependency is an exact version. Recorded
   as a known constraint, a decision, and a P0 box. No upgrade code landed.
 - 2026-09-21 — tagged `origin/main` `303b61e` (#100) as `legacy-runtime`.
-  Rebased `feat/toolchain-jump` onto that commit. The tag is local. No upgrade
-  code landed.
+  Rebased `feat/toolchain-jump` onto that commit. The tag is on origin. No
+  upgrade code landed.
