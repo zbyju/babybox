@@ -2,7 +2,7 @@
 
 Status: **not started** (no upgrade code on `main`)
 Owner: —
-Last updated: 2026-09-21 (exact dependency pins, safe release)
+Last updated: 2026-09-21 (legacy-runtime tag)
 
 ## Goal
 
@@ -58,9 +58,10 @@ hook. They are not upgraded. They stop serving HTTP after P3.
 
 ## Safe release
 
-The execution branch is `feat/toolchain-jump`. It starts at `origin/main`
-`6eb4fbf` (#98). Every phase commit stays on this branch. Do not merge one
-phase into `main` by itself.
+The execution branch is `feat/toolchain-jump`. The branch is rebased onto
+`origin/main` `303b61e` (#100). The branch started at `6eb4fbf` (#98). Every
+phase commit stays on this branch. Do not merge one phase into `main` by
+itself.
 
 A box updates when it restarts. The startup app runs `git pull`, then maybe
 `pnpm run build`. Two arrivals must both end with a panel on screen.
@@ -236,8 +237,8 @@ the next restart.
 
 ### CI on this branch
 
-The `legacy-image` job starts from the `legacy-runtime` tag (`6eb4fbf` until
-`main` moves). It runs `git pull` to the branch tip and `pnpm run build`.
+The `legacy-image` job starts from the `legacy-runtime` tag (`303b61e`, #100).
+It runs `git pull` to the branch tip and `pnpm run build`.
 
 On the success path it asserts all of the following.
 
@@ -914,8 +915,8 @@ phase must pass the legacy-image job on its own.
 
 ### P0 — Make the plan checkable
 
-- [ ] Tag the current `main` as `legacy-runtime`. That is the state the CI job
-      upgrades from, forever. Tag after this plan merges, so the tag includes
+- [x] Tag the current `main` as `legacy-runtime` (`303b61e`, #100). That is the state the CI job
+      upgrades from, forever. Tagged after this plan merged, so the tag includes
       #85–#91.
 - [ ] CI: legacy-image job (see "Upgrading from any older version"). At P0 it only
       asserts the two legacy commands still succeed against the PR head; the Bun
@@ -1285,3 +1286,6 @@ One line per landed step: date, PR, what moved.
   `feat/toolchain-jump`.
 - 2026-09-21 — owner: every registry dependency is an exact version. Recorded
   as a known constraint, a decision, and a P0 box. No upgrade code landed.
+- 2026-09-21 — tagged `origin/main` `303b61e` (#100) as `legacy-runtime`.
+  Rebased `feat/toolchain-jump` onto that commit. The tag is local. No upgrade
+  code landed.
