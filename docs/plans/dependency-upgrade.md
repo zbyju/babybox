@@ -1309,5 +1309,5 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — #107 — `apps/startup/versions.env` stores Bun 1.4.2, the two x64 zip
   sha256 values, pm2 7.0.4, and detect-only Node 18.12.1 / pnpm 7.5.0.
   No script reads the file yet. `install-all.sh` stays unchanged.
-- 2026-09-21 — `source/.npmrc` sets `frozen-lockfile` to true. A lockfile pnpm
+- 2026-09-21 — #108 — `source/.npmrc` sets `frozen-lockfile` to true. A lockfile pnpm
   cannot read fails the install. pnpm does not rewrite the file.
