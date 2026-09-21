@@ -63,3 +63,101 @@ jobs:
 
       - name: Configer tests
         run: pnpm -F babybox-panel-configer exec vitest run
+
+  # Prvni boot po pullu. Checkout je tag legacy-runtime, pak git pull na hlavu
+  # PR a pnpm run build. Exit 0, prazdny stderr, cisty strom. bun -v, OS_HOLD
+  # a build po uz hotovem checkoutu patri do P1.
+  legacy-image:
+    name: legacy-image (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout legacy-runtime
+        uses: actions/checkout@v4
+        with:
+          ref: legacy-runtime
+          fetch-depth: 0
+
+      - name: Pull the pull request head
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          git checkout -B legacy-image
+          if [ -n "${PR_NUMBER}" ]; then
+            git fetch origin "pull/${PR_NUMBER}/head"
+          else
+            git fetch origin main
+          fi
+          merge_out="$(git merge --ff-only FETCH_HEAD)"
+          printf '%s\n' "${merge_out}"
+          if [ -z "${merge_out}" ]; then
+            echo "git pull produced empty stdout" >&2
+            exit 1
+          fi
+          if printf '%s' "${merge_out}" | grep -qi "already up to date"; then
+            echo "git pull did not move off legacy-runtime" >&2
+            exit 1
+          fi
+          got="$(git rev-parse HEAD)"
+          if [ "${got}" != "${TARGET_SHA}" ]; then
+            echo "HEAD ${got} is not ${TARGET_SHA}" >&2
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 7.5.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.12.1
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+
+      - name: pnpm run build
+        shell: bash
+        working-directory: source
+        run: |
+          set -euo pipefail
+          node_version="$(node -v)"
+          pnpm_version="$(pnpm -v)"
+          if [ "${node_version}" != "v18.12.1" ]; then
+            echo "node is ${node_version}, want v18.12.1" >&2
+            exit 1
+          fi
+          if [ "${pnpm_version}" != "7.5.0" ]; then
+            echo "pnpm is ${pnpm_version}, want 7.5.0" >&2
+            exit 1
+          fi
+          stderr_file="${RUNNER_TEMP}/pnpm-build.stderr"
+          set +e
+          pnpm run build 2>"${stderr_file}"
+          build_status=$?
+          set -e
+          if [ "${build_status}" -ne 0 ]; then
+            echo "pnpm run build exited ${build_status}" >&2
+            cat "${stderr_file}" >&2
+            exit "${build_status}"
+          fi
+          if [ -s "${stderr_file}" ]; then
+            echo "pnpm run build wrote stderr" >&2
+            cat "${stderr_file}" >&2
+            exit 1
+          fi
+
+      - name: Working tree is clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          dirty="$(git status --porcelain)"
+          if [ -n "${dirty}" ]; then
+            echo "working tree is dirty after pnpm run build" >&2
+            printf '%s\n' "${dirty}" >&2
+            exit 1
+          fi
