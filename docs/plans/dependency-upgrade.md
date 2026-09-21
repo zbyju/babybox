@@ -363,7 +363,7 @@ mistaken for P1. The 2026-09-13 target runtime (Node 24 LTS 24.21.0 and pnpm
 | Panel no longer imports axios | #76 | `axios` is still in `apps/panel/package.json` and the leftover `apps/panel/pnpm-lock.yaml`. Dead weight for P0. Backend still has one axios call site. |
 | Panel lodash is deep imports | #71 | `lodash/isEqual`, `cloneDeep`, `throttle`. Lodash 4.18.1 is still the bump. |
 | CI already matches the box | #77 | Node 18.12.1, pnpm 7.5.0, `pnpm install --frozen-lockfile`, lint, `build:schema`, panel/backend/configer build, tests. A comment claims `versions.env` exists. The file is not on `main`. No Bun job. No legacy-image job. |
-| `decisions.md` and `learnings.md` exist | #85 | Copy the 2026-09-12 and 2026-09-14 upgrade decisions into `decisions.md` in P0. Panel typecheck is 20 errors, not 17, measured at 1927135; #89 and #91 landed after, so re-count at the start of P4. |
+| `decisions.md` and `learnings.md` exist | #85 | The 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions are in `decisions.md`. Panel typecheck is 20 errors, not 17, measured at 1927135; #89 and #91 landed after, so re-count at the start of P4. |
 | GET `/status` exists | #80 | Backend and configer both return `{ msg: "Alive." }`. P0/P1 extend those bodies. They do not add new routes. |
 | Root `build` already builds the schema | #86 | `"build": "pnpm install && pnpm run build:schema && …"`. `bootstrap.js` still goes in front of `pnpm install` in P1. P2 changes that step to `bun install`. |
 
@@ -957,7 +957,7 @@ phase must pass the legacy-image job on its own.
 - [x] Remove dead weight: `lowdb` from the backend, `axios` from the panel, the
       unused `lowdb` import in `configer/src/index.ts`, global `typescript` and
       `ts-node` from the install scripts. **Do not remove jest from startup.**
-- [ ] Copy the 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions from
+- [x] Copy the 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions from
       the table below into `decisions.md`. That file exists now.
 
 Size: ~0.5 day.
@@ -1220,7 +1220,7 @@ contract, which is where most of the migration risk sits.
 
 ## Decisions taken (2026-09-12, owner)
 
-Copy into decisions.md in P0. `decisions.md` exists as of #85.
+Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 
 | Question | Answer | Consequence |
 |---|---|---|
@@ -1322,3 +1322,5 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — #112 — the backend drops unused lowdb, the panel drops unused axios, and
   configer drops the unused lowdb import. The install scripts no longer install
   global typescript or ts-node. Startup keeps jest. The lockfile stays format 5.4.
+- 2026-09-21 — #113 — the 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions are
+  copied into `decisions.md`. P0 has no open box.
