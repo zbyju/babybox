@@ -1299,7 +1299,7 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — #104 — owner: each topic is a pull request into
   `feat/toolchain-jump`. The long-lived branch stays open. #102 stays the
   pull request into `main`.
-- 2026-09-21 — legacy-image job starts from the `legacy-runtime` tag and
-  checks that `git pull` and `pnpm run build` still succeed with empty stderr
-  and a clean tree. Panel `*.tsbuildinfo` files are ignored so that build
-  does not dirty the checkout. Bun checks stay for P1.
+- 2026-09-21 — #105 — legacy-image job starts from the `legacy-runtime` tag
+  and checks that `git pull` and `pnpm run build` still succeed with empty
+  stderr and a clean tree. Panel `*.tsbuildinfo` files are ignored so that
+  build does not dirty the checkout. Bun checks stay for P1.
