@@ -1322,5 +1322,5 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — #112 — the backend drops unused lowdb, the panel drops unused axios, and
   configer drops the unused lowdb import. The install scripts no longer install
   global typescript or ts-node. Startup keeps jest. The lockfile stays format 5.4.
-- 2026-09-21 — the 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions are
+- 2026-09-21 — #113 — the 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions are
   copied into `decisions.md`. P0 has no open box.
