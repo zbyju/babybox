@@ -41,7 +41,7 @@ jobs:
         run: |
           pnpm -F babybox-panel-backend exec eslint --ext .js,.ts .
           pnpm -F babybox-panel exec eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore
-          pnpm -F startup exec eslint src/
+          pnpm -F startup exec eslint src/ bootstrap.js bootstrap.test.js
 
       # Vsechny aplikace ctou tvar konfigurace odsud, musi se sestavit jako prvni
       - name: Build config schema
@@ -67,6 +67,9 @@ jobs:
 
       - name: Configer tests
         run: pnpm -F babybox-panel-configer exec vitest run
+
+      - name: Startup tests
+        run: pnpm -F startup exec jest --ci
 
   # Prvni boot po pullu. Checkout je tag legacy-runtime, pak git pull na hlavu
   # PR a pnpm run build. Exit 0, prazdny stderr, cisty strom. bun -v, OS_HOLD
