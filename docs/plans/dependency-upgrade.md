@@ -1311,7 +1311,7 @@ One line per landed step: date, PR, what moved.
   No script reads the file yet. `install-all.sh` stays unchanged.
 - 2026-09-21 — #108 — `source/.npmrc` sets `frozen-lockfile` to true. A lockfile pnpm
   cannot read fails the install. pnpm does not rewrite the file.
-- 2026-09-21 — every `package.json` under `source/` pins each registry dependency
+- 2026-09-21 — #109 — every `package.json` under `source/` pins each registry dependency
   to the version `pnpm-lock.yaml` already resolved. CI fails when a registry
   specifier is still a range. `workspace:*` stays on the panel and configer.
   The backend still has none.
