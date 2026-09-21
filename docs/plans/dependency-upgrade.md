@@ -1317,5 +1317,5 @@ One line per landed step: date, PR, what moved.
   The backend still has none.
 - 2026-09-21 — #110 — a second CI job runs install, build, and tests on Bun 1.4.2.
   The job is allowed to fail. The Node 18 job stays the gate until P2.
-- 2026-09-21 — GET /status on configer and the backend reports node, pnpm, and bun.
+- 2026-09-21 — #111 — GET /status on configer and the backend reports node, pnpm, and bun.
   bun is an empty string when that binary is not on PATH. The last-upgrade record stays in P1.
