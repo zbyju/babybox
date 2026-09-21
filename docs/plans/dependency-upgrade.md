@@ -936,7 +936,7 @@ phase must pass the legacy-image job on its own.
       values. P0 only writes the file. `install-all.sh` starts installing Bun
       in P1, when `bootstrap.js` exists. Reuse the file from the unmerged
       pinning branch. The CI comment that already names this file becomes true.
-- [ ] `.npmrc`: add `frozen-lockfile=true` next to `link-workspace-packages = true`
+- [x] `.npmrc`: add `frozen-lockfile=true` next to `link-workspace-packages = true`
 - [ ] Pin every registry dependency to one exact version in every `package.json`
       under `source/`. The specifier is `1.2.3`. It is not `^1.2.3`, `~1.2.3`,
       `*`, `latest`, or a range. Use the version this plan names. If this plan
@@ -1309,3 +1309,5 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — #107 — `apps/startup/versions.env` stores Bun 1.4.2, the two x64 zip
   sha256 values, pm2 7.0.4, and detect-only Node 18.12.1 / pnpm 7.5.0.
   No script reads the file yet. `install-all.sh` stays unchanged.
+- 2026-09-21 — #108 — `source/.npmrc` sets `frozen-lockfile` to true. A lockfile pnpm
+  cannot read fails the install. pnpm does not rewrite the file.
