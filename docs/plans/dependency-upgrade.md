@@ -58,10 +58,11 @@ hook. They are not upgraded. They stop serving HTTP after P3.
 
 ## Safe release
 
-The execution branch is `feat/toolchain-jump`. The branch is rebased onto
-`origin/main` `303b61e` (#100). The branch started at `6eb4fbf` (#98). Every
-phase commit stays on this branch. Do not merge one phase into `main` by
-itself.
+The execution branch is `feat/toolchain-jump`. This branch is long-lived.
+Rebase put it on `origin/main` `303b61e` (#100). It started at `6eb4fbf`
+(#98). A topic pull request targets `feat/toolchain-jump`. Every phase commit
+stays on this branch after that pull request merges. Do not merge one phase
+into `main` by itself.
 
 A box updates when it restarts. The startup app runs `git pull`, then maybe
 `pnpm run build`. Two arrivals must both end with a panel on screen.
