@@ -1,11 +1,10 @@
 import express from "express";
 import * as dotenv from "dotenv";
-// import { Low } from "lowdb";
-import { JSONFile, Low } from "lowdb";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DbFactory } from "./services/db/factory.js";
 import { router as configRoute } from "./routes/configRoute.js";
+import { cachedRuntimeVersions, statusBody } from "./runtimeVersions.js";
 import cors from "cors";
 
 async function main() {
@@ -31,9 +30,7 @@ async function main() {
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
-    res.status(200).send({
-      msg: "Alive.",
-    });
+    res.status(200).send(statusBody(cachedRuntimeVersions()));
   });
 
   // Other routes

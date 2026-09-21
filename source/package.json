@@ -1,6 +1,9 @@
 {
   "name": "babybox-mono",
   "version": "1.0.0",
+  "engines": {
+    "node": "18.12.1"
+  },
   "description": "",
   "author": "",
   "keywords": [],
@@ -18,11 +21,11 @@
     "echo": "echo test"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.12",
-    "@types/express": "^4.17.13",
-    "@types/lodash.merge": "^4.6.7",
-    "@types/node": "^18.11.18",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.7.4"
+    "@types/cors": "2.8.12",
+    "@types/express": "4.17.13",
+    "@types/lodash.merge": "4.6.7",
+    "@types/node": "18.11.18",
+    "ts-node": "10.9.1",
+    "typescript": "4.7.4"
   }
 }

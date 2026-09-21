@@ -2,7 +2,7 @@
 
 Status: **not started** (no upgrade code on `main`)
 Owner: —
-Last updated: 2026-09-21 (exact dependency pins, safe release)
+Last updated: 2026-09-21 (topic pull requests)
 
 ## Goal
 
@@ -58,9 +58,16 @@ hook. They are not upgraded. They stop serving HTTP after P3.
 
 ## Safe release
 
-The execution branch is `feat/toolchain-jump`. It starts at `origin/main`
-`6eb4fbf` (#98). Every phase commit stays on this branch. Do not merge one
-phase into `main` by itself.
+The execution branch is `feat/toolchain-jump`. This branch is long-lived.
+Rebase put it on `origin/main` `303b61e` (#100). It started at `6eb4fbf`
+(#98). Do not delete the branch. Do not merge one phase into `main` by
+itself.
+
+Each topic uses its own branch and its own pull request. The base of that
+pull request is `feat/toolchain-jump`. A merge of that pull request puts the
+commits on the long-lived branch. The pull request from `feat/toolchain-jump`
+into `main` (#102) stays open until the canary. Do not open a second pull
+request into `main`.
 
 A box updates when it restarts. The startup app runs `git pull`, then maybe
 `pnpm run build`. Two arrivals must both end with a panel on screen.
@@ -236,8 +243,8 @@ the next restart.
 
 ### CI on this branch
 
-The `legacy-image` job starts from the `legacy-runtime` tag (`6eb4fbf` until
-`main` moves). It runs `git pull` to the branch tip and `pnpm run build`.
+The `legacy-image` job starts from the `legacy-runtime` tag (`303b61e`, #100).
+It runs `git pull` to the branch tip and `pnpm run build`.
 
 On the success path it asserts all of the following.
 
@@ -428,12 +435,12 @@ read `versions.env`. Do not harvest `ensure_node` as the jump.
 
 | Piece | Today | Pinned where |
 |---|---|---|
-| Node on Ubuntu boxes (half the fleet) | 18.12.1 via `n`, `/usr/local` chowned to the user | `install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`. `apps/startup/versions.env` is named in the CI comment and does not exist. Stays as the bootstrap host. Not upgraded. |
+| Node on Ubuntu boxes (half the fleet) | 18.12.1 via `n`, `/usr/local` chowned to the user | `install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`, and `apps/startup/versions.env` (`NODE_VERSION`, detect-only). Stays as the bootstrap host. Not upgraded. |
 | Node on Windows boxes (other half) | installed by hand with nvm-windows, "mimicking" 18.12.1; OS is Windows 7, 8, 10 or 11 | nowhere; `install.bat` only checks `node -v`. Stays as the bootstrap host on Windows 10/11. |
 | pnpm | 7.5.0, lockfile `5.4` | `install-all.sh`, `install.sh`, `install.bat`, `src/logic/install/{ubuntu,windows}.js`, root `packageManager`, `ci.yml`. Stays as the `pnpm run build` hook. Not upgraded. |
-| Bun | absent | nowhere. P1 installs 1.4.2 from a pinned GitHub release zip. |
-| pm2 | `@latest` at install time | `src/logic/install/*.js` |
-| Global `typescript@4.7.4`, `ts-node@10.9.1` | installed on every box | `src/logic/install/*.js`; unused by the build (the workspace `tsc` is used) |
+| Bun | absent | `apps/startup/versions.env` (`BUN_VERSION` 1.4.2 and the two x64 zip sha256 values). P1 installs the zip. |
+| pm2 | `@latest` at install time | `src/logic/install/*.js`. `apps/startup/versions.env` stores `PM2_VERSION` 7.0.4. Nothing reads that pin until P1. |
+| Global `typescript`, `ts-node` | not installed by the scripts | Removed from `src/logic/install/*.js` in P0. The workspace `tsc` is what the build uses. |
 | TypeScript in the workspace | `^4.7.4` (root, panel, backend); configer and config-schema use the workspace `tsc` | each `package.json` that lists it |
 
 ### How a box updates
@@ -692,7 +699,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | vue | ^3.2.33 | 3.5.43 | — | minor line, low risk |
 | vue-router | ^4.0.14 | 5.3.1 | — | v5 has no breaking change for us (no file-based routing); v6 will be ESM-only |
 | pinia | ^2.0.13 | 4.0.3 | — | stores already use `defineStore("id", {…})`, which v3 kept. v4 is ESM-only and needs `@vue/devtools-api`, TS ≥5.6, vue ≥3.5.11. Vite bundles it. |
-| axios | ^0.27.2 | — | | **unused** in panel `src/` (PR #76). Remove in P0. Do not upgrade. |
+| axios | removed | — | | Removed in P0. It was unused in panel `src/` (PR #76). |
 | howler | ^2.2.3 | 2.2.4 | — | last release 2023-09; works |
 | lodash | ^4.17.21 | 4.18.1 | — | three deep imports (`isEqual`, `cloneDeep`, `throttle`) |
 | moment | ^2.29.3 | 2.31.0 | — | project is in maintenance mode; 17 call sites; replacing it is out of scope |
@@ -723,7 +730,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | express | ^4.18.1 | 5.2.1 | ≥18 | see "Express 5" below |
 | cors | ^2.8.5 | 2.8.6 | — | |
 | dotenv | ^16.0.1 | 18.0.2 | ≥12 | 18 is a major bump. Re-check the load banner before P4. Silence it or it lands on stdout. |
-| lowdb | ^3.0.0 | — | | **unused** (no import anywhere); remove in P0 |
+| lowdb | removed | — | | Removed in P0. No import in the backend. |
 | moment | ^2.29.3 | 2.31.0 | — | |
 | morgan | ^1.10.0 | 1.12.1 | — | |
 | open | ^8.4.0 | 11.0.4 | ≥20 | ESM-only since v9; backend is CommonJS; see "ESM-only packages" |
@@ -741,7 +748,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | Package | Now | Latest | Node | Note |
 |---|---|---|---|---|
 | express, cors, dotenv | as backend | as backend | | |
-| lowdb | ^3.0.0 | 7.0.1 | ≥18 | `versions.json` only. `index.ts` still imports `JSONFile`/`Low` and does not use them; drop that import in P0. |
+| lowdb | 3.0.0 | 7.0.1 | ≥18 | `versions.json` only. The unused `index.ts` import was removed in P0. |
 | lodash.merge, @types/lodash.merge | ^4.6.2, ^4.6.7 | 4.6.2, 4.6.9 | — | |
 | vitest | ^0.9.3 | 5.0.1 | ^22.12 ‖ ^24 | |
 | @babybox/config-schema | workspace:* | — | | built to `dist/` first; Node 18 cannot load `.ts` |
@@ -766,7 +773,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | Node | 18.12.1 | leave in place | | Bootstrap host and `pnpm run build` hook. Not upgraded. Stops serving HTTP after P3. |
 | pnpm | 7.5.0 | leave in place | ≥18 | Legacy `pnpm run build` only. Lockfile 5.4 stays until P7. Not upgraded. |
 | pm2 | `latest` | 7.0.4 | ≥18 | pin it; `latest` on an unattended install is a risk we already carry. P3 spawns apps with the absolute Bun path. |
-| typescript, ts-node (global) | 4.7.4, 10.9.1 | remove | | nothing uses them |
+| typescript, ts-node (global) | removed from the install scripts | — | | P0. Workspace `typescript` and `ts-node` stay until later phases. |
 
 ## Things that change behaviour, not just versions
 
@@ -912,40 +919,40 @@ phase must pass the legacy-image job on its own.
 
 ### P0 — Make the plan checkable
 
-- [ ] Tag the current `main` as `legacy-runtime`. That is the state the CI job
-      upgrades from, forever. Tag after this plan merges, so the tag includes
+- [x] Tag the current `main` as `legacy-runtime` (`303b61e`, #100). That is the state the CI job
+      upgrades from, forever. Tagged after this plan merged, so the tag includes
       #85–#91.
-- [ ] CI: legacy-image job (see "Upgrading from any older version"). At P0 it only
+- [x] CI: legacy-image job (see "Upgrading from any older version"). At P0 it only
       asserts the two legacy commands still succeed against the PR head; the Bun
       version assertions are added in P1–P3.
-- [ ] Add `engines.node` to every `package.json` (including config-schema) and
+- [x] Add `engines.node` to every `package.json` (including config-schema) and
       `engine-strict=false` on purpose, so a mismatch prints, never blocks, on a
       box. Do not add `engines.bun` until P2.
-- [ ] Fill `apps/startup/versions.env` with `BUN_VERSION=1.4.2`, sha256 keys for
+- [x] Fill `apps/startup/versions.env` with `BUN_VERSION=1.4.2`, sha256 keys for
       `bun-linux-x64` and `bun-windows-x64` only, `PM2_VERSION`,
       and the legacy `NODE_VERSION=18.12.1` / `PNPM_VERSION=7.5.0` as detect-only
       values. P0 only writes the file. `install-all.sh` starts installing Bun
       in P1, when `bootstrap.js` exists. Reuse the file from the unmerged
       pinning branch. The CI comment that already names this file becomes true.
-- [ ] `.npmrc`: add `frozen-lockfile=true` next to `link-workspace-packages = true`
-- [ ] Pin every registry dependency to one exact version in every `package.json`
+- [x] `.npmrc`: add `frozen-lockfile=true` next to `link-workspace-packages = true`
+- [x] Pin every registry dependency to one exact version in every `package.json`
       under `source/`. The specifier is `1.2.3`. It is not `^1.2.3`, `~1.2.3`,
       `*`, `latest`, or a range. Use the version this plan names. If this plan
       does not bump that package yet, use the version the lockfile already
       resolved. A `workspace:` specifier stays only where this plan already
       allows it. The backend `package.json` still has no `workspace:*`.
       CI fails if a registry specifier still has a range.
-- [ ] CI: add a second job on Bun 1.4.2 that runs install, build and tests but is
+- [x] CI: add a second job on Bun 1.4.2 that runs install, build and tests but is
       allowed to fail. It shows what breaks per phase before the boxes move. The
       existing Node 18 job stays as the gate until P2.
-- [ ] Extend the existing `GET /status` bodies on configer and the backend with
+- [x] Extend the existing `GET /status` bodies on configer and the backend with
       `node -v`, `pnpm -v` and `bun -v` (empty string until P1). Do not add a
       new route. The last-upgrade record lands in P1 once `startup.last.json`
       exists.
 - [x] Lint stack decided: oxlint + oxfmt (see "Decisions taken")
 - [x] Runtime decided: Bun 1.4.2, not Node 24 + pnpm 12 (see "Review 2026-09-14")
 - [x] TypeScript contract decided: very strict flags (see "TypeScript contract")
-- [ ] Remove dead weight: `lowdb` from the backend, `axios` from the panel, the
+- [x] Remove dead weight: `lowdb` from the backend, `axios` from the panel, the
       unused `lowdb` import in `configer/src/index.ts`, global `typescript` and
       `ts-node` from the install scripts. **Do not remove jest from startup.**
 - [ ] Copy the 2026-09-12, 2026-09-14, and 2026-09-21 upgrade decisions from
@@ -1237,7 +1244,8 @@ Copy into decisions.md in P0. `decisions.md` exists as of #85.
 
 | Question | Answer | Consequence |
 |---|---|---|
-| Where does the work land? | One branch, `feat/toolchain-jump`, off `6eb4fbf` | Phases are commits on that branch. `main` gets one merge after the canary. |
+| Where does the work land? | `feat/toolchain-jump`, long-lived | Topic pull requests merge into that branch. `main` gets one merge after the canary. Do not delete the branch. |
+| How is a topic tracked? | One pull request into `feat/toolchain-jump` | Open that pull request for every topic. Do not merge it unless the owner asks. #102 stays the open pull request into `main`. |
 | What does a restart do? | It is the release | A pull or a checkout done before the restart still builds, unless the OS is on hold. |
 | Windows 8? | `OS_HOLD` | The current panel stays up. The git branch does not change. The tree stays clean. A later OS install plus a restart takes the jump. |
 | Windows 10 and 11? | Jump when the build is 17763 or newer | Older Windows 10 uses the same hold as Windows 8. |
@@ -1282,3 +1290,32 @@ One line per landed step: date, PR, what moved.
   `feat/toolchain-jump`.
 - 2026-09-21 — owner: every registry dependency is an exact version. Recorded
   as a known constraint, a decision, and a P0 box. No upgrade code landed.
+- 2026-09-21 — tagged `origin/main` `303b61e` (#100) as `legacy-runtime`.
+  Rebased `feat/toolchain-jump` onto that commit. The tag is on origin. No
+  upgrade code landed.
+- 2026-09-21 — #104 — owner: each topic is a pull request into
+  `feat/toolchain-jump`. The long-lived branch stays open. #102 stays the
+  pull request into `main`.
+- 2026-09-21 — #105 — legacy-image job starts from the `legacy-runtime` tag
+  and checks that `git pull` and `pnpm run build` still succeed with empty
+  stderr and a clean tree. Panel `*.tsbuildinfo` files are ignored so that
+  build does not dirty the checkout. Bun checks stay for P1.
+- 2026-09-21 — #106 — every `package.json` declares `engines.node` `18.12.1`.
+  `engine-strict` is false, so a mismatch prints and does not stop install.
+  `engines.bun` stays out until P2.
+- 2026-09-21 — #107 — `apps/startup/versions.env` stores Bun 1.4.2, the two x64 zip
+  sha256 values, pm2 7.0.4, and detect-only Node 18.12.1 / pnpm 7.5.0.
+  No script reads the file yet. `install-all.sh` stays unchanged.
+- 2026-09-21 — #108 — `source/.npmrc` sets `frozen-lockfile` to true. A lockfile pnpm
+  cannot read fails the install. pnpm does not rewrite the file.
+- 2026-09-21 — #109 — every `package.json` under `source/` pins each registry dependency
+  to the version `pnpm-lock.yaml` already resolved. CI fails when a registry
+  specifier is still a range. `workspace:*` stays on the panel and configer.
+  The backend still has none.
+- 2026-09-21 — #110 — a second CI job runs install, build, and tests on Bun 1.4.2.
+  The job is allowed to fail. The Node 18 job stays the gate until P2.
+- 2026-09-21 — #111 — GET /status on configer and the backend reports node, pnpm, and bun.
+  bun is an empty string when that binary is not on PATH. The last-upgrade record stays in P1.
+- 2026-09-21 — #112 — the backend drops unused lowdb, the panel drops unused axios, and
+  configer drops the unused lowdb import. The install scripts no longer install
+  global typescript or ts-node. Startup keeps jest. The lockfile stays format 5.4.
