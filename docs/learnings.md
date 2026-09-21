@@ -6,8 +6,10 @@ lesson: what happened, what to do instead.
 ## Tooling
 
 - **Never run the machine's pnpm here.** It rewrites the lockfile format. Use
-  `npx pnpm@7.5.0`. CI and every babybox install with `--frozen-lockfile` from that
-  version; a lockfile in another format means the box does not start.
+  `npx pnpm@7.5.0`. CI and the box's workspace install use `--frozen-lockfile` from
+  that version; a lockfile in another format means the box does not start. The
+  runtime install in repo-root `dist/` is `pnpm install --prod` and does not use
+  this lockfile.
 - **A green build proves little for the panel.** `pnpm typecheck` on the panel is red
   with 20 pre-existing errors and the build's type gate checks zero files. The docs
   said 17 until P3 counted them on `origin/main` at 1927135. Record your own baseline
@@ -117,10 +119,15 @@ lesson: what happened, what to do instead.
 
 ## Startup
 
-- **The backend's `dist` is installed standalone.** `startup` copies
-  `apps/backend/dist` and `apps/backend/package.json` to the repo-root `dist/` and runs
-  `pnpm install` there, outside the workspace. A `workspace:*` dependency in the
-  backend's `package.json` breaks that install, so the backend can only share types.
+- **The backend's `dist` is installed standalone, production dependencies only.**
+  `startup` copies `apps/backend/dist` and `apps/backend/package.json` to the
+  repo-root `dist/` and runs `pnpm install --prod` there, outside the workspace.
+  A `workspace:*` dependency in the backend's `package.json` breaks that install,
+  so the backend can only share types. Do not drop `--prod`. Jest, newman, and the
+  compiler are devDependencies, and the running server does not import them.
+- **The workspace install that builds the box stays a full install.** `tsc`,
+  `vue-tsc`, and `vite` are devDependencies. `pnpm install --prod` in `source/`
+  would omit them, and `pnpm run build` would fail on the box.
 - **After `git pull` the box runs the root `build` script**, nothing else. A new build
   step belongs there, or the box never runs it.
 

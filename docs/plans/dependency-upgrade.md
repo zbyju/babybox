@@ -447,11 +447,11 @@ On every boot the desktop autostart runs `apps/startup/scripts/ubuntu/startup.sh
    Stderr on a pull that exits 0 does not fail the pull.
 2. If the pull changed something, or `dist` is missing: `pnpm run build` in
    `source/`. That runs the
-   `build` script from **HEAD's** root `package.json`: `pnpm install &&
+   `build` script from **HEAD's** root `package.json`: `pnpm install --frozen-lockfile &&
    build:schema && build panel && build backend && build configer`. Any stderr
    fails the build.
 3. On success: rename `dist` to `dist2`, copy the new build into `dist`,
-   `pnpm install` inside `dist`, restart both apps under pm2.
+   `pnpm install --prod` inside `dist`, restart both apps under pm2.
 4. On a failed **build**: leave `dist` in place and start it. On a failed
    **copy**: try to rename `dist2` back. On a failed **start**: retry the
    **new** apps five times and never restore `dist2`. That last case is a
@@ -510,10 +510,8 @@ after P3.
   left behind.
 - **Configer vs panel.** A configer start failure retries only `start()` (the
   panel). Configer stays down.
-- **Rollback install path.** The copy uses `cwd: "../../../dist"`. The
-  rollback `pnpm install` uses `cwd: "../../dist"`. One of those is wrong.
 - **No last-good until swap is proven.** `dist` is renamed to `dist2` before
-  the new copy and `pnpm install` finish. A crash in that window leaves
+  the new copy and `pnpm install --prod` finish. A crash in that window leaves
   neither tree complete.
 
 #### Contract
@@ -996,8 +994,7 @@ P3 switches the interpreter.
       `dist-next` is complete. Swap, then start configer and panel. If either
       start fails, swap back, start both from the restored `dist`, record
       `START_CONFIGER` or `START_PANEL`. If a step before the swap fails, start
-      live `dist` unchanged. Fix the rollback install cwd (today
-      `../../dist` vs `../../../dist`).
+      live `dist` unchanged. The rollback install already uses `../../../dist`.
 - [ ] Startup app: run the bootstrap again before its own `git pull`, after a
       `git checkout -- pnpm-lock.yaml` and with a working tree check; log the
       outcome through the same step record (not a second log file).
