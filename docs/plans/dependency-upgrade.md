@@ -2,7 +2,7 @@
 
 Status: **not started** (no upgrade code on `main`)
 Owner: —
-Last updated: 2026-09-21 (legacy-runtime tag)
+Last updated: 2026-09-21 (topic pull requests)
 
 ## Goal
 
@@ -60,9 +60,14 @@ hook. They are not upgraded. They stop serving HTTP after P3.
 
 The execution branch is `feat/toolchain-jump`. This branch is long-lived.
 Rebase put it on `origin/main` `303b61e` (#100). It started at `6eb4fbf`
-(#98). Phase commits land on `feat/toolchain-jump`. The pull request for this
-branch targets `main` and stays open. Do not delete the branch. Do not merge
-one phase into `main` by itself.
+(#98). Do not delete the branch. Do not merge one phase into `main` by
+itself.
+
+Each topic uses its own branch and its own pull request. The base of that
+pull request is `feat/toolchain-jump`. A merge of that pull request puts the
+commits on the long-lived branch. The pull request from `feat/toolchain-jump`
+into `main` (#102) stays open until the canary. Do not open a second pull
+request into `main`.
 
 A box updates when it restarts. The startup app runs `git pull`, then maybe
 `pnpm run build`. Two arrivals must both end with a panel on screen.
@@ -1242,7 +1247,8 @@ Copy into decisions.md in P0. `decisions.md` exists as of #85.
 
 | Question | Answer | Consequence |
 |---|---|---|
-| Where does the work land? | One branch, `feat/toolchain-jump`, off `6eb4fbf` | Phases are commits on that branch. `main` gets one merge after the canary. |
+| Where does the work land? | `feat/toolchain-jump`, long-lived | Topic pull requests merge into that branch. `main` gets one merge after the canary. Do not delete the branch. |
+| How is a topic tracked? | One pull request into `feat/toolchain-jump` | Open that pull request for every topic. Do not merge it unless the owner asks. #102 stays the open pull request into `main`. |
 | What does a restart do? | It is the release | A pull or a checkout done before the restart still builds, unless the OS is on hold. |
 | Windows 8? | `OS_HOLD` | The current panel stays up. The git branch does not change. The tree stays clean. A later OS install plus a restart takes the jump. |
 | Windows 10 and 11? | Jump when the build is 17763 or newer | Older Windows 10 uses the same hold as Windows 8. |
@@ -1290,3 +1296,6 @@ One line per landed step: date, PR, what moved.
 - 2026-09-21 — tagged `origin/main` `303b61e` (#100) as `legacy-runtime`.
   Rebased `feat/toolchain-jump` onto that commit. The tag is on origin. No
   upgrade code landed.
+- 2026-09-21 — #104 — owner: each topic is a pull request into
+  `feat/toolchain-jump`. The long-lived branch stays open. #102 stays the
+  pull request into `main`.
