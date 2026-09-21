@@ -937,7 +937,7 @@ phase must pass the legacy-image job on its own.
       in P1, when `bootstrap.js` exists. Reuse the file from the unmerged
       pinning branch. The CI comment that already names this file becomes true.
 - [x] `.npmrc`: add `frozen-lockfile=true` next to `link-workspace-packages = true`
-- [ ] Pin every registry dependency to one exact version in every `package.json`
+- [x] Pin every registry dependency to one exact version in every `package.json`
       under `source/`. The specifier is `1.2.3`. It is not `^1.2.3`, `~1.2.3`,
       `*`, `latest`, or a range. Use the version this plan names. If this plan
       does not bump that package yet, use the version the lockfile already
@@ -1311,3 +1311,7 @@ One line per landed step: date, PR, what moved.
   No script reads the file yet. `install-all.sh` stays unchanged.
 - 2026-09-21 — #108 — `source/.npmrc` sets `frozen-lockfile` to true. A lockfile pnpm
   cannot read fails the install. pnpm does not rewrite the file.
+- 2026-09-21 — #109 — every `package.json` under `source/` pins each registry dependency
+  to the version `pnpm-lock.yaml` already resolved. CI fails when a registry
+  specifier is still a range. `workspace:*` stays on the panel and configer.
+  The backend still has none.
