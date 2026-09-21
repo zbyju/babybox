@@ -15,6 +15,7 @@ import { router as reloadRoute } from "./routes/reloadRoute";
 import { router as restartRoute } from "./routes/restartRoute";
 import { router as thermalRoute } from "./routes/thermalRoute";
 import { router as unitsRoute } from "./routes/unitsRoute";
+import { cachedRuntimeVersions, statusBody } from "./utils/runtimeVersions";
 import { wait } from "./utils/wait";
 
 const CONFIG_RETRY_DELAY_MS = 5000;
@@ -112,9 +113,7 @@ async function main() {
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
-    res.status(200).send({
-      msg: "Alive.",
-    });
+    res.status(200).send(statusBody(cachedRuntimeVersions()));
   });
 
   //Routes

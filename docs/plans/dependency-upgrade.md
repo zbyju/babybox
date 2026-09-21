@@ -947,7 +947,7 @@ phase must pass the legacy-image job on its own.
 - [x] CI: add a second job on Bun 1.4.2 that runs install, build and tests but is
       allowed to fail. It shows what breaks per phase before the boxes move. The
       existing Node 18 job stays as the gate until P2.
-- [ ] Extend the existing `GET /status` bodies on configer and the backend with
+- [x] Extend the existing `GET /status` bodies on configer and the backend with
       `node -v`, `pnpm -v` and `bun -v` (empty string until P1). Do not add a
       new route. The last-upgrade record lands in P1 once `startup.last.json`
       exists.
@@ -1317,3 +1317,5 @@ One line per landed step: date, PR, what moved.
   The backend still has none.
 - 2026-09-21 — #110 — a second CI job runs install, build, and tests on Bun 1.4.2.
   The job is allowed to fail. The Node 18 job stays the gate until P2.
+- 2026-09-21 — #111 — GET /status on configer and the backend reports node, pnpm, and bun.
+  bun is an empty string when that binary is not on PATH. The last-upgrade record stays in P1.
