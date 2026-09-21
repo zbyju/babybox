@@ -1315,5 +1315,5 @@ One line per landed step: date, PR, what moved.
   to the version `pnpm-lock.yaml` already resolved. CI fails when a registry
   specifier is still a range. `workspace:*` stays on the panel and configer.
   The backend still has none.
-- 2026-09-21 — a second CI job runs install, build, and tests on Bun 1.4.2.
+- 2026-09-21 — #110 — a second CI job runs install, build, and tests on Bun 1.4.2.
   The job is allowed to fail. The Node 18 job stays the gate until P2.
