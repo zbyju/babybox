@@ -1327,4 +1327,4 @@ One line per landed step: date, PR, what moved.
 - 2026-09-22 — #114 — bootstrap.js reads versions.env and installs the pinned Bun zip
   under the user profile when that binary is missing or different. It exits 0
   when Bun already matches and the OS is not on hold. An illegal instruction
-  is CPU_HOLD and does not download another zip.
+  is CPU_HOLD. The same pin does not download another zip.
