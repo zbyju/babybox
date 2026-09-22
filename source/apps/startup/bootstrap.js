@@ -604,12 +604,12 @@ function holdCpu(
   pm2Version,
   holdPath,
   version,
-  tools
+  versions
 ) {
   const message = "Procesor nespustí Bun. Krok CPU_HOLD.";
   writeHold(holdPath, version);
   writeLine(state, "INFO", message);
-  writeLast(state, "CPU_HOLD", true, message, tools);
+  writeLast(state, "CPU_HOLD", true, message, versions);
   comparePm2(state, spawnSync, env, platform, pm2Version);
   return 1;
 }
