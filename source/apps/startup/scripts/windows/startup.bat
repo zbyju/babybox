@@ -139,7 +139,7 @@ call :clear_hold
 exit /b 0
 
 :ensure_bun_after_match
-call :is_illegal "!PROBE_STATUS!"
+call :is_illegal_instruction "!PROBE_STATUS!"
 if errorlevel 1 goto :ensure_bun_not_illegal
 call :hold_matches
 if not errorlevel 1 goto :ensure_bun_cpu
@@ -187,7 +187,7 @@ copy /y "!FOUND!" "!BUN_EXE!" >nul
 if errorlevel 1 goto :ensure_bun_unpack_fail
 call :cleanup_stage
 call :probe_bun "!BUN_EXE!"
-call :is_illegal "!PROBE_STATUS!"
+call :is_illegal_instruction "!PROBE_STATUS!"
 if not errorlevel 1 goto :ensure_bun_cpu
 if not "!PROBE_STATUS!"=="0" goto :ensure_bun_bad_version
 call :version_matches "!PROBE_OUT!" "!BUN_VERSION!"
@@ -272,7 +272,8 @@ if /i "%~1"=="%~2" exit /b 0
 if /i "%~1"=="v%~2" exit /b 0
 exit /b 1
 
-:is_illegal
+:is_illegal_instruction
+REM 132, -1073741795, and 3221225501 are an illegal instruction.
 if "%~1"=="132" exit /b 0
 if "%~1"=="-1073741795" exit /b 0
 if "%~1"=="3221225501" exit /b 0
