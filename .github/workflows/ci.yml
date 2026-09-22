@@ -21,6 +21,9 @@ jobs:
       - name: Ubuntu startup shell
         run: bash apps/startup/tests/startup.test.sh
 
+      - name: Windows startup.bat shape
+        run: bash apps/startup/tests/startup.windows.static.sh
+
       - uses: pnpm/action-setup@v4
         with:
           version: 7.5.0
@@ -244,3 +247,16 @@ jobs:
             exit 1
           fi
           node --check source/apps/startup/bootstrap.js
+
+  windows-startup:
+    name: Windows startup.bat
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: source
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Windows startup.bat
+        shell: pwsh
+        run: ./apps/startup/tests/startup.windows.test.ps1

@@ -981,7 +981,7 @@ P3 switches the interpreter.
       pinning branch into `startup.sh`, and probe `pino` not `winston` if
       `deps_ok` comes along. `install-all.sh` installs the same pinned Bun
       for new boxes.
-- [ ] Windows 10 build 17763+ and Windows 11: same zip into
+- [x] Windows 10 build 17763+ and Windows 11: same zip into
       `%USERPROFILE%\.bun\bin`. No `nvm use`. Same harvest into `startup.bat`.
       Later steps use the absolute `bun.exe` path.
 - [ ] Windows 7, Windows 8, Windows 8.1, and Windows 10 below build 17763:
