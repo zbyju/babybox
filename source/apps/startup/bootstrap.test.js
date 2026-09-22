@@ -503,6 +503,36 @@ describe("already installed", () => {
     );
   });
 
+  it("still exits 0 when pm2 returns no version", async () => {
+    await withFixture(
+      {
+        spawnSync(cmd) {
+          if (isBunPath(cmd)) {
+            return { status: 0, signal: null, stdout: "1.4.2\n", stderr: "" };
+          }
+          if (cmd === "pm2") {
+            return {
+              status: 1,
+              signal: null,
+              stdout: "",
+              stderr: "pm2 failed",
+            };
+          }
+          throw new Error(`unexpected spawn ${cmd}`);
+        },
+      },
+      async (fx) => {
+        placeExe(fx.home, "bun", "present");
+        expect(await fx.run()).toBe(0);
+        expect(fx.stdout.text()).toContain(
+          "pm2 nevrátil verzi, chceme 7.0.4."
+        );
+        expect(fx.stdout.text()).toContain("pm2 failed");
+        expect(fx.stdout.text()).not.toContain("pm2 chybí");
+      }
+    );
+  });
+
   it("still exits 0 when pm2 is missing", async () => {
     await withFixture(
       {

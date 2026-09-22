@@ -313,7 +313,7 @@ function comparePm2(state, spawnSync, env, platform, wanted) {
     writeLine(
       state,
       "WARN",
-      withDetail(`pm2 chybí, chceme ${wanted}.`, spawnDetail(result))
+      withDetail(`pm2 nevrátil verzi, chceme ${wanted}.`, spawnDetail(result))
     );
     return;
   }
