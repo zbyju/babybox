@@ -154,14 +154,22 @@ function Add-Trailer([string]$Src, [string]$Dest, [string]$Trailer) {
   [IO.File]::WriteAllBytes($Dest, $all)
 }
 
-function New-FixtureZip([string]$StubExe, [string]$ZipPath) {
+function New-FixtureZip([string]$StubExe, [string]$ZipPath, [bool]$WithBun = $true) {
   Add-Type -AssemblyName System.IO.Compression | Out-Null
   Add-Type -AssemblyName System.IO.Compression.FileSystem | Out-Null
-  $src = Join-Path (Split-Path -Parent $ZipPath) "zip-src\bun-windows-x64"
+  $rootName = "zip-src"
+  if (-not $WithBun) { $rootName = "zip-src-empty" }
+  $root = Join-Path (Split-Path -Parent $ZipPath) $rootName
+  if (Test-Path $root) { Remove-Item -Recurse -Force $root }
+  $src = Join-Path $root "bun-windows-x64"
   New-Item -ItemType Directory -Force -Path $src | Out-Null
-  Copy-Item $StubExe (Join-Path $src "bun.exe") -Force
+  if ($WithBun) {
+    Copy-Item $StubExe (Join-Path $src "bun.exe") -Force
+  } else {
+    [IO.File]::WriteAllText((Join-Path $src "readme.txt"), "no bun")
+  }
   if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
-  [IO.Compression.ZipFile]::CreateFromDirectory((Split-Path -Parent $src), $ZipPath)
+  [IO.Compression.ZipFile]::CreateFromDirectory($root, $ZipPath)
 }
 
 function Invoke-Case {
@@ -448,6 +456,25 @@ if (Test-Path $script:InstalledBun) {
 } else {
   Fail "bun.exe was not written"
 }
+
+Write-Host "a checksum-good zip with no bun.exe does not install"
+Reset-Case
+$emptyZip = Join-Path $work "no-bun.zip"
+New-FixtureZip $script:ZipExe $emptyZip $false
+$savedZip = $script:ZipPath
+$savedSha = $script:ZipSha
+$script:ZipPath = $emptyZip
+$script:ZipSha = (Get-FileHash -Algorithm SHA256 -Path $emptyZip).Hash
+$script:StubBunMissing = $true
+$script:RewriteSha = $true
+Invoke-Case
+$script:ZipPath = $savedZip
+$script:ZipSha = $savedSha
+Expect-Log "V archivu chybi bun"
+Expect-NoLog "je nainstalovany"
+Expect-Called "pnpm run start"
+Expect-Rc 0
+if (Test-Path $script:InstalledBun) { Fail "bun.exe was written from an empty archive" } else { Pass }
 
 Write-Host "a failed download still starts the panel"
 Reset-Case
