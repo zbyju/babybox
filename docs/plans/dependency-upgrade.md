@@ -976,7 +976,7 @@ P3 switches the interpreter.
       under the user profile, prepends `PATH` for child processes, records
       `CPU_HOLD` on illegal instruction, stdout and a log file only, exit 0
       when Bun already matches and the OS is not on hold
-- [ ] Ubuntu: write to `$HOME/.bun/bin`. Do not call `n` or install pnpm 12.
+- [x] Ubuntu: write to `$HOME/.bun/bin`. Do not call `n` or install pnpm 12.
       Harvest a Bun-shaped `ensure_bun` / `ensure_pm2` from the unmerged
       pinning branch into `startup.sh`, and probe `pino` not `winston` if
       `deps_ok` comes along. `install-all.sh` installs the same pinned Bun
