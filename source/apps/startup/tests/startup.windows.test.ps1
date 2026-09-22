@@ -495,23 +495,16 @@ Expect-Log "CPU_HOLD"
 Expect-Called "pnpm run start"
 Expect-Rc 0
 
-Write-Host "an illegal instruction and the same hold do not download"
-Reset-Case
-$script:StubBunExit = "-1073741795"
-$script:HoldVersion = $script:BunVersion
-Invoke-Case
-Expect-NotCalled "bun-windows-x64.zip"
-Expect-Log "CPU_HOLD"
-Expect-Rc 0
-
-Write-Host "exit 132 and the same hold do not download"
-Reset-Case
-$script:StubBunExit = "132"
-$script:HoldVersion = $script:BunVersion
-Invoke-Case
-Expect-NotCalled "bun-windows-x64.zip"
-Expect-Log "CPU_HOLD"
-Expect-Rc 0
+foreach ($code in @("-1073741795", "132")) {
+  Write-Host "exit $code and the same hold do not download"
+  Reset-Case
+  $script:StubBunExit = $code
+  $script:HoldVersion = $script:BunVersion
+  Invoke-Case
+  Expect-NotCalled "bun-windows-x64.zip"
+  Expect-Log "CPU_HOLD"
+  Expect-Rc 0
+}
 
 Write-Host "an illegal instruction and a different hold downloads"
 Reset-Case
