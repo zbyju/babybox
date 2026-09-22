@@ -991,7 +991,7 @@ P3 switches the interpreter.
       `%USERPROFILE%\.bun` with no UAC prompt? If not, decide between
       `sudo-prompt` (already a dependency) and a one-time on-site change,
       before P1 merges
-- [ ] Root `package.json`: `"build": "node apps/startup/run-update.js"`. The
+- [x] Root `package.json`: `"build": "node apps/startup/run-update.js"`. The
       runner calls `bootstrap.js`, then each named step in "When an upgrade
       fails". `pnpm run build` stays the one command the legacy startup runs.
       P1 still calls `pnpm install` after Bun is on `PATH`.
