@@ -14,13 +14,6 @@ function asText(value) {
   return String(value);
 }
 
-function field(value) {
-  if (value === undefined || value === null) {
-    return "";
-  }
-  return String(value);
-}
-
 function cap(text) {
   if (text.length <= MAX_MESSAGE) {
     return text;
@@ -88,9 +81,9 @@ function readToolVersion(spawnSync, command, env, platform) {
 function resolveVersions(explicit, spawnSync, env, platform) {
   if (explicit !== undefined && explicit !== null) {
     return {
-      node: field(explicit.node),
-      pnpm: field(explicit.pnpm),
-      bun: field(explicit.bun),
+      node: asText(explicit.node),
+      pnpm: asText(explicit.pnpm),
+      bun: asText(explicit.bun),
     };
   }
   const spawn = spawnSync || childProcess.spawnSync;
@@ -109,9 +102,9 @@ function buildRecord(step, ok, message, date, versions) {
     ok: ok === true,
     message: collapseMessage(message),
     at: date.toISOString(),
-    node: field(tools.node),
-    pnpm: field(tools.pnpm),
-    bun: field(tools.bun),
+    node: asText(tools.node),
+    pnpm: asText(tools.pnpm),
+    bun: asText(tools.bun),
   };
 }
 
