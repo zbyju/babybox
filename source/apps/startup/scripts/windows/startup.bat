@@ -108,6 +108,7 @@ set "CAN_BUN=0"
 set "OS_RELEASE="
 if defined BABYBOX_OS_RELEASE set "OS_RELEASE=!BABYBOX_OS_RELEASE!"
 if not defined BABYBOX_OS_RELEASE (
+  REM ver puts the release in token 4, with a trailing ].
   for /f "tokens=4" %%A in ('ver') do set "OS_RELEASE=%%A"
 )
 set "OS_RELEASE=!OS_RELEASE:]=!"
