@@ -1339,3 +1339,6 @@ One line per landed step: date, PR, what moved.
   build 17763 record `OS_HOLD` before any download. The boot exits non-zero
   with empty stderr. `startup.last.json` has `ok` true. The git branch does
   not change. The panel still starts.
+- 2026-09-22 — #118 — root `build` runs `node apps/startup/run-update.js`.
+  The runner calls `bootstrap.js`, then `pnpm install`, then each package build.
+  A hold exits before install. A failed step stops the chain.
