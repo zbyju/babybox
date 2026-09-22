@@ -1331,3 +1331,7 @@ One line per landed step: date, PR, what moved.
 - 2026-09-22 — #115 — Ubuntu startup.sh writes the pinned Bun zip to `$HOME/.bun/bin`
   and installs the pinned pm2. It does not call `n` and it does not install pnpm.
   `install-all.sh` uses the same pin for a new box. The script does not run `git pull`.
+- 2026-09-22 — #116 — Windows startup.bat writes the pinned Bun zip to
+  `%USERPROFILE%\.bun\bin` on Windows 10 build 17763 or newer, and on Windows 11.
+  It does not use nvm. Later steps call the absolute bun.exe path.
+  An older Windows release does not download the zip.
