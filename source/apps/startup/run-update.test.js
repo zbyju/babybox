@@ -9,6 +9,8 @@ const { run } = require("./run-update");
 const REAL_VERSIONS = path.join(__dirname, "versions.env");
 const ROOT_PACKAGE = path.join(__dirname, "../../package.json");
 
+const WHEN = new Date(2026, 8, 22, 1, 2, 3);
+
 const STEP_ARGS = [
   ["install"],
   ["run", "build:schema"],
@@ -63,6 +65,11 @@ function createFixture() {
     env,
     logText: () =>
       fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : "",
+    last() {
+      return JSON.parse(
+        fs.readFileSync(path.join(root, "startup.last.json"), "utf8")
+      );
+    },
     cleanup() {
       fs.rmSync(home, { recursive: true, force: true });
       fs.rmSync(root, { recursive: true, force: true });
@@ -84,6 +91,7 @@ function baseOptions(fx, extra) {
       arch: "x64",
       release: "5.15.0-generic",
       versionsPath: REAL_VERSIONS,
+      versions: { node: "v18.12.1", pnpm: "7.5.0", bun: "1.4.2" },
     },
     extra
   );
@@ -116,11 +124,15 @@ describe("run-update", () => {
       expect(fx.stdout.text()).toContain("Krok OS_HOLD");
       expect(fx.stdout.text()).not.toContain("nezdařil");
       expect(fx.logText()).toContain("Krok OS_HOLD");
-      const last = JSON.parse(
-        fs.readFileSync(path.join(fx.root, "startup.last.json"), "utf8")
-      );
-      expect(last.step).toBe("OS_HOLD");
-      expect(last.ok).toBe(true);
+      expect(fx.last()).toEqual({
+        step: "OS_HOLD",
+        ok: true,
+        message: "Tento systém nespustí Bun. Krok OS_HOLD. Vydání 6.2.9200.",
+        at: WHEN.toISOString(),
+        node: "v18.12.1",
+        pnpm: "7.5.0",
+        bun: "1.4.2",
+      });
     } finally {
       fx.cleanup();
     }
@@ -129,6 +141,11 @@ describe("run-update", () => {
   it("runs pnpm install and each package build after Bun is on PATH", async () => {
     const fx = createFixture();
     placeBun(fx.home);
+    // A later success replaces a stale failure record.
+    fs.writeFileSync(
+      path.join(fx.root, "startup.last.json"),
+      "{\"step\":\"BUILD_PANEL\",\"ok\":false,\"message\":\"old\"}\n"
+    );
     const calls = [];
     const paths = [];
     const spawnSync = (cmd, args, opts) => {
@@ -167,6 +184,15 @@ describe("run-update", () => {
       expect(fx.stdout.text()).toContain("Krok BUILD_CONFIGER skončil.");
       expect(fx.logText()).toContain("Krok INSTALL skončil.");
       expect(fx.logText()).not.toContain("pnpm");
+      expect(fx.last()).toEqual({
+        step: "BUILD_CONFIGER",
+        ok: true,
+        message: "",
+        at: WHEN.toISOString(),
+        node: "v18.12.1",
+        pnpm: "7.5.0",
+        bun: "1.4.2",
+      });
     } finally {
       fx.cleanup();
     }
@@ -221,6 +247,8 @@ describe("run-update", () => {
       );
       expect(code).toBe(1);
       expect(fx.stdout.text()).toContain("Krok BOOTSTRAP_BUN se nezdařil.");
+      expect(fx.last().step).toBe("BOOTSTRAP_BUN");
+      expect(fx.last().ok).toBe(false);
     } finally {
       fx.cleanup();
     }
@@ -228,6 +256,8 @@ describe("run-update", () => {
 
   it("does not name CPU_HOLD as a bootstrap failure", async () => {
     const fx = createFixture();
+    const previous = "{\"step\":\"CPU_HOLD\",\"ok\":true}\n";
+    fs.writeFileSync(path.join(fx.root, "startup.last.json"), previous);
     const spawnSync = () => {
       throw new Error("pnpm must not run");
     };
@@ -247,6 +277,9 @@ describe("run-update", () => {
       expect(fx.stderr.text()).toBe("");
       expect(fx.stdout.text()).toContain("Krok CPU_HOLD");
       expect(fx.stdout.text()).not.toContain("nezdařil");
+      expect(fs.readFileSync(path.join(fx.root, "startup.last.json"), "utf8")).toBe(
+        previous
+      );
     } finally {
       fx.cleanup();
     }
@@ -280,6 +313,12 @@ describe("run-update", () => {
       expect(fx.stdout.text()).not.toContain("Krok BUILD_PANEL");
       expect(fx.logText()).toContain("Krok BUILD_SCHEMA se nezdařil.");
       expect(fx.logText()).not.toContain("schema broke");
+      expect(fx.last()).toMatchObject({
+        step: "BUILD_SCHEMA",
+        ok: false,
+        message: "schema broke schema out",
+        at: WHEN.toISOString(),
+      });
     } finally {
       fx.cleanup();
     }
@@ -302,6 +341,11 @@ describe("run-update", () => {
       expect(calls).toEqual([STEP_ARGS[0]]);
       expect(fx.stderr.text()).toBe("deprecation\n");
       expect(fx.stdout.text()).toContain("Krok INSTALL se nezdařil.");
+      expect(fx.last()).toMatchObject({
+        step: "INSTALL",
+        ok: false,
+        message: "deprecation",
+      });
     } finally {
       fx.cleanup();
     }
@@ -329,6 +373,11 @@ describe("run-update", () => {
       expect(code).toBe(1);
       expect(fx.stderr.text()).toBe("spawn ENOENT");
       expect(calls).toEqual([STEP_ARGS[0]]);
+      expect(fx.last()).toMatchObject({
+        step: "INSTALL",
+        ok: false,
+        message: "spawn ENOENT",
+      });
     } finally {
       fx.cleanup();
     }
@@ -372,6 +421,11 @@ describe("run-update", () => {
       expect(code).toBe(1);
       expect(fx.stderr.text()).toBe("");
       expect(fx.stdout.text()).toContain("Krok BOOTSTRAP_BUN se nezdařil.");
+      expect(fx.last()).toMatchObject({
+        step: "BOOTSTRAP_BUN",
+        ok: false,
+        message: "boom",
+      });
     } finally {
       fx.cleanup();
     }

@@ -47,7 +47,7 @@ jobs:
         run: |
           pnpm -F babybox-panel-backend exec eslint --ext .js,.ts .
           pnpm -F babybox-panel exec eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore
-          pnpm -F startup exec eslint src/ bootstrap.js bootstrap.test.js run-update.js run-update.test.js
+          pnpm -F startup exec eslint src/ bootstrap.js bootstrap.test.js last-record.js last-record.test.js run-update.js run-update.test.js
 
       # Vsechny aplikace ctou tvar konfigurace odsud, musi se sestavit jako prvni
       - name: Build config schema
@@ -247,6 +247,8 @@ jobs:
             exit 1
           fi
           node --check source/apps/startup/bootstrap.js
+          node --check source/apps/startup/last-record.js
+          node --check source/apps/startup/run-update.js
 
   windows-startup:
     name: Windows startup.bat

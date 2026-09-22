@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 
 const bootstrap = require("./bootstrap");
+const lastRecord = require("./last-record");
 
 const STEPS = [
   { step: "INSTALL", args: ["install"] },
@@ -157,7 +158,23 @@ function bootstrapOptions(opts, env, stdout, logPath, now) {
   if (opts.httpsGet !== undefined) {
     built.httpsGet = opts.httpsGet;
   }
+  if (opts.versions !== undefined) {
+    built.versions = opts.versions;
+  }
   return built;
+}
+
+function finishStep(state, opts, env, platform, step, ok, message) {
+  const versions = lastRecord.resolveVersions(
+    opts.versions,
+    childProcess.spawnSync,
+    env,
+    platform
+  );
+  lastRecord.writeRecord(
+    state.logPath,
+    lastRecord.buildRecord(step, ok, message, state.now(), versions)
+  );
 }
 
 async function run(options) {
@@ -184,13 +201,24 @@ async function run(options) {
       bootstrapOptions(opts, env, captured.stream, logPath, now)
     );
   } catch (err) {
+    const detail = err && err.message ? err.message : String(err);
     writeLine(state, "ERROR", "Krok BOOTSTRAP_BUN se nezdařil.");
+    finishStep(state, opts, env, platform, "BOOTSTRAP_BUN", false, detail);
     return 1;
   }
 
   if (code !== 0) {
     if (!isHoldText(captured.text())) {
       writeLine(state, "ERROR", "Krok BOOTSTRAP_BUN se nezdařil.");
+      finishStep(
+        state,
+        opts,
+        env,
+        platform,
+        "BOOTSTRAP_BUN",
+        false,
+        captured.text()
+      );
     }
     if (typeof code === "number") {
       return code;
@@ -199,6 +227,15 @@ async function run(options) {
   }
 
   writeLine(state, "INFO", "Krok BOOTSTRAP_BUN skončil.");
+  finishStep(
+    state,
+    opts,
+    env,
+    platform,
+    "BOOTSTRAP_BUN",
+    true,
+    captured.text()
+  );
 
   for (let i = 0; i < STEPS.length; i += 1) {
     const spec = STEPS[i];
@@ -207,15 +244,18 @@ async function run(options) {
     forward(stdout, result.stdout);
     // The old startup fails the update on any build stderr.
     const failed = result.status !== 0 || result.stderr !== "";
+    const message = lastRecord.commandMessage(result.stderr, result.stdout);
     if (failed) {
       forward(stderr, result.stderr);
       writeLine(state, "ERROR", `Krok ${spec.step} se nezdařil.`);
+      finishStep(state, opts, env, platform, spec.step, false, message);
       if (result.status !== 0) {
         return result.status;
       }
       return 1;
     }
     writeLine(state, "INFO", `Krok ${spec.step} skončil.`);
+    finishStep(state, opts, env, platform, spec.step, true, message);
   }
 
   return 0;

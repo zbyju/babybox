@@ -1,8 +1,20 @@
 import { spawnSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 const VERSION_TIMEOUT_MS = 5000;
 
 export type RuntimeVersions = {
+  node: string;
+  pnpm: string;
+  bun: string;
+};
+
+export type StartupLast = {
+  step: string;
+  ok: boolean;
+  message: string;
+  at: string;
   node: string;
   pnpm: string;
   bun: string;
@@ -13,7 +25,10 @@ export type StatusBody = {
   node: string;
   pnpm: string;
   bun: string;
+  startup: StartupLast | null;
 };
+
+const MAX_RECORD_BYTES = 16 * 1024;
 
 /*
  * A caller supplies the command runner so a test does not spawn a process.
@@ -32,13 +47,104 @@ export function runtimeVersions(run: VersionCommand): RuntimeVersions {
   };
 }
 
-export function statusBody(versions: RuntimeVersions): StatusBody {
+export function statusBody(
+  versions: RuntimeVersions,
+  startup: StartupLast | null
+): StatusBody {
   return {
     msg: "Alive.",
     node: versions.node,
     pnpm: versions.pnpm,
     bun: versions.bun,
+    startup,
   };
+}
+
+/*
+ * `startup` is startup.last.json, next to startup.log.
+ * A missing file, a huge file, or a record without the step fields is null.
+ */
+export function startupLastFor(startDir: string): StartupLast | null {
+  const filePath = findStartupLast(startDir);
+  if (filePath === null) {
+    return null;
+  }
+  return readStartupLast(filePath);
+}
+
+export function parseStartupLast(text: string): StartupLast | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!isRecord(value)) {
+    return null;
+  }
+  const step = value.step;
+  const ok = value.ok;
+  const message = value.message;
+  const at = value.at;
+  const node = value.node;
+  const pnpm = value.pnpm;
+  const bun = value.bun;
+  if (
+    typeof step !== "string" ||
+    typeof ok !== "boolean" ||
+    typeof message !== "string" ||
+    typeof at !== "string" ||
+    typeof node !== "string" ||
+    typeof pnpm !== "string" ||
+    typeof bun !== "string"
+  ) {
+    return null;
+  }
+  return { step, ok, message, at, node, pnpm, bun };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && Array.isArray(value) === false;
+}
+
+function hasStartupApp(dir: string): boolean {
+  return fs.existsSync(path.join(dir, "apps", "startup", "versions.env"));
+}
+
+function findStartupLast(startDir: string): string | null {
+  let dir = path.resolve(startDir);
+  for (let i = 0; i < 8; i += 1) {
+    if (hasStartupApp(dir)) {
+      const inLogs = path.join(dir, "logs", "startup.last.json");
+      if (fs.existsSync(inLogs)) {
+        return inLogs;
+      }
+    }
+    if (hasStartupApp(path.join(dir, "source"))) {
+      const inSourceLogs = path.join(dir, "source", "logs", "startup.last.json");
+      if (fs.existsSync(inSourceLogs)) {
+        return inSourceLogs;
+      }
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return null;
+    }
+    dir = parent;
+  }
+  return null;
+}
+
+function readStartupLast(filePath: string): StartupLast | null {
+  try {
+    const stat = fs.statSync(filePath);
+    if (stat.isFile() === false || stat.size > MAX_RECORD_BYTES) {
+      return null;
+    }
+    return parseStartupLast(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 let cached: RuntimeVersions | undefined;

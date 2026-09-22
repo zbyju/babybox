@@ -137,6 +137,7 @@ function createFixture(overrides) {
             arch: "x64",
             release: "5.15.0-generic",
             versionsPath: REAL_VERSIONS,
+            versions: { node: "v18.12.1", pnpm: "7.5.0", bun: "" },
             now: () => new Date(2026, 8, 22, 1, 2, 3),
           },
           rest,
@@ -361,6 +362,10 @@ describe("OS hold", () => {
           step: "OS_HOLD",
           ok: true,
           message: `Tento systém nespustí Bun. Krok OS_HOLD. Vydání ${release}.`,
+          at: new Date(2026, 8, 22, 1, 2, 3).toISOString(),
+          node: "v18.12.1",
+          pnpm: "7.5.0",
+          bun: "",
         });
         expect(fx.stdout.text()).toContain("Krok OS_HOLD.");
         expect(fx.stdout.text()).toContain(`Vydání ${release}.`);
@@ -440,6 +445,19 @@ describe("CPU hold", () => {
         expect(fx.stdout.text()).toContain("Krok CPU_HOLD.");
         expect(fx.calls.map((call) => call.cmd)).not.toContain("unzip");
         expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
+        const record = JSON.parse(
+          fs.readFileSync(
+            path.join(path.dirname(fx.logPath), "startup.last.json"),
+            "utf8"
+          )
+        );
+        expect(record.step).toBe("CPU_HOLD");
+        expect(record.ok).toBe(true);
+        expect(record.message).toBe("Procesor nespustí Bun. Krok CPU_HOLD.");
+        expect(record.at).toBe(new Date(2026, 8, 22, 1, 2, 3).toISOString());
+        expect(record.node).toBe("v18.12.1");
+        expect(record.pnpm).toBe("7.5.0");
+        expect(record.bun).toBe("");
       }
     );
   });
@@ -899,10 +917,9 @@ describe("platform", () => {
 
 describe("syntax", () => {
   it("stays on Node 12 CommonJS and does not name a git branch or dist swap", () => {
-    const source = fs.readFileSync(
-      path.join(__dirname, "bootstrap.js"),
-      "utf8"
-    );
+    const source = ["bootstrap.js", "last-record.js", "run-update.js"]
+      .map((name) => fs.readFileSync(path.join(__dirname, name), "utf8"))
+      .join("\n");
     expect(source.includes("??")).toBe(false);
     expect(source.includes("?.")).toBe(false);
     expect(source.includes("fs/promises")).toBe(false);

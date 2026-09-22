@@ -8,6 +8,8 @@ const https = require("https");
 const os = require("os");
 const path = require("path");
 
+const lastRecord = require("./last-record");
+
 const LINUX_ZIP = "bun-linux-x64";
 const WINDOWS_ZIP = "bun-windows-x64";
 const MAX_MESSAGE = 2000;
@@ -226,24 +228,17 @@ function writeHold(filePath, version) {
   fs.writeFileSync(filePath, `${version}\n`);
 }
 
-function writeLast(state, record) {
-  const filePath = path.join(path.dirname(state.logPath), "startup.last.json");
-  try {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, `${JSON.stringify(record)}\n`);
-  } catch (err) {
-    // The console line is enough when the log directory is not writable.
-  }
+function writeLast(state, step, ok, message, versions) {
+  lastRecord.writeRecord(
+    state.logPath,
+    lastRecord.buildRecord(step, ok, message, state.now(), versions)
+  );
 }
 
-function holdOs(state, release) {
+function holdOs(state, release, versions) {
   const message = `Tento systém nespustí Bun. Krok OS_HOLD. Vydání ${release}.`;
   writeLine(state, "INFO", message);
-  writeLast(state, {
-    step: "OS_HOLD",
-    ok: true,
-    message,
-  });
+  writeLast(state, "OS_HOLD", true, message, versions);
   return 1;
 }
 
@@ -608,10 +603,13 @@ function holdCpu(
   platform,
   pm2Version,
   holdPath,
-  version
+  version,
+  tools
 ) {
+  const message = "Procesor nespustí Bun. Krok CPU_HOLD.";
   writeHold(holdPath, version);
-  writeLine(state, "INFO", "Procesor nespustí Bun. Krok CPU_HOLD.");
+  writeLine(state, "INFO", message);
+  writeLast(state, "CPU_HOLD", true, message, tools);
   comparePm2(state, spawnSync, env, platform, pm2Version);
   return 1;
 }
@@ -630,9 +628,15 @@ async function runInner(state, opts) {
   const httpsGet = pick(opts.httpsGet, nodeHttpsGet);
   // Child processes see this PATH. The parent shell does not.
   const env = pick(opts.env, process.env);
+  const tools = lastRecord.resolveVersions(
+    opts.versions,
+    childProcess.spawnSync,
+    env,
+    platform
+  );
 
   if (isOsHold(platform, release)) {
-    return holdOs(state, release);
+    return holdOs(state, release, tools);
   }
 
   if (arch !== "x64") {
@@ -716,7 +720,8 @@ async function runInner(state, opts) {
         platform,
         pm2Version,
         holdPath,
-        version
+        version,
+        tools
       );
     }
   }
@@ -761,7 +766,8 @@ async function runInner(state, opts) {
       platform,
       pm2Version,
       holdPath,
-      version
+      version,
+      tools
     );
   }
   if (after.state === "version" && versionsMatch(after.version, version)) {
