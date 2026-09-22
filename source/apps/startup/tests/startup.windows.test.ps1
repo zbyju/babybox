@@ -590,13 +590,13 @@ $script:OsRelease = "10.0.17762"
 $script:StubPm2 = "5.2.0"
 Invoke-Case
 Expect-NotCalled "bun-windows-x64.zip"
-Expect-NotCalled "npm "
+Expect-NotCalled "npm install"
 Expect-NotCalled "git "
 Expect-Log "OS_HOLD"
-Expect-Log "10.0.17762"
+Expect-Log $script:OsRelease
 Expect-Called "pnpm run start"
 Expect-StderrEmpty
-Expect-OsHold "10.0.17762"
+Expect-OsHold $script:OsRelease
 Expect-Rc 1
 
 Write-Host "release 6.2.9200 with no versions.env records OS_HOLD"
@@ -606,12 +606,12 @@ $script:OmitVersions = $true
 $script:StubBunMissing = $true
 Invoke-Case
 Expect-NotCalled "bun-windows-x64.zip"
-Expect-NotCalled "npm "
+Expect-NotCalled "npm install"
 Expect-NotCalled "git "
 Expect-Log "OS_HOLD"
 Expect-Called "pnpm run start"
 Expect-StderrEmpty
-Expect-OsHold "6.2.9200"
+Expect-OsHold $script:OsRelease
 Expect-Rc 1
 
 Write-Host "a failed pm2 install still starts the panel"
@@ -712,7 +712,7 @@ foreach ($gate in $gates) {
   } else {
     Expect-Rc 1
     Expect-NotCalled "bun-windows-x64.zip"
-    Expect-NotCalled "npm "
+    Expect-NotCalled "npm install"
     Expect-Log "OS_HOLD"
     Expect-StderrEmpty
     Expect-OsHold $release
