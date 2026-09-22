@@ -487,6 +487,19 @@ Expect-Hold $script:BunVersion
 Expect-Called "pnpm run start"
 Expect-Rc 0
 
+Write-Host "an unpacked bun that exits 132 writes cpu-hold"
+Reset-Case
+$script:StubBunMissing = $true
+$script:StubBunExit = "132"
+$script:RewriteSha = $true
+Invoke-Case
+Expect-Called "bun-windows-x64.zip"
+Expect-Log "CPU_HOLD"
+Expect-NoLog "je nainstalovany"
+Expect-Hold $script:BunVersion
+Expect-Called "pnpm run start"
+Expect-Rc 0
+
 Write-Host "a matching bun deletes cpu-hold"
 Reset-Case
 $script:HoldVersion = "1.0.0"
