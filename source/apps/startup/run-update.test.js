@@ -313,11 +313,14 @@ describe("run-update", () => {
       expect(fx.stdout.text()).not.toContain("Krok BUILD_PANEL");
       expect(fx.logText()).toContain("Krok BUILD_SCHEMA se nezdařil.");
       expect(fx.logText()).not.toContain("schema broke");
-      expect(fx.last()).toMatchObject({
+      expect(fx.last()).toEqual({
         step: "BUILD_SCHEMA",
         ok: false,
         message: "schema broke schema out",
         at: WHEN.toISOString(),
+        node: "v18.12.1",
+        pnpm: "7.5.0",
+        bun: "1.4.2",
       });
     } finally {
       fx.cleanup();
@@ -341,10 +344,14 @@ describe("run-update", () => {
       expect(calls).toEqual([STEP_ARGS[0]]);
       expect(fx.stderr.text()).toBe("deprecation\n");
       expect(fx.stdout.text()).toContain("Krok INSTALL se nezdařil.");
-      expect(fx.last()).toMatchObject({
+      expect(fx.last()).toEqual({
         step: "INSTALL",
         ok: false,
         message: "deprecation",
+        at: WHEN.toISOString(),
+        node: "v18.12.1",
+        pnpm: "7.5.0",
+        bun: "1.4.2",
       });
     } finally {
       fx.cleanup();
@@ -373,10 +380,14 @@ describe("run-update", () => {
       expect(code).toBe(1);
       expect(fx.stderr.text()).toBe("spawn ENOENT");
       expect(calls).toEqual([STEP_ARGS[0]]);
-      expect(fx.last()).toMatchObject({
+      expect(fx.last()).toEqual({
         step: "INSTALL",
         ok: false,
         message: "spawn ENOENT",
+        at: WHEN.toISOString(),
+        node: "v18.12.1",
+        pnpm: "7.5.0",
+        bun: "1.4.2",
       });
     } finally {
       fx.cleanup();
@@ -421,10 +432,14 @@ describe("run-update", () => {
       expect(code).toBe(1);
       expect(fx.stderr.text()).toBe("");
       expect(fx.stdout.text()).toContain("Krok BOOTSTRAP_BUN se nezdařil.");
-      expect(fx.last()).toMatchObject({
+      expect(fx.last()).toEqual({
         step: "BOOTSTRAP_BUN",
         ok: false,
         message: "boom",
+        at: WHEN.toISOString(),
+        node: "v18.12.1",
+        pnpm: "7.5.0",
+        bun: "1.4.2",
       });
     } finally {
       fx.cleanup();
@@ -447,6 +462,15 @@ describe("run-update", () => {
       expect(fx.stderr.text()).toBe("");
       expect(fx.stdout.text()).toContain("Krok BOOTSTRAP_BUN se nezdařil.");
       expect(fx.stdout.text()).not.toContain("Krok INSTALL");
+      expect(fx.last()).toEqual({
+        step: "BOOTSTRAP_BUN",
+        ok: false,
+        message: "",
+        at: WHEN.toISOString(),
+        node: "v18.12.1",
+        pnpm: "7.5.0",
+        bun: "1.4.2",
+      });
     } finally {
       fx.cleanup();
     }
