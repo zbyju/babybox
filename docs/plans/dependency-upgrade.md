@@ -1342,3 +1342,6 @@ One line per landed step: date, PR, what moved.
 - 2026-09-22 — #118 — root `build` runs `node apps/startup/run-update.js`.
   The runner calls `bootstrap.js`, then `pnpm install`, then each package build.
   A hold exits before install. A failed step stops the chain.
+- 2026-09-22 — #119 — each update step writes `startup.last.json` with step,
+  ok, message, at, node, pnpm, and bun. A success replaces a stale failure.
+  GET /status on configer and the backend includes the record.
