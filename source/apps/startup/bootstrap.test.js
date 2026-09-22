@@ -125,6 +125,7 @@ function createFixture(overrides) {
     tmpDir,
     calls,
     urls,
+    logPath,
     stderrText: () => stderrChunks.join(""),
     logText: () =>
       fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : "",
@@ -332,19 +333,70 @@ describe("OS hold", () => {
     expect(isOsHold(platform, release)).toBe(held);
   });
 
-  it("exits non-zero before any download and does not change the profile", async () => {
-    await withFixture(
-      { platform: "win32", release: "6.2.9200" },
-      async (fx) => {
+  it.each(["6.1.7601", "6.2.9200", "6.3.9600", "10.0.17762"])(
+    "records OS_HOLD for %s before any download",
+    async (release) => {
+      await withFixture({ platform: "win32", release }, async (fx) => {
+        const dist = path.join(fx.tmpDir, "dist");
+        fs.mkdirSync(dist);
+        fs.writeFileSync(path.join(dist, "marker.txt"), "live");
         expect(await fx.run()).toBe(1);
         expect(fx.urls).toEqual([]);
-        expect(fx.calls).toEqual([]);
+        expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
+        expect(fs.readFileSync(path.join(dist, "marker.txt"), "utf8")).toBe(
+          "live"
+        );
         expect(fs.readdirSync(fx.home)).toEqual([]);
+        const record = JSON.parse(
+          fs.readFileSync(
+            path.join(path.dirname(fx.logPath), "startup.last.json"),
+            "utf8"
+          )
+        );
+        expect(record).toEqual({
+          step: "OS_HOLD",
+          ok: true,
+          message: `Tento systém nespustí Bun. Krok OS_HOLD. Vydání ${release}.`,
+        });
         expect(fx.stdout.text()).toContain("Krok OS_HOLD.");
-        expect(fx.stdout.text()).toContain("Vydání 6.2.9200.");
+        expect(fx.stdout.text()).toContain(`Vydání ${release}.`);
         expect(fx.stdout.text()).not.toContain("Windows 8");
-      }
-    );
+      });
+    }
+  );
+
+  it("does not change the lockfile or the git branch on a Windows hold", async () => {
+    await withFixture({ platform: "win32", release: "6.2.9200" }, async (fx) => {
+      const root = path.dirname(fx.logPath);
+      const lockPath = path.join(root, "pnpm-lock.yaml");
+      const lockBytes = Buffer.from("lockfile\n");
+      const gitEnv = Object.assign({}, process.env, {
+        GIT_AUTHOR_NAME: "Babybox Test",
+        GIT_AUTHOR_EMAIL: "test@example.com",
+        GIT_COMMITTER_NAME: "Babybox Test",
+        GIT_COMMITTER_EMAIL: "test@example.com",
+      });
+      const git = (args) =>
+        childProcess.execFileSync("git", args, {
+          cwd: root,
+          env: gitEnv,
+          encoding: "utf8",
+        });
+      fs.writeFileSync(
+        path.join(root, ".gitignore"),
+        "startup.log\nstartup.last.json\ntmp/\n"
+      );
+      fs.writeFileSync(lockPath, lockBytes);
+      git(["init", "-b", "main"]);
+      git(["add", ".gitignore", "pnpm-lock.yaml"]);
+      git(["commit", "-m", "seed"]);
+      expect(await fx.run()).toBe(1);
+      expect(fs.readFileSync(lockPath)).toEqual(lockBytes);
+      expect(git(["status", "--porcelain"])).toBe("");
+      expect(git(["branch", "--show-current"]).trim()).toBe("main");
+      expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
+      expect(fx.urls).toEqual([]);
+    });
   });
 });
 
@@ -826,6 +878,11 @@ describe("platform", () => {
         expect(await fx.run()).toBe(0);
         expect(fx.urls).toEqual([]);
         expect(fx.stdout.text()).not.toContain("OS_HOLD");
+        expect(
+          fs.existsSync(
+            path.join(path.dirname(fx.logPath), "startup.last.json")
+          )
+        ).toBe(false);
       }
     );
   });

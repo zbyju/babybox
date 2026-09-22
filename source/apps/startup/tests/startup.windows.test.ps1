@@ -65,6 +65,31 @@ function Expect-Rc([int]$Want) {
   if ($script:RC -eq $Want) { Pass } else { Fail "exit $($script:RC), want $Want" }
 }
 
+function Expect-StderrEmpty {
+  if ($script:Stderr -eq "") { Pass } else { Fail "stderr '$($script:Stderr)'" }
+}
+
+function Last-File {
+  return Join-Path (Split-Path $script:Log) "startup.last.json"
+}
+
+function Expect-OsHold([string]$Release) {
+  $file = Last-File
+  if (-not (Test-Path $file)) { Fail "startup.last.json missing"; return }
+  $obj = [IO.File]::ReadAllText($file) | ConvertFrom-Json
+  if ($obj.step -ne "OS_HOLD") { Fail "step $($obj.step)"; return }
+  if ($obj.ok -ne $true) { Fail "ok is not true"; return }
+  $message = [string]$obj.message
+  if ($message -notlike "*$Release*") { Fail "message '$message'"; return }
+  if ($message -notlike "*OS_HOLD*") { Fail "message '$message'"; return }
+  Pass
+}
+
+function Expect-NoLast {
+  $file = Last-File
+  if (Test-Path $file) { Fail "startup.last.json exists" } else { Pass }
+}
+
 function Expect-Hold([string]$Want) {
   $hold = Join-Path (Split-Path -Parent (Split-Path -Parent $script:InstalledBun)) "cpu-hold"
   if (-not (Test-Path $hold)) { Fail "cpu-hold missing"; return }
@@ -110,6 +135,7 @@ function Reset-Case {
   $script:SeedDeps = "startup/pino backend/express configer/express panel/vue"
   $script:OsRelease = "10.0.17763"
   $script:UseRealVer = $false
+  $script:OmitVersions = $false
 }
 
 function New-BunStub([string]$Dest) {
@@ -199,7 +225,9 @@ function Invoke-Case {
       if ($_ -like "BUN_WINDOWS_X64_SHA256=*") { "BUN_WINDOWS_X64_SHA256=$script:ZipSha" } else { $_ }
     }
   }
-  [IO.File]::WriteAllLines($versions, $lines)
+  if (-not $script:OmitVersions) {
+    [IO.File]::WriteAllLines($versions, $lines)
+  }
 
   Copy-Item $BatSrc (Join-Path $startup "scripts\windows\startup.bat") -Force
 
@@ -396,6 +424,7 @@ Expect-NotCalled "--ubuntu"
 Expect-Called ".bun\bin"
 Expect-Called "bun -v"
 Expect-NoLog "Zavislosti chybi"
+Expect-NoLast
 Expect-Rc 0
 
 Write-Host "missing bun and a matching checksum lands in the user profile"
@@ -555,17 +584,35 @@ Expect-Called "pm2 update"
 Expect-NotCalled "pnpm@"
 Expect-Rc 0
 
-Write-Host "an old release with a different pm2 still installs the pin"
+Write-Host "an old release records OS_HOLD and does not install pm2"
 Reset-Case
 $script:OsRelease = "10.0.17762"
 $script:StubPm2 = "5.2.0"
 Invoke-Case
 Expect-NotCalled "bun-windows-x64.zip"
-Expect-Called "npm install -g pm2@7.0.4"
-Expect-Called "pm2 update"
-Expect-Log "nespusti Bun"
+Expect-NotCalled "npm install"
+Expect-NotCalled "git "
+Expect-Log "OS_HOLD"
+Expect-Log $script:OsRelease
 Expect-Called "pnpm run start"
-Expect-Rc 0
+Expect-StderrEmpty
+Expect-OsHold $script:OsRelease
+Expect-Rc 1
+
+Write-Host "release 6.2.9200 with no versions.env records OS_HOLD"
+Reset-Case
+$script:OsRelease = "6.2.9200"
+$script:OmitVersions = $true
+$script:StubBunMissing = $true
+Invoke-Case
+Expect-NotCalled "bun-windows-x64.zip"
+Expect-NotCalled "npm install"
+Expect-NotCalled "git "
+Expect-Log "OS_HOLD"
+Expect-Called "pnpm run start"
+Expect-StderrEmpty
+Expect-OsHold $script:OsRelease
+Expect-Rc 1
 
 Write-Host "a failed pm2 install still starts the panel"
 Reset-Case
@@ -655,14 +702,20 @@ foreach ($gate in $gates) {
   $script:CurlFail = "1"
   Invoke-Case
   Expect-Called "pnpm run start"
-  Expect-Rc 0
+  Expect-NotCalled "git "
   if ($should) {
+    Expect-Rc 0
     Expect-Called "bun-windows-x64.zip"
     Expect-Log "Stazeni Bun se nezdarilo"
     Expect-NoLog "nespusti Bun"
+    Expect-NoLast
   } else {
+    Expect-Rc 1
     Expect-NotCalled "bun-windows-x64.zip"
-    Expect-Log "nespusti Bun"
+    Expect-NotCalled "npm install"
+    Expect-Log "OS_HOLD"
+    Expect-StderrEmpty
+    Expect-OsHold $release
   }
 }
 

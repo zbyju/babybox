@@ -984,7 +984,7 @@ P3 switches the interpreter.
 - [x] Windows 10 build 17763+ and Windows 11: same zip into
       `%USERPROFILE%\.bun\bin`. No `nvm use`. Same harvest into `startup.bat`.
       Later steps use the absolute `bun.exe` path.
-- [ ] Windows 7, Windows 8, Windows 8.1, and Windows 10 below build 17763:
+- [x] Windows 7, Windows 8, Windows 8.1, and Windows 10 below build 17763:
       `OS_HOLD` before any download. Do not change the git branch. Exit
       non-zero with empty stderr. Write `startup.last.json` with `ok` true.
 - [ ] Test on one Windows 10 box: can the autostart user write
@@ -1335,3 +1335,7 @@ One line per landed step: date, PR, what moved.
   `%USERPROFILE%\.bun\bin` on Windows 10 build 17763 or newer, and on Windows 11.
   It does not use nvm. Later steps call the absolute bun.exe path.
   An older Windows release does not download the zip.
+- 2026-09-22 — #117 — Windows 7, Windows 8, Windows 8.1, and Windows 10 below
+  build 17763 record `OS_HOLD` before any download. The boot exits non-zero
+  with empty stderr. `startup.last.json` has `ok` true. The git branch does
+  not change. The panel still starts.

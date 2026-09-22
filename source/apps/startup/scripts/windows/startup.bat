@@ -18,6 +18,12 @@ REM The zip runs on Windows 10 build 17763 or newer, and on Windows 11.
 REM The check reads the release numbers. It does not look for a product name.
 REM BABYBOX_OS_RELEASE overrides those numbers. A box leaves it empty.
 REM The value has the same shape as os.release().
+REM
+REM A release below build 17763 takes OS_HOLD before any download.
+REM The script writes logs\startup.last.json with step OS_HOLD and ok true.
+REM Exit 1 with empty stderr. Exit 0 makes the old startup swap dist.
+REM It does not change the git branch.
+REM It still starts the panel.
 
 set "STARTUP_DIR=%~dp0..\.."
 pushd "%STARTUP_DIR%"
@@ -38,16 +44,18 @@ endlocal & exit /b %RC%
 
 :main
 call :log "Start"
+call :can_run_bun
+if not "!CAN_BUN!"=="1" goto :main_os_skip
 if not exist "%VERSIONS%" goto :main_no_versions
 call :read_versions
 if errorlevel 1 goto :main_bad_versions
-call :can_run_bun
-if not "!CAN_BUN!"=="1" goto :main_os_skip
 call :ensure_bun
 goto :main_after_bun
 
 :main_os_skip
-call :log "Tento system nespusti Bun. Vydani !OS_RELEASE!."
+call :write_os_hold
+call :log "Tento system nespusti Bun. Krok OS_HOLD. Vydani !OS_RELEASE!."
+goto :start_held_panel
 
 :main_after_bun
 call :ensure_pm2
@@ -68,6 +76,22 @@ if errorlevel 1 goto :main_no_dir
 call pnpm run start
 set "PNPM_RC=!ERRORLEVEL!"
 exit /b !PNPM_RC!
+
+:start_held_panel
+call :deps_ok
+if errorlevel 1 call :log "Zavislosti chybi - panel presto spoustim"
+cd /d "%STARTUP_DIR%"
+if errorlevel 1 goto :main_no_dir
+call pnpm run start 2>>"%LOG_FILE%"
+exit /b 1
+
+:write_os_hold
+if not exist "%SOURCE_DIR%\logs" mkdir "%SOURCE_DIR%\logs"
+set "LAST_FILE=%SOURCE_DIR%\logs\startup.last.json"
+(
+  echo {"step":"OS_HOLD","ok":true,"message":"Tento system nespusti Bun. Krok OS_HOLD. Vydani !OS_RELEASE!."}
+) > "%LAST_FILE%"
+exit /b 0
 
 :main_no_dir
 call :log "Adresar !STARTUP_DIR! neexistuje - koncim"

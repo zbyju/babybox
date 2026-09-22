@@ -226,6 +226,27 @@ function writeHold(filePath, version) {
   fs.writeFileSync(filePath, `${version}\n`);
 }
 
+function writeLast(state, record) {
+  const filePath = path.join(path.dirname(state.logPath), "startup.last.json");
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, `${JSON.stringify(record)}\n`);
+  } catch (err) {
+    // The console line is enough when the log directory is not writable.
+  }
+}
+
+function holdOs(state, release) {
+  const message = `Tento systém nespustí Bun. Krok OS_HOLD. Vydání ${release}.`;
+  writeLine(state, "INFO", message);
+  writeLast(state, {
+    step: "OS_HOLD",
+    ok: true,
+    message,
+  });
+  return 1;
+}
+
 function clearHold(filePath) {
   try {
     if (fs.existsSync(filePath)) {
@@ -598,12 +619,7 @@ async function runInner(state, opts) {
   const env = pick(opts.env, process.env);
 
   if (isOsHold(platform, release)) {
-    writeLine(
-      state,
-      "INFO",
-      `Tento systém nespustí Bun. Krok OS_HOLD. Vydání ${release}.`
-    );
-    return 1;
+    return holdOs(state, release);
   }
 
   if (arch !== "x64") {
