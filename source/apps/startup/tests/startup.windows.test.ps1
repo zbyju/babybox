@@ -203,15 +203,15 @@ function Invoke-Case {
     Remove-Item -Recurse -Force $script:Sandbox
   }
   $script:Sandbox = Join-Path ([IO.Path]::GetTempPath()) ("babybox-win-" + [guid]::NewGuid().ToString("N"))
-  $home = Join-Path $script:Sandbox "home"
-  $startup = Join-Path $home "babybox\source\apps\startup"
+  $userHome = Join-Path $script:Sandbox "home"
+  $startup = Join-Path $userHome "babybox\source\apps\startup"
   $script:AppDir = $startup
   $stubDir = Join-Path $script:Sandbox "stub"
   $state = Join-Path $script:Sandbox "state"
   $temp = Join-Path $script:Sandbox "temp"
   $script:Calls = Join-Path $script:Sandbox "calls.txt"
-  $script:Log = Join-Path $home "babybox\source\logs\startup.bat.log"
-  $script:InstalledBun = Join-Path $home ".bun\bin\bun.exe"
+  $script:Log = Join-Path $userHome "babybox\source\logs\startup.bat.log"
+  $script:InstalledBun = Join-Path $userHome ".bun\bin\bun.exe"
   New-Item -ItemType Directory -Force -Path $stubDir, $state, $temp, (Join-Path $startup "scripts\windows") | Out-Null
   [IO.File]::WriteAllText($script:Calls, "")
 
@@ -309,14 +309,14 @@ exit /b 99
     Copy-Item $script:OldExe $script:InstalledBun -Force
   }
   if ($script:HoldVersion) {
-    $holdDir = Join-Path $home ".bun"
+    $holdDir = Join-Path $userHome ".bun"
     New-Item -ItemType Directory -Force -Path $holdDir | Out-Null
     [IO.File]::WriteAllText((Join-Path $holdDir "cpu-hold"), $script:HoldVersion)
   }
   foreach ($probe in ($script:SeedDeps -split " ")) {
     if (-not $probe) { continue }
     $pair = $probe -split "/"
-    $dir = Join-Path $home ("babybox\source\apps\" + $pair[0] + "\node_modules\" + $pair[1])
+    $dir = Join-Path $userHome ("babybox\source\apps\" + $pair[0] + "\node_modules\" + $pair[1])
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
   }
 
@@ -330,7 +330,7 @@ exit /b 99
   $psi.CreateNoWindow = $true
   $psi.WorkingDirectory = $env:SystemRoot
   $psi.EnvironmentVariables["PATH"] = "$stubDir;$env:SystemRoot\System32"
-  $psi.EnvironmentVariables["USERPROFILE"] = $home
+  $psi.EnvironmentVariables["USERPROFILE"] = $userHome
   $psi.EnvironmentVariables["TEMP"] = $temp
   $psi.EnvironmentVariables["TMP"] = $temp
   $psi.EnvironmentVariables["CALLS"] = $script:Calls
