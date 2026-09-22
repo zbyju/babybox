@@ -65,6 +65,13 @@ function Expect-Rc([int]$Want) {
   if ($script:RC -eq $Want) { Pass } else { Fail "exit $($script:RC), want $Want" }
 }
 
+function Expect-Hold([string]$Want) {
+  $hold = Join-Path (Split-Path -Parent (Split-Path -Parent $script:InstalledBun)) "cpu-hold"
+  if (-not (Test-Path $hold)) { Fail "cpu-hold missing"; return }
+  $text = ([IO.File]::ReadAllText($hold)).Trim()
+  if ($text -eq $Want) { Pass } else { Fail "cpu-hold is '$text', want '$Want'" }
+}
+
 function Expect-PnpmDir {
   $got = ""
   foreach ($row in ($script:CallsText -split '\r?\n')) {
@@ -468,6 +475,16 @@ $script:CurlFail = "1"
 Invoke-Case
 Expect-Called "bun-windows-x64.zip"
 Expect-Log "Stazeni Bun se nezdarilo"
+Expect-Rc 0
+
+Write-Host "exit 132 with no cpu-hold writes the pin"
+Reset-Case
+$script:StubBunExit = "132"
+Invoke-Case
+Expect-NotCalled "bun-windows-x64.zip"
+Expect-Log "CPU_HOLD"
+Expect-Hold $script:BunVersion
+Expect-Called "pnpm run start"
 Expect-Rc 0
 
 Write-Host "a matching bun deletes cpu-hold"
