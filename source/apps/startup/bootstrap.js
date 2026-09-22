@@ -117,7 +117,6 @@ function firstLine(value) {
 }
 
 /**
- * Windows 7, 8, 8.1, and Windows 10 builds below 17763 cannot run Bun.
  * The check uses os.release() numbers. It does not look for a product name.
  */
 function isOsHold(platform, release) {
