@@ -61,8 +61,8 @@ export function statusBody(
 }
 
 /*
- * `startup` is startup.last.json, next to startup.log.
- * A missing file, a huge file, or a record without the step fields is null.
+ * startup.last.json sits beside startup.log.
+ * A missing file, a huge file, or a bad record is null.
  */
 export function startupLastFor(startDir: string): StartupLast | null {
   const filePath = findStartupLast(startDir);
@@ -107,20 +107,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && Array.isArray(value) === false;
 }
 
-function hasStartupApp(dir: string): boolean {
+function hasStartupMarker(dir: string): boolean {
   return fs.existsSync(path.join(dir, "apps", "startup", "versions.env"));
 }
 
 function findStartupLast(startDir: string): string | null {
   let dir = path.resolve(startDir);
   for (let i = 0; i < 8; i += 1) {
-    if (hasStartupApp(dir)) {
+    if (hasStartupMarker(dir)) {
       const inLogs = path.join(dir, "logs", "startup.last.json");
       if (fs.existsSync(inLogs)) {
         return inLogs;
       }
     }
-    if (hasStartupApp(path.join(dir, "source"))) {
+    if (hasStartupMarker(path.join(dir, "source"))) {
       const inSourceLogs = path.join(dir, "source", "logs", "startup.last.json");
       if (fs.existsSync(inSourceLogs)) {
         return inSourceLogs;
