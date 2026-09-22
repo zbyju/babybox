@@ -193,6 +193,16 @@ function matchingSpawn(stdout) {
   };
 }
 
+function installSpawnWithBun(onBun) {
+  const extract = installSpawn();
+  return (cmd, args, opts) => {
+    if (isBunPath(cmd)) {
+      return onBun();
+    }
+    return extract(cmd, args, opts);
+  };
+}
+
 function installSpawn() {
   return (cmd, args, opts) => {
     if (cmd === "unzip" || cmd === "tar") {
@@ -241,6 +251,69 @@ describe("versions.env", () => {
   it("ignores comments, blanks, and CRLF", () => {
     expect(readVersions("# note\r\n\r\nBUN_VERSION=1.4.2\r\n")).toEqual({
       BUN_VERSION: "1.4.2",
+    });
+  });
+
+  it("exits non-zero when BUN_VERSION is not an exact version", async () => {
+    await withFixture({}, async (fx) => {
+      const versionsPath = path.join(fx.tmpDir, "versions.env");
+      fs.writeFileSync(
+        versionsPath,
+        [
+          "BUN_VERSION=1.4",
+          `BUN_LINUX_X64_SHA256=${"a".repeat(64)}`,
+          "PM2_VERSION=7.0.4",
+          "",
+        ].join("\n")
+      );
+      expect(await fx.run({ versionsPath })).toBe(1);
+      expect(fx.urls).toEqual([]);
+      expect(fx.calls).toEqual([]);
+      expect(fx.stdout.text()).toContain(
+        "Ve versions.env chybí platná hodnota BUN_VERSION."
+      );
+    });
+  });
+
+  it("exits non-zero when the zip checksum is not sha256", async () => {
+    await withFixture({}, async (fx) => {
+      const versionsPath = path.join(fx.tmpDir, "versions.env");
+      fs.writeFileSync(
+        versionsPath,
+        [
+          "BUN_VERSION=1.4.2",
+          "BUN_LINUX_X64_SHA256=abcd",
+          "PM2_VERSION=7.0.4",
+          "",
+        ].join("\n")
+      );
+      expect(await fx.run({ versionsPath })).toBe(1);
+      expect(fx.urls).toEqual([]);
+      expect(fx.calls).toEqual([]);
+      expect(fx.stdout.text()).toContain(
+        "Ve versions.env chybí platná hodnota BUN_LINUX_X64_SHA256."
+      );
+    });
+  });
+
+  it("exits non-zero when PM2_VERSION is not an exact version", async () => {
+    await withFixture({}, async (fx) => {
+      const versionsPath = path.join(fx.tmpDir, "versions.env");
+      fs.writeFileSync(
+        versionsPath,
+        [
+          "BUN_VERSION=1.4.2",
+          `BUN_LINUX_X64_SHA256=${"a".repeat(64)}`,
+          "PM2_VERSION=7",
+          "",
+        ].join("\n")
+      );
+      expect(await fx.run({ versionsPath })).toBe(1);
+      expect(fx.urls).toEqual([]);
+      expect(fx.calls).toEqual([]);
+      expect(fx.stdout.text()).toContain(
+        "Ve versions.env chybí platná hodnota PM2_VERSION."
+      );
     });
   });
 });
@@ -311,6 +384,34 @@ describe("CPU hold", () => {
         expect(fx.stdout.text()).toContain("Krok CPU_HOLD.");
         expect(fx.calls.map((call) => call.cmd)).not.toContain("unzip");
         expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
+      }
+    );
+  });
+
+  it("records CPU_HOLD when the installed binary raises SIGILL", async () => {
+    const body = Buffer.from("sigill-zip");
+    const sha = sha256(body);
+    await withFixture(
+      {
+        spawnSync: installSpawnWithBun(() => ({
+          status: null,
+          signal: "SIGILL",
+          stdout: "",
+          stderr: "",
+        })),
+        httpsGet(_url, callback) {
+          callback(null, fakeResponse(200, {}, body));
+        },
+      },
+      async (fx) => {
+        const versionsPath = writeVersions(fx.tmpDir, sha);
+        expect(await fx.run({ versionsPath })).toBe(1);
+        expect(fx.urls).toHaveLength(1);
+        expect(fx.stdout.text()).toContain("Krok CPU_HOLD.");
+        expect(fx.stdout.text()).not.toContain("Zkouším instalaci znovu.");
+        expect(
+          fs.readFileSync(path.join(fx.home, ".bun", "cpu-hold"), "utf8")
+        ).toBe("1.4.2\n");
       }
     );
   });
@@ -458,6 +559,96 @@ describe("download", () => {
         expect(
           fs.readFileSync(path.join(fx.home, ".bun", "bin", "bun"), "utf8")
         ).toContain("echo 1.4.2");
+      }
+    );
+  });
+
+  it("warns and installs again when the first probe fails", async () => {
+    const body = Buffer.from("retry-zip");
+    const sha = sha256(body);
+    let probes = 0;
+    await withFixture(
+      {
+        spawnSync: installSpawnWithBun(() => {
+          probes += 1;
+          if (probes === 1) {
+            return {
+              status: 1,
+              signal: null,
+              stdout: "",
+              stderr: "probe failed",
+            };
+          }
+          return { status: 0, signal: null, stdout: "1.4.2\n", stderr: "" };
+        }),
+        httpsGet(_url, callback) {
+          callback(null, fakeResponse(200, {}, body));
+        },
+      },
+      async (fx) => {
+        placeExe(fx.home, "bun", "broken");
+        const versionsPath = writeVersions(fx.tmpDir, sha);
+        expect(await fx.run({ versionsPath })).toBe(0);
+        expect(probes).toBe(2);
+        expect(fx.urls).toHaveLength(1);
+        expect(fx.stdout.text()).toContain(
+          "Bun se nepodařilo spustit. Zkouším instalaci znovu."
+        );
+        expect(fx.stdout.text()).toContain("probe failed");
+        expect(fx.stdout.text()).toContain("Bun 1.4.2 je nainstalovaný.");
+      }
+    );
+  });
+
+  it("exits non-zero when the probe after install fails", async () => {
+    const body = Buffer.from("bad-probe-zip");
+    const sha = sha256(body);
+    await withFixture(
+      {
+        spawnSync: installSpawnWithBun(() => ({
+          status: 1,
+          signal: null,
+          stdout: "",
+          stderr: "exec format error",
+        })),
+        httpsGet(_url, callback) {
+          callback(null, fakeResponse(200, {}, body));
+        },
+      },
+      async (fx) => {
+        const versionsPath = writeVersions(fx.tmpDir, sha);
+        expect(await fx.run({ versionsPath })).toBe(1);
+        expect(fx.urls).toHaveLength(1);
+        expect(fx.stdout.text()).toContain("Bun se nepodařilo spustit.");
+        expect(fx.stdout.text()).toContain("exec format error");
+        expect(fx.stdout.text()).not.toContain("CPU_HOLD");
+        expect(fs.existsSync(path.join(fx.home, ".bun", "cpu-hold"))).toBe(
+          false
+        );
+      }
+    );
+  });
+
+  it("exits non-zero when the probe after install returns another version", async () => {
+    const body = Buffer.from("wrong-version-zip");
+    const sha = sha256(body);
+    await withFixture(
+      {
+        spawnSync: installSpawnWithBun(() => ({
+          status: 0,
+          signal: null,
+          stdout: "0.0.1\n",
+          stderr: "",
+        })),
+        httpsGet(_url, callback) {
+          callback(null, fakeResponse(200, {}, body));
+        },
+      },
+      async (fx) => {
+        const versionsPath = writeVersions(fx.tmpDir, sha);
+        expect(await fx.run({ versionsPath })).toBe(1);
+        expect(fx.urls).toHaveLength(1);
+        expect(fx.stdout.text()).toContain("Bun je 0.0.1, chceme 1.4.2.");
       }
     );
   });
