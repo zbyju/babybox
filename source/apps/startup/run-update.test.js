@@ -90,7 +90,7 @@ function baseOptions(fx, extra) {
 }
 
 describe("root build script", () => {
-  it("runs run-update.js", () => {
+  it("points build at apps/startup/run-update.js", () => {
     const pkg = JSON.parse(fs.readFileSync(ROOT_PACKAGE, "utf8"));
     expect(pkg.scripts.build).toBe("node apps/startup/run-update.js");
   });
@@ -130,8 +130,10 @@ describe("run-update", () => {
     const fx = createFixture();
     placeBun(fx.home);
     const calls = [];
+    const paths = [];
     const spawnSync = (cmd, args, opts) => {
       calls.push({ cmd, args, opts });
+      paths.push(String(opts.env.PATH));
       return { status: 0, stdout: "", stderr: "" };
     };
     try {
@@ -158,7 +160,7 @@ describe("run-update", () => {
         expect(call.opts.env).toBe(fx.env);
       });
       const binDir = path.join(fx.home, ".bun", "bin");
-      expect(fx.env.PATH.indexOf(binDir)).toBe(0);
+      expect(paths[0].indexOf(binDir)).toBe(0);
       expect(fx.stdout.text()).toContain(
         "22.09.2026 01:02:03 INFO [run-update] Krok INSTALL začíná."
       );
@@ -271,7 +273,7 @@ describe("run-update", () => {
         })
       );
       expect(code).toBe(2);
-      expect(calls).toEqual([["install"], ["run", "build:schema"]]);
+      expect(calls).toEqual(STEP_ARGS.slice(0, 2));
       expect(fx.stderr.text()).toBe("schema broke\n");
       expect(fx.stdout.text()).toContain("schema out\n");
       expect(fx.stdout.text()).toContain("Krok BUILD_SCHEMA se nezdařil.");
@@ -297,9 +299,57 @@ describe("run-update", () => {
         })
       );
       expect(code).toBe(1);
-      expect(calls).toEqual([["install"]]);
+      expect(calls).toEqual([STEP_ARGS[0]]);
       expect(fx.stderr.text()).toBe("deprecation\n");
       expect(fx.stdout.text()).toContain("Krok INSTALL se nezdařil.");
+    } finally {
+      fx.cleanup();
+    }
+  });
+
+  it("stops when spawn returns an error message and no status", async () => {
+    const fx = createFixture();
+    const calls = [];
+    try {
+      const code = await run(
+        baseOptions(fx, {
+          bootstrapRun: async () => 0,
+          spawnSync: (cmd, args) => {
+            calls.push(args);
+            return {
+              status: null,
+              signal: null,
+              stdout: "",
+              stderr: "",
+              error: { message: "spawn ENOENT" },
+            };
+          },
+        })
+      );
+      expect(code).toBe(1);
+      expect(fx.stderr.text()).toBe("spawn ENOENT");
+      expect(calls).toEqual([STEP_ARGS[0]]);
+    } finally {
+      fx.cleanup();
+    }
+  });
+
+  it("returns 0 when the log parent is a file", async () => {
+    const fx = createFixture();
+    const parentFile = path.join(fx.root, "not-a-directory");
+    fs.writeFileSync(parentFile, "file");
+    try {
+      const code = await run(
+        baseOptions(fx, {
+          logPath: path.join(parentFile, "startup.log"),
+          bootstrapRun: async () => 0,
+          spawnSync: () => {
+            return { status: 0, stdout: "", stderr: "" };
+          },
+        })
+      );
+      expect(code).toBe(0);
+      expect(fx.stderr.text()).toBe("");
     } finally {
       fx.cleanup();
     }
