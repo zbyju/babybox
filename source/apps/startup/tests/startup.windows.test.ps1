@@ -11,6 +11,13 @@ $Failed = 0
 $StartupSrc = Split-Path -Parent $PSScriptRoot
 $BatSrc = Join-Path $StartupSrc "scripts\windows\startup.bat"
 $VersionsSrc = Join-Path $StartupSrc "versions.env"
+$script:BunVersion = ""
+foreach ($versionLine in Get-Content -Path $VersionsSrc) {
+  if ($versionLine -like "BUN_VERSION=*") {
+    $script:BunVersion = ($versionLine -split "=", 2)[1].Trim()
+  }
+}
+if ($script:BunVersion -eq "") { throw "BUN_VERSION is missing from versions.env" }
 $Sandbox = $null
 $CallsText = ""
 $LogText = ""
@@ -67,7 +74,7 @@ function Write-Cmd([string]$Path, [string]$Body) {
 function Reset-Case {
   $script:StubPm2 = "7.0.4"
   $script:StubBunMissing = $false
-  $script:StubBunPrint = "1.4.2"
+  $script:StubBunPrint = $script:BunVersion
   $script:StubBunExit = "0"
   $script:HoldVersion = ""
   $script:NpmInstallExit = "0"
@@ -360,12 +367,12 @@ Reset-Case
 $script:StubBunMissing = $true
 $script:RewriteSha = $true
 Invoke-Case
-Expect-Called "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-windows-x64.zip"
+Expect-Called "https://github.com/oven-sh/bun/releases/download/bun-v$($script:BunVersion)/bun-windows-x64.zip"
 Expect-Called "babybox-bootstrap"
 Expect-NotCalled "baseline"
 Expect-NotCalled "bare-bun"
 Expect-NotCalled "nvm "
-Expect-Log "Bun 1.4.2 je nainstalovany"
+Expect-Log "Bun $($script:BunVersion) je nainstalovany"
 Expect-Called "pnpm run start"
 Expect-Rc 0
 if (Test-Path $script:InstalledBun) {
@@ -378,7 +385,7 @@ if (Test-Path $script:InstalledBun) {
 
 Write-Host "a v prefix does not download"
 Reset-Case
-$script:StubBunPrint = "v1.4.2"
+$script:StubBunPrint = "v$($script:BunVersion)"
 Invoke-Case
 Expect-NotCalled "bun-windows-x64.zip"
 Expect-Rc 0
@@ -407,7 +414,7 @@ Expect-Rc 0
 Write-Host "the same cpu-hold does not download"
 Reset-Case
 $script:StubBunMissing = $true
-$script:HoldVersion = "1.4.2"
+$script:HoldVersion = $script:BunVersion
 Invoke-Case
 Expect-NotCalled "bun-windows-x64.zip"
 Expect-Log "CPU_HOLD"
@@ -417,7 +424,7 @@ Expect-Rc 0
 Write-Host "an illegal instruction and the same hold do not download"
 Reset-Case
 $script:StubBunExit = "-1073741795"
-$script:HoldVersion = "1.4.2"
+$script:HoldVersion = $script:BunVersion
 Invoke-Case
 Expect-NotCalled "bun-windows-x64.zip"
 Expect-Log "CPU_HOLD"
@@ -426,7 +433,7 @@ Expect-Rc 0
 Write-Host "exit 132 and the same hold do not download"
 Reset-Case
 $script:StubBunExit = "132"
-$script:HoldVersion = "1.4.2"
+$script:HoldVersion = $script:BunVersion
 Invoke-Case
 Expect-NotCalled "bun-windows-x64.zip"
 Expect-Log "CPU_HOLD"
