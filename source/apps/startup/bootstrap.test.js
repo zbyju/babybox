@@ -125,6 +125,7 @@ function createFixture(overrides) {
     tmpDir,
     calls,
     urls,
+    logPath,
     stderrText: () => stderrChunks.join(""),
     logText: () =>
       fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : "",
@@ -332,20 +333,37 @@ describe("OS hold", () => {
     expect(isOsHold(platform, release)).toBe(held);
   });
 
-  it("exits non-zero before any download and does not change the profile", async () => {
-    await withFixture(
-      { platform: "win32", release: "6.2.9200" },
-      async (fx) => {
+  it.each(["6.1.7601", "6.2.9200", "6.3.9600", "10.0.17762"])(
+    "records OS_HOLD for %s before any download",
+    async (release) => {
+      await withFixture({ platform: "win32", release }, async (fx) => {
+        const dist = path.join(fx.tmpDir, "dist");
+        fs.mkdirSync(dist);
+        fs.writeFileSync(path.join(dist, "marker.txt"), "live");
         expect(await fx.run()).toBe(1);
         expect(fx.urls).toEqual([]);
-        expect(fx.calls).toEqual([]);
+        expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
+        expect(fs.readFileSync(path.join(dist, "marker.txt"), "utf8")).toBe(
+          "live"
+        );
         expect(fs.readdirSync(fx.home)).toEqual([]);
+        const record = JSON.parse(
+          fs.readFileSync(
+            path.join(path.dirname(fx.logPath), "startup.last.json"),
+            "utf8"
+          )
+        );
+        expect(record).toEqual({
+          step: "OS_HOLD",
+          ok: true,
+          message: `Tento systém nespustí Bun. Krok OS_HOLD. Vydání ${release}.`,
+        });
         expect(fx.stdout.text()).toContain("Krok OS_HOLD.");
-        expect(fx.stdout.text()).toContain("Vydání 6.2.9200.");
+        expect(fx.stdout.text()).toContain(`Vydání ${release}.`);
         expect(fx.stdout.text()).not.toContain("Windows 8");
-      }
-    );
-  });
+      });
+    }
+  );
 });
 
 describe("CPU hold", () => {
@@ -826,6 +844,11 @@ describe("platform", () => {
         expect(await fx.run()).toBe(0);
         expect(fx.urls).toEqual([]);
         expect(fx.stdout.text()).not.toContain("OS_HOLD");
+        expect(
+          fs.existsSync(
+            path.join(path.dirname(fx.logPath), "startup.last.json")
+          )
+        ).toBe(false);
       }
     );
   });
