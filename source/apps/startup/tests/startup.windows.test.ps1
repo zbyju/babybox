@@ -109,7 +109,7 @@ public class BunStub {
       Console.WriteLine(printed);
     }
     string code = Environment.GetEnvironmentVariable("STUB_BUN_EXIT");
-    if (code == "-1073741795") return -1073741795;
+    if (code == "-1073741795" || code == "3221225501") return -1073741795;
     int n = 0;
     if (!string.IsNullOrEmpty(code)) int.TryParse(code, out n);
     return n;
