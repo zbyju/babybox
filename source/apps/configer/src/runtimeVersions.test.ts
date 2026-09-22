@@ -85,7 +85,15 @@ const STARTUP_RECORD = {
 };
 
 describe("startup last record", () => {
-  it("includes the record on the status body", () => {
+  it("parseStartupLast accepts a full record, rejects a partial record, and rejects text that is not JSON", () => {
+    expect(parseStartupLast(JSON.stringify(STARTUP_RECORD))).toEqual(
+      STARTUP_RECORD
+    );
+    expect(parseStartupLast("{\"step\":\"OS_HOLD\",\"ok\":true}")).toBe(null);
+    expect(parseStartupLast("not json")).toBe(null);
+  });
+
+  it("startupLastFor reads the record from a configer dist directory and from a deployed dist directory", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "babybox-status-"));
     const logs = path.join(root, "source", "logs");
     fs.mkdirSync(path.join(root, "source", "apps", "startup"), {
@@ -101,29 +109,54 @@ describe("startup last record", () => {
       `${JSON.stringify(STARTUP_RECORD)}\n`
     );
     try {
-      expect(parseStartupLast(JSON.stringify(STARTUP_RECORD))).toEqual(
-        STARTUP_RECORD
-      );
-      expect(parseStartupLast("{\"step\":\"OS_HOLD\",\"ok\":true}")).toBe(
-        null
-      );
-      expect(parseStartupLast("not json")).toBe(null);
       expect(
         startupLastFor(path.join(root, "source", "apps", "configer", "dist"))
       ).toEqual(STARTUP_RECORD);
       expect(startupLastFor(path.join(root, "dist"))).toEqual(STARTUP_RECORD);
-      expect(
-        statusBody(
-          { node: "v18.12.1", pnpm: "7.5.0", bun: "" },
-          STARTUP_RECORD
-        )
-      ).toEqual({
-        msg: "Alive.",
-        node: "v18.12.1",
-        pnpm: "7.5.0",
-        bun: "",
-        startup: STARTUP_RECORD,
-      });
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("statusBody nests that record", () => {
+    expect(
+      statusBody(
+        { node: "v18.12.1", pnpm: "7.5.0", bun: "" },
+        STARTUP_RECORD
+      )
+    ).toEqual({
+      msg: "Alive.",
+      node: "v18.12.1",
+      pnpm: "7.5.0",
+      bun: "",
+      startup: STARTUP_RECORD,
+    });
+  });
+
+  it("startupLastFor returns null when versions.env exists and startup.last.json does not", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "babybox-status-"));
+    fs.mkdirSync(path.join(root, "apps", "startup"), { recursive: true });
+    fs.writeFileSync(path.join(root, "apps", "startup", "versions.env"), "");
+    try {
+      expect(startupLastFor(path.join(root, "apps", "backend", "dist"))).toBe(
+        null
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("startupLastFor returns null when the file contents are not JSON", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "babybox-status-"));
+    const logs = path.join(root, "logs");
+    fs.mkdirSync(path.join(root, "apps", "startup"), { recursive: true });
+    fs.writeFileSync(path.join(root, "apps", "startup", "versions.env"), "");
+    fs.mkdirSync(logs);
+    fs.writeFileSync(path.join(logs, "startup.last.json"), "not json");
+    try {
+      expect(startupLastFor(path.join(root, "apps", "backend", "dist"))).toBe(
+        null
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
