@@ -17,7 +17,7 @@ function versions() {
   return { node: "v18.12.1", pnpm: "7.5.0", bun: "1.4.2" };
 }
 
-describe("startup.last.json record", () => {
+describe("startup last record", () => {
   it("collapses output, drops node_modules frames, and keeps the tail", () => {
     const stack = [
       "boom",
@@ -71,15 +71,7 @@ describe("startup.last.json record", () => {
         versions()
       );
       writeRecord(logPath, failed);
-      expect(JSON.parse(fs.readFileSync(filePath, "utf8"))).toEqual({
-        step: "BUILD_SCHEMA",
-        ok: false,
-        message: "schema broke",
-        at: WHEN.toISOString(),
-        node: "v18.12.1",
-        pnpm: "7.5.0",
-        bun: "1.4.2",
-      });
+      expect(JSON.parse(fs.readFileSync(filePath, "utf8"))).toEqual(failed);
       writeRecord(
         logPath,
         buildRecord("BUILD_CONFIGER", true, "", WHEN, versions())
