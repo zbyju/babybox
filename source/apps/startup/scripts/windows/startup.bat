@@ -21,7 +21,7 @@ REM The value has the same shape as os.release().
 REM
 REM A release below build 17763 takes OS_HOLD before any download.
 REM The script writes logs\startup.last.json with step OS_HOLD and ok true.
-REM It exits non-zero. It writes no stderr.
+REM Exit 1 with empty stderr. Exit 0 makes the old startup swap dist.
 REM It does not change the git branch.
 REM It still starts the panel.
 
