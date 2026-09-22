@@ -41,7 +41,7 @@ jobs:
         run: |
           pnpm -F babybox-panel-backend exec eslint --ext .js,.ts .
           pnpm -F babybox-panel exec eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore
-          pnpm -F startup exec eslint src/
+          pnpm -F startup exec eslint src/ bootstrap.js bootstrap.test.js
 
       # Vsechny aplikace ctou tvar konfigurace odsud, musi se sestavit jako prvni
       - name: Build config schema
@@ -67,6 +67,9 @@ jobs:
 
       - name: Configer tests
         run: pnpm -F babybox-panel-configer exec vitest run
+
+      - name: Startup tests
+        run: pnpm -F startup exec jest --ci
 
   # Prvni boot po pullu. Checkout je tag legacy-runtime, pak git pull na hlavu
   # PR a pnpm run build. Exit 0, prazdny stderr, cisty strom. bun -v, OS_HOLD
@@ -218,3 +221,23 @@ jobs:
 
       - name: Configer tests
         run: bun --filter babybox-panel-configer test
+
+  # bootstrap.js musi projit Node 12. Sken textu na Node 18 tu chybu nechyti.
+  bootstrap-syntax:
+    name: bootstrap.js Node 12 parse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 12.22.12
+
+      - name: Parse bootstrap.js with Node 12
+        run: |
+          node_version="$(node -v)"
+          if [ "${node_version}" != "v12.22.12" ]; then
+            echo "node is ${node_version}, want v12.22.12" >&2
+            exit 1
+          fi
+          node --check source/apps/startup/bootstrap.js
