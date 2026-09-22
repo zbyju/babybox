@@ -364,6 +364,40 @@ describe("OS hold", () => {
       });
     }
   );
+
+  it("does not change the lockfile or the git branch on a Windows hold", async () => {
+    await withFixture({ platform: "win32", release: "6.2.9200" }, async (fx) => {
+      const root = path.dirname(fx.logPath);
+      const lockPath = path.join(root, "pnpm-lock.yaml");
+      const lockBytes = Buffer.from("lockfile\n");
+      const gitEnv = Object.assign({}, process.env, {
+        GIT_AUTHOR_NAME: "Babybox Test",
+        GIT_AUTHOR_EMAIL: "test@example.com",
+        GIT_COMMITTER_NAME: "Babybox Test",
+        GIT_COMMITTER_EMAIL: "test@example.com",
+      });
+      const git = (args) =>
+        childProcess.execFileSync("git", args, {
+          cwd: root,
+          env: gitEnv,
+          encoding: "utf8",
+        });
+      fs.writeFileSync(
+        path.join(root, ".gitignore"),
+        "startup.log\nstartup.last.json\ntmp/\n"
+      );
+      fs.writeFileSync(lockPath, lockBytes);
+      git(["init", "-b", "main"]);
+      git(["add", ".gitignore", "pnpm-lock.yaml"]);
+      git(["commit", "-m", "seed"]);
+      expect(await fx.run()).toBe(1);
+      expect(fs.readFileSync(lockPath)).toEqual(lockBytes);
+      expect(git(["status", "--porcelain"])).toBe("");
+      expect(git(["branch", "--show-current"]).trim()).toBe("main");
+      expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
+      expect(fx.urls).toEqual([]);
+    });
+  });
 });
 
 describe("CPU hold", () => {
