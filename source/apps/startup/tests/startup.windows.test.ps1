@@ -613,6 +613,30 @@ Expect-Log "Zavislosti chybi"
 Expect-Called "pnpm run start"
 Expect-Rc 0
 
+Write-Host "missing vue is logged and the panel still starts"
+Reset-Case
+$script:SeedDeps = "startup/pino backend/express configer/express"
+Invoke-Case
+Expect-Log "Zavislosti chybi"
+Expect-Called "pnpm run start"
+Expect-Rc 0
+
+Write-Host "missing backend express is logged and the panel still starts"
+Reset-Case
+$script:SeedDeps = "startup/pino configer/express panel/vue"
+Invoke-Case
+Expect-Log "Zavislosti chybi"
+Expect-Called "pnpm run start"
+Expect-Rc 0
+
+Write-Host "missing configer express is logged and the panel still starts"
+Reset-Case
+$script:SeedDeps = "startup/pino backend/express panel/vue"
+Invoke-Case
+Expect-Log "Zavislosti chybi"
+Expect-Called "pnpm run start"
+Expect-Rc 0
+
 Write-Host "git pull does not run"
 Reset-Case
 Invoke-Case
