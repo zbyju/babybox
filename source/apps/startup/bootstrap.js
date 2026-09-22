@@ -479,9 +479,10 @@ function sha256File(filePath) {
 function extractZip(spawnSync, platform, zipPath, destDir, env) {
   fs.mkdirSync(destDir, { recursive: true });
   const command = platform === "win32" ? "tar" : "unzip";
+  // GNU tar treats C: as a remote host. --force-local keeps the drive local.
   const args =
     platform === "win32"
-      ? ["-xf", zipPath, "-C", destDir]
+      ? ["--force-local", "-xf", zipPath, "-C", destDir]
       : ["-o", "-q", "-d", destDir, zipPath];
   const result = spawnCaptured(spawnSync, command, args, env, false);
   if (result.error && result.error.code === "ENOENT") {

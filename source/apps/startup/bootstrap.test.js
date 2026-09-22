@@ -854,8 +854,9 @@ describe("platform", () => {
           "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-windows-x64.zip"
         );
         const tar = fx.calls.find((call) => call.cmd === "tar");
-        expect(tar.args[0]).toBe("-xf");
-        expect(tar.args[2]).toBe("-C");
+        expect(tar.args[0]).toBe("--force-local");
+        expect(tar.args[1]).toBe("-xf");
+        expect(tar.args[3]).toBe("-C");
         expect(tar.opts.shell).toBe(false);
         const pm2 = fx.calls.find((call) => call.cmd === "pm2");
         expect(pm2.opts.shell).toBe(true);
