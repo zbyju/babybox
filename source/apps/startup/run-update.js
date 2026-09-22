@@ -1,6 +1,5 @@
 // The legacy startup runs `pnpm run build`. This file is that script.
-// Node 12 syntax. It calls bootstrap.js, then pnpm install, then each package build.
-// A non-zero bootstrap stops the chain. Stderr stays empty on OS_HOLD.
+// Node 12 syntax. Stderr stays empty on OS_HOLD.
 // DIST_PREPARE, SWAP, and the start steps stay in the startup app.
 
 const childProcess = require("child_process");
@@ -69,6 +68,7 @@ function captureStdout(stdout) {
   };
 }
 
+// A hold and a failure both return 1.
 function isHoldText(text) {
   if (text.indexOf("Krok OS_HOLD") !== -1) {
     return true;
@@ -90,7 +90,7 @@ function pnpmCommand(platform) {
   return "pnpm";
 }
 
-function runCommand(spawnSync, args, env, cwd, platform) {
+function runPnpm(spawnSync, args, env, cwd, platform) {
   try {
     const result = spawnSync(pnpmCommand(platform), args, {
       cwd,
@@ -104,10 +104,16 @@ function runCommand(spawnSync, args, env, cwd, platform) {
       return { status: 1, stdout: "", stderr: "" };
     }
     const status = typeof result.status === "number" ? result.status : 1;
+    let stderrText = asText(result.stderr);
+    if (stderrText === "" && result.error && result.error.message) {
+      stderrText = result.error.message;
+    } else if (stderrText === "" && result.signal) {
+      stderrText = String(result.signal);
+    }
     return {
       status,
       stdout: asText(result.stdout),
-      stderr: asText(result.stderr),
+      stderr: stderrText,
     };
   } catch (err) {
     return {
@@ -197,8 +203,9 @@ async function run(options) {
   for (let i = 0; i < STEPS.length; i += 1) {
     const spec = STEPS[i];
     writeLine(state, "INFO", `Krok ${spec.step} začíná.`);
-    const result = runCommand(spawnSync, spec.args, env, cwd, platform);
+    const result = runPnpm(spawnSync, spec.args, env, cwd, platform);
     forward(stdout, result.stdout);
+    // The old startup fails the update on any build stderr.
     const failed = result.status !== 0 || result.stderr !== "";
     if (failed) {
       forward(stderr, result.stderr);
