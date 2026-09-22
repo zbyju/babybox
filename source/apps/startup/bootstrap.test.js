@@ -162,6 +162,15 @@ function createFixture(overrides) {
   };
 }
 
+function readStartupLast(logPath) {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(path.dirname(logPath), "startup.last.json"),
+      "utf8"
+    )
+  );
+}
+
 async function withFixture(overrides, fn) {
   const fx = createFixture(overrides);
   try {
@@ -352,12 +361,7 @@ describe("OS hold", () => {
           "live"
         );
         expect(fs.readdirSync(fx.home)).toEqual([]);
-        const record = JSON.parse(
-          fs.readFileSync(
-            path.join(path.dirname(fx.logPath), "startup.last.json"),
-            "utf8"
-          )
-        );
+        const record = readStartupLast(fx.logPath);
         expect(record).toEqual({
           step: "OS_HOLD",
           ok: true,
@@ -445,12 +449,7 @@ describe("CPU hold", () => {
         expect(fx.stdout.text()).toContain("Krok CPU_HOLD.");
         expect(fx.calls.map((call) => call.cmd)).not.toContain("unzip");
         expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
-        const record = JSON.parse(
-          fs.readFileSync(
-            path.join(path.dirname(fx.logPath), "startup.last.json"),
-            "utf8"
-          )
-        );
+        const record = readStartupLast(fx.logPath);
         expect(record.step).toBe("CPU_HOLD");
         expect(record.ok).toBe(true);
         expect(record.message).toBe("Procesor nespustí Bun. Krok CPU_HOLD.");
@@ -486,6 +485,14 @@ describe("CPU hold", () => {
         expect(
           fs.readFileSync(path.join(fx.home, ".bun", "cpu-hold"), "utf8")
         ).toBe("1.4.2\n");
+        const record = readStartupLast(fx.logPath);
+        expect(record.step).toBe("CPU_HOLD");
+        expect(record.ok).toBe(true);
+        expect(record.message).toBe("Procesor nespustí Bun. Krok CPU_HOLD.");
+        expect(record.at).toBe(new Date(2026, 8, 22, 1, 2, 3).toISOString());
+        expect(record.node).toBe("v18.12.1");
+        expect(record.pnpm).toBe("7.5.0");
+        expect(record.bun).toBe("");
       }
     );
   });
