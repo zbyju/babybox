@@ -1328,3 +1328,6 @@ One line per landed step: date, PR, what moved.
   under the user profile when that binary is missing or different. It exits 0
   when Bun already matches and the OS is not on hold. An illegal instruction
   is CPU_HOLD. The same pin does not download another zip.
+- 2026-09-22 — #115 — Ubuntu startup.sh writes the pinned Bun zip to `$HOME/.bun/bin`
+  and installs the pinned pm2. It does not call `n` and it does not install pnpm.
+  `install-all.sh` uses the same pin for a new box. The script does not run `git pull`.
