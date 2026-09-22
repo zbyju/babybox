@@ -65,6 +65,24 @@ function Expect-Rc([int]$Want) {
   if ($script:RC -eq $Want) { Pass } else { Fail "exit $($script:RC), want $Want" }
 }
 
+function Expect-PnpmDir {
+  $got = ""
+  foreach ($row in ($script:CallsText -split '\r?\n')) {
+    if ($row.StartsWith("PNPM_DIR=")) {
+      $got = $row.Substring(9).Trim()
+      break
+    }
+  }
+  if ($got -eq "") { Fail "missing pnpm directory"; return }
+  $want = [IO.Path]::GetFullPath($script:AppDir).TrimEnd('\')
+  $full = [IO.Path]::GetFullPath($got).TrimEnd('\')
+  if ([string]::Equals($full, $want, [StringComparison]::OrdinalIgnoreCase)) {
+    Pass
+  } else {
+    Fail "pnpm dir $full, want $want"
+  }
+}
+
 function Write-Cmd([string]$Path, [string]$Body) {
   $text = ($Body -replace "`r`n", "`n") -replace "`n", "`r`n"
   if (-not $text.EndsWith("`r`n")) { $text += "`r`n" }
@@ -146,6 +164,7 @@ function Invoke-Case {
   $script:Sandbox = Join-Path ([IO.Path]::GetTempPath()) ("babybox-win-" + [guid]::NewGuid().ToString("N"))
   $home = Join-Path $script:Sandbox "home"
   $startup = Join-Path $home "babybox\source\apps\startup"
+  $script:AppDir = $startup
   $stubDir = Join-Path $script:Sandbox "stub"
   $state = Join-Path $script:Sandbox "state"
   $temp = Join-Path $script:Sandbox "temp"
@@ -222,6 +241,7 @@ exit /b 0
 @echo off
 >>"%CALLS%" echo pnpm %*
 >>"%CALLS%" echo PATH=%PATH%
+>>"%CALLS%" echo PNPM_DIR=%CD%
 exit /b 0
 '@
   Write-Cmd (Join-Path $stubDir "nvm.cmd") @'
@@ -265,7 +285,7 @@ exit /b 99
   $psi.RedirectStandardOutput = $true
   $psi.RedirectStandardError = $true
   $psi.CreateNoWindow = $true
-  $psi.WorkingDirectory = $startup
+  $psi.WorkingDirectory = $env:SystemRoot
   $psi.EnvironmentVariables["PATH"] = "$stubDir;$env:SystemRoot\System32"
   $psi.EnvironmentVariables["USERPROFILE"] = $home
   $psi.EnvironmentVariables["TEMP"] = $temp
@@ -356,6 +376,7 @@ Expect-NotCalled "bare-bun"
 Expect-NotCalled "nvm "
 Expect-NotCalled "git "
 Expect-Called "pnpm run start"
+Expect-PnpmDir
 Expect-NotCalled "--ubuntu"
 Expect-Called ".bun\bin"
 Expect-Called "bun -v"
