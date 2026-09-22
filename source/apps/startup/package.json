@@ -11,7 +11,7 @@
     "dev:install": "nodemon src/index.js --install",
     "start": "node src/index.js",
     "start:install": "node src/index.js --install",
-    "test": "jest"
+    "test": "jest && bash tests/startup.test.sh"
   },
   "author": "",
   "license": "ISC",

@@ -976,7 +976,7 @@ P3 switches the interpreter.
       under the user profile, prepends `PATH` for child processes, records
       `CPU_HOLD` on illegal instruction, stdout and a log file only, exit 0
       when Bun already matches and the OS is not on hold
-- [ ] Ubuntu: write to `$HOME/.bun/bin`. Do not call `n` or install pnpm 12.
+- [x] Ubuntu: write to `$HOME/.bun/bin`. Do not call `n` or install pnpm 12.
       Harvest a Bun-shaped `ensure_bun` / `ensure_pm2` from the unmerged
       pinning branch into `startup.sh`, and probe `pino` not `winston` if
       `deps_ok` comes along. `install-all.sh` installs the same pinned Bun
@@ -1328,3 +1328,6 @@ One line per landed step: date, PR, what moved.
   under the user profile when that binary is missing or different. It exits 0
   when Bun already matches and the OS is not on hold. An illegal instruction
   is CPU_HOLD. The same pin does not download another zip.
+- 2026-09-22 — #115 — Ubuntu startup.sh writes the pinned Bun zip to `$HOME/.bun/bin`
+  and installs the pinned pm2. It does not call `n` and it does not install pnpm.
+  `install-all.sh` uses the same pin for a new box. The script does not run `git pull`.
