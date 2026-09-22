@@ -204,13 +204,17 @@ function installSpawnWithBun(onBun) {
   };
 }
 
+function isTarCommand(cmd) {
+  return cmd === "tar" || cmd.endsWith(`${path.sep}tar.exe`);
+}
+
 function installSpawn() {
   return (cmd, args, opts) => {
-    if (cmd === "unzip" || cmd === "tar") {
+    if (cmd === "unzip" || isTarCommand(cmd)) {
       const destFlag = cmd === "unzip" ? "-d" : "-C";
       const dest = args[args.indexOf(destFlag) + 1];
-      const folderName = cmd === "tar" ? "bun-windows-x64" : "bun-linux-x64";
-      const exeName = cmd === "tar" ? "bun.exe" : "bun";
+      const folderName = isTarCommand(cmd) ? "bun-windows-x64" : "bun-linux-x64";
+      const exeName = isTarCommand(cmd) ? "bun.exe" : "bun";
       const folder = path.join(dest, folderName);
       fs.mkdirSync(folder, { recursive: true });
       const exe = path.join(folder, exeName);
@@ -848,12 +852,17 @@ describe("platform", () => {
         },
       },
       async (fx) => {
+        const systemRoot = path.join(fx.home, "Windows");
+        fs.mkdirSync(path.join(systemRoot, "System32"), { recursive: true });
+        fs.writeFileSync(path.join(systemRoot, "System32", "tar.exe"), "");
+        fx.env.SystemRoot = systemRoot;
         const versionsPath = writeVersions(fx.tmpDir, sha);
         expect(await fx.run({ versionsPath })).toBe(0);
         expect(fx.urls[0]).toBe(
           "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-windows-x64.zip"
         );
-        const tar = fx.calls.find((call) => call.cmd === "tar");
+        const tar = fx.calls.find((call) => isTarCommand(call.cmd));
+        expect(tar.cmd).toBe(path.join(systemRoot, "System32", "tar.exe"));
         expect(tar.args[0]).toBe("-xf");
         expect(tar.args[2]).toBe("-C");
         expect(tar.opts.shell).toBe(false);

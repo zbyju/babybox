@@ -17,7 +17,7 @@
     "start:configer": "pnpm -F babybox-panel-configer start",
     "start:main": "cd \"../dist\" && pnpm install && pm2 start ../dist/index.js -n babybox",
     "build:schema": "pnpm -F @babybox/config-schema build",
-    "build": "pnpm install && pnpm run build:schema && pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build",
+    "build": "node apps/startup/run-update.js",
     "echo": "echo test"
   },
   "devDependencies": {

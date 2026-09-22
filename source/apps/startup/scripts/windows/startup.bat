@@ -139,18 +139,20 @@ set "OS_RELEASE=!OS_RELEASE:]=!"
 set "OS_MAJOR="
 set "OS_MINOR="
 set "OS_BUILD="
-for /f "tokens=1,2,3 delims=." %%A in ("!OS_RELEASE!") do (
-  set "OS_MAJOR=%%A"
-  set "OS_MINOR=%%B"
-  set "OS_BUILD=%%C"
-)
+for /f "tokens=1,2,3 delims=." %%A in ("!OS_RELEASE!") do call :capture_os_release %%A %%B %%C
 if not "!OS_MAJOR!"=="10" exit /b 0
 if not "!OS_MINOR!"=="0" exit /b 0
 if "!OS_BUILD!"=="" exit /b 0
-set "NONDIG=!OS_BUILD!"
-for %%D in (0 1 2 3 4 5 6 7 8 9) do set "NONDIG=!NONDIG:%%D=!"
-if not "!NONDIG!"=="" exit /b 0
-if !OS_BUILD! GEQ 17763 set "CAN_BUN=1"
+set /a OS_BUILD_NUM=!OS_BUILD! >nul 2>&1
+if errorlevel 1 exit /b 0
+if not "!OS_BUILD_NUM!"=="!OS_BUILD!" exit /b 0
+if !OS_BUILD_NUM! GEQ 17763 set "CAN_BUN=1"
+exit /b 0
+
+:capture_os_release
+set "OS_MAJOR=%~1"
+set "OS_MINOR=%~2"
+set "OS_BUILD=%~3"
 exit /b 0
 
 :ensure_bun

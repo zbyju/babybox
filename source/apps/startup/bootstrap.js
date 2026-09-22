@@ -476,9 +476,22 @@ function sha256File(filePath) {
   });
 }
 
+function windowsTar(env) {
+  const root = env.SystemRoot || env.SYSTEMROOT;
+  if (!root) {
+    return "tar";
+  }
+  const systemTar = path.join(root, "System32", "tar.exe");
+  if (isFile(systemTar)) {
+    return systemTar;
+  }
+  return "tar";
+}
+
 function extractZip(spawnSync, platform, zipPath, destDir, env) {
   fs.mkdirSync(destDir, { recursive: true });
-  const command = platform === "win32" ? "tar" : "unzip";
+  // Git tar treats C: as a host and cannot read a zip. System32 tar does both.
+  const command = platform === "win32" ? windowsTar(env) : "unzip";
   const args =
     platform === "win32"
       ? ["-xf", zipPath, "-C", destDir]
