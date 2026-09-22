@@ -486,6 +486,18 @@ Expect-Called "pm2 update"
 Expect-NotCalled "pnpm@"
 Expect-Rc 0
 
+Write-Host "an old release with a different pm2 still installs the pin"
+Reset-Case
+$script:OsRelease = "10.0.17762"
+$script:StubPm2 = "5.2.0"
+Invoke-Case
+Expect-NotCalled "bun-windows-x64.zip"
+Expect-Called "npm install -g pm2@7.0.4"
+Expect-Called "pm2 update"
+Expect-Log "nespusti Bun"
+Expect-Called "pnpm run start"
+Expect-Rc 0
+
 Write-Host "a failed pm2 install still starts the panel"
 Reset-Case
 $script:StubPm2 = "5.2.0"
