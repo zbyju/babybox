@@ -1414,3 +1414,10 @@ One line per landed step: date, PR, what moved.
   its own git pull. The legacy-image job checks bun 1.4.2, the already-current
   build, and a forced failure at `BUILD_PANEL`, `START_PANEL`, and
   `BOOTSTRAP_BUN`.
+- 2026-09-23 — #124 — the update runner installs with bun 1.4.2. `packageManager`
+  is `bun@1.4.2`. Workspaces cover `apps/*` and `packages/*`. `bun.lock` is in
+  the tree and is copied into `dist-next`. `pnpm-lock.yaml` stays format 5.4.
+  The panel pnpm lockfile is gone. `bun install` in the runner writes nothing
+  on stderr, so the stderr rule stays. `bun audit` reports 79 vulnerabilities
+  (2 critical, 27 high, 38 moderate, 12 low). The Bun job is the only build
+  job. Node 18 only hosts the legacy-image job.
