@@ -10,8 +10,8 @@ const bootstrap = require("./bootstrap");
 const lastRecord = require("./last-record");
 
 const STEPS = [
-  { step: "INSTALL", args: ["install"] },
-  { step: "BUILD_SCHEMA", args: ["run", "build:schema"] },
+  { step: "INSTALL", args: ["install", "--frozen-lockfile"] },
+  { step: "BUILD_SCHEMA", args: ["-F", "@babybox/config-schema", "build"] },
   { step: "BUILD_PANEL", args: ["-F", "babybox-panel", "build"] },
   { step: "BUILD_BACKEND", args: ["-F", "babybox-panel-backend", "build"] },
   { step: "BUILD_CONFIGER", args: ["-F", "babybox-panel-configer", "build"] },
@@ -84,16 +84,13 @@ function asText(value) {
   return String(value);
 }
 
-function pnpmCommand(platform) {
-  if (platform === "win32") {
-    return "pnpm.cmd";
-  }
-  return "pnpm";
+function bunCommand() {
+  return "bun";
 }
 
-function runPnpm(spawnSync, args, env, cwd, platform) {
+function runBun(spawnSync, args, env, cwd) {
   try {
-    const result = spawnSync(pnpmCommand(platform), args, {
+    const result = spawnSync(bunCommand(), args, {
       cwd,
       env,
       encoding: "utf8",
@@ -240,7 +237,7 @@ async function run(options) {
   for (let i = 0; i < STEPS.length; i += 1) {
     const spec = STEPS[i];
     writeLine(state, "INFO", `Krok ${spec.step} začíná.`);
-    const result = runPnpm(spawnSync, spec.args, env, cwd, platform);
+    const result = runBun(spawnSync, spec.args, env, cwd);
     forward(stdout, result.stdout);
     // The old startup fails the update on any build stderr.
     const failed = result.status !== 0 || result.stderr !== "";

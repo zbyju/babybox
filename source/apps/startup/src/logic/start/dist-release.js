@@ -45,6 +45,7 @@ function createContext(options) {
     repoRoot,
     platform,
     pnpm: pick(opts.pnpm, platform === "win32" ? "pnpm.cmd" : "pnpm"),
+    bun: pick(opts.bun, "bun"),
     exec: pick(opts.exec, util.promisify(childProcess.exec)),
     spawn: pick(opts.spawn, childProcess.spawn),
     fs: pick(opts.fs, fs),
@@ -84,6 +85,7 @@ function createContext(options) {
         "backend",
         "package.json"
       ),
+      bunLock: path.join(repoRoot, "source", "bun.lock"),
     },
   };
 }
@@ -494,8 +496,13 @@ async function assembleDistNext(ctx) {
       ctx.paths.backendPackage,
       path.join(ctx.paths.distNext, "package.json")
     );
+    fileSystem.copyFileSync(
+      ctx.paths.bunLock,
+      path.join(ctx.paths.distNext, "bun.lock")
+    );
     // Install here, before any rename of the live dist.
-    await ctx.exec(`${ctx.pnpm} install`, {
+    // --no-save keeps the copied lock and writes nothing on stderr.
+    await ctx.exec(`${ctx.bun} install --no-save`, {
       cwd: ctx.paths.distNext,
       maxBuffer: 32 * 1024 * 1024,
     });
@@ -696,7 +703,7 @@ async function swapBack(ctx) {
   }
   try {
     // Repo dist, not source/dist.
-    await ctx.exec(`${ctx.pnpm} install`, {
+    await ctx.exec(`${ctx.bun} install --no-save`, {
       cwd: ctx.paths.dist,
       maxBuffer: 32 * 1024 * 1024,
     });

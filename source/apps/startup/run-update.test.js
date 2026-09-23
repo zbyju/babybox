@@ -12,8 +12,8 @@ const ROOT_PACKAGE = path.join(__dirname, "../../package.json");
 const WHEN = new Date(2026, 8, 22, 1, 2, 3);
 
 const STEP_ARGS = [
-  ["install"],
-  ["run", "build:schema"],
+  ["install", "--frozen-lockfile"],
+  ["-F", "@babybox/config-schema", "build"],
   ["-F", "babybox-panel", "build"],
   ["-F", "babybox-panel-backend", "build"],
   ["-F", "babybox-panel-configer", "build"],
@@ -105,10 +105,10 @@ describe("root build script", () => {
 });
 
 describe("run-update", () => {
-  it("stops on OS_HOLD before pnpm install and writes no stderr", async () => {
+  it("stops on OS_HOLD before bun install and writes no stderr", async () => {
     const fx = createFixture();
     const spawnSync = () => {
-      throw new Error("pnpm must not run on OS_HOLD");
+      throw new Error("bun must not run on OS_HOLD");
     };
     try {
       const code = await run(
@@ -138,7 +138,7 @@ describe("run-update", () => {
     }
   });
 
-  it("runs pnpm install and each package build after Bun is on PATH", async () => {
+  it("runs bun install and each package build after Bun is on PATH", async () => {
     const fx = createFixture();
     placeBun(fx.home);
     // A later success replaces a stale failure record.
@@ -164,11 +164,11 @@ describe("run-update", () => {
       expect(code).toBe(0);
       expect(fx.stderr.text()).toBe("");
       expect(calls.map((call) => call.cmd)).toEqual([
-        "pnpm",
-        "pnpm",
-        "pnpm",
-        "pnpm",
-        "pnpm",
+        "bun",
+        "bun",
+        "bun",
+        "bun",
+        "bun",
       ]);
       expect(calls.map((call) => call.args)).toEqual(STEP_ARGS);
       calls.forEach((call) => {
@@ -198,7 +198,7 @@ describe("run-update", () => {
     }
   });
 
-  it("calls pnpm.cmd on Windows", async () => {
+  it("calls bun on Windows", async () => {
     const fx = createFixture();
     const calls = [];
     try {
@@ -215,11 +215,11 @@ describe("run-update", () => {
       );
       expect(code).toBe(0);
       expect(calls.map((call) => call.cmd)).toEqual([
-        "pnpm.cmd",
-        "pnpm.cmd",
-        "pnpm.cmd",
-        "pnpm.cmd",
-        "pnpm.cmd",
+        "bun",
+        "bun",
+        "bun",
+        "bun",
+        "bun",
       ]);
       calls.forEach((call) => {
         expect(call.opts.shell).toBe(false);
@@ -236,7 +236,7 @@ describe("run-update", () => {
 "{\"step\":\"OS_HOLD\",\"ok\":true}\n"
     );
     const spawnSync = () => {
-      throw new Error("pnpm must not run");
+      throw new Error("bun must not run");
     };
     try {
       const code = await run(
@@ -259,7 +259,7 @@ describe("run-update", () => {
     const previous = "{\"step\":\"CPU_HOLD\",\"ok\":true}\n";
     fs.writeFileSync(path.join(fx.root, "startup.last.json"), previous);
     const spawnSync = () => {
-      throw new Error("pnpm must not run");
+      throw new Error("bun must not run");
     };
     try {
       const code = await run(
@@ -294,7 +294,7 @@ describe("run-update", () => {
           bootstrapRun: async () => 0,
           spawnSync: (cmd, args) => {
             calls.push(args);
-            if (args[0] === "run") {
+            if (args[1] === "@babybox/config-schema") {
               return {
                 status: 2,
                 stdout: "schema out\n",
@@ -418,7 +418,7 @@ describe("run-update", () => {
   it("does not install when bootstrap throws", async () => {
     const fx = createFixture();
     const spawnSync = () => {
-      throw new Error("pnpm must not run");
+      throw new Error("bun must not run");
     };
     try {
       const code = await run(
@@ -449,7 +449,7 @@ describe("run-update", () => {
   it("does not install when bootstrap fails", async () => {
     const fx = createFixture();
     const spawnSync = () => {
-      throw new Error("pnpm must not run");
+      throw new Error("bun must not run");
     };
     try {
       const code = await run(

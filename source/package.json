@@ -2,12 +2,17 @@
   "name": "babybox-mono",
   "version": "1.0.0",
   "engines": {
-    "node": "18.12.1"
+    "node": "18.12.1",
+    "bun": "1.4.2"
   },
   "description": "",
   "author": "",
   "keywords": [],
-  "packageManager": "pnpm@7.5.0",
+  "packageManager": "bun@1.4.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "pnpm run build:schema && (pnpm -F babybox-panel-configer dev & pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev)",
     "dev:backend": "pnpm -F babybox-panel-backend dev",
@@ -15,7 +20,7 @@
     "dev:configer": "pnpm -F babybox-panel-configer dev",
     "stop": "pm2 delete configer && pm2 delete babybox",
     "start:configer": "pnpm -F babybox-panel-configer start",
-    "start:main": "cd \"../dist\" && pnpm install && pm2 start ../dist/index.js -n babybox",
+    "start:main": "cd \"../dist\" && bun install --no-save && pm2 start ../dist/index.js -n babybox",
     "build:schema": "pnpm -F @babybox/config-schema build",
     "build": "node apps/startup/run-update.js",
     "echo": "echo test"
