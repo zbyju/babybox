@@ -12,7 +12,7 @@ const ROOT_PACKAGE = path.join(__dirname, "../../package.json");
 const WHEN = new Date(2026, 8, 22, 1, 2, 3);
 
 const STEP_ARGS = [
-  ["install"],
+  ["install", "--frozen-lockfile"],
   ["run", "build:schema"],
   ["-F", "babybox-panel", "build"],
   ["-F", "babybox-panel-backend", "build"],
@@ -144,7 +144,7 @@ describe("run-update", () => {
     // A later success replaces a stale failure record.
     fs.writeFileSync(
       path.join(fx.root, "startup.last.json"),
-      "{\"step\":\"BUILD_PANEL\",\"ok\":false,\"message\":\"old\"}\n"
+      '{"step":"BUILD_PANEL","ok":false,"message":"old"}\n'
     );
     const calls = [];
     const paths = [];
@@ -233,7 +233,7 @@ describe("run-update", () => {
     const fx = createFixture();
     fs.writeFileSync(
       path.join(fx.root, "startup.last.json"),
-"{\"step\":\"OS_HOLD\",\"ok\":true}\n"
+      '{"step":"OS_HOLD","ok":true}\n'
     );
     const spawnSync = () => {
       throw new Error("pnpm must not run");
@@ -256,7 +256,7 @@ describe("run-update", () => {
 
   it("does not name CPU_HOLD as a bootstrap failure", async () => {
     const fx = createFixture();
-    const previous = "{\"step\":\"CPU_HOLD\",\"ok\":true}\n";
+    const previous = '{"step":"CPU_HOLD","ok":true}\n';
     fs.writeFileSync(path.join(fx.root, "startup.last.json"), previous);
     const spawnSync = () => {
       throw new Error("pnpm must not run");
@@ -277,9 +277,9 @@ describe("run-update", () => {
       expect(fx.stderr.text()).toBe("");
       expect(fx.stdout.text()).toContain("Krok CPU_HOLD");
       expect(fx.stdout.text()).not.toContain("nezdařil");
-      expect(fs.readFileSync(path.join(fx.root, "startup.last.json"), "utf8")).toBe(
-        previous
-      );
+      expect(
+        fs.readFileSync(path.join(fx.root, "startup.last.json"), "utf8")
+      ).toBe(previous);
     } finally {
       fx.cleanup();
     }

@@ -10,7 +10,7 @@ const bootstrap = require("./bootstrap");
 const lastRecord = require("./last-record");
 
 const STEPS = [
-  { step: "INSTALL", args: ["install"] },
+  { step: "INSTALL", args: ["install", "--frozen-lockfile"] },
   { step: "BUILD_SCHEMA", args: ["run", "build:schema"] },
   { step: "BUILD_PANEL", args: ["-F", "babybox-panel", "build"] },
   { step: "BUILD_BACKEND", args: ["-F", "babybox-panel-backend", "build"] },

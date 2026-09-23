@@ -118,10 +118,42 @@ function writeRecord(logPath, record) {
   }
 }
 
+function defaultNow() {
+  return new Date();
+}
+
+function writeCli(argv, options) {
+  const opts = options || {};
+  const step = argv[2];
+  const okText = argv[3];
+  const message = argv[4] === undefined ? "" : argv[4];
+  const logPath = argv[5];
+  if (!step || (okText !== "true" && okText !== "false") || !logPath) {
+    return 1;
+  }
+  const versions = resolveVersions(
+    opts.versions,
+    opts.spawnSync || childProcess.spawnSync,
+    opts.env || process.env,
+    opts.platform || process.platform
+  );
+  const now = opts.now || defaultNow;
+  writeRecord(
+    logPath,
+    buildRecord(step, okText === "true", message, now(), versions)
+  );
+  return 0;
+}
+
+if (require.main === module) {
+  process.exit(writeCli(process.argv));
+}
+
 module.exports = {
   buildRecord,
   collapseMessage,
   commandMessage,
   resolveVersions,
+  writeCli,
   writeRecord,
 };

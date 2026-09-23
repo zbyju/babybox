@@ -20,7 +20,9 @@ REM BABYBOX_OS_RELEASE overrides those numbers. A box leaves it empty.
 REM The value has the same shape as os.release().
 REM
 REM A release below build 17763 takes OS_HOLD before any download.
-REM The script writes logs\startup.last.json with step OS_HOLD and ok true.
+REM The script writes logs\startup.last.json through last-record.js.
+REM The record has step, ok, message, at, node, pnpm, and bun.
+REM CPU_HOLD writes the same record.
 REM Exit 1 with empty stderr. Exit 0 makes the old startup swap dist.
 REM It does not change the git branch.
 REM It still starts the panel.
@@ -86,11 +88,13 @@ call pnpm run start 2>>"%LOG_FILE%"
 exit /b 1
 
 :write_os_hold
+call :write_last OS_HOLD "Tento system nespusti Bun. Krok OS_HOLD. Vydani !OS_RELEASE!."
+exit /b 0
+
+:write_last
 if not exist "%SOURCE_DIR%\logs" mkdir "%SOURCE_DIR%\logs"
-set "LAST_FILE=%SOURCE_DIR%\logs\startup.last.json"
-(
-  echo {"step":"OS_HOLD","ok":true,"message":"Tento system nespusti Bun. Krok OS_HOLD. Vydani !OS_RELEASE!."}
-) > "%LAST_FILE%"
+node "%STARTUP_DIR%\last-record.js" %~1 true "%~2" "%SOURCE_DIR%\logs\startup.log"
+if errorlevel 1 call :log "startup.last.json se nepodarilo zapsat."
 exit /b 0
 
 :main_no_dir
@@ -317,6 +321,7 @@ exit /b 1
 :cpu_hold
 if not exist "%USERPROFILE%\.bun" mkdir "%USERPROFILE%\.bun"
 >"%HOLD_FILE%" echo !BUN_VERSION!
+call :write_last CPU_HOLD "Procesor nespusti Bun. Krok CPU_HOLD."
 call :log "Procesor nespusti Bun. Krok CPU_HOLD."
 exit /b 1
 
