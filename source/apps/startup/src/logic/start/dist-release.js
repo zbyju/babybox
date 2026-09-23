@@ -161,6 +161,7 @@ async function build(ctx) {
     const { stderr, stdout } = await ctx.exec(`${ctx.pnpm} run build`, {
       cwd: ctx.paths.source,
     });
+    // The old startup fails the update on any build stderr.
     if (stderr) {
       const err = new Error(strings.buildFailed);
       err.stderr = stderr;
@@ -318,8 +319,7 @@ function startOne(ctx, script) {
   });
 }
 
-// Starts the tree that is already at dist. Does not write a success record,
-// so a failed upgrade stays visible for the next boot.
+// Does not write a success record, so a failed upgrade stays visible for the next boot.
 async function startLive(ctx) {
   await stopPm2(ctx);
   let ok = true;
@@ -394,7 +394,7 @@ async function swapBack(ctx) {
     ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
   }
   try {
-    // Repo dist, the same directory the copy used. Not source/dist.
+    // Repo dist, not source/dist.
     await ctx.exec(`${ctx.pnpm} install`, { cwd: ctx.paths.dist });
   } catch (err) {
     ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
