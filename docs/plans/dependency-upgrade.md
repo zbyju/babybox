@@ -1385,5 +1385,5 @@ One line per landed step: date, PR, what moved.
   and swaps it into `dist` only after that tree is complete. A failed start
   restores the previous `dist` and starts both apps. The rollback install
   runs in the repo `dist`.
-- 2026-09-23 — the remaining work is six pull requests of about 5000 lines.
-  See "Pull requests from here".
+- 2026-09-23 — #122 — the remaining work is six pull requests of about 5000
+  lines. See "Pull requests from here".
