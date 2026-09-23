@@ -98,6 +98,7 @@ function writeBackendAndPanel(root) {
     path.join(root, "source", "apps", "backend", "package.json"),
     "{\"name\":\"babybox-panel-backend\"}\n"
   );
+  fs.writeFileSync(path.join(root, "source", "bun.lock"), "{}\n");
   const panelDist = path.join(root, "source", "apps", "panel", "dist");
   fs.mkdirSync(panelDist, { recursive: true });
   fs.writeFileSync(path.join(panelDist, "index.html"), "panel");
@@ -203,7 +204,7 @@ describe("dist-next release", () => {
     let dist2DuringInstall = true;
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", (cwd) => {
+    harness.on("bun install --no-save", (cwd) => {
       if (cwd === path.join(root, "dist-next")) {
         distDuringInstall = fs.readFileSync(path.join(root, "dist", "index.js"), "utf8");
         modulesDuringInstall = fs.existsSync(
@@ -226,6 +227,15 @@ describe("dist-next release", () => {
         "panel"
       );
       expect(fs.readFileSync(path.join(root, "dist", ".env"), "utf8")).toBe("A=1\n");
+      expect(fs.readFileSync(path.join(root, "dist", "bun.lock"), "utf8")).toBe(
+        fs.readFileSync(path.join(root, "source", "bun.lock"), "utf8")
+      );
+      expect(fs.readFileSync(path.join(root, "dist", "package.json"), "utf8")).toBe(
+        fs.readFileSync(
+          path.join(root, "source", "apps", "backend", "package.json"),
+          "utf8"
+        )
+      );
       expect(fs.existsSync(path.join(root, "dist2", "index.js"))).toBe(true);
       expect(fs.readFileSync(path.join(root, "dist2", "index.js"), "utf8")).toBe("old");
       expect(fs.existsSync(path.join(root, "dist2", "node_modules"))).toBe(false);
@@ -272,7 +282,7 @@ describe("dist-next release", () => {
     harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", (cwd) => {
+    harness.on("bun install --no-save", (cwd) => {
       if (cwd === path.join(root, "dist")) {
         restoredIndex = fs.readFileSync(path.join(root, "dist", "index.js"), "utf8");
       }
@@ -318,7 +328,7 @@ describe("dist-next release", () => {
     harness.spawnQueue.push({ code: 0 }, { code: 2, stderr: "panel broke\n" });
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
@@ -348,7 +358,7 @@ describe("dist-next release", () => {
     const harness = createHarness();
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => {
+    harness.on("bun install --no-save", () => {
       const err = new Error("install failed");
       err.stderr = "install failed\n";
       throw err;
@@ -400,7 +410,7 @@ describe("dist-next release", () => {
       expect(code).toBe(true);
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
-      expect(commands(harness)).not.toContain("pnpm install");
+      expect(commands(harness)).not.toContain("bun install --no-save");
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
         ["start:configer"],
         ["start:main"],
@@ -419,7 +429,7 @@ describe("dist-next release", () => {
     harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
@@ -454,7 +464,7 @@ describe("dist-next release", () => {
       stderr: "",
     }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
@@ -480,7 +490,7 @@ describe("dist-next release", () => {
     };
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
@@ -555,7 +565,7 @@ describe("dist-next release", () => {
     );
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
@@ -588,7 +598,7 @@ describe("dist-next release", () => {
     harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", (cwd) => {
+    harness.on("bun install --no-save", (cwd) => {
       if (cwd === path.join(root, "dist")) {
         spawnsAtRestoreInstall = harness.spawnCalls.length;
         throw new Error("restore install failed");
@@ -635,7 +645,7 @@ describe("dist-next release", () => {
       stderr: "",
     }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
@@ -689,7 +699,7 @@ describe("dist-next release", () => {
     };
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
@@ -737,7 +747,7 @@ describe("dist-next release", () => {
     };
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", (cwd) => {
+    harness.on("bun install --no-save", (cwd) => {
       if (cwd === path.join(root, "dist-next")) {
         fs.mkdirSync(path.join(cwd, "node_modules"), { recursive: true });
         fs.writeFileSync(path.join(cwd, "node_modules", "keep.txt"), "keep");
@@ -809,7 +819,7 @@ describe("dist-next release", () => {
     writeReleaseFile(root, OTHER_SHA);
     alreadyCurrent(harness);
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
       const code = await onStartup(baseOptions(root, harness));
@@ -834,7 +844,7 @@ describe("dist-next release", () => {
     writeReleaseFile(root, OTHER_SHA);
     alreadyCurrent(harness);
     harness.on("pnpm.cmd run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm.cmd install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
       const opts = baseOptions(root, harness, { platform: "win32" });
@@ -857,7 +867,7 @@ describe("dist-next release", () => {
     writeReleaseFile(root, OTHER_SHA);
     alreadyCurrent(harness);
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
       const opts = baseOptions(root, harness);
@@ -918,7 +928,7 @@ describe("dist-next release", () => {
     });
     alreadyCurrent(harness);
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
       const code = await onStartup(
@@ -972,7 +982,7 @@ describe("dist-next release", () => {
     fs.writeFileSync(path.join(root, ".bun", "cpu-hold"), "1.4.0\n");
     alreadyCurrent(harness);
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
       const code = await onStartup(
@@ -993,7 +1003,7 @@ describe("dist-next release", () => {
     writeReleaseFile(root);
     alreadyCurrent(harness);
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
       const code = await onStartup(
@@ -1015,7 +1025,7 @@ describe("dist-next release", () => {
     fs.writeFileSync(path.join(bin, "bun"), "#!/bin/sh\n");
     alreadyCurrent(harness);
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
       const opts = baseOptions(root, harness, {
@@ -1164,7 +1174,7 @@ describe("dist-next release", () => {
     };
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
       const code = await onStartup(baseOptions(root, harness, { fs: trackingFs }));

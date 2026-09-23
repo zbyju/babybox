@@ -1061,23 +1061,43 @@ run, and of which step last failed.
 
 ### P2 — pnpm install → bun install
 
-- [ ] Root `packageManager` = `bun@1.4.2`. Bun workspaces cover `apps/*` and
+- [x] Root `packageManager` = `bun@1.4.2`. Bun workspaces cover `apps/*` and
       `packages/*`. Delete `apps/panel/pnpm-lock.yaml`.
-- [ ] Generate `bun.lock`. Keep `pnpm-lock.yaml` (format 5.4) in the tree so
+- [x] Generate `bun.lock`. Keep `pnpm-lock.yaml` (format 5.4) in the tree so
       pnpm 7 cannot rewrite it. The update runner never calls `pnpm install`
       after this phase.
-- [ ] Runner steps `INSTALL` / `DIST_PREPARE` use `bun install`. Copy
+- [x] Runner steps `INSTALL` / `DIST_PREPARE` use `bun install`. Copy
       `bun.lock` into `dist-next` with the backend `package.json`.
-- [ ] Record trusted lifecycle scripts (`esbuild` via Vite is the usual one).
-- [ ] Verify on the box image that `bun install` inside the runner prints
+- [x] Record trusted lifecycle scripts (`esbuild` via Vite is the usual one).
+- [x] Verify on the box image that `bun install` inside the runner prints
       nothing on stderr. If it does, either silence it or change the startup's
       stderr rule to a non-empty-exit-code rule, and record why.
-- [ ] `bun audit` baseline recorded in this file.
-- [ ] Legacy-image job asserts `bun -v` = 1.4.2 after `pnpm run build`, and
+- [x] `bun audit` baseline recorded in this file.
+- [x] Legacy-image job asserts `bun -v` = 1.4.2 after `pnpm run build`, and
       that the tree is clean (pnpm 7 with `frozen-lockfile=true` must not have
       rewritten the lockfile before the bootstrap ran).
-- [ ] The Bun CI job from P0 becomes the only build job; the Node 18 job
+- [x] The Bun CI job from P0 becomes the only build job; the Node 18 job
       remains only as the host of the legacy-image job.
+
+Trusted lifecycle scripts, checked with Bun 1.4.2. Vite 2.9.14 uses
+`esbuild` 0.14.54. Its postinstall runs `node install.js`. `vue-demi` 0.14.10
+also has a postinstall. Both names are on Bun's default trusted list.
+`bun pm untrusted` reports 0. `package.json` does not set
+`trustedDependencies`. An explicit list replaces that default list.
+
+Stderr, checked with Bun 1.4.2. `bun install --frozen-lockfile` writes
+nothing on stderr when `bun.lock` is already present. An install that sees
+only `pnpm-lock.yaml` warns on stderr that lockfileVersion 5.4 cannot be
+migrated. The committed `bun.lock` keeps INSTALL off that path.
+`bun install` in `dist-next` prints `Saved lockfile` on stderr and rewrites
+the copied lock. `bun install --no-save` installs the backend dependencies,
+leaves the copied lock in place, and writes nothing on stderr. The runner
+still fails a step on any stderr. The rule did not change.
+
+`bun audit` baseline, Bun 1.4.2, 2026-09-23. 79 vulnerabilities: 2 critical,
+27 high, 38 moderate, 12 low. The critical items are `handlebars` 4.7.7
+through newman, and `vitest` 0.9.4. Later library bumps change this count.
+This phase does not gate CI on it.
 
 Size: ~0.5 day. Must be the same PR as, or a later PR than, P1: a `bun.lock`
 world on `main` without the bootstrap in the `build` script leaves pnpm 7 to
@@ -1394,3 +1414,10 @@ One line per landed step: date, PR, what moved.
   its own git pull. The legacy-image job checks bun 1.4.2, the already-current
   build, and a forced failure at `BUILD_PANEL`, `START_PANEL`, and
   `BOOTSTRAP_BUN`.
+- 2026-09-23 — #124 — the update runner installs with bun 1.4.2. `packageManager`
+  is `bun@1.4.2`. Workspaces cover `apps/*` and `packages/*`. `bun.lock` is in
+  the tree and is copied into `dist-next`. `pnpm-lock.yaml` stays format 5.4.
+  The panel pnpm lockfile is gone. `bun install` in the runner writes nothing
+  on stderr, so the stderr rule stays. `bun audit` reports 79 vulnerabilities
+  (2 critical, 27 high, 38 moderate, 12 low). The Bun job is the only build
+  job. Node 18 only hosts the legacy-image job.

@@ -9,74 +9,6 @@ on:
     branches: [main]
 
 jobs:
-  verify:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: source
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Ubuntu startup shell
-        run: bash apps/startup/tests/startup.test.sh
-
-      - name: Windows startup.bat shape
-        run: bash apps/startup/tests/startup.windows.static.sh
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 7.5.0
-
-      # Stejna verze, jakou drzi apps/startup/versions.env
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18.12.1
-          cache: pnpm
-          cache-dependency-path: source/pnpm-lock.yaml
-
-      # A registry specifier is one exact version. A range fails this job.
-      - name: Exact dependency versions
-        run: node scripts/check-exact-versions.js
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      # Skripty "lint" maji --fix, coz by tady prepisovalo soubory
-      - name: Lint
-        run: |
-          pnpm -F babybox-panel-backend exec eslint --ext .js,.ts .
-          pnpm -F babybox-panel exec eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore
-          pnpm -F startup exec eslint src/ bootstrap.js bootstrap.test.js last-record.js last-record.test.js run-update.js run-update.test.js
-
-      # Vsechny aplikace ctou tvar konfigurace odsud, musi se sestavit jako prvni
-      - name: Build config schema
-        run: pnpm -F @babybox/config-schema build
-
-      - name: Build
-        run: pnpm -F babybox-panel build && pnpm -F babybox-panel-backend build && pnpm -F babybox-panel-configer build
-
-      # Backend dist se na boxu instaluje mimo workspace, schema tam smi byt jen typ
-      - name: Backend dist has no schema import
-        run: |
-          test -d apps/backend/dist
-          ! grep -rl "config-schema" apps/backend/dist
-
-      - name: Config schema tests
-        run: pnpm -F @babybox/config-schema exec vitest run
-
-      - name: Backend tests
-        run: pnpm -F babybox-panel-backend exec jest
-
-      - name: Panel tests
-        run: pnpm -F babybox-panel exec vitest run --environment jsdom
-
-      - name: Configer tests
-        run: pnpm -F babybox-panel-configer exec vitest run
-
-      - name: Startup tests
-        run: pnpm -F startup exec jest --ci
-
   # Prvni boot po pullu. Checkout je tag legacy-runtime, pak git pull na hlavu
   # PR a pnpm run build. Exit 0, prazdny stderr, cisty strom.
   # Dalsi krok overi bun 1.4.2, build po hotovem checkoutu, a nucene selhani.
@@ -127,11 +59,11 @@ jobs:
         with:
           version: 7.5.0
 
+      # Runner nevola pnpm install. Cache pnpm store po jobu spadne,
+      # protoze ta slozka neexistuje.
       - uses: actions/setup-node@v4
         with:
           node-version: 18.12.1
-          cache: pnpm
-          cache-dependency-path: source/pnpm-lock.yaml
 
       - name: pnpm run build
         shell: bash
@@ -180,19 +112,23 @@ jobs:
         working-directory: source
         run: bash apps/startup/tests/legacy-image-release.sh
 
-  # Bun 1.4.2. Instalace, build a testy. Job smi selhat.
-  # Ukazuje, co se rozbije, nez se z nej v P2 stane brana.
-  # Job verify na Node 18 zustava branou.
+  # Bun 1.4.2 je jedina brana pro install, build a testy.
+  # Node 18 zustava jen v jobu legacy-image.
   bun:
-    name: bun 1.4.2 (allowed to fail)
+    name: bun 1.4.2
     runs-on: ubuntu-latest
-    continue-on-error: true
     defaults:
       run:
         working-directory: source
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ubuntu startup shell
+        run: bash apps/startup/tests/startup.test.sh
+
+      - name: Windows startup.bat shape
+        run: bash apps/startup/tests/startup.windows.static.sh
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -207,8 +143,19 @@ jobs:
             exit 1
           fi
 
+      # A registry specifier is one exact version. A range fails this job.
+      - name: Exact dependency versions
+        run: bun scripts/check-exact-versions.js
+
       - name: Install
-        run: bun install
+        run: bun install --frozen-lockfile
+
+      # Skripty "lint" maji --fix, coz by tady prepisovalo soubory
+      - name: Lint
+        run: |
+          (cd apps/backend && bun ./node_modules/.bin/eslint --ext .js,.ts .)
+          (cd apps/panel && bun ./node_modules/.bin/eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore)
+          (cd apps/startup && bun ./node_modules/.bin/eslint src/ bootstrap.js bootstrap.test.js last-record.js last-record.test.js run-update.js run-update.test.js)
 
       - name: Build config schema
         run: bun --filter @babybox/config-schema build
@@ -232,6 +179,9 @@ jobs:
 
       - name: Configer tests
         run: bun --filter babybox-panel-configer test
+
+      - name: Startup tests
+        run: (cd apps/startup && ./node_modules/.bin/jest --ci)
 
   # bootstrap.js musi projit Node 12. Sken textu na Node 18 tu chybu nechyti.
   bootstrap-syntax:

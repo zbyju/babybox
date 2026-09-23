@@ -99,13 +99,15 @@ seed_previous() {
   mkdir -p "$ROOT/dist"
   cp -R "$SOURCE/apps/backend/dist/." "$ROOT/dist/"
   cp "$SOURCE/apps/backend/package.json" "$ROOT/dist/package.json"
+  if [ -f "$SOURCE/bun.lock" ]; then
+    cp "$SOURCE/bun.lock" "$ROOT/dist/bun.lock"
+  fi
   printf '%s\n' "NODE_ENV=development" "PORT=5000" "API_PREFIX=/api/v1" >"$ROOT/dist/.env"
-  # start:main runs pnpm install inside dist.
-  # GitHub sets CI, so that install needs a lockfile.
-  # A box does not set CI. Write the lockfile here.
+  # The BOOTSTRAP_BUN case deletes ~/.bun, then checks a bad checksum.
+  # The previous dist must still start from modules this seed wrote.
   (
     cd "$ROOT/dist"
-    pnpm install --no-frozen-lockfile
+    "$(node -e "const os=require('os');const path=require('path');const name=process.platform==='win32'?'bun.exe':'bun';process.stdout.write(path.join(os.homedir(),'.bun','bin',name))")" install --no-save
   )
   printf '%s\n' "previous-live" >"$ROOT/dist/marker.txt"
   printf '%s\n' '{"sha":"0000000000000000000000000000000000000000"}' >"$ROOT/dist/release.json"
