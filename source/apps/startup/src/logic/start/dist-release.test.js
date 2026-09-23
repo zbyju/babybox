@@ -227,9 +227,14 @@ describe("dist-next release", () => {
         "panel"
       );
       expect(fs.readFileSync(path.join(root, "dist", ".env"), "utf8")).toBe("A=1\n");
-      expect(fs.readFileSync(path.join(root, "dist", "bun.lock"), "utf8")).toBe("{}\n");
+      expect(fs.readFileSync(path.join(root, "dist", "bun.lock"), "utf8")).toBe(
+        fs.readFileSync(path.join(root, "source", "bun.lock"), "utf8")
+      );
       expect(fs.readFileSync(path.join(root, "dist", "package.json"), "utf8")).toBe(
-        "{\"name\":\"babybox-panel-backend\"}\n"
+        fs.readFileSync(
+          path.join(root, "source", "apps", "backend", "package.json"),
+          "utf8"
+        )
       );
       expect(fs.existsSync(path.join(root, "dist2", "index.js"))).toBe(true);
       expect(fs.readFileSync(path.join(root, "dist2", "index.js"), "utf8")).toBe("old");
