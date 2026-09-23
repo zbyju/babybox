@@ -1410,7 +1410,7 @@ One line per landed step: date, PR, what moved.
 - 2026-09-22 — #119 — each update step writes `startup.last.json` with step,
   ok, message, at, node, pnpm, and bun. A success replaces a stale failure.
   GET /status on configer and the backend includes the record.
-- 2026-09-23 — merged #101 into the jump branch. `dist` keeps
+- 2026-09-23 — #120 — merged #101 into the jump branch. `dist` keeps
   `pnpm install --prod`. The runner install is `pnpm install --frozen-lockfile`.
   `startup.bat` writes the full hold record through `last-record.js`.
   The plan matches the branch. The `legacy-runtime` tag stays on `303b61e`
