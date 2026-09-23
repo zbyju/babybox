@@ -1,8 +1,9 @@
 # Dependency upgrade
 
-Status: **not started** (no upgrade code on `main`)
+Status: **P1 in progress** on `feat/toolchain-jump`. `main` has no upgrade code.
+`main` does have #101 (production install in `dist`).
 Owner: —
-Last updated: 2026-09-21 (topic pull requests)
+Last updated: 2026-09-23
 
 ## Goal
 
@@ -126,10 +127,15 @@ On a hold OS the boot does only this.
 The first boot after the pull still uses the old startup app. That app treats
 a non-zero `pnpm run build` as a failed build and does not swap `dist`. The
 runner exits non-zero on `OS_HOLD` and writes no stderr. The old app then
-starts the existing `dist`. The next restart uses the new startup app. That
-app sees `OS_HOLD` and does not call the build again. If the runner exits
-non-zero and `step` is `OS_HOLD`, the new startup starts the previous `dist`.
-It does not retry the new apps.
+starts the existing `dist`.
+
+The next restart runs the new `startup.bat` or `startup.sh`. `startup.bat`
+writes the full `OS_HOLD` record, then still runs `pnpm run start`, then
+exits 1. The Node startup app does not read the hold. It builds again when
+`git pull` changes the checkout. The open P1 box skips that build while the
+OS is still on hold. `CPU_HOLD` uses the same skip. The skip reads
+`startup.last.json` and `~/.bun/cpu-hold`. `startup.bat` writes both.
+`bootstrap.js` writes the same JSON shape when the runner hits the hold.
 
 A hold box stays on its current branch. After the merge, that branch is
 `main`. Each later restart can still `git pull`. The panel on screen stays
@@ -149,7 +155,10 @@ download it as a fallback.
 
 If the binary exits with an illegal instruction, record step `CPU_HOLD`. Keep
 the last good `dist`. Do not try again until `BUN_VERSION` changes. Use the
-same non-zero exit and clean tree as `OS_HOLD`.
+same non-zero exit and clean tree as `OS_HOLD`. `bootstrap.js` and
+`startup.bat` both write that record with `step`, `ok`, `message`, `at`,
+`node`, `pnpm`, and `bun`. The batch file also stores the pin in
+`%USERPROFILE%\.bun\cpu-hold`.
 
 ### Where files land
 
@@ -182,9 +191,13 @@ The jump commit contains all of these together.
 Later commits on the branch may upgrade libraries. They stay off `main` until
 the tip passes the job again.
 
-If `main` gains old-toolchain commits before this branch merges, rebase
-`feat/toolchain-jump` onto `main` and move the `legacy-runtime` tag to the new
-base. Do not rebase after a box has checked out the tip.
+If `main` gains old-toolchain commits before this branch merges, merge `main`
+into `feat/toolchain-jump`. Move the `legacy-runtime` tag to that `main`
+commit after the merge is on the branch. Do not rebase the published branch.
+Do not move the tag before the branch contains the new `main` commit. #101
+(`8c5ce84`) is that commit today. The tag stays on `303b61e` (#100) until
+this merge is on `feat/toolchain-jump`. A moved tag breaks `legacy-image`
+for a tip that does not contain #101.
 
 ### Canary before merge
 
@@ -244,7 +257,12 @@ the next restart.
 ### CI on this branch
 
 The `legacy-image` job starts from the `legacy-runtime` tag (`303b61e`, #100).
-It runs `git pull` to the branch tip and `pnpm run build`.
+After the tag moves to `8c5ce84` (#101), the job starts there. It runs
+`git pull` to the branch tip and `pnpm run build`.
+
+On #118 the success path already exits 0, writes no stderr, and leaves a
+clean tree, on Ubuntu and on Windows. It does not yet assert `bun -v`.
+The Windows 8 case and the already-checked-out case are still open.
 
 On the success path it asserts all of the following.
 
@@ -268,6 +286,29 @@ from `dist/release.json`. The job asserts that the build runs.
 
 The job gates the merge. A red job means the tip is not safe to check out on
 a box. The fake Windows 8 case does not replace the real Windows 8 canary.
+
+## Review 2026-09-23
+
+Checked against `feat/toolchain-jump` at #119 and against `main` at #101
+(`8c5ce84`). P0 is complete. P1 has the Bun install, the runner, the hold
+exits, and the step record. The startup app still owns `dist-next`, the
+`release.json` build rule, and the hold skip.
+
+#101 was on `main` and not on the jump branch. This branch merges it. `dist`
+installs stay `pnpm install --prod`. The rollback directory stays
+`../../../dist`. The runner `INSTALL` step is `pnpm install --frozen-lockfile`.
+`build` stays `node apps/startup/run-update.js`.
+
+`startup.bat` was writing a three-field `OS_HOLD` record and no `CPU_HOLD`
+record. `GET /status` ignores a record that lacks `at`, `node`, `pnpm`, or
+`bun`. The batch file now calls `last-record.js` for both holds.
+
+`BOOTSTRAP_PM2` is not a runner step. The shells install pinned pm2 and
+continue when that install fails. `bootstrap.js` warns on a version mismatch.
+
+The Node 12 job already parses `bootstrap.js`, `run-update.js`, and
+`last-record.js`. The Windows write test and the Ubuntu profile test block
+the canary. They do not block the next topic pull request.
 
 ## Review 2026-09-21
 
@@ -438,27 +479,31 @@ read `versions.env`. Do not harvest `ensure_node` as the jump.
 | Node on Ubuntu boxes (half the fleet) | 18.12.1 via `n`, `/usr/local` chowned to the user | `install-all.sh` (`NODE_VERSION`), `.github/workflows/ci.yml`, and `apps/startup/versions.env` (`NODE_VERSION`, detect-only). Stays as the bootstrap host. Not upgraded. |
 | Node on Windows boxes (other half) | installed by hand with nvm-windows, "mimicking" 18.12.1; OS is Windows 7, 8, 10 or 11 | nowhere; `install.bat` only checks `node -v`. Stays as the bootstrap host on Windows 10/11. |
 | pnpm | 7.5.0, lockfile `5.4` | `install-all.sh`, `install.sh`, `install.bat`, `src/logic/install/{ubuntu,windows}.js`, root `packageManager`, `ci.yml`. Stays as the `pnpm run build` hook. Not upgraded. |
-| Bun | absent | `apps/startup/versions.env` (`BUN_VERSION` 1.4.2 and the two x64 zip sha256 values). P1 installs the zip. |
-| pm2 | `@latest` at install time | `src/logic/install/*.js`. `apps/startup/versions.env` stores `PM2_VERSION` 7.0.4. Nothing reads that pin until P1. |
+| Bun | installed on this branch by `bootstrap.js`, `startup.sh`, `startup.bat`, and `install-all.sh`. Absent on `main`. | `apps/startup/versions.env` (`BUN_VERSION` 1.4.2 and the two x64 zip sha256 values). |
+| pm2 | `ensure_pm2` in the shells installs `7.0.4`. `bootstrap.js` compares `pm2 -v` and warns. A mismatch does not fail the build. | `apps/startup/versions.env` (`PM2_VERSION`). P3 decides whether the daemon runs on Bun. |
 | Global `typescript`, `ts-node` | not installed by the scripts | Removed from `src/logic/install/*.js` in P0. The workspace `tsc` is what the build uses. |
-| TypeScript in the workspace | `^4.7.4` (root, panel, backend); configer and config-schema use the workspace `tsc` | each `package.json` that lists it |
+| TypeScript in the workspace | `4.7.4` exact (root, panel, backend); configer and config-schema use the workspace `tsc` | each `package.json` that lists it. P0 removed the caret. |
 
 ### How a box updates
 
-On every boot the desktop autostart runs `apps/startup/scripts/ubuntu/startup.sh`
-(two lines: `cd` into startup, `pnpm run start --ubuntu`) or the Windows
-`startup.bat` (`cd ../../`, `pnpm run start`). That is `node src/index.js`
-**from the git checkout**. That process (`src/logic/start/ubuntu.js`) does:
+A box that has not pulled this branch still starts from the old autostart.
+That file changes directory into startup, then runs `pnpm run start`. It
+runs `node src/index.js` from the git checkout.
+
+On this branch, `startup.sh` and `startup.bat` install the pinned Bun and
+the pinned pm2, then run that same Node app. A failed install does not stop
+the panel. The Node app (`src/logic/start/ubuntu.js` and `windows.js`) does:
 
 1. `git pull` in `source/`. A non-zero exit or empty stdout counts as failure.
    Stderr on a pull that exits 0 does not fail the pull.
 2. If the pull changed something, or `dist` is missing: `pnpm run build` in
-   `source/`. That runs the
-   `build` script from **HEAD's** root `package.json`: `pnpm install --frozen-lockfile &&
-   build:schema && build panel && build backend && build configer`. Any stderr
-   fails the build.
+   `source/`. On this branch that script is `node apps/startup/run-update.js`.
+   The runner calls `bootstrap.js`, then `pnpm install --frozen-lockfile`,
+   then each package build. Any stderr fails the build. A hold exits 1 with
+   empty stderr before install.
 3. On success: rename `dist` to `dist2`, copy the new build into `dist`,
    `pnpm install --prod` inside `dist`, restart both apps under pm2.
+   The rollback install uses `../../../dist` and `--prod` (#101).
 4. On a failed **build**: leave `dist` in place and start it. On a failed
    **copy**: try to rename `dist2` back. On a failed **start**: retry the
    **new** apps five times and never restore `dist2`. That last case is a
@@ -507,11 +552,10 @@ after P3.
 
 #### What today does not do
 
-- **Which step.** `pnpm run build` is one blob: install, schema, panel,
-  backend, configer. A failure is one Czech line, "Sestavení aplikace se
-  nezdařilo," plus truncated stdio. `GET /status` still returns
-  `{ msg: "Alive." }`. A remote reader cannot tell PULL from BUILD_PANEL from
-  BOOTSTRAP_PNPM.
+- **Which step.** The runner names `BOOTSTRAP_BUN`, `INSTALL`,
+  `BUILD_SCHEMA`, `BUILD_PANEL`, `BUILD_BACKEND`, and `BUILD_CONFIGER`.
+  `GET /status` includes that record. The startup app still does not name
+  `PULL`, `DIST_PREPARE`, `SWAP`, `START_CONFIGER`, or `START_PANEL`.
 - **Start failure.** After a successful swap, `startConfiger` / `start` retry
   the new processes only. `override()`'s return value is ignored. `dist2` is
   left behind.
@@ -525,15 +569,17 @@ after P3.
 
 1. **Named steps**, a closed set, one in flight:
 
-   `PULL`, `BOOTSTRAP_BUN`, `BOOTSTRAP_PM2`, `INSTALL`,
+   `PULL`, `BOOTSTRAP_BUN`, `INSTALL`,
    `BUILD_SCHEMA`, `BUILD_PANEL`, `BUILD_BACKEND`, `BUILD_CONFIGER`,
    `DIST_PREPARE`, `SWAP`, `START_CONFIGER`, `START_PANEL`,
    `OS_HOLD`, `CPU_HOLD`.
 
-   There is no `BOOTSTRAP_NODE` and no `BOOTSTRAP_PNPM`. Those tools stay at
-   the legacy versions. Root `build` becomes a small runner
-   (`apps/startup/run-update.js` or the same job inside `bootstrap.js`) that
-   executes those build steps one by one. The legacy startup still calls
+   There is no `BOOTSTRAP_NODE`, no `BOOTSTRAP_PNPM`, and no `BOOTSTRAP_PM2`
+   in the runner. Node and pnpm stay at the legacy versions. `startup.sh`
+   and `startup.bat` install pinned pm2. A failed pm2 install does not stop
+   the panel. `bootstrap.js` compares `pm2 -v` and warns. P3 decides whether
+   the pm2 daemon runs on Bun. Root `build` is `apps/startup/run-update.js`.
+   It executes those build steps one by one. The legacy startup still calls
    `pnpm run build`. Each step logs start and end. A failure stops the chain.
 
 2. **The error stays with the step.** On failure write one record to
@@ -546,8 +592,8 @@ after P3.
    boot does not keep a stale failure.
 
 3. **Last good `dist` stays intact until the new apps start.** Build into the
-   app `dist` folders and assemble `dist-next` (copy + `bun install --omit
-   dev` there, `pnpm install` only before P2). Do not rename the live `dist`
+   app `dist` folders and assemble `dist-next` (copy + `pnpm install --prod`
+   there until P2, then `bun install --omit=dev`). Do not rename the live `dist`
    until `dist-next` is complete. Then stop pm2,
    swap (`dist` → `dist2`, `dist-next` → `dist`), start configer, start
    panel. If either start fails: swap back, start both from the restored
@@ -592,20 +638,18 @@ Two mechanisms, both in HEAD, both required:
    directory to `PATH` for the rest of the runner. The zip is `bun-linux-x64`
    or `bun-windows-x64` only. An illegal instruction is `CPU_HOLD`, not a
    second download. Exit 0 when Bun already matches and the OS is not on hold.
-   A hold exits non-zero before any download. After P2 the install that
-   follows is `bun`
-   install` in a fresh process; `vite build` and `tsc` run through `bun
-   run`. One boot. A failed step writes `startup.last.json` and the runner
+   A hold exits non-zero before any download. The install that follows is
+   `pnpm install --frozen-lockfile`. After P2 that install is `bun install`
+   in a fresh process. `vite build` and `tsc` run through `bun run`. One
+   boot. A failed step writes `startup.last.json` and the runner
    exits non-zero without touching live `dist`.
 2. **The new startup app as fallback, plus shell `ensure_bun`.** If the
    bootstrap could not run (bad permissions, no network for GitHub
-   releases), the build fails, the last good `dist` starts (see "When an
-   upgrade fails"), and on the next boot HEAD's `startup.sh` / `startup.bat`
-   and the Node startup app run on the old Node with the old `node_modules`.
-   They repeat the bootstrap with better logging and a `git checkout --
-   pnpm-lock.yaml` before the pull, so a dirtied tree self-heals. Two boots.
-   The shell functions are a Bun-shaped harvest of the unmerged pinning
-   branch. They do not replace (1).
+   releases), the build fails and the last good `dist` starts (see "When an
+   upgrade fails"). `startup.sh` and `startup.bat` already install Bun and
+   pm2 (#115, #116). The Node startup app does not yet run the bootstrap
+   before `git pull`, and it does not yet run `git checkout -- pnpm-lock.yaml`.
+   That box is still open. The shell functions do not replace (1).
 
 ### Windows boxes
 
@@ -632,14 +676,15 @@ What the bootstrap does on Windows:
    contract as Ubuntu.
 2. Windows 7, Windows 8, Windows 8.1, and Windows 10 below build 17763:
    `OS_HOLD`. Do not download Bun. Do not change the branch. Exit non-zero
-   so the old startup does not swap `dist`. The next restart sees `OS_HOLD`
-   and starts the existing panel. A new OS on that computer, then a restart,
+   so the old startup does not swap `dist`. The next restart starts the
+   existing panel. The startup app does not yet skip the build on a hold.
+   That skip is an open P1 box. A new OS on that computer, then a restart,
    takes the jump.
 
 Rules that follow, and hold until the last legacy box is gone:
 
-- `bootstrap.js` and everything in `apps/startup/src` run on the **oldest Node in the
-  field**, not on Node 18. Until the inventory says otherwise, assume Node 12: no `??`
+- `bootstrap.js`, `run-update.js`, `last-record.js`, and everything in `apps/startup/src` run on the **oldest Node in the
+  field**, not on Node 18. The Node 12 job parses those three files. Until the inventory says otherwise, assume Node 12: no `??`
   or `?.`, no `fs/promises` import, CommonJS. They use **no dependency** that is not
   already in a legacy `node_modules`. Today that set is `fs-extra` 10, `moment`,
   `pino` 8, `pino-pretty` 10, `sudo-prompt` 9 — and pino is loaded through a
@@ -650,9 +695,9 @@ Rules that follow, and hold until the last legacy box is gone:
 - `bootstrap.js` writes only to stdout and a log file. The zip download and
   unzip both chat on stderr; redirect it. Stderr fails the build.
 - `bootstrap.js` is idempotent and fast when nothing differs; it runs on every update.
-- `.npmrc` gets `frozen-lockfile=true`, so a pnpm that cannot read the lockfile
-  errors out instead of rewriting it. Fail loud, stay clean. Today `.npmrc` only
-  has `link-workspace-packages = true`. The old lockfile 5.4 file stays until P7.
+- `source/.npmrc` sets `frozen-lockfile=true` and `engine-strict=false`.
+  A lockfile pnpm cannot read fails the install. The file stays unchanged.
+  The old lockfile 5.4 file stays until P7.
 - **CI proves the jump on every PR**, not a person on a spare box. A container with
   Node 18.12.1, pnpm 7.5.0 and a checkout of the tagged legacy commit runs the same
   two commands the legacy startup runs, `git pull` to the PR head and `pnpm run
@@ -674,6 +719,10 @@ Numbers that did not move since 2026-09-13 are left as they were. Re-check at
 the start of P4 and P5. The Latest column is the exact specifier to write in
 `package.json`. Write `1.2.3`. Do not write `^1.2.3`, `~1.2.3`, `*`, or
 `latest`.
+
+The Now column shows the range before the P0 pin. The tree now uses the
+exact version the lockfile already resolved. P4 and P5 write the Latest
+column as an exact version.
 
 **Root (`source/package.json`)**
 
@@ -769,10 +818,10 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 
 | Tool | Now | Target | Node | Note |
 |---|---|---|---|---|
-| Bun | absent | 1.4.2 pinned | | Runtime and package manager. GitHub release zip, sha256 in `versions.env`. One x64 binary. SSE4.2 required. No baseline fallback. |
+| Bun | absent on the fleet. This branch installs the pin. | 1.4.2 pinned | | Runtime and package manager. GitHub release zip, sha256 in `versions.env`. One x64 binary. SSE4.2 required. No baseline fallback. |
 | Node | 18.12.1 | leave in place | | Bootstrap host and `pnpm run build` hook. Not upgraded. Stops serving HTTP after P3. |
 | pnpm | 7.5.0 | leave in place | ≥18 | Legacy `pnpm run build` only. Lockfile 5.4 stays until P7. Not upgraded. |
-| pm2 | `latest` | 7.0.4 | ≥18 | pin it; `latest` on an unattended install is a risk we already carry. P3 spawns apps with the absolute Bun path. |
+| pm2 | 7.0.4 from the shell on this branch. Older boxes may still have the install-time `latest`. | 7.0.4 | ≥18 | The shell installs the pin. A mismatch warns and does not fail the build. P3 spawns apps with the absolute Bun path. |
 | typescript, ts-node (global) | removed from the install scripts | — | | P0. Workspace `typescript` and `ts-node` stay until later phases. |
 
 ## Things that change behaviour, not just versions
@@ -988,20 +1037,25 @@ P3 switches the interpreter.
 - [ ] Test on one Windows 10 box: can the autostart user write
       `%USERPROFILE%\.bun` with no UAC prompt? If not, decide between
       `sudo-prompt` (already a dependency) and a one-time on-site change,
-      before P1 merges
+      before the canary. This does not block the next topic pull request.
 - [x] Root `package.json`: `"build": "node apps/startup/run-update.js"`. The
       runner calls `bootstrap.js`, then each named step in "When an upgrade
       fails". `pnpm run build` stays the one command the legacy startup runs.
-      P1 still calls `pnpm install` after Bun is on `PATH`.
-- [x] `source/logs/startup.last.json`: write `step`, `ok`, `message`, `at`,
-      `node`, `pnpm`, `bun` on every step end. Czech one-line in `startup.log`
-      as well. Success clears a previous failure. `GET /status` on configer
-      and the backend include this record.
+      P1 calls `pnpm install --frozen-lockfile` after Bun is on `PATH`.
+- [x] `source/logs/startup.last.json`: the runner writes `step`, `ok`,
+      `message`, `at`, `node`, `pnpm`, and `bun` for `BOOTSTRAP_BUN`,
+      `INSTALL`, and each package build. `bootstrap.js` and `startup.bat`
+      write that same shape for `OS_HOLD` and `CPU_HOLD`. A success replaces
+      a stale failure. `GET /status` on configer and the backend includes
+      this record. `PULL`, `DIST_PREPARE`, `SWAP`, and the start steps stay
+      on the startup-app boxes below.
 - [ ] Assemble the new tree in `dist-next`. Do not rename live `dist` until
-      `dist-next` is complete. Swap, then start configer and panel. If either
-      start fails, swap back, start both from the restored `dist`, record
-      `START_CONFIGER` or `START_PANEL`. If a step before the swap fails, start
-      live `dist` unchanged. The rollback install already uses `../../../dist`.
+      `dist-next` is complete. The install in `dist` is `pnpm install --prod`
+      until P2, then `bun install --omit=dev`. Swap, then start configer and
+      panel. If either start fails, swap back, start both from the restored
+      `dist`, record `START_CONFIGER` or `START_PANEL`. If a step before the
+      swap fails, start live `dist` unchanged. The rollback install uses
+      `../../../dist` and `--prod` (#101).
 - [ ] Startup app: run the bootstrap again before its own `git pull`, after a
       `git checkout -- pnpm-lock.yaml` and with a working tree check; log the
       outcome through the same step record (not a second log file).
@@ -1009,19 +1063,25 @@ P3 switches the interpreter.
       if `git pull` prints `Already up to date`. Skip the build when `step` is
       `OS_HOLD` or `CPU_HOLD` and the OS is still in that hold. Write
       `dist/release.json` only after `START_PANEL` succeeds.
-- [ ] Startup app: report `node -v`, `pnpm -v`, `bun -v`, and
-      `startup.last.json` on the existing `GET /status`.
-- [ ] Legacy-image job runs the P1 head and asserts `bun -v` = 1.4.2 after
-      `pnpm run build`, empty stderr, clean tree. This is the real proof; it
-      runs on every PR from here on.
+- [x] Configer and the backend report `node`, `pnpm`, `bun`, and
+      `startup.last.json` on the existing `GET /status` (#111, #119).
+      The startup app does not serve that route.
+- [x] Legacy-image job runs `pnpm run build` from the `legacy-runtime` tag.
+      On #118 it exits 0, writes no stderr, and leaves a clean tree.
+      It runs on every PR.
+- [ ] The same job asserts `bun -v` is `1.4.2`.
+- [ ] The same job checks out the tip first. `git pull` prints
+      `Already up to date`. HEAD differs from `dist/release.json`.
+      The job asserts that the build runs.
 - [ ] Legacy-image job: force `BUILD_PANEL` to fail, assert `startup.last.json`
       names that step and carries the error, live `dist` is the previous build,
       both apps start from it. Repeat with `START_PANEL` after a good build.
       Repeat with `BOOTSTRAP_BUN` forced to fail (bad sha256): last good
       `dist` starts on Node.
-- [ ] Ubuntu: the user profile must be writable so the zip can land. Do not
-      require a writable `/usr/local` for the jump. `installAll.sh` is gone
-      (#54); do not mention it in new code.
+- [ ] Ubuntu canary: the user profile must be writable so the zip can land.
+      Do not require a writable `/usr/local` for the jump. `installAll.sh` is
+      gone (#54); do not mention it in new code. This does not block the next
+      topic pull request.
 
 Size: ~3.5 days, of which Windows is one and the failure/rollback contract is
 one. Phases stay on `feat/toolchain-jump`. They do not merge to `main` one by
@@ -1253,6 +1313,14 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | Baseline Bun zip? | Do not use it | It is an alias of the same x64 binary. An illegal instruction is `CPU_HOLD`. |
 | How are dependencies declared? | Exact versions only | Every registry specifier in `package.json` is `1.2.3`. No `^`, `~`, `*`, `latest`, or range. The lockfile matches. P0 pins current packages. Later phases write the new exact version. Renovate bumps stay exact. |
 
+## Decisions taken (2026-09-23)
+
+| Question | Answer | Consequence |
+|---|---|---|
+| How does #101 land on the jump branch? | Merge `main` in. Do not rebase. | `build` stays `run-update.js`. `dist` installs stay `pnpm install --prod`. The rollback directory stays `../../../dist`. The runner install is `pnpm install --frozen-lockfile`. Move `legacy-runtime` to `8c5ce84` only after this merge is on `feat/toolchain-jump`. |
+| Where does pm2 install live? | In `startup.sh` and `startup.bat` | The runner has no `BOOTSTRAP_PM2` step. A failed pm2 install does not stop the panel. `bootstrap.js` warns on a version mismatch. P3 decides the daemon. |
+| When do the physical box checks run? | At the canary | The Windows profile write and the Ubuntu profile write do not block the next topic pull request. |
+
 ## Open questions
 
 - [x] Windows 8: answered 2026-09-21. Hold in place. Do not park on another branch.
@@ -1342,3 +1410,8 @@ One line per landed step: date, PR, what moved.
 - 2026-09-22 — #119 — each update step writes `startup.last.json` with step,
   ok, message, at, node, pnpm, and bun. A success replaces a stale failure.
   GET /status on configer and the backend includes the record.
+- 2026-09-23 — merged #101 into the jump branch. `dist` keeps
+  `pnpm install --prod`. The runner install is `pnpm install --frozen-lockfile`.
+  `startup.bat` writes the full hold record through `last-record.js`.
+  The plan matches the branch. The `legacy-runtime` tag stays on `303b61e`
+  until this merge is on `feat/toolchain-jump`.

@@ -1025,3 +1025,48 @@ Context · Decision · Why · Gave up · Where
 - Where: `source/package.json`, `apps/startup/src/logic/start/ubuntu.js`,
   `apps/startup/src/logic/start/windows.js`, the ubuntu and windows install
   scripts, `docs/learnings.md`.
+
+## 2026-09-23 — The jump keeps the production dist install
+
+- Context: #101 made `dist` installs `pnpm install --prod` and pointed the
+  rollback install at `../../../dist`. The jump branch had already replaced
+  `build` with `run-update.js`.
+- Decision: merge `main` into `feat/toolchain-jump`. Do not rebase that
+  branch. `build` stays `node apps/startup/run-update.js`. The `INSTALL` step
+  is `pnpm install --frozen-lockfile`. `dist` installs stay
+  `pnpm install --prod`.
+- Why: a rebase would rewrite the published branch. Restoring the old `build`
+  script would drop the named steps. A full `pnpm install` in `dist` would
+  put the test tools back on the panel.
+- Gave up: moving the `legacy-runtime` tag in the same pull request. The tag
+  stays on `303b61e` until this merge is on `feat/toolchain-jump`. A tag that
+  points at #101 breaks `legacy-image` for a tip that does not contain #101.
+- Where: `apps/startup/run-update.js`, `apps/startup/src/logic/start/ubuntu.js`,
+  `apps/startup/src/logic/start/windows.js`,
+  [dependency upgrade plan](plans/dependency-upgrade.md).
+
+## 2026-09-23 — pm2 install stays in the shell
+
+- Context: the plan listed `BOOTSTRAP_PM2` as a runner step. The runner never
+  emits it. `startup.sh` and `startup.bat` already install pinned pm2.
+- Decision: there is no `BOOTSTRAP_PM2` step. A failed pm2 install does not
+  stop the panel. `bootstrap.js` compares `pm2 -v` and warns. P3 decides
+  whether the daemon runs on Bun.
+- Why: a runner failure would stop a box whose pm2 is old and still starts
+  the panel.
+- Gave up: a build that fails when pm2 is missing or old.
+- Where: `apps/startup/scripts/ubuntu/startup.sh`,
+  `apps/startup/scripts/windows/startup.bat`, `apps/startup/bootstrap.js`,
+  [dependency upgrade plan](plans/dependency-upgrade.md).
+
+## 2026-09-23 — Hold records use one shape
+
+- Context: `startup.bat` wrote an `OS_HOLD` record with `step`, `ok`, and
+  `message` only. It wrote no record for `CPU_HOLD`. `GET /status` returns
+  null when `at`, `node`, `pnpm`, or `bun` is missing.
+- Decision: `startup.bat` calls `last-record.js` for both holds. The record
+  has the same fields as the runner.
+- Why: a hold box must show the same record as a runner hold.
+- Gave up: a hand-written JSON line in the batch file.
+- Where: `apps/startup/scripts/windows/startup.bat`,
+  `apps/startup/last-record.js`.
