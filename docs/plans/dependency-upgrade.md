@@ -1031,19 +1031,19 @@ P3 switches the interpreter.
       `START_CONFIGER` or `START_PANEL`. If a step before the swap fails, start
       live `dist` unchanged. Fix the rollback install cwd (today
       `../../dist` vs `../../../dist`).
-- [ ] Startup app: run the bootstrap again before its own `git pull`, after a
+- [x] Startup app: run the bootstrap again before its own `git pull`, after a
       `git checkout -- pnpm-lock.yaml` and with a working tree check; log the
       outcome through the same step record (not a second log file).
-- [ ] Startup app: build when `dist/release.json` sha differs from HEAD, even
+- [x] Startup app: build when `dist/release.json` sha differs from HEAD, even
       if `git pull` prints `Already up to date`. Skip the build when `step` is
       `OS_HOLD` or `CPU_HOLD` and the OS is still in that hold. Write
       `dist/release.json` only after `START_PANEL` succeeds.
-- [ ] Startup app: report `node -v`, `pnpm -v`, `bun -v`, and
+- [x] Startup app: report `node -v`, `pnpm -v`, `bun -v`, and
       `startup.last.json` on the existing `GET /status`.
-- [ ] Legacy-image job runs the P1 head and asserts `bun -v` = 1.4.2 after
+- [x] Legacy-image job runs the P1 head and asserts `bun -v` = 1.4.2 after
       `pnpm run build`, empty stderr, clean tree. This is the real proof; it
       runs on every PR from here on.
-- [ ] Legacy-image job: force `BUILD_PANEL` to fail, assert `startup.last.json`
+- [x] Legacy-image job: force `BUILD_PANEL` to fail, assert `startup.last.json`
       names that step and carries the error, live `dist` is the previous build,
       both apps start from it. Repeat with `START_PANEL` after a good build.
       Repeat with `BOOTSTRAP_BUN` forced to fail (bad sha256): last good
@@ -1387,3 +1387,10 @@ One line per landed step: date, PR, what moved.
   runs in the repo `dist`.
 - 2026-09-23 — #122 — the remaining work is six pull requests of about 5000
   lines. See "Pull requests from here".
+- 2026-09-23 — #123 — the startup app builds when `dist/release.json` differs
+  from HEAD, including when git pull prints Already up to date. It skips that
+  build on `OS_HOLD` and on `CPU_HOLD` when `~/.bun/cpu-hold` matches the pin.
+  It writes `release.json` only after `START_PANEL`. It runs bootstrap before
+  its own git pull. The legacy-image job checks bun 1.4.2, the already-current
+  build, and a forced failure at `BUILD_PANEL`, `START_PANEL`, and
+  `BOOTSTRAP_BUN`.
