@@ -25,6 +25,8 @@ module.exports = {
   stepFinished: "Krok {step} skončil.",
   stepFailed: "Krok {step} se nezdařil.",
   distNextMissingBuild: "Sestavené soubory pro novou verzi chybí.",
+  treeDirty: "Pracovní strom není čistý.",
+  releaseWriteFailed: "Soubor release.json se nepodařilo zapsat.",
   startBegin: "Spouštím panel babyboxu.",
   startSucceeded: "Panel babyboxu byl spuštěn.",
   startFailed: "Panel babyboxu se nepodařilo spustit.",

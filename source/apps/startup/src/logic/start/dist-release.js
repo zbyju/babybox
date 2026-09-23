@@ -2,13 +2,19 @@
 // The live dist stays in place until that new tree is complete.
 // A failed start puts the previous dist back and starts both apps from it.
 // Rollback install uses the repo dist directory, not source/dist.
+// An already-current pull still builds when dist/release.json lacks HEAD.
+// OS_HOLD and CPU_HOLD skip that build while the hold is still true.
+// release.json is written only after START_PANEL succeeds.
+// Bootstrap runs again before git pull, after the lockfile restore.
 
 const childProcess = require("child_process");
+const os = require("os");
 const path = require("path");
 const util = require("util");
 
 const fs = require("fs-extra");
 
+const bootstrap = require("../../../bootstrap");
 const lastRecord = require("../../../last-record");
 const logger = require("../../logger");
 const strings = require("../../strings");
@@ -47,6 +53,20 @@ function createContext(options) {
     now: pick(opts.now, () => new Date()),
     versions: opts.versions,
     env: pick(opts.env, process.env),
+    home: pick(opts.home, os.homedir()),
+    release: pick(opts.release, os.release()),
+    arch: pick(opts.arch, process.arch),
+    bootstrapRun: pick(opts.bootstrapRun, bootstrap.run),
+    bootstrapSpawn: opts.bootstrapSpawn,
+    httpsGet: opts.httpsGet,
+    headSha: opts.headSha,
+    bunVersion: opts.bunVersion,
+    wantedBun: opts.wantedBun,
+    versionsPath: pick(
+      opts.versionsPath,
+      path.join(__dirname, "../../../versions.env")
+    ),
+    spawnSync: pick(opts.spawnSync, childProcess.spawnSync),
     requireConfigerBuild: opts.requireConfigerBuild === true,
     paths: {
       source: path.join(repoRoot, "source"),
@@ -156,10 +176,282 @@ async function update(ctx) {
   }
 }
 
+function lastPath(ctx) {
+  return path.join(path.dirname(ctx.logPath), "startup.last.json");
+}
+
+function readLast(ctx) {
+  try {
+    const record = JSON.parse(fs.readFileSync(lastPath(ctx), "utf8"));
+    if (!record || typeof record.step !== "string") {
+      return null;
+    }
+    return record;
+  } catch (err) {
+    return null;
+  }
+}
+
+function cpuHoldFile(ctx) {
+  return path.join(ctx.home, ".bun", "cpu-hold");
+}
+
+function readCpuHold(ctx) {
+  try {
+    if (!fs.existsSync(cpuHoldFile(ctx))) {
+      return "";
+    }
+    return fs.readFileSync(cpuHoldFile(ctx), "utf8").trim();
+  } catch (err) {
+    return "";
+  }
+}
+
+function wantedBun(ctx) {
+  if (ctx.wantedBun !== undefined && ctx.wantedBun !== null) {
+    return String(ctx.wantedBun).trim();
+  }
+  try {
+    const parsed = bootstrap.readVersions(
+      fs.readFileSync(ctx.versionsPath, "utf8")
+    );
+    return parsed.BUN_VERSION || "";
+  } catch (err) {
+    return "";
+  }
+}
+
+function firstLine(value) {
+  const text = value === undefined || value === null ? "" : String(value);
+  return text.split(/\r?\n/)[0].trim();
+}
+
+function installedBunVersion(ctx) {
+  if (ctx.bunVersion !== undefined && ctx.bunVersion !== null) {
+    return String(ctx.bunVersion).trim();
+  }
+  const exeName = ctx.platform === "win32" ? "bun.exe" : "bun";
+  const exePath = path.join(ctx.home, ".bun", "bin", exeName);
+  if (!fs.existsSync(exePath)) {
+    return "";
+  }
+  try {
+    const result = ctx.spawnSync(exePath, ["-v"], {
+      env: ctx.env,
+      encoding: "utf8",
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: false,
+    });
+    if (!result || result.status !== 0) {
+      return "";
+    }
+    return firstLine(result.stdout);
+  } catch (err) {
+    return "";
+  }
+}
+
+function bunMatches(ctx) {
+  const wanted = wantedBun(ctx);
+  const have = installedBunVersion(ctx);
+  if (wanted === "") {
+    return false;
+  }
+  if (have === wanted || have === `v${wanted}`) {
+    return true;
+  }
+  return false;
+}
+
+function releasePath(ctx) {
+  return path.join(ctx.paths.dist, "release.json");
+}
+
+function releaseHasSha(ctx, sha) {
+  if (!sha) {
+    return false;
+  }
+  try {
+    if (!ctx.fs.existsSync(releasePath(ctx))) {
+      return false;
+    }
+    return String(ctx.fs.readFileSync(releasePath(ctx), "utf8")).indexOf(sha) !== -1;
+  } catch (err) {
+    return false;
+  }
+}
+
+function writeRelease(ctx, sha) {
+  if (!sha) {
+    throw new Error(strings.releaseWriteFailed);
+  }
+  ctx.fs.writeFileSync(releasePath(ctx), `${JSON.stringify({ sha })}\n`);
+}
+
+// The file bootstrap wrote must name this pin. A new BUN_VERSION builds again.
+function stillOnHold(ctx) {
+  const record = readLast(ctx);
+  if (!record || record.ok !== true) {
+    return false;
+  }
+  if (record.step === "OS_HOLD") {
+    return bootstrap.isOsHold(ctx.platform, ctx.release);
+  }
+  if (record.step === "CPU_HOLD") {
+    const wanted = wantedBun(ctx);
+    const pinned = readCpuHold(ctx);
+    return wanted !== "" && pinned === wanted;
+  }
+  return false;
+}
+
+function needsBuild(ctx, previous, updateRes, boot, sha) {
+  if (updateRes === UPDATE_CHANGED) {
+    return true;
+  }
+  if (!ctx.fs.existsSync(ctx.paths.dist)) {
+    return true;
+  }
+  if (!releaseHasSha(ctx, sha)) {
+    return true;
+  }
+  if (!bunMatches(ctx)) {
+    return true;
+  }
+  if (
+    previous &&
+    previous.ok === false &&
+    previous.step !== "OS_HOLD" &&
+    previous.step !== "CPU_HOLD"
+  ) {
+    return true;
+  }
+  if (boot.code !== 0) {
+    return true;
+  }
+  if (ctx.requireConfigerBuild && !ctx.fs.existsSync(ctx.paths.configerDist)) {
+    return true;
+  }
+  return false;
+}
+
+async function git(ctx, command) {
+  return ctx.exec(command, { cwd: ctx.paths.source });
+}
+
+async function prepareTree(ctx) {
+  try {
+    await git(ctx, "git checkout -- pnpm-lock.yaml");
+  } catch (err) {
+    remember(ctx, "PULL", false, errorText(err));
+    return false;
+  }
+  try {
+    const result = await git(ctx, "git status --porcelain");
+    const dirty = String(result.stdout || "").trim();
+    if (dirty !== "") {
+      remember(ctx, "PULL", false, `${strings.treeDirty} ${dirty}`);
+      return false;
+    }
+  } catch (err) {
+    remember(ctx, "PULL", false, errorText(err));
+    return false;
+  }
+  return true;
+}
+
+function holdStep(text) {
+  if (text.indexOf("Krok OS_HOLD") !== -1) {
+    return "OS_HOLD";
+  }
+  if (text.indexOf("Krok CPU_HOLD") !== -1) {
+    return "CPU_HOLD";
+  }
+  return "";
+}
+
+function bootstrapOptions(ctx, stdout) {
+  const built = {
+    env: ctx.env,
+    stdout,
+    logPath: ctx.logPath,
+    now: ctx.now,
+    platform: ctx.platform,
+    arch: ctx.arch,
+    release: ctx.release,
+    home: ctx.home,
+    versionsPath: ctx.versionsPath,
+  };
+  if (ctx.bootstrapSpawn !== undefined) {
+    built.spawnSync = ctx.bootstrapSpawn;
+  }
+  if (ctx.httpsGet !== undefined) {
+    built.httpsGet = ctx.httpsGet;
+  }
+  if (ctx.versions !== undefined) {
+    built.versions = ctx.versions;
+  }
+  return built;
+}
+
+async function bootstrapBeforePull(ctx) {
+  begin(ctx, "BOOTSTRAP_BUN");
+  let text = "";
+  const stdout = {
+    write(chunk) {
+      text += String(chunk);
+      return true;
+    },
+  };
+  let code;
+  try {
+    code = await ctx.bootstrapRun(bootstrapOptions(ctx, stdout));
+  } catch (err) {
+    fail(ctx, "BOOTSTRAP_BUN", err);
+    return { code: 1, hold: false };
+  }
+  if (typeof code !== "number") {
+    code = 1;
+  }
+  if (code !== 0) {
+    const hold = holdStep(text);
+    if (hold !== "") {
+      const current = readLast(ctx);
+      if (!current || current.step !== hold) {
+        remember(ctx, hold, true, text);
+      }
+      return { code, hold: true };
+    }
+    const err = new Error(strings.stepFailed.replace("{step}", "BOOTSTRAP_BUN"));
+    err.stderr = text;
+    fail(ctx, "BOOTSTRAP_BUN", err);
+    return { code, hold: false };
+  }
+  succeed(ctx, "BOOTSTRAP_BUN", text);
+  return { code: 0, hold: false };
+}
+
+async function headSha(ctx) {
+  if (ctx.headSha !== undefined && ctx.headSha !== null) {
+    return String(ctx.headSha).trim();
+  }
+  const result = await git(ctx, "git rev-parse HEAD");
+  return String(result.stdout || "").trim();
+}
+
+async function startPrevious(ctx) {
+  if (ctx.fs.existsSync(ctx.paths.dist)) {
+    return startLive(ctx);
+  }
+  return false;
+}
+
 async function build(ctx) {
   try {
     const { stderr, stdout } = await ctx.exec(`${ctx.pnpm} run build`, {
       cwd: ctx.paths.source,
+      maxBuffer: 32 * 1024 * 1024,
     });
     // The old startup fails the update on any build stderr.
     if (stderr) {
@@ -203,7 +495,10 @@ async function assembleDistNext(ctx) {
       path.join(ctx.paths.distNext, "package.json")
     );
     // Install here, before any rename of the live dist.
-    await ctx.exec(`${ctx.pnpm} install`, { cwd: ctx.paths.distNext });
+    await ctx.exec(`${ctx.pnpm} install`, {
+      cwd: ctx.paths.distNext,
+      maxBuffer: 32 * 1024 * 1024,
+    });
   } catch (err) {
     try {
       fileSystem.rmSync(ctx.paths.distNext, { recursive: true, force: true });
@@ -354,6 +649,12 @@ async function startNew(ctx) {
   try {
     begin(ctx, "START_PANEL");
     const output = await startOne(ctx, "start:main");
+    try {
+      writeRelease(ctx, await headSha(ctx));
+    } catch (err) {
+      // The panel is up. A missing sha makes the next boot build again.
+      ctx.logger.error("START_PANEL", strings.releaseWriteFailed, err);
+    }
     succeed(ctx, "START_PANEL", output);
     return "";
   } catch (err) {
@@ -395,7 +696,10 @@ async function swapBack(ctx) {
   }
   try {
     // Repo dist, not source/dist.
-    await ctx.exec(`${ctx.pnpm} install`, { cwd: ctx.paths.dist });
+    await ctx.exec(`${ctx.pnpm} install`, {
+      cwd: ctx.paths.dist,
+      maxBuffer: 32 * 1024 * 1024,
+    });
   } catch (err) {
     ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
   }
@@ -434,17 +738,29 @@ async function runRelease(ctx) {
 
 async function onStartup(options) {
   const ctx = createContext(options);
+  const previous = readLast(ctx);
+  const ready = await prepareTree(ctx);
+  if (!ready) {
+    return startPrevious(ctx);
+  }
+  const boot = await bootstrapBeforePull(ctx);
   const updateRes = await update(ctx);
-  const distMissing = !ctx.fs.existsSync(ctx.paths.dist);
-  const configerMissing =
-    ctx.requireConfigerBuild && !ctx.fs.existsSync(ctx.paths.configerDist);
-  if (updateRes === UPDATE_CHANGED || distMissing || configerMissing) {
+  if (stillOnHold(ctx)) {
+    return startPrevious(ctx);
+  }
+  if (updateRes === UPDATE_ERROR) {
+    return startPrevious(ctx);
+  }
+  let sha = "";
+  try {
+    sha = await headSha(ctx);
+  } catch (err) {
+    sha = "";
+  }
+  if (needsBuild(ctx, previous, updateRes, boot, sha)) {
     const built = await build(ctx);
     if (!built) {
-      if (ctx.fs.existsSync(ctx.paths.dist)) {
-        return startLive(ctx);
-      }
-      return false;
+      return startPrevious(ctx);
     }
     return runRelease(ctx);
   }
