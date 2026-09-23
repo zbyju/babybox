@@ -28,10 +28,11 @@ show_logs() {
 
 on_exit() {
   git update-index --no-skip-worktree apps/panel/package.json >/dev/null 2>&1 || true
+  git update-index --no-skip-worktree apps/backend/package.json >/dev/null 2>&1 || true
   git update-index --no-skip-worktree package.json >/dev/null 2>&1 || true
   git update-index --no-skip-worktree apps/startup/versions.env >/dev/null 2>&1 || true
-  git checkout -- apps/panel/package.json package.json apps/startup/versions.env >/dev/null 2>&1 || true
-  rm -f apps/panel/fail-panel-build.js fail-panel-start.js
+  git checkout -- apps/panel/package.json apps/backend/package.json package.json apps/startup/versions.env >/dev/null 2>&1 || true
+  rm -f apps/panel/fail-panel-build.js apps/backend/omit-dist-entry.js
   pm2 delete configer >/dev/null 2>&1 || true
   pm2 delete babybox >/dev/null 2>&1 || true
 }
@@ -67,7 +68,7 @@ hide_local_files() {
   touch "$exclude"
   for pattern in \
     "source/apps/panel/fail-panel-build.js" \
-    "source/fail-panel-start.js"
+    "source/apps/backend/omit-dist-entry.js"
   do
     if ! grep -qxF "$pattern" "$exclude"; then
       printf '%s\n' "$pattern" >>"$exclude"
@@ -195,22 +196,6 @@ assert_apps() {
   fi
 }
 
-start_both() {
-  local index_js
-  stop_apps
-  pnpm -F babybox-panel-configer start
-  index_js="$ROOT/dist/index.js"
-  if command -v cygpath >/dev/null 2>&1; then
-    index_js="$(cygpath -w "$index_js")"
-  fi
-  (
-    cd "$ROOT/dist"
-    pnpm install
-    pm2 start "$index_js" -n babybox
-  )
-  assert_apps
-}
-
 skip_worktree() {
   git update-index --skip-worktree "$1"
 }
@@ -239,10 +224,15 @@ break_panel_build() {
   patch_script apps/panel/package.json build "node fail-panel-build.js"
 }
 
-break_panel_start() {
-  printf '%s\n' "process.stderr.write(\"panel start broke\\n\");" "process.exit(1);" \
-    >fail-panel-start.js
-  patch_script package.json start:main "node fail-panel-start.js"
+# Drop the new backend entry after tsc.
+# seed_previous already copied the old entry into the live dist.
+# start:main stays the real script, so rollback can start that dist.
+break_new_dist_entry() {
+  cat >apps/backend/omit-dist-entry.js <<'EOF'
+const fs = require("fs");
+fs.rmSync("dist/index.js");
+EOF
+  patch_script apps/backend/package.json build "tsc --build && node omit-dist-entry.js"
 }
 
 break_bun_sha() {
@@ -310,14 +300,14 @@ stop_apps
 
 echo "forced START_PANEL restores the previous dist"
 seed_previous
-break_panel_start
+break_new_dist_entry
 assert_clean
 run_startup || true
-assert_record "START_PANEL" "panel start broke|start:main"
+assert_record "START_PANEL" "Script not found|start:main"
 assert_marker
-restore_tracked package.json
-rm -f fail-panel-start.js
-start_both
+assert_apps
+restore_tracked apps/backend/package.json
+rm -f apps/backend/omit-dist-entry.js
 stop_apps
 
 echo "forced BOOTSTRAP_BUN keeps the previous dist"
