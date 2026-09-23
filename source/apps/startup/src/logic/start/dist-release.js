@@ -702,7 +702,7 @@ async function swapBack(ctx) {
     ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
   }
   try {
-    // Repo dist, not source/dist.
+    // --no-save keeps the copied lock and writes nothing on stderr.
     await ctx.exec(`${ctx.bun} install --no-save`, {
       cwd: ctx.paths.dist,
       maxBuffer: 32 * 1024 * 1024,
