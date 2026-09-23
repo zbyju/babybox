@@ -8,6 +8,7 @@ const {
   collapseMessage,
   commandMessage,
   resolveVersions,
+  writeCli,
   writeRecord,
 } = require("./last-record");
 
@@ -95,6 +96,61 @@ describe("startup last record", () => {
         buildRecord("INSTALL", true, "", WHEN, versions())
       );
       expect(fs.existsSync(path.join(root, "startup.last.json"))).toBe(false);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("writes a full record from the command arguments", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "babybox-last-"));
+    const logPath = path.join(root, "startup.log");
+    const spawnSync = () => {
+      throw new Error("spawn");
+    };
+    try {
+      const code = writeCli(
+        [
+          "node",
+          "last-record.js",
+          "OS_HOLD",
+          "true",
+          "Krok OS_HOLD. 6.2.9200",
+          logPath,
+        ],
+        { versions: versions(), now: () => WHEN, spawnSync }
+      );
+      expect(code).toBe(0);
+      expect(
+        writeCli(["node", "last-record.js", "OS_HOLD", "true", "hi"])
+      ).toBe(1);
+      const blocked = path.join(root, "not-a-directory");
+      fs.writeFileSync(blocked, "file");
+      expect(
+        writeCli(
+          [
+            "node",
+            "last-record.js",
+            "CPU_HOLD",
+            "true",
+            "Krok CPU_HOLD.",
+            path.join(blocked, "startup.log"),
+          ],
+          { versions: versions(), now: () => WHEN, spawnSync }
+        )
+      ).toBe(1);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "startup.last.json"), "utf8")
+        )
+      ).toEqual({
+        step: "OS_HOLD",
+        ok: true,
+        message: "Krok OS_HOLD. 6.2.9200",
+        at: WHEN.toISOString(),
+        node: "v18.12.1",
+        pnpm: "7.5.0",
+        bun: "1.4.2",
+      });
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
