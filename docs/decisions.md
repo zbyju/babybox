@@ -1014,3 +1014,21 @@ Context · Decision · Why · Gave up · Where
   or at the process. Also gave up splitting `bun.lock` out of P2.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Pull
   requests from here".
+
+## 2026-09-23 — The Windows login user can write the Bun folder
+
+- Context: Bun lands in `%USERPROFILE%\.bun`. A UAC prompt on that write
+  would stop an unattended boot. The plan left the write as an open question
+  until one Windows box was tested.
+- Decision: the logged-in user can create that folder with no UAC prompt.
+  Tested 2026-09-23. The account was `juricj`. The usual fleet account name
+  is `babybox`. This box uses `juricj`. The command ran at Medium integrity.
+  `mkdir` of `%USERPROFILE%\.bun\bin` and a probe file succeeded. Windows
+  showed no consent dialog.
+- Why: the folder is inside the profile of the user who is logged in. The
+  account name is not part of the path. `sudo-prompt` is not used for this
+  write. No on-site permission change.
+- Gave up: installing Bun with elevation, and a one-time ACL change on the
+  box.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P1 and
+  "Open questions".

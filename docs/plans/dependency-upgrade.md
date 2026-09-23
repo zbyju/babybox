@@ -620,8 +620,10 @@ Half the fleet. Facts that shape the bootstrap there:
   they actually run. The `GET /status` fields from P1 will tell.
 - **The Bun zip extracts under the user profile.** No `nvm use`, no Program
   Files symlink, no global npm after a Node switch. That removes the UAC
-  prompt that Node 24 would have needed. P1 still tests that the autostart
-  user can write `%USERPROFILE%\.bun`.
+  prompt that Node 24 would have needed. Tested 2026-09-23 on one Windows
+  box. The logged-in user wrote `%USERPROFILE%\.bun` at Medium integrity
+  with no UAC prompt. That account was `juricj`. The usual fleet account
+  name is `babybox`. The path is the profile of whoever is logged in.
 - **nvm-windows stays as the leftover Node host.** The jump does not call
   `nvm use`. If pm2 cannot run as a Bun process, the daemon stays on the
   existing Node and only the app interpreter changes in P3.
@@ -1013,10 +1015,12 @@ P3 switches the interpreter.
 - [x] Windows 7, Windows 8, Windows 8.1, and Windows 10 below build 17763:
       `OS_HOLD` before any download. Do not change the git branch. Exit
       non-zero with empty stderr. Write `startup.last.json` with `ok` true.
-- [ ] Test on one Windows 10 box: can the autostart user write
+- [x] Test on one Windows 10 box: can the autostart user write
       `%USERPROFILE%\.bun` with no UAC prompt? If not, decide between
       `sudo-prompt` (already a dependency) and a one-time on-site change,
-      before P1 merges
+      before P1 merges. Tested 2026-09-23. Yes. The account on that box was
+      `juricj`, not the usual `babybox` name. Medium integrity. No UAC
+      prompt. Do not use `sudo-prompt` for this write. No on-site change.
 - [x] Root `package.json`: `"build": "node apps/startup/run-update.js"`. The
       runner calls `bootstrap.js`, then each named step in "When an upgrade
       fails". `pnpm run build` stays the one command the legacy startup runs.
@@ -1311,14 +1315,19 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | Does P3 join P2? | No | A red legacy-image job then points at install or at the process. |
 | What if the type contract passes 5000 lines? | The panel is the follow-up | Configer, the backend, config-schema, and the ESM move stay in the first contract pull request. |
 | When do TypeScript 7 and Renovate land? | After the six | TypeScript 7 is a short pull request. Renovate waits until after the merge to `main`. |
+| Can the autostart user write `%USERPROFILE%\.bun`? | Yes, with no UAC prompt | Tested 2026-09-23 on one Windows box as `juricj` at Medium integrity. The usual fleet account name is `babybox`. This box uses `juricj`. The folder is that user's profile. Do not use `sudo-prompt`. No on-site permission change. |
 
 ## Open questions
 
 - [x] Windows 8: answered 2026-09-21. Hold in place. Do not park on another branch.
-- [ ] Can the autostart user write `%USERPROFILE%\.bun` with no UAC prompt on the
-      Windows 10/11 boxes? Test on one box before the jump commit is a canary.
-      The old `nvm use` UAC question is gone unless pm2 cannot run on Bun and
-      we have to switch Node.
+- [x] Can the autostart user write `%USERPROFILE%\.bun` with no UAC prompt on the
+      Windows 10/11 boxes? Yes. Tested 2026-09-23 on one box as `juricj` at
+      Medium integrity. The usual account name `babybox` was not the account
+      on that box. `mkdir` of `%USERPROFILE%\.bun\bin` and a probe file
+      succeeded. Windows showed no consent dialog. Do not use `sudo-prompt`
+      for this write. No on-site permission change. The old `nvm use` UAC
+      question stays gone unless pm2 cannot run on Bun and we have to switch
+      Node.
 - [ ] What Node do the Windows boxes actually run? nvm-windows "mimicked" 18.12.1, but
       Node 18 does not install on Windows 7/8. Sets the syntax floor for
       `bootstrap.js`; assumed Node 12 until known.
@@ -1421,3 +1430,8 @@ One line per landed step: date, PR, what moved.
   on stderr, so the stderr rule stays. `bun audit` reports 79 vulnerabilities
   (2 critical, 27 high, 38 moderate, 12 low). The Bun job is the only build
   job. Node 18 only hosts the legacy-image job.
+- 2026-09-23 — #125 — the logged-in Windows user can write
+  `%USERPROFILE%\.bun` with no UAC prompt. Tested as `juricj` at Medium
+  integrity. The usual account name `babybox` was not the account on that
+  box. The jump does not use `sudo-prompt` for this write. No on-site
+  permission change.
