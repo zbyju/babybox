@@ -1387,3 +1387,10 @@ One line per landed step: date, PR, what moved.
   runs in the repo `dist`.
 - 2026-09-23 — #122 — the remaining work is six pull requests of about 5000
   lines. See "Pull requests from here".
+- 2026-09-23 — #123 — the startup app builds when `dist/release.json` differs
+  from HEAD, including when git pull prints Already up to date. It skips that
+  build on `OS_HOLD` and on `CPU_HOLD` when `~/.bun/cpu-hold` matches the pin.
+  It writes `release.json` only after `START_PANEL`. It runs bootstrap before
+  its own git pull. The legacy-image job checks bun 1.4.2, the already-current
+  build, and a forced failure at `BUILD_PANEL`, `START_PANEL`, and
+  `BOOTSTRAP_BUN`.
