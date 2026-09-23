@@ -59,11 +59,11 @@ jobs:
         with:
           version: 7.5.0
 
+      # Runner nevola pnpm install. Cache pnpm store po jobu spadne,
+      # protoze ta slozka neexistuje.
       - uses: actions/setup-node@v4
         with:
           node-version: 18.12.1
-          cache: pnpm
-          cache-dependency-path: source/pnpm-lock.yaml
 
       - name: pnpm run build
         shell: bash
