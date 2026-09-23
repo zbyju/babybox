@@ -43,5 +43,6 @@ pnpm dev     # start all services
 pnpm build   # build for production
 ```
 
-Use pnpm 7.5.0 on Node 18. A newer pnpm rewrites the lockfile, and every box installs
-with `--frozen-lockfile`. See [docs/learnings.md](docs/learnings.md).
+Use pnpm 7.5.0 on Node 18. A newer pnpm rewrites the lockfile. The box's workspace
+install uses `--frozen-lockfile`. The runtime folder installs production dependencies
+only. See [docs/learnings.md](docs/learnings.md).

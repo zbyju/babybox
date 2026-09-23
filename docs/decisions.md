@@ -1000,3 +1000,28 @@ Context · Decision · Why · Gave up · Where
 - Gave up: caret and tilde ranges.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
   constraints". The P0 pin is #109.
+
+## 2026-09-21 — The runtime install skips devDependencies
+
+- Context: startup copies the backend `package.json` into repo-root `dist/` and
+  runs `pnpm install`. That manifest lists jest, newman, eslint, typescript, and
+  the `@types` packages as devDependencies. The running server imports none of
+  them. `start:main` runs the same install again on every boot. The workspace
+  install inside `pnpm run build` is a separate step. It has to keep
+  devDependencies, because the box compiles with `tsc`, `vue-tsc`, and `vite`.
+- Decision: the `dist/` installs are `pnpm install --prod`. The workspace
+  installs the box runs (`build`, `install-all.sh`, `install.sh`, `install.bat`)
+  are `pnpm install --frozen-lockfile`. The rollback install uses
+  `../../../dist`, the same directory as the install it rolls back.
+- Why: `--prod` is the pnpm 7.5.0 flag that skips devDependencies. The backend
+  already splits the two sets. `--frozen-lockfile` is what CI already requires
+  for the workspace, and it skips resolution when the lockfile matches. The
+  rollback command was aimed at `source/dist`, so a failed update restored the
+  runtime folder and then installed dependencies in a different folder.
+- Gave up: a production install of the workspace. The compiler lives in
+  devDependencies, and the box still builds after `git pull`. Also left the
+  install in `start:main`. A boot that finds `dist/` without `node_modules`
+  still needs it, and with `--prod` that install no longer fetches the test tools.
+- Where: `source/package.json`, `apps/startup/src/logic/start/ubuntu.js`,
+  `apps/startup/src/logic/start/windows.js`, the ubuntu and windows install
+  scripts, `docs/learnings.md`.
