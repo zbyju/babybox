@@ -1345,3 +1345,7 @@ One line per landed step: date, PR, what moved.
 - 2026-09-22 — #119 — each update step writes `startup.last.json` with step,
   ok, message, at, node, pnpm, and bun. A success replaces a stale failure.
   GET /status on configer and the backend includes the record.
+- 2026-09-23 — #121 — the startup app assembles the new build in `dist-next`
+  and swaps it into `dist` only after that tree is complete. A failed start
+  restores the previous `dist` and starts both apps. The rollback install
+  runs in the repo `dist`.
