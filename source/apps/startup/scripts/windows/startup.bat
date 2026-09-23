@@ -88,12 +88,8 @@ call pnpm run start 2>>"%LOG_FILE%"
 exit /b 1
 
 :write_os_hold
-call :write_last OS_HOLD "Tento system nespusti Bun. Krok OS_HOLD. Vydani !OS_RELEASE!."
-exit /b 0
-
-:write_last
 if not exist "%SOURCE_DIR%\logs" mkdir "%SOURCE_DIR%\logs"
-node "%STARTUP_DIR%\last-record.js" %~1 true "%~2" "%SOURCE_DIR%\logs\startup.log"
+node "%STARTUP_DIR%\last-record.js" OS_HOLD true "Tento system nespusti Bun. Krok OS_HOLD. Vydani !OS_RELEASE!." "%SOURCE_DIR%\logs\startup.log"
 if errorlevel 1 call :log "startup.last.json se nepodarilo zapsat."
 exit /b 0
 
@@ -321,7 +317,9 @@ exit /b 1
 :cpu_hold
 if not exist "%USERPROFILE%\.bun" mkdir "%USERPROFILE%\.bun"
 >"%HOLD_FILE%" echo !BUN_VERSION!
-call :write_last CPU_HOLD "Procesor nespusti Bun. Krok CPU_HOLD."
+if not exist "%SOURCE_DIR%\logs" mkdir "%SOURCE_DIR%\logs"
+node "%STARTUP_DIR%\last-record.js" CPU_HOLD true "Procesor nespusti Bun. Krok CPU_HOLD." "%SOURCE_DIR%\logs\startup.log"
+if errorlevel 1 call :log "startup.last.json se nepodarilo zapsat."
 call :log "Procesor nespusti Bun. Krok CPU_HOLD."
 exit /b 1
 

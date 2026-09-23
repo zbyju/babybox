@@ -144,7 +144,7 @@ describe("run-update", () => {
     // A later success replaces a stale failure record.
     fs.writeFileSync(
       path.join(fx.root, "startup.last.json"),
-      '{"step":"BUILD_PANEL","ok":false,"message":"old"}\n'
+      "{\"step\":\"BUILD_PANEL\",\"ok\":false,\"message\":\"old\"}\n"
     );
     const calls = [];
     const paths = [];
@@ -233,7 +233,7 @@ describe("run-update", () => {
     const fx = createFixture();
     fs.writeFileSync(
       path.join(fx.root, "startup.last.json"),
-      '{"step":"OS_HOLD","ok":true}\n'
+      "{\"step\":\"OS_HOLD\",\"ok\":true}\n"
     );
     const spawnSync = () => {
       throw new Error("pnpm must not run");
@@ -256,7 +256,7 @@ describe("run-update", () => {
 
   it("does not name CPU_HOLD as a bootstrap failure", async () => {
     const fx = createFixture();
-    const previous = '{"step":"CPU_HOLD","ok":true}\n';
+    const previous = "{\"step\":\"CPU_HOLD\",\"ok\":true}\n";
     fs.writeFileSync(path.join(fx.root, "startup.last.json"), previous);
     const spawnSync = () => {
       throw new Error("pnpm must not run");
