@@ -995,7 +995,7 @@ P3 switches the interpreter.
       runner calls `bootstrap.js`, then each named step in "When an upgrade
       fails". `pnpm run build` stays the one command the legacy startup runs.
       P1 still calls `pnpm install` after Bun is on `PATH`.
-- [ ] `source/logs/startup.last.json`: write `step`, `ok`, `message`, `at`,
+- [x] `source/logs/startup.last.json`: write `step`, `ok`, `message`, `at`,
       `node`, `pnpm`, `bun` on every step end. Czech one-line in `startup.log`
       as well. Success clears a previous failure. `GET /status` on configer
       and the backend include this record.
@@ -1342,3 +1342,6 @@ One line per landed step: date, PR, what moved.
 - 2026-09-22 — #118 — root `build` runs `node apps/startup/run-update.js`.
   The runner calls `bootstrap.js`, then `pnpm install`, then each package build.
   A hold exits before install. A failed step stops the chain.
+- 2026-09-22 — #119 — each update step writes `startup.last.json` with step,
+  ok, message, at, node, pnpm, and bun. A success replaces a stale failure.
+  GET /status on configer and the backend includes the record.
