@@ -315,6 +315,13 @@ stop_apps
 
 echo "forced BOOTSTRAP_BUN keeps the previous dist"
 seed_previous
+# Bun already matches the pin, so bootstrap does not download.
+# Remove it so the bad sha256 is checked.
+bun_home="$(node -e "const os=require('os');const path=require('path');process.stdout.write(path.join(os.homedir(),'.bun'))")"
+if command -v cygpath >/dev/null 2>&1; then
+  bun_home="$(cygpath -u "$bun_home")"
+fi
+rm -rf "$bun_home"
 break_bun_sha
 assert_clean
 run_startup || true
