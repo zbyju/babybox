@@ -79,6 +79,10 @@ function Expect-OsHold([string]$Release) {
   $obj = [IO.File]::ReadAllText($file) | ConvertFrom-Json
   if ($obj.step -ne "OS_HOLD") { Fail "step $($obj.step)"; return }
   if ($obj.ok -ne $true) { Fail "ok is not true"; return }
+  if ($null -eq $obj.at -or $null -eq $obj.node -or $null -eq $obj.pnpm -or $null -eq $obj.bun) {
+    Fail "record is missing at, node, pnpm, or bun"
+    return
+  }
   $message = [string]$obj.message
   if ($message -notlike "*$Release*") { Fail "message '$message'"; return }
   if ($message -notlike "*OS_HOLD*") { Fail "message '$message'"; return }
@@ -230,6 +234,7 @@ function Invoke-Case {
   }
 
   Copy-Item $BatSrc (Join-Path $startup "scripts\windows\startup.bat") -Force
+  Copy-Item (Join-Path $StartupSrc "scripts\windows\record-hold.bat") (Join-Path $startup "scripts\windows\record-hold.bat") -Force
 
   Write-Cmd (Join-Path $stubDir "curl.cmd") @'
 @echo off
@@ -296,6 +301,17 @@ exit /b 1
 @echo off
 >>"%CALLS%" echo git %*
 exit /b 1
+'@
+  Write-Cmd (Join-Path $stubDir "node.cmd") @'
+@echo off
+setlocal EnableDelayedExpansion
+>>"%CALLS%" echo node %*
+if "%~2"=="" exit /b 1
+if "%~5"=="" exit /b 1
+for %%D in ("%~5") do set "DIR=%%~dpD"
+if not exist "!DIR!" mkdir "!DIR!"
+>"!DIR!startup.last.json" echo {"step":"%~2","ok":true,"message":"%~4","at":"2026-09-23T00:00:00.000Z","node":"v18.12.1","pnpm":"7.5.0","bun":""}
+exit /b 0
 '@
   Write-Cmd (Join-Path $stubDir "bun.cmd") @'
 @echo off
@@ -563,6 +579,7 @@ $script:RewriteSha = $true
 Invoke-Case
 Expect-Called "bun-windows-x64.zip"
 Expect-Log "CPU_HOLD"
+Expect-Called "last-record.js"
 Expect-NoLog "je nainstalovany"
 Expect-Hold $script:BunVersion
 Expect-Called "pnpm run start"
@@ -594,6 +611,7 @@ Expect-NotCalled "npm install"
 Expect-NotCalled "git "
 Expect-Log "OS_HOLD"
 Expect-Log $script:OsRelease
+Expect-Called "last-record.js"
 Expect-Called "pnpm run start"
 Expect-StderrEmpty
 Expect-OsHold $script:OsRelease
