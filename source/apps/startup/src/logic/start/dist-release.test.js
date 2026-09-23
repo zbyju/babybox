@@ -4,6 +4,8 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
+const fsExtra = require("fs-extra");
+
 const { onStartup } = require("./dist-release");
 const ubuntuStart = require("./ubuntu");
 const windowsStart = require("./windows");
@@ -146,6 +148,7 @@ describe("dist-next release", () => {
     const harness = createHarness();
     let distDuringInstall = "";
     let modulesDuringInstall = false;
+    let dist2DuringInstall = true;
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
     harness.on("pnpm install", (cwd) => {
@@ -154,7 +157,7 @@ describe("dist-next release", () => {
         modulesDuringInstall = fs.existsSync(
           path.join(root, "dist", "node_modules", "keep.txt")
         );
-        expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
+        dist2DuringInstall = fs.existsSync(path.join(root, "dist2"));
       }
       return { stdout: "", stderr: "" };
     });
@@ -165,6 +168,7 @@ describe("dist-next release", () => {
       expect(code).toBe(true);
       expect(distDuringInstall).toBe("old");
       expect(modulesDuringInstall).toBe(true);
+      expect(dist2DuringInstall).toBe(false);
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
       expect(fs.readFileSync(path.join(root, "dist", "public", "index.html"), "utf8")).toBe(
         "panel"
@@ -189,9 +193,9 @@ describe("dist-next release", () => {
         ok: true,
         message: "",
         at: WHEN.toISOString(),
-        node: "v18.12.1",
-        pnpm: "7.5.0",
-        bun: "1.4.2",
+        node: VERSIONS.node,
+        pnpm: VERSIONS.pnpm,
+        bun: VERSIONS.bun,
       });
       expect(harness.logger.lines.map((line) => line.message)).toEqual(
         expect.arrayContaining([
@@ -209,12 +213,13 @@ describe("dist-next release", () => {
   it("restores dist and starts both apps when configer fails to start", async () => {
     const root = createRoot();
     const harness = createHarness();
+    let restoredIndex = "";
     harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
     harness.on("pnpm install", (cwd) => {
       if (cwd === path.join(root, "dist")) {
-        expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+        restoredIndex = fs.readFileSync(path.join(root, "dist", "index.js"), "utf8");
       }
       return { stdout: "", stderr: "" };
     });
@@ -223,6 +228,7 @@ describe("dist-next release", () => {
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
+      expect(restoredIndex).toBe("old");
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
       expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
@@ -241,9 +247,9 @@ describe("dist-next release", () => {
         ok: false,
         message: "configer broke",
         at: WHEN.toISOString(),
-        node: "v18.12.1",
-        pnpm: "7.5.0",
-        bun: "1.4.2",
+        node: VERSIONS.node,
+        pnpm: VERSIONS.pnpm,
+        bun: VERSIONS.bun,
       });
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
@@ -325,6 +331,10 @@ describe("dist-next release", () => {
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
       expect(commands(harness)).not.toContain("pnpm install");
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+        ["start:main"],
+      ]);
       expect(fs.existsSync(path.join(root, "logs", "startup.last.json"))).toBe(false);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
@@ -382,13 +392,12 @@ describe("dist-next release", () => {
   it("puts the live dist back when the swap cannot finish", async () => {
     const root = createRoot();
     const harness = createHarness();
-    const realFs = require("fs-extra");
-    const trackingFs = Object.create(realFs);
+    const trackingFs = Object.create(fsExtra);
     trackingFs.renameSync = (from, to) => {
       if (String(from).endsWith(`${path.sep}dist-next`)) {
         throw new Error("rename dist-next failed");
       }
-      return realFs.renameSync(from, to);
+      return fsExtra.renameSync(from, to);
     };
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
