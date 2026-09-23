@@ -1,8 +1,8 @@
 # Dependency upgrade
 
-Status: **not started** (no upgrade code on `main`)
+Status: **P1 in progress** on `feat/toolchain-jump`. `main` has no upgrade code.
 Owner: —
-Last updated: 2026-09-21 (topic pull requests)
+Last updated: 2026-09-23
 
 ## Goal
 
@@ -911,13 +911,39 @@ broken log format as a failed phase. `bootstrap.js` never imports pino.
 
 **Zod.** Leave at `3.23.8`. A bump to 3.25 or 4 is not this project.
 
+## Pull requests from here
+
+#121 already assembled `dist-next`. The work that remains lands as these
+pull requests into `feat/toolchain-jump`. Each one stays near 5000 lines.
+Each one passes the legacy-image job before the next one starts. `main`
+still gets one merge after the canary.
+
+1. **Startup release path.** The rest of P1. The hold skip, `release.json`,
+   the bootstrap before the pull, and the legacy-image failure cases.
+2. **`bun install`.** All of P2. `source/pnpm-lock.yaml` is 6407 lines, so
+   `bun.lock` may pass 5000 lines. Keep that pull request whole. Review
+   `package.json` and the runner. Treat the lockfile as generated output.
+3. **Apps run on Bun.** All of P3. It stays its own pull request so a red
+   legacy-image job points at the process.
+4. **Type contract.** TypeScript 6, the contract flags, and the backend ESM
+   move. If the panel fixes pass 5000 lines, the panel is the next pull
+   request.
+5. **Libraries.** The P4 bumps, including Express 5 and Pino 10. The review
+   checks behavior. Czech text, JSON errors, and the startup log line stay
+   the same.
+6. **Test and lint tools.** Vite 8, vitest 5, oxlint, and oxfmt.
+
+TypeScript 7 is one short pull request after the type contract. The review
+is a diff of the compiled output. Renovate waits until after the merge to
+`main`.
+
 ## Phases
 
 Order is fixed by the box update path: the bootstrap first, because every later
 commit depends on it being in HEAD; then the Bun binary it installs; then the
 lockfile and interpreter switch; then everything that needs the new runtime.
-Phases are for review size and for finding what breaks, not for the boxes. Each
-phase must pass the legacy-image job on its own.
+The checkboxes below are the work. "Pull requests from here" is the review
+size. Each pull request must pass the legacy-image job on its own.
 
 ### P0 — Make the plan checkable
 
@@ -1256,6 +1282,16 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | Baseline Bun zip? | Do not use it | It is an alias of the same x64 binary. An illegal instruction is `CPU_HOLD`. |
 | How are dependencies declared? | Exact versions only | Every registry specifier in `package.json` is `1.2.3`. No `^`, `~`, `*`, `latest`, or range. The lockfile matches. P0 pins current packages. Later phases write the new exact version. Renovate bumps stay exact. |
 
+## Decisions taken (2026-09-23)
+
+| Question | Answer | Consequence |
+|---|---|---|
+| How big is a remaining pull request? | About 5000 lines | The six pull requests in "Pull requests from here". A 500 line cap would split one behavior across several reviews. |
+| What if `bun.lock` is longer? | Keep P2 as one pull request | Review `package.json` and the runner. The lockfile is generated. |
+| Does P3 join P2? | No | A red legacy-image job then points at install or at the process. |
+| What if the type contract passes 5000 lines? | The panel is the follow-up | Configer, the backend, config-schema, and the ESM move stay in the first contract pull request. |
+| When do TypeScript 7 and Renovate land? | After the six | TypeScript 7 is a short pull request. Renovate waits until after the merge to `main`. |
+
 ## Open questions
 
 - [x] Windows 8: answered 2026-09-21. Hold in place. Do not park on another branch.
@@ -1349,3 +1385,5 @@ One line per landed step: date, PR, what moved.
   and swaps it into `dist` only after that tree is complete. A failed start
   restores the previous `dist` and starts both apps. The rollback install
   runs in the repo `dist`.
+- 2026-09-23 — the remaining work is six pull requests of about 5000 lines.
+  See "Pull requests from here".

@@ -1000,3 +1000,17 @@ Context · Decision · Why · Gave up · Where
 - Gave up: caret and tilde ranges.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
   constraints". The P0 pin is #109.
+
+## 2026-09-23 — Remaining pull requests stay near 5000 lines
+
+- Context: one pull request per checkbox makes the review queue longer than
+  the work. A whole phase in one pull request is a wide review.
+- Decision: the work after #121 lands as the six pull requests in
+  "Pull requests from here". Each one stays near 5000 lines. Each one passes
+  the legacy-image job before the next one starts.
+- Why: agentic coding fills a few thousand lines in one pass. Five hundred
+  lines splits one behavior across several reviews.
+- Gave up: joining P2 and P3. A red legacy-image job has to point at install
+  or at the process. Also gave up splitting `bun.lock` out of P2.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Pull
+  requests from here".
