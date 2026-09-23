@@ -999,7 +999,7 @@ P3 switches the interpreter.
       `node`, `pnpm`, `bun` on every step end. Czech one-line in `startup.log`
       as well. Success clears a previous failure. `GET /status` on configer
       and the backend include this record.
-- [ ] Assemble the new tree in `dist-next`. Do not rename live `dist` until
+- [x] Assemble the new tree in `dist-next`. Do not rename live `dist` until
       `dist-next` is complete. Swap, then start configer and panel. If either
       start fails, swap back, start both from the restored `dist`, record
       `START_CONFIGER` or `START_PANEL`. If a step before the swap fails, start
