@@ -20,7 +20,7 @@
     "dev:configer": "pnpm -F babybox-panel-configer dev",
     "stop": "pm2 delete configer && pm2 delete babybox",
     "start:configer": "pnpm -F babybox-panel-configer start",
-    "start:main": "cd \"../dist\" && bun install --no-save && pm2 start ../dist/index.js -n babybox",
+    "start:main": "cd \"../dist\" && node -e \"var fs=require('fs');var cp=require('child_process');if(!fs.existsSync('node_modules'))cp.execSync('bun install --no-save',{stdio:'inherit'})\" && pm2 start ../dist/index.js -n babybox",
     "build:schema": "pnpm -F @babybox/config-schema build",
     "build": "node apps/startup/run-update.js",
     "echo": "echo test"

@@ -103,8 +103,9 @@ seed_previous() {
     cp "$SOURCE/bun.lock" "$ROOT/dist/bun.lock"
   fi
   printf '%s\n' "NODE_ENV=development" "PORT=5000" "API_PREFIX=/api/v1" >"$ROOT/dist/.env"
-  # start:main runs bun install inside dist.
-  # --no-save does not rewrite the copied lock.
+  # start:main installs with bun only when dist has no node_modules.
+  # A forced bad Bun checksum deletes the binary. The previous dist must
+  # still start from the modules this seed already wrote.
   (
     cd "$ROOT/dist"
     "$(node -e "const os=require('os');const path=require('path');const name=process.platform==='win32'?'bun.exe':'bun';process.stdout.write(path.join(os.homedir(),'.bun','bin',name))")" install --no-save

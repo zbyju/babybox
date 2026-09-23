@@ -101,6 +101,9 @@ describe("root build script", () => {
   it("points build at apps/startup/run-update.js", () => {
     const pkg = JSON.parse(fs.readFileSync(ROOT_PACKAGE, "utf8"));
     expect(pkg.scripts.build).toBe("node apps/startup/run-update.js");
+    expect(pkg.scripts["start:main"]).toBe(
+      "cd \"../dist\" && node -e \"var fs=require('fs');var cp=require('child_process');if(!fs.existsSync('node_modules'))cp.execSync('bun install --no-save',{stdio:'inherit'})\" && pm2 start ../dist/index.js -n babybox"
+    );
   });
 });
 
