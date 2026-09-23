@@ -464,4 +464,216 @@ describe("dist-next release", () => {
       fs.rmSync(root, { recursive: true, force: true });
     }
   });
+
+  it("starts the panel when the restored configer also fails", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    harness.spawnQueue.push(
+      { code: 1, stderr: "configer broke\n" },
+      { code: 1, stderr: "restored configer broke\n" }
+    );
+    harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(code).toBe(false);
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+        ["start:configer"],
+        ["start:main"],
+      ]);
+      expect(readRecord(root)).toEqual({
+        step: "START_CONFIGER",
+        ok: false,
+        message: "configer broke",
+        at: WHEN.toISOString(),
+        node: VERSIONS.node,
+        pnpm: VERSIONS.pnpm,
+        bun: VERSIONS.bun,
+      });
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("starts both apps when install of the restored dist throws", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    let spawnsAtRestoreInstall = -1;
+    harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
+    harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", (cwd) => {
+      if (cwd === path.join(root, "dist")) {
+        spawnsAtRestoreInstall = harness.spawnCalls.length;
+        throw new Error("restore install failed");
+      }
+      return { stdout: "", stderr: "" };
+    });
+    harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(code).toBe(true);
+      expect(spawnsAtRestoreInstall).toBe(1);
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+        ["start:configer"],
+        ["start:main"],
+      ]);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("returns false when the build fails and there is no live dist", async () => {
+    const root = createRoot(false);
+    const harness = createHarness();
+    harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "schema broke\n" }));
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(code).toBe(false);
+      expect(harness.spawnCalls).toEqual([]);
+      expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("builds when there is no live dist and the checkout is already current", async () => {
+    const root = createRoot(false);
+    const harness = createHarness();
+    harness.on("git pull", () => ({
+      stdout: "Already up to date.\n",
+      stderr: "",
+    }));
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(commands(harness)).toContain("pnpm run build");
+      expect(code).toBe(true);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("starts the live dist when git pull throws", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    harness.on("git pull", () => {
+      throw new Error("pull failed");
+    });
+    harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(code).toBe(true);
+      expect(commands(harness)).not.toContain("pnpm run build");
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+        ["start:main"],
+      ]);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("installs dist-next at the default repo root when repoRoot is omitted", async () => {
+    const root = createRoot(false);
+    const harness = createHarness();
+    const repoRoot = path.resolve(__dirname, "../../../../../..");
+    const fakeFs = {
+      existsSync(target) {
+        return (
+          target === path.join(repoRoot, "source", "apps", "backend", "dist") ||
+          target === path.join(repoRoot, "source", "apps", "panel", "dist") ||
+          target === path.join(repoRoot, "dist")
+        );
+      },
+      copySync() {},
+      copyFileSync() {},
+      rmSync() {},
+      renameSync() {},
+    };
+    harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+    try {
+      const opts = baseOptions(root, harness, { fs: fakeFs });
+      delete opts.repoRoot;
+      await onStartup(opts);
+      expect(installCwds(harness)).toContain(
+        path.resolve(__dirname, "../../../../../../dist-next")
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("skips the build on Ubuntu when the configer dist exists", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const configerDist = path.join(root, "source", "apps", "configer", "dist");
+    fs.mkdirSync(configerDist, { recursive: true });
+    fs.writeFileSync(path.join(configerDist, "index.js"), "configer");
+    harness.on("git pull", () => ({
+      stdout: "Already up to date.\n",
+      stderr: "",
+    }));
+    harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+    try {
+      await ubuntuStart(baseOptions(root, harness));
+      expect(commands(harness)).not.toContain("pnpm run build");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("finishes the swap when node_modules would block rename", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const trackingFs = Object.create(fsExtra);
+    trackingFs.renameSync = (from, to) => {
+      if (fs.existsSync(path.join(from, "node_modules"))) {
+        throw new Error("node_modules blocks rename");
+      }
+      return fsExtra.renameSync(from, to);
+    };
+    harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", (cwd) => {
+      if (cwd === path.join(root, "dist-next")) {
+        fs.mkdirSync(path.join(cwd, "node_modules"), { recursive: true });
+        fs.writeFileSync(path.join(cwd, "node_modules", "keep.txt"), "keep");
+      }
+      return { stdout: "", stderr: "" };
+    });
+    harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
+    harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          fs: trackingFs,
+        })
+      );
+      expect(code).toBe(true);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
