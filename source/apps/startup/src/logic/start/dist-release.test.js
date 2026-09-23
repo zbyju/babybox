@@ -12,6 +12,8 @@ const windowsStart = require("./windows");
 
 const WHEN = new Date(2026, 8, 23, 4, 5, 6);
 const VERSIONS = { node: "v18.12.1", pnpm: "7.5.0", bun: "1.4.2" };
+const HEAD_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const OTHER_SHA = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 function makeLogger() {
   const lines = [];
@@ -37,6 +39,12 @@ function createHarness() {
     handlers.push({ command, run });
   }
 
+  const defaults = {
+    "git checkout -- pnpm-lock.yaml": () => ({ stdout: "", stderr: "" }),
+    "git status --porcelain": () => ({ stdout: "", stderr: "" }),
+    "git rev-parse HEAD": () => ({ stdout: `${HEAD_SHA}\n`, stderr: "" }),
+  };
+
   async function exec(command, opts) {
     const cwd = opts ? opts.cwd : undefined;
     execCalls.push({ command, cwd });
@@ -44,6 +52,9 @@ function createHarness() {
       if (handlers[i].command === command) {
         return handlers[i].run(cwd, command);
       }
+    }
+    if (defaults[command]) {
+      return defaults[command](cwd, command);
     }
     throw new Error(`unexpected exec ${command}`);
   }
@@ -121,9 +132,50 @@ function baseOptions(root, harness, extra) {
       spawn: harness.spawn,
       logger: harness.logger,
       env: {},
+      home: root,
+      release: "5.15.0",
+      arch: "x64",
+      headSha: HEAD_SHA,
+      bunVersion: "1.4.2",
+      wantedBun: "1.4.2",
+      bootstrapRun: async () => 0,
     },
     extra
   );
+}
+
+function writeReleaseFile(root, sha) {
+  fs.writeFileSync(
+    path.join(root, "dist", "release.json"),
+    `${JSON.stringify({ sha: sha || HEAD_SHA })}\n`
+  );
+}
+
+function writeLast(root, record) {
+  fs.mkdirSync(path.join(root, "logs"), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, "logs", "startup.last.json"),
+    `${JSON.stringify(record)}\n`
+  );
+}
+
+function allowPm2(harness) {
+  harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
+  harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+}
+
+function alreadyCurrent(harness) {
+  harness.on("git pull", () => ({
+    stdout: "Already up to date.\n",
+    stderr: "",
+  }));
+}
+
+function holdBootstrap(line) {
+  return async (opts) => {
+    opts.stdout.write(`${line}\n`);
+    return 1;
+  };
 }
 
 function readRecord(root) {
@@ -197,6 +249,9 @@ describe("dist-next release", () => {
         pnpm: VERSIONS.pnpm,
         bun: VERSIONS.bun,
       });
+      expect(JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8"))).toEqual({
+        sha: HEAD_SHA,
+      });
       expect(harness.logger.lines.map((line) => line.message)).toEqual(
         expect.arrayContaining([
           "Krok DIST_PREPARE začíná.",
@@ -259,6 +314,7 @@ describe("dist-next release", () => {
   it("records START_PANEL and restores dist when the panel fails to start", async () => {
     const root = createRoot();
     const harness = createHarness();
+    writeReleaseFile(root, OTHER_SHA);
     harness.spawnQueue.push({ code: 0 }, { code: 2, stderr: "panel broke\n" });
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
@@ -279,6 +335,9 @@ describe("dist-next release", () => {
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe("panel broke");
       expect(installCwds(harness)[1]).toBe(path.join(root, "dist"));
+      expect(JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha).toBe(
+        OTHER_SHA
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -322,7 +381,18 @@ describe("dist-next release", () => {
     const root = createRoot();
     const harness = createHarness();
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
-    harness.on("pnpm run build", () => ({ stdout: "", stderr: "schema broke\n" }));
+    harness.on("pnpm run build", () => {
+      writeLast(root, {
+        step: "BUILD_PANEL",
+        ok: false,
+        message: "schema broke",
+        at: WHEN.toISOString(),
+        node: VERSIONS.node,
+        pnpm: VERSIONS.pnpm,
+        bun: VERSIONS.bun,
+      });
+      return { stdout: "", stderr: "schema broke\n" };
+    });
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
@@ -335,7 +405,9 @@ describe("dist-next release", () => {
         ["start:configer"],
         ["start:main"],
       ]);
-      expect(fs.existsSync(path.join(root, "logs", "startup.last.json"))).toBe(false);
+      expect(readRecord(root).step).toBe("BUILD_PANEL");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toBe("schema broke");
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -364,26 +436,33 @@ describe("dist-next release", () => {
     }
   });
 
-  it("does not clear a failure record when the checkout is already current", async () => {
+  it("builds when the last step failed even if the checkout is already current", async () => {
     const root = createRoot();
     const harness = createHarness();
-    const previous = "{\"step\":\"BUILD_PANEL\",\"ok\":false,\"message\":\"old\"}\n";
-    fs.mkdirSync(path.join(root, "logs"), { recursive: true });
-    fs.writeFileSync(path.join(root, "logs", "startup.last.json"), previous);
+    writeReleaseFile(root);
+    writeLast(root, {
+      step: "BUILD_PANEL",
+      ok: false,
+      message: "old",
+      at: WHEN.toISOString(),
+      node: VERSIONS.node,
+      pnpm: VERSIONS.pnpm,
+      bun: VERSIONS.bun,
+    });
     harness.on("git pull", () => ({
       stdout: "Already up to date.\n",
       stderr: "",
     }));
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
-      expect(commands(harness)).not.toContain("pnpm run build");
-      expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
-      expect(fs.readFileSync(path.join(root, "logs", "startup.last.json"), "utf8")).toBe(
-        previous
-      );
+      expect(commands(harness)).toContain("pnpm run build");
+      expect(readRecord(root).step).toBe("START_PANEL");
+      expect(readRecord(root).ok).toBe(true);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -424,6 +503,7 @@ describe("dist-next release", () => {
   it("builds on Ubuntu when the configer dist is missing", async () => {
     const root = createRoot();
     const harness = createHarness();
+    writeReleaseFile(root);
     harness.on("git pull", () => ({
       stdout: "Already up to date.\n",
       stderr: "",
@@ -443,6 +523,7 @@ describe("dist-next release", () => {
   it("uses pnpm.cmd on Windows and skips the build when only configer dist is missing", async () => {
     const root = createRoot();
     const harness = createHarness();
+    writeReleaseFile(root);
     harness.on("git pull", () => ({
       stdout: "Already up to date.\n",
       stderr: "",
@@ -626,6 +707,7 @@ describe("dist-next release", () => {
   it("skips the build on Ubuntu when the configer dist exists", async () => {
     const root = createRoot();
     const harness = createHarness();
+    writeReleaseFile(root);
     const configerDist = path.join(root, "source", "apps", "configer", "dist");
     fs.mkdirSync(configerDist, { recursive: true });
     fs.writeFileSync(path.join(configerDist, "index.js"), "configer");
@@ -672,6 +754,427 @@ describe("dist-next release", () => {
       );
       expect(code).toBe(true);
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("bootstraps after the lockfile restore and before git pull", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const order = [];
+    writeReleaseFile(root);
+    harness.on("git checkout -- pnpm-lock.yaml", () => {
+      order.push("checkout");
+      return { stdout: "", stderr: "" };
+    });
+    harness.on("git status --porcelain", () => {
+      order.push("status");
+      return { stdout: "", stderr: "" };
+    });
+    harness.on("git pull", () => {
+      order.push("pull");
+      return { stdout: "Already up to date.\n", stderr: "" };
+    });
+    allowPm2(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          bootstrapRun: async () => {
+            order.push("bootstrap");
+            return 0;
+          },
+        })
+      );
+      expect(code).toBe(true);
+      expect(order).toEqual(["checkout", "status", "bootstrap", "pull"]);
+      expect(commands(harness)).not.toContain("pnpm run build");
+      expect(readRecord(root)).toEqual({
+        step: "BOOTSTRAP_BUN",
+        ok: true,
+        message: "",
+        at: WHEN.toISOString(),
+        node: VERSIONS.node,
+        pnpm: VERSIONS.pnpm,
+        bun: VERSIONS.bun,
+      });
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("builds when the pull is already current and release.json is not HEAD", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root, OTHER_SHA);
+    alreadyCurrent(harness);
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("pnpm run build");
+      expect(commands(harness)[0]).toBe("git checkout -- pnpm-lock.yaml");
+      expect(commands(harness).indexOf("git pull")).toBeGreaterThan(
+        commands(harness).indexOf("git status --porcelain")
+      );
+      expect(
+        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8"))
+      ).toEqual({ sha: HEAD_SHA });
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("builds on Windows when release.json is not HEAD", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root, OTHER_SHA);
+    alreadyCurrent(harness);
+    harness.on("pnpm.cmd run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm.cmd install", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
+    try {
+      const opts = baseOptions(root, harness, { platform: "win32" });
+      delete opts.pnpm;
+      const code = await windowsStart(opts);
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("pnpm.cmd run build");
+      expect(harness.spawnCalls.map((call) => call.cmd)).toEqual([
+        "pnpm.cmd",
+        "pnpm.cmd",
+      ]);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("asks git for HEAD when the caller does not pass a sha", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root, OTHER_SHA);
+    alreadyCurrent(harness);
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
+    try {
+      const opts = baseOptions(root, harness);
+      delete opts.headSha;
+      const code = await onStartup(opts);
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("git rev-parse HEAD");
+      expect(
+        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha
+      ).toBe(HEAD_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("skips the build on OS_HOLD while that release is still a hold", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root, OTHER_SHA);
+    alreadyCurrent(harness);
+    allowPm2(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          platform: "win32",
+          release: "6.2.9200",
+          bootstrapRun: holdBootstrap(
+            "Tento systém nespustí Bun. Krok OS_HOLD. Vydání 6.2.9200."
+          ),
+        })
+      );
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("git pull");
+      expect(commands(harness)).not.toContain("pnpm run build");
+      expect(readRecord(root).step).toBe("OS_HOLD");
+      expect(readRecord(root).ok).toBe(true);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(
+        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha
+      ).toBe(OTHER_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("builds when an OS_HOLD record is left on an OS that can run Bun", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root, OTHER_SHA);
+    writeLast(root, {
+      step: "OS_HOLD",
+      ok: true,
+      message: "old hold",
+      at: WHEN.toISOString(),
+      node: VERSIONS.node,
+      pnpm: VERSIONS.pnpm,
+      bun: VERSIONS.bun,
+    });
+    alreadyCurrent(harness);
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          platform: "win32",
+          release: "10.0.22621",
+        })
+      );
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("pnpm run build");
+      expect(
+        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha
+      ).toBe(HEAD_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("skips the build on CPU_HOLD when cpu-hold matches the pin", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root, OTHER_SHA);
+    fs.mkdirSync(path.join(root, ".bun"), { recursive: true });
+    fs.writeFileSync(path.join(root, ".bun", "cpu-hold"), "1.4.2\n");
+    alreadyCurrent(harness);
+    allowPm2(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          bootstrapRun: holdBootstrap("Procesor nespustí Bun. Krok CPU_HOLD."),
+        })
+      );
+      expect(code).toBe(true);
+      expect(commands(harness)).not.toContain("pnpm run build");
+      expect(readRecord(root).step).toBe("CPU_HOLD");
+      expect(readRecord(root).ok).toBe(true);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(
+        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha
+      ).toBe(OTHER_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("builds when cpu-hold names an older pin than BUN_VERSION", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root);
+    fs.mkdirSync(path.join(root, ".bun"), { recursive: true });
+    fs.writeFileSync(path.join(root, ".bun", "cpu-hold"), "1.4.0\n");
+    alreadyCurrent(harness);
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          bootstrapRun: holdBootstrap("Procesor nespustí Bun. Krok CPU_HOLD."),
+        })
+      );
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("pnpm run build");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("builds when bun -v is not the pinned version", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root);
+    alreadyCurrent(harness);
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, { bunVersion: "1.0.0" })
+      );
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("pnpm run build");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reads bun -v from the user profile when the caller does not pass it", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root);
+    const bin = path.join(root, ".bun", "bin");
+    fs.mkdirSync(bin, { recursive: true });
+    fs.writeFileSync(path.join(bin, "bun"), "#!/bin/sh\n");
+    alreadyCurrent(harness);
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
+    try {
+      const opts = baseOptions(root, harness, {
+        spawnSync: () => ({ status: 0, stdout: "0.0.1\n" }),
+      });
+      delete opts.bunVersion;
+      const code = await onStartup(opts);
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("pnpm run build");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("skips the build when the probed bun matches the pin and release.json matches", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root);
+    const bin = path.join(root, ".bun", "bin");
+    fs.mkdirSync(bin, { recursive: true });
+    fs.writeFileSync(path.join(bin, "bun"), "#!/bin/sh\n");
+    alreadyCurrent(harness);
+    allowPm2(harness);
+    try {
+      const opts = baseOptions(root, harness, {
+        spawnSync: () => ({ status: 0, stdout: "v1.4.2\n" }),
+      });
+      delete opts.bunVersion;
+      delete opts.wantedBun;
+      opts.versionsPath = path.join(
+        __dirname,
+        "../../../versions.env"
+      );
+      const code = await onStartup(opts);
+      expect(code).toBe(true);
+      expect(commands(harness)).not.toContain("pnpm run build");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("records a dirty tree and does not pull or build", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    harness.on("git status --porcelain", () => ({
+      stdout: " M pnpm-lock.yaml\n",
+      stderr: "",
+    }));
+    allowPm2(harness);
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(code).toBe(true);
+      expect(commands(harness).slice(0, 2)).toEqual([
+        "git checkout -- pnpm-lock.yaml",
+        "git status --porcelain",
+      ]);
+      expect(commands(harness)).not.toContain("git pull");
+      expect(commands(harness)).not.toContain("pnpm run build");
+      expect(readRecord(root).step).toBe("PULL");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toContain("pnpm-lock.yaml");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("starts the live dist when the lockfile checkout fails", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    harness.on("git checkout -- pnpm-lock.yaml", () => {
+      const err = new Error("checkout failed");
+      err.stderr = "checkout failed\n";
+      throw err;
+    });
+    allowPm2(harness);
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(code).toBe(true);
+      expect(commands(harness)[0]).toBe("git checkout -- pnpm-lock.yaml");
+      expect(commands(harness)).not.toContain("git pull");
+      expect(commands(harness)).not.toContain("pnpm run build");
+      expect(readRecord(root).step).toBe("PULL");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toBe("checkout failed");
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+        ["start:main"],
+      ]);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("names BOOTSTRAP_BUN and keeps the previous dist when that step fails", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    writeReleaseFile(root, OTHER_SHA);
+    alreadyCurrent(harness);
+    harness.on("pnpm run build", () => {
+      writeLast(root, {
+        step: "BOOTSTRAP_BUN",
+        ok: false,
+        message: "Kontrolní součet archivu Bun se neshoduje.",
+        at: WHEN.toISOString(),
+        node: VERSIONS.node,
+        pnpm: VERSIONS.pnpm,
+        bun: VERSIONS.bun,
+      });
+      return { stdout: "", stderr: "checksum\n" };
+    });
+    allowPm2(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          bootstrapRun: holdBootstrap(
+            "Kontrolní součet archivu Bun se neshoduje."
+          ),
+        })
+      );
+      expect(code).toBe(true);
+      expect(commands(harness)).toContain("pnpm run build");
+      expect(readRecord(root).step).toBe("BOOTSTRAP_BUN");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toContain("Kontrolní součet");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+        ["start:main"],
+      ]);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps START_PANEL success when release.json cannot be written", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const trackingFs = Object.create(fsExtra);
+    trackingFs.writeFileSync = (file, data) => {
+      if (String(file).endsWith(`${path.sep}release.json`)) {
+        throw new Error("disk full");
+      }
+      return fsExtra.writeFileSync(file, data);
+    };
+    harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
+    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+    harness.on("pnpm install", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
+    try {
+      const code = await onStartup(baseOptions(root, harness, { fs: trackingFs }));
+      expect(code).toBe(true);
+      expect(readRecord(root).step).toBe("START_PANEL");
+      expect(readRecord(root).ok).toBe(true);
+      expect(fs.existsSync(path.join(root, "dist", "release.json"))).toBe(false);
+      expect(harness.logger.lines.map((line) => line.message)).toContain(
+        "Soubor release.json se nepodařilo zapsat."
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
