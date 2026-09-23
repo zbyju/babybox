@@ -300,6 +300,9 @@ stop_apps
 
 echo "forced START_PANEL restores the previous dist"
 seed_previous
+# The build drops apps/backend/dist/index.js.
+# The next case still seeds the previous dist from that file.
+cp apps/backend/dist/index.js "$RUNNER_TEMP/backend-index.js"
 break_new_dist_entry
 assert_clean
 run_startup || true
@@ -308,6 +311,7 @@ assert_marker
 assert_apps
 restore_tracked apps/backend/package.json
 rm -f apps/backend/omit-dist-entry.js
+cp "$RUNNER_TEMP/backend-index.js" apps/backend/dist/index.js
 stop_apps
 
 echo "forced BOOTSTRAP_BUN keeps the previous dist"
