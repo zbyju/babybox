@@ -234,6 +234,7 @@ function Invoke-Case {
   }
 
   Copy-Item $BatSrc (Join-Path $startup "scripts\windows\startup.bat") -Force
+  Copy-Item (Join-Path $StartupSrc "scripts\windows\record-hold.bat") (Join-Path $startup "scripts\windows\record-hold.bat") -Force
 
   Write-Cmd (Join-Path $stubDir "curl.cmd") @'
 @echo off
