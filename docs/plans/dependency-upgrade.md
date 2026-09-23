@@ -1430,3 +1430,8 @@ One line per landed step: date, PR, what moved.
   on stderr, so the stderr rule stays. `bun audit` reports 79 vulnerabilities
   (2 critical, 27 high, 38 moderate, 12 low). The Bun job is the only build
   job. Node 18 only hosts the legacy-image job.
+- 2026-09-23 — #125 — the logged-in Windows user can write
+  `%USERPROFILE%\.bun` with no UAC prompt. Tested as `juricj` at Medium
+  integrity. The usual account name `babybox` was not the account on that
+  box. The jump does not use `sudo-prompt` for this write. No on-site
+  permission change.
