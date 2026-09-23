@@ -113,8 +113,10 @@ function writeRecord(logPath, record) {
   try {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, `${JSON.stringify(record)}\n`);
+    return true;
   } catch (err) {
-    // The console line is enough when the log directory is not writable.
+    // The caller logs the failure. A throw would stop the panel.
+    return false;
   }
 }
 
@@ -138,10 +140,13 @@ function writeCli(argv, options) {
     opts.platform || process.platform
   );
   const now = opts.now || defaultNow;
-  writeRecord(
+  const wrote = writeRecord(
     logPath,
     buildRecord(step, okText === "true", message, now(), versions)
   );
+  if (wrote !== true) {
+    return 1;
+  }
   return 0;
 }
 

@@ -123,6 +123,21 @@ describe("startup last record", () => {
       expect(
         writeCli(["node", "last-record.js", "OS_HOLD", "true", "hi"])
       ).toBe(1);
+      const blocked = path.join(root, "not-a-directory");
+      fs.writeFileSync(blocked, "file");
+      expect(
+        writeCli(
+          [
+            "node",
+            "last-record.js",
+            "CPU_HOLD",
+            "true",
+            "Krok CPU_HOLD.",
+            path.join(blocked, "startup.log"),
+          ],
+          { versions: versions(), now: () => WHEN, spawnSync }
+        )
+      ).toBe(1);
       expect(
         JSON.parse(
           fs.readFileSync(path.join(root, "startup.last.json"), "utf8")
