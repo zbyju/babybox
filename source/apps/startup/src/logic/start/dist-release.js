@@ -216,6 +216,14 @@ async function assembleDistNext(ctx) {
   return true;
 }
 
+function dropNodeModules(fileSystem, dir) {
+  const modules = path.join(dir, "node_modules");
+  if (fileSystem.existsSync(modules)) {
+    // node_modules is read-only on Windows and blocks rename.
+    fileSystem.rmSync(modules, { maxRetries: 3, recursive: true });
+  }
+}
+
 async function stopPm2(ctx) {
   try {
     await ctx.exec("pm2 delete configer");
@@ -239,13 +247,10 @@ async function swapIn(ctx) {
       fileSystem.rmSync(ctx.paths.dist2, { recursive: true, force: true });
     }
     if (hadLive) {
-      const modules = path.join(ctx.paths.dist, "node_modules");
-      if (fileSystem.existsSync(modules)) {
-        // node_modules is read-only on Windows and blocks rename.
-        fileSystem.rmSync(modules, { maxRetries: 3, recursive: true });
-      }
+      dropNodeModules(fileSystem, ctx.paths.dist);
       fileSystem.renameSync(ctx.paths.dist, ctx.paths.dist2);
     }
+    dropNodeModules(fileSystem, ctx.paths.distNext);
     fileSystem.renameSync(ctx.paths.distNext, ctx.paths.dist);
   } catch (err) {
     if (
@@ -365,6 +370,7 @@ async function swapBack(ctx) {
   try {
     fileSystem.rmSync(ctx.paths.distNext, { recursive: true, force: true });
     if (fileSystem.existsSync(ctx.paths.dist)) {
+      dropNodeModules(fileSystem, ctx.paths.dist);
       fileSystem.renameSync(ctx.paths.dist, ctx.paths.distNext);
     }
     fileSystem.renameSync(ctx.paths.dist2, ctx.paths.dist);
