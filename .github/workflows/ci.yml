@@ -78,8 +78,8 @@ jobs:
         run: pnpm -F startup exec jest --ci
 
   # Prvni boot po pullu. Checkout je tag legacy-runtime, pak git pull na hlavu
-  # PR a pnpm run build. Exit 0, prazdny stderr, cisty strom. bun -v, OS_HOLD
-  # a build po uz hotovem checkoutu patri do P1.
+  # PR a pnpm run build. Exit 0, prazdny stderr, cisty strom.
+  # Dalsi krok overi bun 1.4.2, build po hotovem checkoutu, a nucene selhani.
   legacy-image:
     name: legacy-image (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -174,6 +174,11 @@ jobs:
             printf '%s\n' "${dirty}" >&2
             exit 1
           fi
+
+      - name: Release path and failed steps
+        shell: bash
+        working-directory: source
+        run: bash apps/startup/tests/legacy-image-release.sh
 
   # Bun 1.4.2. Instalace, build a testy. Job smi selhat.
   # Ukazuje, co se rozbije, nez se z nej v P2 stane brana.
