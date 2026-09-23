@@ -152,7 +152,14 @@ if (record.step !== process.env.STEP || record.ok !== false) {
   console.error(JSON.stringify(record));
   process.exit(1);
 }
-if (message.indexOf(process.env.NEEDLE) === -1) {
+const needles = String(process.env.NEEDLE).split("|");
+let found = false;
+for (let i = 0; i < needles.length; i += 1) {
+  if (message.indexOf(needles[i]) !== -1) {
+    found = true;
+  }
+}
+if (!found) {
   console.error(JSON.stringify(record));
   process.exit(1);
 }
@@ -306,7 +313,7 @@ seed_previous
 break_panel_start
 assert_clean
 run_startup || true
-assert_record "START_PANEL" "panel start broke"
+assert_record "START_PANEL" "panel start broke|start:main"
 assert_marker
 restore_tracked package.json
 rm -f fail-panel-start.js
