@@ -1032,3 +1032,15 @@ Context · Decision · Why · Gave up · Where
   box.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), P1 and
   "Open questions".
+
+## 2026-09-24 — Ubuntu Bun lands in the home directory
+
+- Context: The Bun zip on Ubuntu must land in `$HOME/.bun/bin`. The jump
+  must not need a writable `/usr/local`.
+- Decision: Keep `$HOME/.bun/bin`. `startup.sh`, `bootstrap.js`, and
+  `install-all.sh` already write Bun there. The jump does not write
+  `/usr/local`.
+- Why: `/usr/local` is the Node host. `install-all.sh` may still chown
+  `/usr/local` when it installs Node. That step stays. Bun does not use it.
+- Gave up: a Bun install under `/usr/local`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P1.
