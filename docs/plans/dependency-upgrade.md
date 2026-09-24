@@ -1444,3 +1444,7 @@ One line per landed step: date, PR, what moved.
   integrity. The usual account name `babybox` was not the account on that
   box. The jump does not use `sudo-prompt` for this write. No on-site
   permission change.
+- 2026-09-24 — #127 — the Ubuntu Bun zip lands in `$HOME/.bun/bin`. The jump
+  does not need a writable `/usr/local`. `startup.sh`, `bootstrap.js`, and
+  `install-all.sh` already write that path. `install-all.sh` may still
+  chown `/usr/local` for Node. That host stays.
