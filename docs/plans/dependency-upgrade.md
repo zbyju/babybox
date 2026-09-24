@@ -1052,9 +1052,12 @@ P3 switches the interpreter.
       both apps start from it. Repeat with `START_PANEL` after a good build.
       Repeat with `BOOTSTRAP_BUN` forced to fail (bad sha256): last good
       `dist` starts on Node.
-- [ ] Ubuntu: the user profile must be writable so the zip can land. Do not
+- [x] Ubuntu: the user profile must be writable so the zip can land. Do not
       require a writable `/usr/local` for the jump. `installAll.sh` is gone
-      (#54); do not mention it in new code.
+      (#54); do not mention it in new code. The zip lands in `$HOME/.bun/bin`.
+      `startup.sh`, `bootstrap.js`, and `install-all.sh` already write that
+      path. The jump does not write `/usr/local`. `install-all.sh` may still
+      chown `/usr/local` for Node. That Node host stays.
 
 Size: ~3.5 days, of which Windows is one and the failure/rollback contract is
 one. Phases stay on `feat/toolchain-jump`. They do not merge to `main` one by
@@ -1316,6 +1319,12 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | What if the type contract passes 5000 lines? | The panel is the follow-up | Configer, the backend, config-schema, and the ESM move stay in the first contract pull request. |
 | When do TypeScript 7 and Renovate land? | After the six | TypeScript 7 is a short pull request. Renovate waits until after the merge to `main`. |
 | Can the autostart user write `%USERPROFILE%\.bun`? | Yes, with no UAC prompt | Tested 2026-09-23 on one Windows box as `juricj` at Medium integrity. The usual fleet account name is `babybox`. This box uses `juricj`. The folder is that user's profile. Do not use `sudo-prompt`. No on-site permission change. |
+
+## Decisions taken (2026-09-24)
+
+| Question | Answer | Consequence |
+|---|---|---|
+| Where does the Ubuntu Bun zip land? | `$HOME/.bun/bin` | The jump does not need a writable `/usr/local`. `startup.sh`, `bootstrap.js`, and `install-all.sh` already write that path. `install-all.sh` may still chown `/usr/local` for Node. That host stays. |
 
 ## Open questions
 
