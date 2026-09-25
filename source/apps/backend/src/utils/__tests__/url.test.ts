@@ -53,4 +53,16 @@ describe("url.ts", () => {
       expect(actionToUnit(undefined)).toBe(undefined);
     });
   });
+
+  describe("unitToIp", () => {
+    it("should throw before the config is loaded", async () => {
+      vi.resetModules();
+      vi.doMock("../../index.js", () => ({ config: null }));
+      const { unitToIp } = await import("../url.js");
+
+      expect(() => unitToIp(Unit.Engine)).toThrow(
+        new Error("The config is not loaded yet.")
+      );
+    });
+  });
 });
