@@ -1664,3 +1664,7 @@ One line per landed step: date, PR, what moved.
   under `bun --watch`. The panel stays on TypeScript 4.7.4 and `vue-tsc`
   0.38.9. `@types/node` stays 18.x in the backend and configer until the
   owner confirms.
+- 2026-09-25 — #130 — the panel builds with TypeScript 6.0.3 and
+  `vue-tsc` 3.3.11 under the contract flags. The build type-checks 99 files
+  in `src`; it checked none before. The tests and `vite.config.ts` are
+  checked in CI. vue, vue-router, pinia, vite and vitest are unchanged.
