@@ -87,6 +87,7 @@
   function onValueUpdated(newValue: string, index: number) {
     const value = values.value[index];
     const row = rows[index];
+    if (value === undefined || row === undefined) return;
     value.value = newValue;
     if (newValue === "") {
       return (value.state = SettingsTableRowState.Neutral);
@@ -146,9 +147,11 @@
   function onInsertRecommendedAction() {
     addLogMessage("Vloženy doporučené hodnoty");
     values.value = values.value.map((v: SettingsTableRowValue, i: number) => {
+      const row = rows[i];
+      if (row === undefined) return v;
       return {
         ...v,
-        value: rows[i].recommended,
+        value: row.recommended,
       };
     });
   }
@@ -193,6 +196,7 @@
             const engineData = response.data.data.engine.split("|");
             const thermalData = response.data.data.thermal.split("|");
             const row = rows[i];
+            if (row === undefined) return v;
             const engine =
               row.engine !== null ? engineData[row.engine - 100] : null;
             const thermal =

@@ -46,6 +46,7 @@ export const getChangedSettings = (
 
       if (curr.value === null || !isNumber(curr.value)) return res;
       const row = rows[index];
+      if (row === undefined) return res;
 
       if (!isSettingChanged(engineValue, thermalValue, curr.value, row.type))
         return res;
@@ -115,6 +116,7 @@ export const settingsSendToStates = (
 ): SettingsTableRowValue[] => {
   return values.map((value: SettingsTableRowValue, index: number) => {
     const row = rows[index];
+    if (row === undefined) return value;
     const data = response.data;
     const resultEngine = row.engine
       ? data.results.find(
@@ -138,6 +140,7 @@ export const settingsSendToStatesError = (
 ): SettingsTableRowValue[] => {
   return values.map((value: SettingsTableRowValue, index: number) => {
     const row = rows[index];
+    if (row === undefined) return value;
     const data = changedValues;
     const resultEngine = row.engine
       ? data.find((d: any) => d.index === row.engine && d.unit === "engine")
