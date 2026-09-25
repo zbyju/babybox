@@ -1512,6 +1512,13 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       extends, instead of a copy of the contract flags in each tsconfig.
       From the review of #129. The panel tsconfigs copy the block too and
       would move to the shared file.
+- [ ] Owner: run the panel type gate on the box, or only in CI. From the
+      review of #130. `BUILD_PANEL` now runs `vue-tsc` 3.3.11, which needs
+      Node 16. A box whose first `node` is older fails that step on every
+      update and keeps the last good `dist`. CI runs the same check on the
+      same lockfile. Option A: `"build": "vite build"`, and CI keeps the
+      gate. Option B: keep the box gate after `GET /status` shows Node 16 or
+      newer on every Windows 10/11 box.
 - [ ] `dist-release.js` keeps its own copy of the Bun path and the CPU hold
       check (`installedBunVersion`, `readCpuHold`). `start-app.js` uses the
       `bootstrap.js` exports. Fold the startup copy in in a later change.
