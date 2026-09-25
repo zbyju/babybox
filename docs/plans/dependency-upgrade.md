@@ -1438,6 +1438,7 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | `composite` in the panel? | No | With it, `vue-tsc -p` writes `tsconfig.app.tsbuildinfo` on every build. |
 | Vue 3.2 DOM types under `exactOptionalPropertyTypes`? | Leave the attribute off, never pass `undefined` | Eight workarounds in four SFCs until vue 3.5. Never `pattern=""`. |
 | Where do the contract flags live? | In `source/tsconfig.contract.json` | Each unit's tsconfig extends it and repeats no flag. The owner chose this in the #129 review. |
+| Does the box build keep the panel type gate? | Yes, `vue-tsc` stays in `build` | The owner confirmed that all panel PCs run Node 18. The Node 16 floor of `vue-tsc` 3.3.11 is accepted. |
 
 ## Open questions
 
@@ -1457,6 +1458,9 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       one local check. Node 14 was not tested. Since the panel contract PR,
       BUILD_PANEL also needs Node 16 or newer: `vue-tsc` 3.3.11 fails on
       Node 14.21.3. The old `vue-tsc` 0.38.9 ran there.
+      2026-09-25, owner: all panel PCs run Node 18.
+      This plan says Node 18 does not install on Windows 7/8. Hold boxes never
+      run the build, so the box type gate decision holds either way.
 - [x] Can the pm2 daemon run on Bun, or only the apps? Answered 2026-09-25.
       The daemon stays on Node. Every pm2 call starts it on the Node its
       shim finds, including the old startup's `pm2 delete`. The app
@@ -1466,7 +1470,8 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       `release.json`? A Bun crash after `pm2 start` returns 0 is not rolled
       back.
 - [ ] `dist-release.js` spawns `pnpm.cmd` with `shell: false`. Node 18.20.2+
-      and 20.12.2+ refuse that (EINVAL). The Windows fleet Node is unknown.
+      and 20.12.2+ refuse that (EINVAL). The owner said on 2026-09-25 that
+      all panel PCs run Node 18. The minor version is not known.
 - [ ] `GET /status` `node` shows the Node version Bun reports (`v26.3.0`).
       Add a runtime field?
 - [ ] `bun install --no-save` in `dist` installs the backend
@@ -1517,13 +1522,16 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       extends, instead of a copy of the contract flags in each tsconfig.
       Answered 2026-09-25 in the review of #129: yes. The backend, configer
       and config-schema extend it. The panel tsconfigs move to it in #130.
-- [ ] Owner: run the panel type gate on the box, or only in CI. From the
+- [x] Owner: run the panel type gate on the box, or only in CI. From the
       review of #130. `BUILD_PANEL` now runs `vue-tsc` 3.3.11, which needs
       Node 16. A box whose first `node` is older fails that step on every
       update and keeps the last good `dist`. CI runs the same check on the
       same lockfile. Option A: `"build": "vite build"`, and CI keeps the
       gate. Option B: keep the box gate after `GET /status` shows Node 16 or
-      newer on every Windows 10/11 box.
+      newer on every Windows 10/11 box. Answered 2026-09-25: option B. The
+      box build keeps `vue-tsc`. The owner confirmed that all panel PCs run
+      Node 18. Not checked through `GET /status`. The Node 16 floor of
+      `vue-tsc` 3.3.11 is accepted.
 - [ ] `dist-release.js` keeps its own copy of the Bun path and the CPU hold
       check (`installedBunVersion`, `readCpuHold`). `start-app.js` uses the
       `bootstrap.js` exports. Fold the startup copy in in a later change.

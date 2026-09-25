@@ -1300,3 +1300,17 @@ Context · Decision · Why · Gave up · Where
   already see. A silent empty value would look like a working unit.
 - Gave up: a render that survives a bug in the settings form.
 - Where: the panel contract pull request.
+
+## 2026-09-25 — The box build keeps the panel type gate
+
+- Context: BUILD_PANEL runs `vue-tsc` 3.3.11 on the box's first `node`.
+  It needs Node 16 and fails on Node 14.21.3. The review of #130 asked
+  whether the gate should run in CI only.
+- Decision: the box build keeps `vue-tsc --noEmit -p tsconfig.app.json`.
+  The owner confirmed on 2026-09-25 that all panel PCs run Node 18. The
+  Node 16 floor of `vue-tsc` 3.3.11 is accepted.
+- Why: every box that builds meets the floor. A box on OS_HOLD or
+  CPU_HOLD (Windows 7/8 among them) stops before BUILD_PANEL.
+- Gave up: `"build": "vite build"` with the gate in CI only.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
+  constraints" and "Open questions".
