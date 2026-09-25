@@ -1389,8 +1389,9 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       Add a runtime field?
 - [ ] `bun install --no-save` in `dist` installs the backend
       devDependencies too. This plan says `--omit dev`.
-- [ ] Owner: make `legacy-boot1` a required check. It adds about 11 minutes
-      of wall time on Windows.
+- [ ] Owner: make `legacy-boot1` a required check. On the #128 run it took
+      about 1.5 minutes on Ubuntu and 3.5 to 4 minutes on Windows, in
+      parallel with the other jobs. The run still took about 4.5 minutes.
 - [ ] The install scripts still install `nodemon` at `latest`.
 - [ ] `bootstrap.js` logs `pm2 je [PM2] Spawning PM2 daemon …` when its
       `pm2 -v` starts the daemon. It reads the first stdout line. The log
