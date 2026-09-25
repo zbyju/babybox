@@ -721,8 +721,9 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | @vitejs/plugin-vue | ^2.3.1 | 6.0.9 | ^20.19 ‖ ≥22.12 | |
 | vitest | ^0.9.3 | 5.0.1 | ^22.12 ‖ ^24 ‖ ≥26 | |
 | jsdom | ^16.7.0 | 30.1.0 | ^22.22.2 ‖ ^24.15 ‖ ≥26 | the strictest Node floor in the repo. P5 proves `bun install` accepts this engine. |
-| vue-tsc | ^0.38.2 | 3.3.11 | — | needs TS ≥5.0 **JS API**; not the TS 7 binary. Still 3.3.11. |
-| @vue/tsconfig | ^0.1.3 | 0.9.1 | — | needs TS ≥5.8, vue ^3.4; 0.1.3 uses `moduleResolution: Node` and `preserveValueImports`, both removed in TS 7 |
+| vue-tsc | ^0.38.2 | 3.3.11 | — | needs TS ≥5.0 **JS API**; not the TS 7 binary. Still 3.3.11. In the panel since the panel contract PR. Needs Node 16 or newer to run (fails on 14.21.3). |
+| @vue/tsconfig | ^0.1.3 | 0.9.1 | — | needs TS ≥5.8. Its vue ^3.4 peer is optional: 0.9.1 works with vue 3.2.37 (panel contract PR). 0.1.3 used `moduleResolution: Node` and `preserveValueImports`, both removed in TS 7 |
+| @vue/reactivity | none | 3.2.37 | — | added in the panel contract PR, types only. `vitest.env.d.ts` declares the chai bail type on it. Bump with vue. |
 | stylus | ^0.57.0 | 0.64.0 | ≥16 | 31 SFC style blocks |
 | eslint | ^8.19.0 | 10.11.0 | ^20.19 ‖ ^22.13 ‖ ≥24 | flat config rewrite; see "Lint stack". Removed, not upgraded. |
 | @typescript-eslint/* | ^5.30.5 | 8.70.0 | ≥18.18 | peer `typescript <6.1` |
@@ -734,7 +735,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | eslint-plugin-unused-imports | ^2.0.0 | 4.4.1 | — | |
 | @rushstack/eslint-patch | ^1.1.4 | 1.16.1 | — | not needed with flat config; remove |
 | prettier | ^2.7.1 | 3.9.6 | ≥14 | |
-| @types/jsdom, @types/howler, @types/lodash, @types/node | | 30.0.0, 2.2.13, 4.17.25, 24.13.4 | | |
+| @types/jsdom, @types/howler, @types/lodash, @types/node | | 30.0.0, 2.2.13, 4.17.25, 24.13.4 | | The panel contract PR removed `@types/jsdom` (nothing imports jsdom) and moved the panel `@types/node` to 18.11.18, the root and configer pin. Only the tests and `vite.config.ts` load it. |
 | `apps/panel/pnpm-lock.yaml` | stale, format 5.4 | — | | leftover from before the workspace; delete |
 
 **Backend**
@@ -851,6 +852,8 @@ builds of backend, configer and config-schema on 7; dev runners on `bun --watch`
 the panel keeps `typescript@6.0.3` as its own devDependency. Bun workspaces give
 each app its own `typescript`, so this is a per-`package.json` choice. Re-test
 `vue-tsc` on 7 at each Volar major; move the panel when it passes.
+`vue-tsc` also needs Node itself. Under the Bun runtime it loads no `.vue`
+file and fails with TS2307 (checked in the panel contract PR).
 
 **TypeScript contract. Decided 2026-09-14: very strict, every compile unit.**
 `strict: true` is the floor, not the goal. Every `tsconfig` (backend, configer,
@@ -954,6 +957,10 @@ still gets one merge after the canary.
    config-schema, about 1,100 lines with docs. The panel stays on
    TypeScript 4.7.4 and `vue-tsc` 0.38.9 there.
 
+   The panel contract is its own pull request. It is stacked on the
+   type-contract pull request and comes before Libraries. It keeps vue
+   3.2.37, vue-router, pinia, vite and vitest.
+
    Proposed, owner to decide: the panel contract lands before Libraries.
    Confidence medium. The evidence is from the planner's prototype.
    - The Libraries bumps need the panel on a newer TypeScript. pinia 4.0.3
@@ -964,6 +971,8 @@ still gets one merge after the canary.
      peer of `@vue/tsconfig` 0.9.1 is optional.
    - Size: 19 errors on `@vue/tsconfig` 0.9.1 alone, 173 errors in 32 files
      under the full contract (vue-tsc 3.3.11, TypeScript 6.0.3, vue 3.2.37).
+     The panel contract PR counted 149 errors in 20 files in `src` and 13
+     in the tests, and fixed all of them on vue 3.2.37.
    - What would change this: a Libraries bump that the panel's TypeScript
      4.7.4 can type-check, or a panel contract that only passes on vue 3.5.
 5. **Libraries.** The P4 bumps, including Express 5 and Pino 10. The review
@@ -1182,17 +1191,21 @@ TypeScript contract. Do not add `tsx`.
 
 - [x] `typescript@6.0.3` in root, backend, configer and config-schema.
       Configer and config-schema pin their own 6.0.3, then 7 in P6.
-- [ ] `typescript@6.0.3` in the panel. It stays on 4.7.4 with `vue-tsc`
-      0.38.9 until the panel box below.
+- [x] `typescript@6.0.3` in the panel, with `vue-tsc` 3.3.11. The panel
+      contract PR, after the type-contract PR.
 - [ ] `@types/bun` and the `@types/node` version, moved here from P3.
       TypeScript 4.7.4 cannot read either. A box on the Node fallback still
       starts the new `dist` on Node. The type-contract PR kept `@types/node`
       18.x in the backend and configer and added no `@types/bun`. The
       compiler then rejects a Node 20+ API such as `import.meta.dirname`.
-      Owner to confirm, see "Open questions".
+      Owner to confirm, see "Open questions". The panel contract PR moved
+      the panel `@types/node` to 18.11.18. Only its tests and
+      `vite.config.ts` load it.
 - [x] The TypeScript contract flags in configer, the backend and
       config-schema. Configer first. Two tracked suppressions. No flag off.
-- [ ] The TypeScript contract flags in the panel.
+- [x] The TypeScript contract flags in the panel. No tracked suppression.
+      No flag off. `tsconfig.app.json` copies the flag block, as the other
+      units do.
 - [x] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
       node16`, `.js` on relative imports,
       `path.dirname(fileURLToPath(import.meta.url))` (not
@@ -1201,11 +1214,22 @@ TypeScript contract. Do not add `tsx`.
       the same PR because ts-jest is the last CommonJS tool; replace
       `baseUrl` with a relative `paths` entry for `@babybox/config-schema` so
       TS 7 can drop `baseUrl`
-- [ ] Panel: `@vue/tsconfig@0.9.1`, `vue-tsc@3.3.11`, remove `baseUrl`, make
+- [x] Panel: `@vue/tsconfig@0.9.1`, `vue-tsc@3.3.11`, remove `baseUrl`, make
       `paths` relative, fix the known typecheck errors (re-count first; 20 at
       1927135) down to zero under the contract, make `bun run build` actually
       run the type gate over `src` (learnings.md says it checks zero files
-      today)
+      today).
+      The gate is `vue-tsc --noEmit -p tsconfig.app.json`. It checks 99
+      files: `env.d.ts`, 56 `.ts` and 42 `.vue`. It checked none before.
+      Contract: 149 errors in 20 files, now 0. Tests: 13, now 0. The CI
+      step "Panel typecheck" checks the tests and `vite.config.ts`. The 20
+      at 1927135 counted the tests together with the app. 13 of them came
+      from chai's `should`, 2 exist only on TypeScript 4.7, and 5 were
+      strict errors in the app.
+      Measured on Node 18.12.1 in Docker (arm64 on Apple silicon, 10 cores):
+      the panel `build` takes 4.3 to 4.5 s and 340 MB peak RSS. Before it
+      took 2.3 to 2.6 s and 278 MB. The type check alone takes 2.3 s. A box
+      CPU is slower. Not yet measured on a box.
 - [x] Configer: confirm with `tsc --noEmit` under the contract. Config-schema:
       confirm the same; it is already on `node16` / `strict`
 - [x] `ts-node` / `nodemon` → `bun --watch` for backend and configer
@@ -1256,7 +1280,8 @@ Size: ~1.5 days.
 - [ ] Root: `typescript@7.0.2`, or nothing if no root code compiles
 - [ ] Panel: stays on `typescript@6.0.3`; `vue-tsc` 3.3.11 crashes on 7 (tested
       2026-09-12, still the latest Volar on 2026-09-13). Re-test at each Volar
-      major and move when it passes
+      major and move when it passes. `vue-tsc` also needs a Node runtime. On
+      Bun it loads no `.vue` file (TS2307).
 - [ ] Remove any `ignoreDeprecations` left from P4
 - [ ] TS 7 pulls a platform binary (`@typescript/typescript-linux-x64`,
       `-win32-x64`); the legacy-image job on Linux and the Windows runner both
@@ -1324,6 +1349,12 @@ contract, which is where most of the migration risk sits.
   fallback can start their new `dist`. No `@types/bun` there. Pending owner
   confirmation. Do not follow npm's 26.
 - Express stays Express. Vite stays Vite. Tests stay vitest.
+- BUILD_PANEL runs `vue-tsc` on the first `node` on `PATH`. Without one it
+  fails with TS2307. It needs Node 16 or newer: `vue-tsc` 3.3.11 fails on
+  Node 14.21.3 with a SyntaxError (`??=`). 16.20.2 and 18.12.1 pass.
+- The panel build type-checks `src` on every box update. A slow or
+  out-of-memory check fails BUILD_PANEL. The last good `dist` starts, but
+  the box does not update.
 - Do not turn a TypeScript contract flag off to make a phase green.
 - Every registry dependency is pinned to one exact version in `package.json`.
   The lockfile records that same version. A bump writes the new exact version.
@@ -1397,7 +1428,11 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | How does the ESM backend find its folder? | `path.dirname(fileURLToPath(import.meta.url))` | `import.meta.dirname` needs Node 20.11. |
 | Which vitest runs the backend tests? | 0.9.4, the version configer and the panel use | vitest 5 needs vite 6.4 or newer and fails on Node 18. P5 moves every unit to 5. |
 | How is a cast tracked? | `// oxlint-disable-next-line typescript/consistent-type-assertions -- <reason>` on the line above | Two in this PR: configer boot merge, backend boot config. `as const` is not a cast. |
-| Are test files type-checked? | Not yet | They stay out of every tsconfig, as in configer. Test tsconfigs come in P5. |
+| Are test files type-checked? | Not yet | They stay out of every tsconfig, as in configer. Test tsconfigs come in P5. The panel is the exception, see below. |
+| What does the panel build check? | `src`, with `vue-tsc --noEmit -p tsconfig.app.json` | 99 files. The CI step "Panel typecheck" checks the tests and `vite.config.ts`. The box does not. |
+| Are the panel tests type-checked? | Yes, in CI | The panel already had `tsconfig.vitest.json`. `@vue/reactivity` 3.2.37 is a devDependency for the chai bail type. It moves with vue. |
+| `composite` in the panel? | No | With it, `vue-tsc -p` writes `tsconfig.app.tsbuildinfo` on every build. |
+| Vue 3.2 DOM types under `exactOptionalPropertyTypes`? | Leave the attribute off, never pass `undefined` | Eight workarounds in four SFCs until vue 3.5. Never `pattern=""`. |
 
 ## Open questions
 
@@ -1414,7 +1449,9 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       Node 18 does not install on Windows 7/8. Sets the syntax floor for
       `bootstrap.js`; assumed Node 12 until known. It also decides whether
       pm2 7.0.4 (engines Node ≥ 18) runs there. It ran on Node 16.20.2 in
-      one local check. Node 14 was not tested.
+      one local check. Node 14 was not tested. Since the panel contract PR,
+      BUILD_PANEL also needs Node 16 or newer: `vue-tsc` 3.3.11 fails on
+      Node 14.21.3. The old `vue-tsc` 0.38.9 ran there.
 - [x] Can the pm2 daemon run on Bun, or only the apps? Answered 2026-09-25.
       The daemon stays on Node. Every pm2 call starts it on the Node its
       shim finds, including the old startup's `pm2 delete`. The app
@@ -1449,7 +1486,8 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       from here", item 4.
 - [ ] No tsconfig type-checks the test files. Under the contract they have
       18 errors in the backend, 16 in configer and 56 in config-schema, and
-      about 50 `as`. Add a test tsconfig per unit in P5.
+      about 50 `as`. Add a test tsconfig per unit in P5. The panel tests
+      are checked since the panel contract PR.
 - [ ] `tsc` does not clean `outDir`. A box keeps the old
       `apps/backend/dist/__tests__/*.js` and `types/data.types.js`, and the
       startup copies them into `dist`. Nothing imports them.
@@ -1470,6 +1508,42 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 - [ ] npm reports vitest 5.0.2 on 2026-09-25; the plan pins 5.0.1.
       Re-check at P5. `bun audit` still reports 79 (2 critical, 27 high,
       38 moderate, 12 low).
+- [ ] Owner: one shared `source/tsconfig.contract.json` that every unit
+      extends, instead of a copy of the contract flags in each tsconfig.
+      From the review of #129. The panel tsconfigs copy the block too and
+      would move to the shared file.
+- [ ] `dist-release.js` keeps its own copy of the Bun path and the CPU hold
+      check (`installedBunVersion`, `readCpuHold`). `start-app.js` uses the
+      `bootstrap.js` exports. Fold the startup copy in in a later change.
+- [ ] `isInstanceOfGetUnitSettingsRequest` accepts `?unit=` (an empty
+      string). `GET /units/settings?unit=` then answers 200 with no data,
+      not 400. The logic is the same as before #129. A fix changes
+      behaviour.
+- [ ] `vue-tsc` needs a Node runtime. If P7 removes Node from the boxes,
+      BUILD_PANEL has no `node` to run it on.
+- [ ] Measure the panel build on a real box. The P4 numbers come from
+      Docker on Apple silicon.
+- [ ] `<router-link>` and `<router-view>` props are not type-checked.
+      vue-router 4.1.3 extends `GlobalComponents`, which vue 3.2.37 does not
+      have. Check again after vue 3.5.
+- [ ] After vue 3.5, drop the Vue 3.2 attribute workarounds: the optional
+      attributes in `BaseInput`, `srcAttr` and `topBorder` in the camera
+      views, `?? ''` and `=== true` on `value` and `disabled`.
+- [ ] The panel tests keep six `as` and one `let resolve!:`. P5 lint
+      removes them.
+- [ ] The panel has four `isObject` helpers: `utils/general.ts`,
+      `api/config.ts`, `api/reload.ts` and `utils/panel/instanceCheck.ts`.
+      Keep one.
+- [ ] The panel no longer reads the root `@types` folder. TypeScript 6
+      loads only what `types` names. The root `@types/*` can move to the
+      apps that use them.
+- [ ] Small panel leftovers: `VivotekCameraView` types `imageRef` as
+      `HTMLImageElement`, binds it to an `<iframe>`, and never reads it.
+      `SettingsFormTableRow` passes `:value` to `BaseInput` as a
+      fall-through attribute, not as `modelValue`. `maxH + 'px'` renders
+      `undefinedpx` when no size is passed. `settingsRowValueToValue` reads
+      `multiplier` and never uses it. `ConnectionResult` is defined twice.
+      `logic/settings/table.ts` is an empty file.
 
 ## Progress log
 
