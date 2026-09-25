@@ -5,7 +5,7 @@ import type { Maybe } from "@/types/generic.types";
 
 interface AppStateState {
   state: AppState;
-  done: Maybe<boolean>[];
+  done: [config: Maybe<boolean>, backend: Maybe<boolean>];
   message: Maybe<string>;
   startedAt: number;
   okScheduled: boolean;
