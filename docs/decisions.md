@@ -1200,6 +1200,22 @@ Context · Decision · Why · Gave up · Where
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Pull
   requests from here".
 
+## 2026-09-25 — The type contract lives in one file that each unit extends
+
+- Context: the 12 contract flags were copied into the backend, configer
+  and config-schema tsconfigs. Only a reviewer who compared the files by
+  hand could see that one unit lost a flag.
+- Decision: the flags live in `source/tsconfig.contract.json`. Each unit's
+  tsconfig extends it and keeps only its own target, module, paths, types
+  and folders. The owner chose this (option 1) in the #129 review.
+- Why: the contract is in one place. A unit can only weaken it by setting
+  a flag in its own tsconfig, which is easy to see in a diff. The emitted
+  `dist` does not change.
+- Gave up: a CI step that checks each copy. The panel moves to the file in
+  #130.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
+  contract" and "Open questions".
+
 ## 2026-09-25 — The panel contract is built on vue 3.2.37
 
 - Context: the 2026-09-25 proposal put the panel contract before Libraries,

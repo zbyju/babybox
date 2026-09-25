@@ -879,6 +879,10 @@ to the line. oxlint enforces the same with `typescript/no-explicit-any`,
 must not grow; P4 re-counts and then fixes down to zero under this contract.
 Do not turn a flag off to make a phase green.
 
+The 12 flags live in one file, `source/tsconfig.contract.json`. Each unit's
+tsconfig extends it and sets none of the flags itself. Decided 2026-09-25 in
+the review of #129. The panel moves to the file in the panel contract PR.
+
 **Dev runners.** `nodemon` in the backend uses `ts-node` under the hood,
 configer uses `nodemon --esm`. Both go to `bun --watch`. Do not add `tsx`.
 `erasableSyntaxOnly` is not required while we still emit with `tsc` into
@@ -1433,6 +1437,7 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | Are the panel tests type-checked? | Yes, in CI | The panel already had `tsconfig.vitest.json`. `@vue/reactivity` 3.2.37 is a devDependency for the chai bail type. It moves with vue. |
 | `composite` in the panel? | No | With it, `vue-tsc -p` writes `tsconfig.app.tsbuildinfo` on every build. |
 | Vue 3.2 DOM types under `exactOptionalPropertyTypes`? | Leave the attribute off, never pass `undefined` | Eight workarounds in four SFCs until vue 3.5. Never `pattern=""`. |
+| Where do the contract flags live? | In `source/tsconfig.contract.json` | Each unit's tsconfig extends it and repeats no flag. The owner chose this in the #129 review. |
 
 ## Open questions
 
@@ -1508,10 +1513,10 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 - [ ] npm reports vitest 5.0.2 on 2026-09-25; the plan pins 5.0.1.
       Re-check at P5. `bun audit` still reports 79 (2 critical, 27 high,
       38 moderate, 12 low).
-- [ ] Owner: one shared `source/tsconfig.contract.json` that every unit
+- [x] Owner: one shared `source/tsconfig.contract.json` that every unit
       extends, instead of a copy of the contract flags in each tsconfig.
-      From the review of #129. The panel tsconfigs copy the block too and
-      would move to the shared file.
+      Answered 2026-09-25 in the review of #129: yes. The backend, configer
+      and config-schema extend it. The panel tsconfigs move to it in #130.
 - [ ] Owner: run the panel type gate on the box, or only in CI. From the
       review of #130. `BUILD_PANEL` now runs `vue-tsc` 3.3.11, which needs
       Node 16. A box whose first `node` is older fails that step on every
