@@ -1,10 +1,12 @@
-import type { MainConfig } from "../../types/config.types";
+import { describe, expect, it } from "vitest";
+
+import type { MainConfig } from "../../types/config.types.js";
 import {
   BoundAddress,
   isBackendReadableConfig,
   reloadConfig,
   unappliedFields,
-} from "../configReload";
+} from "../configReload.js";
 
 function storedConfig(): MainConfig {
   return {

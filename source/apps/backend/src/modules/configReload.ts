@@ -1,4 +1,4 @@
-import type { MainConfig, UnappliedField } from "../types/config.types";
+import type { MainConfig, UnappliedField } from "../types/config.types.js";
 
 /**
  * The address the server really bound, taken when it started listening.

@@ -1,4 +1,4 @@
-import { config } from "..";
+import { config } from "../index.js";
 import {
   CommonDataRequestQuery,
   CommonDataResponse,
@@ -7,13 +7,13 @@ import {
   isInstanceOfGetUnitSettingsRequest,
   Setting,
   SettingResult,
-} from "../types/request.types";
-import { Action, Unit } from "../types/units.types";
-import { actionToUnit, actionToUrl, unitToIp } from "../utils/url";
-import { wait } from "../utils/wait";
-import { defaultFetchTimeout } from "./constants";
-import { fetchFromUrl } from "./fetch";
-import { onUnit, sharedOnUnit } from "./unitGate";
+} from "../types/request.types.js";
+import { Action, Unit } from "../types/units.types.js";
+import { actionToUnit, actionToUrl, unitToIp } from "../utils/url.js";
+import { wait } from "../utils/wait.js";
+import { defaultFetchTimeout } from "./constants.js";
+import { fetchFromUrl } from "./fetch.js";
+import { onUnit, sharedOnUnit } from "./unitGate.js";
 
 export async function fetchDataCommon(
   unit: Unit,

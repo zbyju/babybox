@@ -1,5 +1,5 @@
-import { CONFIGER_API_URL } from "./constants";
-import { fetchFromUrl } from "./fetch";
+import { CONFIGER_API_URL } from "./constants.js";
+import { fetchFromUrl } from "./fetch.js";
 
 export async function fetchConfig(): Promise<any> {
   const url = `${CONFIGER_API_URL}/main`;

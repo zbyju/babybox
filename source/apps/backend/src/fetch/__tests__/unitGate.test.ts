@@ -1,4 +1,6 @@
-import { UnitQueue, UnitReadResult } from "../unitGate";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { UnitQueue, UnitReadResult } from "../unitGate.js";
 
 function deferred<T>() {
   let resolve: (value: T) => void;

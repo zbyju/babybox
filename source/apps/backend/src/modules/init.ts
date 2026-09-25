@@ -1,4 +1,4 @@
-import { restartRepository } from "./restart";
+import { restartRepository } from "./restart.js";
 
 const DISABLED_VALUES = ["false", "0", "no", "off"];
 

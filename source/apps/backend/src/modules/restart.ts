@@ -1,15 +1,14 @@
-import { Moment } from "moment";
-import moment = require("moment");
-
 import { exec } from "child_process";
+import type { Moment } from "moment";
+import moment from "moment";
+import winston from "winston";
 
-import { RestartRepository } from "../types/restart.types";
+import { config } from "../index.js";
+import { RestartRepository } from "../types/restart.types.js";
 import {
   getFullTimeFormatted,
   getTimeDifferenceInSeconds,
-} from "../utils/time";
-import winston = require("winston");
-import { config } from "..";
+} from "../utils/time.js";
 
 export const restartRepository = function (): RestartRepository {
   const logger = winston.createLogger({

@@ -1,9 +1,9 @@
-import * as express from "express";
+import express from "express";
 import { Request, Response } from "express";
 
-import { fetchDataCommon, updateWatchdog } from "../fetch/fetchFromUnits";
-import { Unit } from "../types/units.types";
-import { transformThermalData } from "../utils/transformData";
+import { fetchDataCommon, updateWatchdog } from "../fetch/fetchFromUnits.js";
+import { Unit } from "../types/units.types.js";
+import { transformThermalData } from "../utils/transformData.js";
 
 export const router = express.Router();
 

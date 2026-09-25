@@ -1,5 +1,5 @@
-import { config } from "..";
-import { Action, Unit } from "../types/units.types";
+import { config } from "../index.js";
+import { Action, Unit } from "../types/units.types.js";
 
 /*
  * One entry per action, so a new Action does not compile until its unit and

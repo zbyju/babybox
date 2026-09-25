@@ -1,7 +1,16 @@
 import * as http from "http";
 import type { AddressInfo } from "net";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
-import { Action, Unit } from "../../types/units.types";
+import { Action, Unit } from "../../types/units.types.js";
 
 /*
  * Drives the real axios and socket path against a local HTTP server, so it
@@ -15,7 +24,7 @@ describe("fetchFromUnits.ts against a real server", () => {
   let inFlight = 0;
   let maxInFlight = 0;
   let requests = 0;
-  let unitApi: typeof import("../fetchFromUnits");
+  let unitApi: typeof import("../fetchFromUnits.js");
 
   beforeAll(async () => {
     server = http.createServer((req, res) => {
@@ -39,8 +48,8 @@ describe("fetchFromUnits.ts against a real server", () => {
      * Both units point at the same server, so a second connection is visible
      * whichever unit opened it.
      */
-    jest.resetModules();
-    jest.doMock("../..", () => ({
+    vi.resetModules();
+    vi.doMock("../../index.js", () => ({
       config: {
         units: {
           engine: { ip: `127.0.0.1:${port}` },
@@ -48,7 +57,7 @@ describe("fetchFromUnits.ts against a real server", () => {
         },
       },
     }));
-    unitApi = require("../fetchFromUnits");
+    unitApi = await import("../fetchFromUnits.js");
   });
 
   afterAll(async () => {
@@ -125,7 +134,7 @@ describe("updateSettings against a unit that is ready", () => {
   const VALUE = 7;
 
   let server: http.Server;
-  let unitApi: typeof import("../fetchFromUnits");
+  let unitApi: typeof import("../fetchFromUnits.js");
   let order: string[] = [];
   let inFlight = 0;
   let maxInFlight = 0;
@@ -173,8 +182,8 @@ describe("updateSettings against a unit that is ready", () => {
     );
     const { port } = server.address() as AddressInfo;
 
-    jest.resetModules();
-    jest.doMock("../..", () => ({
+    vi.resetModules();
+    vi.doMock("../../index.js", () => ({
       config: {
         units: {
           engine: { ip: `127.0.0.1:${port}` },
@@ -182,7 +191,7 @@ describe("updateSettings against a unit that is ready", () => {
         },
       },
     }));
-    unitApi = require("../fetchFromUnits");
+    unitApi = await import("../fetchFromUnits.js");
   });
 
   afterAll(async () => {

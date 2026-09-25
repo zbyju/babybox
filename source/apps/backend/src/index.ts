@@ -1,30 +1,37 @@
-import * as cors from "cors";
+import cors from "cors";
 import * as dotenv from "dotenv";
-import * as express from "express";
-import * as morgan from "morgan";
+import express from "express";
+import morgan from "morgan";
+import open from "open";
 import * as path from "path";
-import open = require("open");
-import { fetchConfig } from "./fetch/fetchConfig";
+import { fileURLToPath } from "url";
+
+import { fetchConfig } from "./fetch/fetchConfig.js";
 import type {
   BackendReadableConfig,
   BoundAddress,
-} from "./modules/configReload";
-import { modulesObject } from "./modules/init";
-import { router as engineRoute } from "./routes/engineRoute";
-import { router as reloadRoute } from "./routes/reloadRoute";
-import { router as restartRoute } from "./routes/restartRoute";
-import { router as thermalRoute } from "./routes/thermalRoute";
-import { router as unitsRoute } from "./routes/unitsRoute";
+} from "./modules/configReload.js";
+import { modulesObject } from "./modules/init.js";
+import { router as engineRoute } from "./routes/engineRoute.js";
+import { router as reloadRoute } from "./routes/reloadRoute.js";
+import { router as restartRoute } from "./routes/restartRoute.js";
+import { router as thermalRoute } from "./routes/thermalRoute.js";
+import { router as unitsRoute } from "./routes/unitsRoute.js";
 import {
   cachedRuntimeVersions,
   startupLastFor,
   statusBody,
-} from "./utils/runtimeVersions";
-import { wait } from "./utils/wait";
+} from "./utils/runtimeVersions.js";
+import { wait } from "./utils/wait.js";
 
 const CONFIG_RETRY_DELAY_MS = 5000;
 
-const PUBLIC_DIR = path.join(__dirname, "public");
+/*
+ * Not import.meta.dirname: that needs Node 20.11.
+ * The box's Node 18 starts this dist when Bun is missing.
+ */
+const APP_DIR = path.dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = path.join(APP_DIR, "public");
 const HASHED_ASSETS_DIR = path.join(PUBLIC_DIR, "assets");
 
 /* Revalidate on every load, so a deployed update is picked up right away. */
@@ -118,7 +125,7 @@ async function main() {
   // Status route
   app.get(prefix + "/status", (req, res) => {
     res.status(200).send(
-      statusBody(cachedRuntimeVersions(), startupLastFor(__dirname))
+      statusBody(cachedRuntimeVersions(), startupLastFor(APP_DIR))
     );
   });
 

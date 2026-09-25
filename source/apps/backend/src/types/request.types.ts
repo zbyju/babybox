@@ -1,4 +1,4 @@
-import { BothUnit, Unit } from "./units.types";
+import { BothUnit, Unit } from "./units.types.js";
 
 export interface CommonDataRequestQuery {
   timeout?: number;
