@@ -1044,3 +1044,66 @@ Context · Decision · Why · Gave up · Where
   `/usr/local` when it installs Node. That step stays. Bun does not use it.
 - Gave up: a Bun install under `/usr/local`.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), P1.
+
+## 2026-09-25 — The apps start through a Node helper with the absolute Bun path
+
+- Context: on boot 1 the old startup app runs HEAD's `start:configer` and
+  `start:main` with its old pm2. `~/.bun/bin` is not on `PATH`. The old app
+  never puts `dist2` back after a failed start.
+- Decision: both scripts run `node apps/startup/start-app.js <app>`. The
+  helper is Node 12 CommonJS with no packages. It passes the absolute Bun
+  path to pm2 with `--interpreter`. The pm2 name, the script, and the cwd
+  stay as before.
+- Why: `sh` and `cmd.exe` run the same one-word command. The helper has
+  unit tests. pm2 5.2.0 through 7.0.4 accept an absolute interpreter path.
+- Gave up: `bun` in the script, `$HOME` or `%USERPROFILE%` in the script,
+  and a pm2 ecosystem file (the same logic, harder to test).
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3.
+
+## 2026-09-25 — The pm2 daemon stays on Node
+
+- Context: the plan left open whether the pm2 daemon could run on Bun.
+- Decision: the daemon stays on Node. Only the app interpreter is Bun.
+- Why: every pm2 call starts the daemon on the Node its shim finds,
+  including the old startup's `pm2 delete`. pm2 7.0.4 ran its daemon on Bun
+  once, but that brings nothing. The daemon only talks to its apps.
+- Gave up: a box with no Node process. Node 18 stays on disk anyway.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3 and
+  "Open questions".
+
+## 2026-09-25 — The startup app stays on Node after boot 2
+
+- Context: the Target table said the startup app moves to Bun after boot 2.
+- Decision: the startup app and the update runner stay on Node.
+  `startup.sh` and `startup.bat` still call Node.
+- Why: the same files must run on the oldest Node for boot 1 and on hold
+  boxes. `spawn("pnpm.cmd", { shell: false })` under Bun on Windows is not
+  tested.
+- Gave up: one runtime for everything on a box that can run Bun.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Target
+  after the jump" and P3.
+
+## 2026-09-25 — A Bun that answers runs the apps, whatever its version
+
+- Context: bootstrap keeps the old binary when the download of a new
+  `BUN_VERSION` fails. A CPU hold keeps the binary that traps on disk.
+- Decision: the helper starts the apps on Node for a hold OS, a CPU hold
+  that names the pin, a missing binary, or a `bun -v` that fails, times
+  out, or prints nothing. Otherwise the apps run on that Bun, even when its
+  version is not `BUN_VERSION`. The start line names both versions.
+- Why: that binary ran the last good `dist`. Node would be a runtime the
+  current `dist` has not run on since the jump.
+- Gave up: a Node fallback on a version mismatch.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3.
+  Check this again at each `BUN_VERSION` bump.
+
+## 2026-09-25 — The Bun and Node types move to the type-contract PR
+
+- Context: P3 planned `@types/node` 24.13.4 and `@types/bun`.
+- Decision: both move to the type-contract PR. That PR picks the
+  `@types/node` version.
+- Why: TypeScript 4.7.4 cannot parse `bun-types` 1.4.2 (TS1005, TS1139), and
+  `skipLibCheck` does not cover a syntax error. `@types/node` 24.13.4 needs
+  TypeScript 5.6.
+- Gave up: new types before the TypeScript bump.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3 and P4.

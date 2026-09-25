@@ -1,8 +1,8 @@
 # Dependency upgrade
 
-Status: **P1 in progress** on `feat/toolchain-jump`. `main` has no upgrade code.
+Status: **P3 done, P4 open** on `feat/toolchain-jump`. `main` has no upgrade code.
 Owner: —
-Last updated: 2026-09-23
+Last updated: 2026-09-25
 
 ## Goal
 
@@ -42,7 +42,7 @@ bootstrap from Node 18.
 
 | Piece | Target | Not |
 |---|---|---|
-| Runtime for backend, configer, panel build, startup after boot 2 | Bun 1.4.2, pinned | Node 24 |
+| Runtime for backend, configer, panel build | Bun 1.4.2, pinned | Node 24 |
 | Package manager | `bun install`, `bun.lock` | pnpm 12, npm, yarn |
 | Legacy hook (boot 1, forever) | `pnpm run build` on the box's old pnpm 7 | changing autostart before the pull |
 | Process manager | pm2 7.0.4, apps spawned with the absolute Bun path | replacing pm2 |
@@ -54,7 +54,8 @@ bootstrap from Node 18.
 | HTTP servers | Express 5 on Bun | Elysia / `Bun.serve` |
 
 Node 18 and pnpm 7 stay on disk as the bootstrap host and the `pnpm run build`
-hook. They are not upgraded. They stop serving HTTP after P3.
+hook. They are not upgraded. They stop serving HTTP after P3. Node also runs
+the pm2 daemon and the startup app.
 
 ## Safe release
 
@@ -268,6 +269,15 @@ from `dist/release.json`. The job asserts that the build runs.
 
 The job gates the merge. A red job means the tip is not safe to check out on
 a box. The fake Windows 8 case does not replace the real Windows 8 canary.
+
+The `legacy-boot1` job runs the real startup app from the `legacy-runtime`
+tag, with pm2 5.2.0 or 6.0.14 and no `~/.bun/bin` on `PATH`. It runs on
+Ubuntu and on Windows. It first builds and starts the tag, as a legacy box
+would. Then it pulls a tip with a panel build that exits 1. The legacy
+`dist` must start on Bun. Then it pulls the pull request head. The new
+`dist` must start on Bun. Each case checks the pm2 interpreter and the real
+process executable. The old startup never puts `dist2` back after a failed
+start, so this job is the only proof that boot 1 starts.
 
 ## Review 2026-09-21
 
@@ -625,8 +635,8 @@ Half the fleet. Facts that shape the bootstrap there:
   with no UAC prompt. That account was `juricj`. The usual fleet account
   name is `babybox`. The path is the profile of whoever is logged in.
 - **nvm-windows stays as the leftover Node host.** The jump does not call
-  `nvm use`. If pm2 cannot run as a Bun process, the daemon stays on the
-  existing Node and only the app interpreter changes in P3.
+  `nvm use`. The pm2 daemon stays on that Node (decided 2026-09-25). Only
+  the app interpreter changes in P3.
 
 What the bootstrap does on Windows:
 
@@ -685,7 +695,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 |---|---|---|---|---|
 | typescript | ^4.7.4 | 7.0.2 | ≥16.20 | native compiler; see P6 |
 | ts-node | ^10.9.1 | 10.9.2 | — | remove. `bun --watch` replaces ts-node, tsx and nodemon |
-| @types/node | ^18.11.18 | 24.13.4 | — | bun's Node compat layer. npm's absolute latest is 26.5.1; do not follow it. Also add `@types/bun`. P3. |
+| @types/node | ^18.11.18 | 24.13.4 | — | bun's Node compat layer. npm's absolute latest is 26.5.1; do not follow it. Also add `@types/bun`. The type-contract PR (TypeScript ≥ 5.6). |
 | @types/cors, @types/express, @types/lodash.merge | | | | move to the apps that use them; root should hold nothing |
 
 **`@babybox/config-schema`** (new since the first draft)
@@ -776,7 +786,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | Bun | absent | 1.4.2 pinned | | Runtime and package manager. GitHub release zip, sha256 in `versions.env`. One x64 binary. SSE4.2 required. No baseline fallback. |
 | Node | 18.12.1 | leave in place | | Bootstrap host and `pnpm run build` hook. Not upgraded. Stops serving HTTP after P3. |
 | pnpm | 7.5.0 | leave in place | ≥18 | Legacy `pnpm run build` only. Lockfile 5.4 stays until P7. Not upgraded. |
-| pm2 | `latest` | 7.0.4 | ≥18 | pin it; `latest` on an unattended install is a risk we already carry. P3 spawns apps with the absolute Bun path. |
+| pm2 | `latest` | 7.0.4 | ≥18 | 7.0.4 from `versions.env` (startup.sh, startup.bat, both install scripts). A box keeps its old pm2 until boot 2. P3 spawns apps with the absolute Bun path. |
 | typescript, ts-node (global) | removed from the install scripts | — | | P0. Workspace `typescript` and `ts-node` stay until later phases. |
 
 ## Things that change behaviour, not just versions
@@ -871,9 +881,9 @@ in production without emit.
   update runner. The old `pnpm-lock.yaml` (format 5.4) stays in the tree so
   pnpm 7 cannot invent a format-9 file. Workspace layout stays `apps/*` and
   `packages/*` via Bun workspaces in root `package.json`.
-- P3 starts pm2 apps with interpreter `bun`. Prove an old compiled `dist`
-  still starts. If the pm2 daemon cannot itself run on Bun, leave the daemon
-  on the existing Node and only switch the app interpreter.
+- P3 starts pm2 apps with the absolute Bun path as the interpreter. An old
+  compiled `dist` still starts. The daemon stays on Node (decided
+  2026-09-25).
 - Express stays. Vite stays. vitest stays. This is not Elysia and not
   `bun test`.
 - `bun install` trusted-dependency / lifecycle scripts: record what must be
@@ -1112,21 +1122,30 @@ run `pnpm install` and dirty the tree.
 
 ### P3 — Apps run on Bun
 
-- [ ] pm2 starts configer and the panel backend with the absolute Bun path.
-      Do not use `bun` from `PATH`. `start:main` / `start:configer` stop
-      calling Node.
-- [ ] `@types/node` → 24.x everywhere (24.13.4 today, not 26.x) plus
-      `@types/bun`. Remove the root copy if no root code needs it.
-- [ ] pm2 → 7.0.4 pinned. If the pm2 daemon cannot run on Bun, leave it on
+- [x] pm2 starts configer and the panel backend with the absolute Bun path.
+      Do not use `bun` from `PATH`. The apps stop running on Node.
+      `start:configer` and `start:main` run `node apps/startup/start-app.js`.
+      The helper runs on the legacy Node. The apps run on Bun.
+- `@types/node` and `@types/bun`: moved to the type-contract PR.
+  TypeScript 4.7.4 cannot parse `bun-types` 1.4.2 (TS1005, TS1139).
+  `skipLibCheck` does not cover a syntax error. `@types/node` 24.13.4 needs
+  TypeScript 5.6.
+- [x] pm2 → 7.0.4 pinned. If the pm2 daemon cannot run on Bun, leave it on
       the existing Node and only switch the app interpreter. Record which.
-- [ ] Prove last good `dist` (compiled JS from before this phase) still
-      starts when the interpreter is Bun.
-- [ ] After boot 2, `startup.sh` / `startup.bat` may call the runner with
+      The daemon stays on Node. Only the app interpreter changed.
+      `install/windows.js` reads `PM2_VERSION`.
+- [x] Prove last good `dist` (compiled JS from before this phase) still
+      starts when the interpreter is Bun. legacy-boot1 builds the tag with
+      the legacy toolchain. A failed boot 1 build then starts that dist on
+      Bun.
+- [x] After boot 2, `startup.sh` / `startup.bat` may call the runner with
       `bun` or still `node`. Either is fine. Legacy autostart still uses
-      `pnpm run build`.
-- [ ] Legacy-image job asserts the spawned apps are Bun processes.
+      `pnpm run build`. Both still call Node.
+- [x] Legacy-image job asserts the spawned apps are Bun processes.
+      `assert-runtime.js` checks `pm2 jlist` and the process executable.
+      The BOOTSTRAP_BUN case expects Node.
 
-Size: ~0.5 day.
+Size: ~1 day (the boot 1 job).
 
 ### P4 — TypeScript 4.7 → 6.0.3, the contract, and the libraries
 
@@ -1136,6 +1155,10 @@ TypeScript contract. Do not add `tsx`.
 
 - [ ] `typescript@6.0.3` in root, panel, backend; configer and config-schema use
       the workspace `tsc` (or their own 6.0.3, then 7 in P6)
+- [ ] `@types/bun` and the `@types/node` version, moved here from P3.
+      TypeScript 4.7.4 cannot read either. The type-contract PR picks the
+      `@types/node` version. A box on the Node fallback still starts the
+      new `dist` on Node.
 - [ ] Every compile unit: the TypeScript contract flags. Configer first, then
       backend, config-schema, panel. Tracked suppressions only. No flag off.
 - [ ] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
@@ -1326,6 +1349,16 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 |---|---|---|
 | Where does the Ubuntu Bun zip land? | `$HOME/.bun/bin` | The jump does not need a writable `/usr/local`. `startup.sh`, `bootstrap.js`, and `install-all.sh` already write that path. `install-all.sh` may still chown `/usr/local` for Node. That host stays. |
 
+## Decisions taken (2026-09-25)
+
+| Question | Answer | Consequence |
+|---|---|---|
+| How does pm2 get the Bun path? | A Node helper, `apps/startup/start-app.js` | The root start scripts call only `node`. The helper passes the absolute Bun path to pm2. Not `bun` from `PATH`, not `$HOME` in a script, not an ecosystem file. |
+| Where does the pm2 daemon run? | On Node | Every pm2 call starts the daemon on the Node its shim finds. Bun brings nothing to that process. |
+| Does the startup app move to Bun after boot 2? | No | It must run on the oldest Node for boot 1 and for hold boxes. `startup.sh` and `startup.bat` still call Node. |
+| What if `bun -v` is not `BUN_VERSION`? | Run the apps on that Bun | That binary ran the last good `dist`. A hold OS, a CPU hold, a missing binary, or a `bun -v` that fails starts on Node. |
+| When do `@types/node` and `@types/bun` move? | In the type-contract PR | TypeScript 4.7.4 cannot read `@types/bun` 1.4.2 or `@types/node` 24.13.4. |
+
 ## Open questions
 
 - [x] Windows 8: answered 2026-09-21. Hold in place. Do not park on another branch.
@@ -1339,9 +1372,29 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       Node.
 - [ ] What Node do the Windows boxes actually run? nvm-windows "mimicked" 18.12.1, but
       Node 18 does not install on Windows 7/8. Sets the syntax floor for
-      `bootstrap.js`; assumed Node 12 until known.
-- [ ] Can the pm2 daemon run on Bun, or only the apps? Decide in P3 with a
-      proof on one box. The app interpreter is the absolute Bun path either way.
+      `bootstrap.js`; assumed Node 12 until known. It also decides whether
+      pm2 7.0.4 (engines Node ≥ 18) runs there. It ran on Node 16.20.2 in
+      one local check. Node 14 was not tested.
+- [x] Can the pm2 daemon run on Bun, or only the apps? Answered 2026-09-25.
+      The daemon stays on Node. Every pm2 call starts it on the Node its
+      shim finds, including the old startup's `pm2 delete`. The app
+      interpreter is the absolute Bun path.
+- [ ] `START_CONFIGER` and `START_PANEL` pass when pm2 accepts the process.
+      Should `START_PANEL` wait for `GET /status` before it writes
+      `release.json`? A Bun crash after `pm2 start` returns 0 is not rolled
+      back.
+- [ ] `dist-release.js` spawns `pnpm.cmd` with `shell: false`. Node 18.20.2+
+      and 20.12.2+ refuse that (EINVAL). The Windows fleet Node is unknown.
+- [ ] `GET /status` `node` shows the Node version Bun reports (`v26.3.0`).
+      Add a runtime field?
+- [ ] `bun install --no-save` in `dist` installs the backend
+      devDependencies too. This plan says `--omit dev`.
+- [ ] Owner: make `legacy-boot1` a required check. It adds about 11 minutes
+      of wall time on Windows.
+- [ ] The install scripts still install `nodemon` at `latest`.
+- [ ] `bootstrap.js` logs `pm2 je [PM2] Spawning PM2 daemon …` when its
+      `pm2 -v` starts the daemon. It reads the first stdout line. The log
+      line is wrong. The build does not fail.
 
 ## Progress log
 

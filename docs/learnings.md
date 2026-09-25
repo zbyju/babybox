@@ -29,6 +29,16 @@ lesson: what happened, what to do instead.
 - **`pnpm view` is not a test of the above.** It shells out to the machine's npm, which
   fails under Node 18 with `tracingChannel is not a function`. Test with
   `pnpm install --lockfile-only` in a scratch folder.
+- **TypeScript 4.7 cannot read `@types/bun` 1.4.2 or `@types/node` 24.13.4.**
+  `bun-types` gives TS1005 and TS1139 parse errors, and `skipLibCheck` does not
+  hide a parse error. Check the package's `ts4.x` dist-tag before a types bump.
+  The `@types/bun` `ts4.7` tag is 1.1.5.
+- **`tsc --build` skips a project it thinks is up to date.** A types bump in the
+  backend exited 0 because nothing was rebuilt. Test a types bump with
+  `tsc --build --force`.
+- **`npx -p node@12.22.12` does not run on Apple silicon.** There is no darwin-arm64
+  build of Node 12, and npx exits 1 with no message. Use the `node:12.22.12`
+  Docker image for a Node 12 parse.
 
 ## Configer
 
@@ -123,6 +133,22 @@ lesson: what happened, what to do instead.
   backend's `package.json` breaks that install, so the backend can only share types.
 - **After `git pull` the box runs the root `build` script**, nothing else. A new build
   step belongs there, or the box never runs it.
+- **pm2 treats a Bun interpreter three ways.** 4.5.6 to 5.4.3 spawn
+  `<bun> <script>` directly. 6.0.x wraps any path that contains `bun` in
+  `ProcessContainerForkBun.js`. 7.0.4 wraps only a path that ends in `bun`, so it
+  spawns `bun.exe` directly. All of them accept an absolute interpreter path.
+- **Under Bun 1.4.2 `process.version` is `v26.3.0`.** The `node` field of
+  `GET /status` shows that value when the app runs on Bun.
+- **The legacy-image job never ran the old startup app.** It runs `git pull` and
+  `pnpm run build` itself, then HEAD's startup app. Boot 1 with the old app had no
+  test until `legacy-boot1`.
+- **`pm2 -v` after `pm2 kill` prints `[PM2] Spawning PM2 daemon` first.** It
+  starts the daemon. Read `pm2 jlist` from the first `[{` or `[]`, not from the
+  first `[`.
+- **Docker on Apple silicon runs the x64 image through rosetta.**
+  `/proc/<pid>/exe` then points at `/run/rosetta/rosetta`, not at the real
+  binary. The executable check in `assert-runtime.js` only holds on a real x64
+  host such as CI.
 
 ## Process
 
