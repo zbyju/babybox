@@ -34,7 +34,7 @@
   }
 
   /*
-   * Left off when unset, as Vue did with undefined.
+   * Not set when there is no value, as Vue did with undefined.
    * An empty pattern would reject every value.
    */
   const optionalAttrs = computed(() => {

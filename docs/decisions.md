@@ -1258,11 +1258,11 @@ Context · Decision · Why · Gave up · Where
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), the package
   table.
 
-## 2026-09-25 — Vue 3.2 DOM attributes are left off, not set to undefined
+## 2026-09-25 — Vue 3.2 DOM attributes with no value are not set at all
 
 - Context: under `exactOptionalPropertyTypes`, the Vue 3.2 DOM types and
   csstype 2.6 reject `undefined` for an attribute or a style value.
-- Decision: leave the attribute off. `v-bind` of an object that lacks the
+- Decision: do not set the attribute. `v-bind` of an object that lacks the
   key for `src`, `placeholder` and `pattern`. A style object without
   `borderTopWidth`. `value ?? ''` and `disabled === true` on inputs.
   Never `pattern=""`.
