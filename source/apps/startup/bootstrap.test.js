@@ -929,6 +929,7 @@ describe("syntax", () => {
       "last-record.js",
       "run-update.js",
       "start-app.js",
+      "src/logic/install/pm2-version.js",
     ]
       .map((name) => fs.readFileSync(path.join(__dirname, name), "utf8"))
       .join("\n");
