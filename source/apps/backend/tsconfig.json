@@ -1,24 +1,24 @@
-// tsconfig.json
 {
+  "extends": "../../tsconfig.contract.json",
+  "include": ["src"],
+  "exclude": ["node_modules", "src/**/*.test.ts"],
   "compilerOptions": {
-    "outDir": "dist", // where to put the compiled JS files
-    "target": "ES2020", // which level of JS support to target
-    "module": "CommonJS", // which system for the program AMD, UMD, System, CommonJS
-
-    // Recommended: Compiler complains about expressions implicitly typed as 'any'
-    "noImplicitAny": true,
-
+    "target": "ES2020",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    // Node's API only: this dist also starts on the box's Node 18 when Bun is missing.
+    "types": ["node"],
     /*
      * The config shape, without a dependency. startup installs the backend's dist
      * outside the workspace, where a workspace:* dependency cannot resolve, so the
      * backend reads the package's built types straight from disk and imports
      * nothing at runtime. The package has to be built before the backend.
+     * No baseUrl: TypeScript 6 deprecates it, and paths resolve from this file.
      */
-    "baseUrl": ".",
     "paths": {
       "@babybox/config-schema": ["../../packages/config-schema/dist/index.d.ts"]
     }
-  },
-  "include": ["src"], // which files to compile
-  "exclude": ["node_modules"] // which files to skip
+  }
 }

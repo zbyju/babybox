@@ -1,4 +1,4 @@
-import type { MainConfig, UnappliedField } from "../types/config.types";
+import type { MainConfig, UnappliedField } from "../types/config.types.js";
 
 /**
  * The address the server really bound, taken when it started listening.
@@ -73,11 +73,11 @@ export function isBackendReadableConfig(
   if (!isObject(engine) || !isObject(thermal)) return false;
 
   return (
-    typeof backend.url === "string" &&
-    typeof backend.port === "number" &&
-    typeof pc.os === "string" &&
-    typeof engine.ip === "string" &&
-    typeof thermal.ip === "string"
+    typeof backend["url"] === "string" &&
+    typeof backend["port"] === "number" &&
+    typeof pc["os"] === "string" &&
+    typeof engine["ip"] === "string" &&
+    typeof thermal["ip"] === "string"
   );
 }
 

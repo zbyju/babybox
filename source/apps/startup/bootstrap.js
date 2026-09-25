@@ -824,6 +824,9 @@ module.exports = {
   isIllegalInstruction,
   isOsHold,
   prependPath,
+  probeBun,
+  readHoldVersion,
   readVersions,
   run,
+  versionsMatch,
 };

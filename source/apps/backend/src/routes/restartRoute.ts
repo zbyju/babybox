@@ -1,7 +1,7 @@
-import * as express from "express";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
+import express from "express";
 
-import { modules } from "..";
+import { modules } from "../index.js";
 
 export const router = express.Router();
 

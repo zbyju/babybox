@@ -1044,3 +1044,174 @@ Context · Decision · Why · Gave up · Where
   `/usr/local` when it installs Node. That step stays. Bun does not use it.
 - Gave up: a Bun install under `/usr/local`.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), P1.
+
+## 2026-09-25 — The apps start through a Node helper with the absolute Bun path
+
+- Context: on boot 1 the old startup app runs HEAD's `start:configer` and
+  `start:main` with its old pm2. `~/.bun/bin` is not on `PATH`. The old app
+  never puts `dist2` back after a failed start.
+- Decision: both scripts run `node apps/startup/start-app.js <app>`. The
+  helper is Node 12 CommonJS with no packages. It passes the absolute Bun
+  path to pm2 with `--interpreter`. The pm2 name, the script, and the cwd
+  stay as before.
+- Why: `sh` and `cmd.exe` run the same one-word command. The helper has
+  unit tests. pm2 5.2.0 through 7.0.4 accept an absolute interpreter path.
+- Gave up: `bun` in the script, `$HOME` or `%USERPROFILE%` in the script,
+  and a pm2 ecosystem file (the same logic, harder to test).
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3.
+
+## 2026-09-25 — The pm2 daemon stays on Node
+
+- Context: the plan left open whether the pm2 daemon could run on Bun.
+- Decision: the daemon stays on Node. Only the app interpreter is Bun.
+- Why: every pm2 call starts the daemon on the Node its shim finds,
+  including the old startup's `pm2 delete`. pm2 7.0.4 ran its daemon on Bun
+  once, but that brings nothing. The daemon only talks to its apps.
+- Gave up: a box with no Node process. Node 18 stays on disk anyway.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3 and
+  "Open questions".
+
+## 2026-09-25 — The startup app stays on Node after boot 2
+
+- Context: the Target table said the startup app moves to Bun after boot 2.
+- Decision: the startup app and the update runner stay on Node.
+  `startup.sh` and `startup.bat` still call Node.
+- Why: the same files must run on the oldest Node for boot 1 and on hold
+  boxes. `spawn("pnpm.cmd", { shell: false })` under Bun on Windows is not
+  tested.
+- Gave up: one runtime for everything on a box that can run Bun.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Target
+  after the jump" and P3.
+
+## 2026-09-25 — A Bun that answers runs the apps, whatever its version
+
+- Context: bootstrap keeps the old binary when the download of a new
+  `BUN_VERSION` fails. A CPU hold keeps the binary that traps on disk.
+- Decision: the helper starts the apps on Node for a hold OS, a CPU hold
+  that names the pin, a missing binary, or a `bun -v` that fails, times
+  out, or prints nothing. Otherwise the apps run on that Bun, even when its
+  version is not `BUN_VERSION`. The start line names both versions.
+- Why: that binary ran the last good `dist`. Node would be a runtime the
+  current `dist` has not run on since the jump.
+- Gave up: a Node fallback on a version mismatch.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3.
+  Check this again at each `BUN_VERSION` bump.
+
+## 2026-09-25 — The Bun and Node types move to the type-contract PR
+
+- Context: P3 planned `@types/node` 24.13.4 and `@types/bun`.
+- Decision: both move to the type-contract PR. That PR picks the
+  `@types/node` version.
+- Why: TypeScript 4.7.4 cannot parse `bun-types` 1.4.2 (TS1005, TS1139), and
+  `skipLibCheck` does not cover a syntax error. `@types/node` 24.13.4 needs
+  TypeScript 5.6.
+- Gave up: new types before the TypeScript bump.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3 and P4.
+
+## 2026-09-25 — The ESM backend finds its folder with fileURLToPath
+
+- Context: the plan text said `import.meta.dirname` for `__dirname` in the
+  ESM backend. P3 starts the same `dist` on Node 18 when a box cannot run
+  Bun (hold OS, CPU hold, missing or dead Bun).
+- Decision: `path.dirname(fileURLToPath(import.meta.url))`, once, as
+  `APP_DIR` in `index.ts`.
+- Why: `import.meta.dirname` needs Node 20.11. On Node 18 it is `undefined`,
+  so `PUBLIC_DIR` and the startup record path would break on the fallback.
+- Gave up: the shorter spelling, until no box can start the apps on Node 18.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-25 — Backend tests run on vitest 0.9.4 until P5
+
+- Context: jest had to go with the ESM move. The plan target is vitest 5.
+- Decision: vitest 0.9.4, the version configer and the panel use. No config
+  file. `vitest run` on Node, not `bun --bun`.
+- Why: vitest 5 needs vite 6.4 or newer as a peer. Without that pin Bun
+  links the panel's vite 2.9.14 and vitest crashes. With vite 8.3.0 it fails
+  on Node 18. vitest 0.9.4 on the Bun runtime fails on `node:v8`
+  `takeCoverage`. P5 moves every unit to vitest 5 together.
+- Gave up: vitest 5 in the backend now.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and P5.
+
+## 2026-09-25 — A cast is a tracked suppression on the line above
+
+- Context: the contract allows `as` only as a tracked suppression. oxlint
+  lands in P5.
+- Decision: `// oxlint-disable-next-line typescript/consistent-type-assertions -- <reason>`
+  on the line above the `as`. `as const` is not a cast. Two in this PR:
+  configer's boot merge in `services/db/main.ts`, and the backend's boot
+  config in `index.ts`. Both keep a box running on an odd stored value.
+- Why: oxlint reads the same comment in P5, so each cast is already
+  counted. A `JSON.parse` result goes into `unknown`, and no generic type
+  argument stands in for a cast.
+- Gave up: `// @ts-expect-error` and casts without a reason.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
+  contract".
+
+## 2026-09-25 — Each unit pins its own TypeScript; the backend builds with tsc
+
+- Context: configer and config-schema found `tsc` only through the root
+  `.bin` on `PATH`. The backend built with `tsc --build`.
+- Decision: configer and config-schema list `typescript` 6.0.3 themselves.
+  The backend `build` is plain `tsc`. The dead `win:build` is gone.
+- Why: P6 moves these units to TypeScript 7 while the panel stays on 6.
+  On TypeScript 6 `tsc --build` writes `tsconfig.tsbuildinfo` and skips a
+  project it thinks is up to date.
+- Gave up: one workspace `tsc` for every unit.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and P6.
+
+## 2026-09-25 — Test files stay outside the compile units for now
+
+- Context: the backend compiled its tests into `dist`. Configer already
+  excluded them.
+- Decision: every unit excludes `src/**/*.test.ts`. No tsconfig checks the
+  tests in this PR.
+- Why: under the contract the tests have 18 errors in the backend, 16 in
+  configer and 56 in config-schema, and about 50 `as`. That is its own
+  change. The backend `dist` now holds no test file.
+- Gave up: type-checked tests until P5.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
+  questions".
+
+## 2026-09-25 — @types/node stays 18 in the backend and configer (owner confirms)
+
+- Context: P3 planned `@types/node` 24.13.4 and `@types/bun` for the
+  type-contract PR. The new backend and configer `dist` can start on the
+  box's Node 18 (P3 fallback).
+- Decision: keep `@types/node` 18.x in the backend and configer. Add no
+  `@types/bun` there. Pending owner confirmation.
+- Why: code that can run on Node 18 must type-check against Node 18 types.
+  With 24.13.4, `import.meta.dirname` compiles and throws on Node 18. The
+  apps use no Bun API.
+- Gave up: Bun's Node compat types in the editor. Move to 24.x when no box
+  can start the apps on Node 18.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3, P4,
+  "Known constraints" and "Open questions".
+
+## 2026-09-25 — Proposal: the panel contract lands before Libraries
+
+- Context: "Pull requests from here" puts Libraries after the type
+  contract. The type-contract PR left the panel out.
+- Decision: proposed, not taken. The owner decides the order.
+- Why: pinia 4.0.3 wants TypeScript 5.6, and the vue 3.5 types use
+  `NoInfer` (TypeScript 5.4), so the Libraries bumps need the panel on a
+  newer TypeScript first. The panel contract does not need the vue bump.
+  Planner's prototype, medium confidence.
+- Gave up: nothing yet.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Pull
+  requests from here".
+
+## 2026-09-25 — The type contract lives in one file that each unit extends
+
+- Context: the 12 contract flags were copied into the backend, configer
+  and config-schema tsconfigs. Only a reviewer who compared the files by
+  hand could see that one unit lost a flag.
+- Decision: the flags live in `source/tsconfig.contract.json`. Each unit's
+  tsconfig extends it and keeps only its own target, module, paths, types
+  and folders. The owner chose this (option 1) in the #129 review.
+- Why: the contract is in one place. A unit can only weaken it by setting
+  a flag in its own tsconfig, which is easy to see in a diff. The emitted
+  `dist` does not change.
+- Gave up: a CI step that checks each copy. The panel moves to the file in
+  #130.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
+  contract" and "Open questions".

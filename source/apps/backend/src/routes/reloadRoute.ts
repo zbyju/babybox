@@ -1,9 +1,9 @@
-import * as express from "express";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
+import express from "express";
 
-import { applyConfig, bound } from "..";
-import { fetchConfig } from "../fetch/fetchConfig";
-import { reloadConfig } from "../modules/configReload";
+import { fetchConfig } from "../fetch/fetchConfig.js";
+import { applyConfig, bound } from "../index.js";
+import { reloadConfig } from "../modules/configReload.js";
 
 export const router = express.Router();
 

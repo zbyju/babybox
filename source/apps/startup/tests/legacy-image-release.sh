@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Proves the P1 release path on the legacy-image job.
+# Proves the release path on the legacy-image job.
 # The runner already finished pnpm run build with empty stderr.
 # This script checks bun 1.4.2, a build after an already-current pull,
 # and a forced failure at BUILD_PANEL, START_PANEL, and BOOTSTRAP_BUN.
+# Each case also checks the runtime pm2 gave the apps: Bun, or Node when
+# the BOOTSTRAP_BUN case left no Bun.
 
 set -euo pipefail
 
@@ -32,7 +34,7 @@ on_exit() {
   git update-index --no-skip-worktree package.json >/dev/null 2>&1 || true
   git update-index --no-skip-worktree apps/startup/versions.env >/dev/null 2>&1 || true
   git checkout -- apps/panel/package.json apps/backend/package.json package.json apps/startup/versions.env >/dev/null 2>&1 || true
-  rm -f apps/panel/fail-panel-build.js apps/backend/omit-dist-entry.js
+  rm -f apps/panel/fail-panel-build.js apps/backend/omit-dist-entry.cjs
   pm2 delete configer >/dev/null 2>&1 || true
   pm2 delete babybox >/dev/null 2>&1 || true
 }
@@ -68,7 +70,7 @@ hide_local_files() {
   touch "$exclude"
   for pattern in \
     "source/apps/panel/fail-panel-build.js" \
-    "source/apps/backend/omit-dist-entry.js"
+    "source/apps/backend/omit-dist-entry.cjs"
   do
     if ! grep -qxF "$pattern" "$exclude"; then
       printf '%s\n' "$pattern" >>"$exclude"
@@ -198,6 +200,28 @@ assert_apps() {
   fi
 }
 
+assert_runtime() {
+  local i=0
+  while [ "$i" -lt 10 ]; do
+    if node apps/startup/tests/assert-runtime.js "$1"; then
+      return 0
+    fi
+    i=$((i + 1))
+    sleep 2
+  done
+  show_logs
+  fail "the apps do not run on $1"
+}
+
+assert_panel_page() {
+  local page
+  page="$(curl -sf "http://127.0.0.1:5000/" || true)"
+  if ! grep -qi "<html" <<<"$page"; then
+    show_logs
+    fail "the panel page is not served"
+  fi
+}
+
 skip_worktree() {
   git update-index --skip-worktree "$1"
 }
@@ -230,11 +254,11 @@ break_panel_build() {
 # seed_previous already copied the old entry into the live dist.
 # start:main stays the real script, so rollback can start that dist.
 break_new_dist_entry() {
-  cat >apps/backend/omit-dist-entry.js <<'EOF'
+  cat >apps/backend/omit-dist-entry.cjs <<'EOF'
 const fs = require("fs");
 fs.rmSync("dist/index.js");
 EOF
-  patch_script apps/backend/package.json build "tsc --build && node omit-dist-entry.js"
+  patch_script apps/backend/package.json build "tsc && node omit-dist-entry.cjs"
 }
 
 break_bun_sha() {
@@ -286,6 +310,9 @@ LOG="$SOURCE/logs/startup.log" RELEASE="$ROOT/dist/release.json" HEAD="$HEAD_SHA
   run_startup
 LOG="$SOURCE/logs/startup.log" RELEASE="$ROOT/dist/release.json" HEAD="$HEAD_SHA" \
   assert_already_current
+assert_apps
+assert_runtime bun
+assert_panel_page
 stop_apps
 
 echo "forced BUILD_PANEL keeps the previous dist"
@@ -296,6 +323,7 @@ run_startup || true
 assert_record "BUILD_PANEL" "panel broke"
 assert_marker
 assert_apps
+assert_runtime bun
 restore_tracked apps/panel/package.json
 rm -f apps/panel/fail-panel-build.js
 stop_apps
@@ -311,8 +339,9 @@ run_startup || true
 assert_record "START_PANEL" "Script not found|start:main"
 assert_marker
 assert_apps
+assert_runtime bun
 restore_tracked apps/backend/package.json
-rm -f apps/backend/omit-dist-entry.js
+rm -f apps/backend/omit-dist-entry.cjs
 cp "$RUNNER_TEMP/backend-index.js" apps/backend/dist/index.js
 stop_apps
 
@@ -331,6 +360,7 @@ run_startup || true
 assert_record "BOOTSTRAP_BUN" "Kontrolní součet"
 assert_marker
 assert_apps
+assert_runtime node
 restore_tracked apps/startup/versions.env
 stop_apps
 

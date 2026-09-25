@@ -82,13 +82,13 @@ export function parseStartupLast(text: string): StartupLast | null {
   if (!isRecord(value)) {
     return null;
   }
-  const step = value.step;
-  const ok = value.ok;
-  const message = value.message;
-  const at = value.at;
-  const node = value.node;
-  const pnpm = value.pnpm;
-  const bun = value.bun;
+  const step = value["step"];
+  const ok = value["ok"];
+  const message = value["message"];
+  const at = value["at"];
+  const node = value["node"];
+  const pnpm = value["pnpm"];
+  const bun = value["bun"];
   if (
     typeof step !== "string" ||
     typeof ok !== "boolean" ||

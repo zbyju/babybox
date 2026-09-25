@@ -1,5 +1,5 @@
-import { config } from "..";
-import { Action, Unit } from "../types/units.types";
+import { config } from "../index.js";
+import { Action, Unit } from "../types/units.types.js";
 
 /*
  * One entry per action, so a new Action does not compile until its unit and
@@ -32,7 +32,15 @@ export function actionToUnit(action: Action): Unit | undefined {
   return actionTargets[action].unit;
 }
 
+/*
+ * The routes are mounted only after main() set the config,
+ * so this throws only on a call before that.
+ * The old code threw in the same place on `null.units`.
+ */
 export function unitToIp(unit: Unit): string {
+  if (config === null) {
+    throw new Error("The config is not loaded yet.");
+  }
   return unit === Unit.Engine
     ? config.units.engine.ip
     : config.units.thermal.ip;

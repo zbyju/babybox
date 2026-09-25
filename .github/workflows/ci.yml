@@ -112,6 +112,74 @@ jobs:
         working-directory: source
         run: bash apps/startup/tests/legacy-image-release.sh
 
+  # Prvni boot na stare krabici. Bezi stary startup z tagu legacy-runtime,
+  # stare pm2 a PATH bez ~/.bun/bin. Stary startup po chybe startu dist2
+  # neobnovi, takze chybny start je krabice, ktera nenabehne.
+  legacy-boot1:
+    name: legacy-boot1 (${{ matrix.os }}, pm2 ${{ matrix.pm2 }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        pm2: ["5.2.0", "6.0.14"]
+    steps:
+      - name: Checkout legacy-runtime
+        uses: actions/checkout@v4
+        with:
+          ref: legacy-runtime
+          fetch-depth: 0
+
+      # Skripty testu jsou jen v hlave PR, tag je nema.
+      - name: Fetch the pull request head
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "${PR_NUMBER}" ]; then
+            git fetch origin "pull/${PR_NUMBER}/head"
+          else
+            git fetch origin main
+          fi
+          got="$(git rev-parse FETCH_HEAD)"
+          if [ "${got}" != "${TARGET_SHA}" ]; then
+            echo "FETCH_HEAD ${got} is not ${TARGET_SHA}" >&2
+            exit 1
+          fi
+          git show "${TARGET_SHA}:source/apps/startup/tests/legacy-boot1.sh" >"${RUNNER_TEMP}/legacy-boot1.sh"
+          git show "${TARGET_SHA}:source/apps/startup/tests/assert-runtime.js" >"${RUNNER_TEMP}/assert-runtime.js"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 7.5.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.12.1
+
+      - name: Old pm2
+        shell: bash
+        env:
+          PM2_VERSION: ${{ matrix.pm2 }}
+        run: |
+          set -euo pipefail
+          npm install -g "pm2@${PM2_VERSION}"
+          got="$(pm2 --version | tail -n 1 | tr -d '\r')"
+          if [ "${got}" != "${PM2_VERSION}" ]; then
+            echo "pm2 is ${got}, want ${PM2_VERSION}" >&2
+            exit 1
+          fi
+
+      - name: Boot 1 with the old startup app
+        shell: bash
+        working-directory: source
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash "${RUNNER_TEMP}/legacy-boot1.sh"
+
   # Bun 1.4.2 je jedina brana pro install, build a testy.
   # Node 18 zustava jen v jobu legacy-image.
   bun:
@@ -155,7 +223,7 @@ jobs:
         run: |
           (cd apps/backend && bun ./node_modules/.bin/eslint --ext .js,.ts .)
           (cd apps/panel && bun ./node_modules/.bin/eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore)
-          (cd apps/startup && bun ./node_modules/.bin/eslint src/ bootstrap.js bootstrap.test.js last-record.js last-record.test.js run-update.js run-update.test.js)
+          (cd apps/startup && bun ./node_modules/.bin/eslint src/ bootstrap.js bootstrap.test.js last-record.js last-record.test.js run-update.js run-update.test.js start-app.js start-app.test.js tests/assert-runtime.js)
 
       - name: Build config schema
         run: bun --filter @babybox/config-schema build
@@ -183,7 +251,8 @@ jobs:
       - name: Startup tests
         run: (cd apps/startup && ./node_modules/.bin/jest --ci)
 
-  # bootstrap.js musi projit Node 12. Sken textu na Node 18 tu chybu nechyti.
+  # Kazdy soubor startupu musi projit Node 12. Sken textu na Node 18 tu chybu
+  # nechyti. Jmeno jobu zustava, muze to byt povinny check.
   bootstrap-syntax:
     name: bootstrap.js Node 12 parse
     runs-on: ubuntu-latest
@@ -194,16 +263,24 @@ jobs:
         with:
           node-version: 12.22.12
 
-      - name: Parse bootstrap.js with Node 12
+      - name: Parse every startup file with Node 12
         run: |
+          set -euo pipefail
           node_version="$(node -v)"
           if [ "${node_version}" != "v12.22.12" ]; then
             echo "node is ${node_version}, want v12.22.12" >&2
             exit 1
           fi
-          node --check source/apps/startup/bootstrap.js
-          node --check source/apps/startup/last-record.js
-          node --check source/apps/startup/run-update.js
+          files="$(git ls-files 'source/apps/startup/*.js' | grep -v '\.test\.js$')"
+          if ! grep -qx 'source/apps/startup/start-app.js' <<<"${files}"; then
+            echo "the file list has no start-app.js" >&2
+            exit 1
+          fi
+          for file in ${files}; do
+            echo "${file}"
+            node --check "${file}"
+          done
+          node -e "require('./source/apps/startup/start-app.js')"
 
   windows-startup:
     name: Windows startup.bat
