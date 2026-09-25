@@ -14,15 +14,18 @@ import { fetchFromUrl } from "./fetch.js";
 import { onUnit, sharedOnUnit } from "./unitGate.js";
 
 /*
- * The panel sends no timeout. A test or a person with curl may: a number, or a
- * query string that reads as one. Anything else is the default.
+ * The panel sends no timeout. A test or a person with curl may.
+ * Only a whole number of ms from 1 to 2147483647 is used.
+ * Anything else is the default,
+ * because axios turns a fraction below 1 into 0, which means no timeout,
+ * and Node fires a longer timer after 1 ms.
  */
 function queryTimeout(query: unknown): number {
   if (typeof query !== "object" || query === null || !("timeout" in query)) {
     return defaultFetchTimeout();
   }
   const timeout = Number(query.timeout);
-  return Number.isFinite(timeout) && timeout > 0
+  return Number.isInteger(timeout) && timeout >= 1 && timeout <= 2147483647
     ? timeout
     : defaultFetchTimeout();
 }
