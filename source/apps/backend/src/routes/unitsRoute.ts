@@ -5,11 +5,11 @@ import {
   fetchSettings,
   updateSettings,
 } from "../fetch/fetchFromUnits.js";
-import {
+import type {
   CommonSettingsResponse,
-  isInstanceOfPostUnitSettingsRequestBody,
   SettingResult,
 } from "../types/request.types.js";
+import { isInstanceOfPostUnitSettingsRequestBody } from "../types/request.types.js";
 import { stringToAction } from "../utils/actions.js";
 
 export const router = express.Router();

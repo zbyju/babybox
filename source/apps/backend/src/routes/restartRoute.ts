@@ -1,5 +1,5 @@
+import type { Request, Response } from "express";
 import express from "express";
-import { Request, Response } from "express";
 
 import { modules } from "../index.js";
 

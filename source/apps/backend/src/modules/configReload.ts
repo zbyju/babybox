@@ -73,11 +73,11 @@ export function isBackendReadableConfig(
   if (!isObject(engine) || !isObject(thermal)) return false;
 
   return (
-    typeof backend.url === "string" &&
-    typeof backend.port === "number" &&
-    typeof pc.os === "string" &&
-    typeof engine.ip === "string" &&
-    typeof thermal.ip === "string"
+    typeof backend["url"] === "string" &&
+    typeof backend["port"] === "number" &&
+    typeof pc["os"] === "string" &&
+    typeof engine["ip"] === "string" &&
+    typeof thermal["ip"] === "string"
   );
 }
 

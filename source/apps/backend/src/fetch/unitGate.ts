@@ -20,7 +20,7 @@ export type SharedRead = `data:${number}` | `settings:${number}`;
  */
 export interface UnitReadResult {
   status: number;
-  data: any;
+  data: unknown;
 }
 
 /**

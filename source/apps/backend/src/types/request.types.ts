@@ -1,4 +1,4 @@
-import { BothUnit, Unit } from "./units.types.js";
+import type { BothUnit, Unit } from "./units.types.js";
 
 export interface CommonDataRequestQuery {
   timeout?: number;
@@ -15,11 +15,16 @@ export interface PostUnitSettingsRequestBody {
   };
 }
 
+// Arrays pass too, as they did before; none of the checks below accepts one.
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 export function isInstanceOfPostUnitSettingsRequestBody(
-  object: any
+  object: unknown
 ): object is PostUnitSettingsRequestBody {
-  if (!object || typeof object !== "object") return false;
-  return "settings" in object && isInstanceOfArraySetting(object.settings);
+  if (!isObject(object)) return false;
+  return "settings" in object && isInstanceOfArraySetting(object["settings"]);
 }
 
 export interface GetUnitSettingsRequest {
@@ -28,15 +33,11 @@ export interface GetUnitSettingsRequest {
 }
 
 export function isInstanceOfGetUnitSettingsRequest(
-  object: any
+  object: unknown
 ): object is GetUnitSettingsRequest {
-  if (!object || typeof object !== "object") return false;
-  if (
-    object.unit &&
-    object.unit !== "engine" &&
-    object.unit !== "thermal" &&
-    object.unit !== "both"
-  ) {
+  if (!isObject(object)) return false;
+  const unit = object["unit"];
+  if (unit && unit !== "engine" && unit !== "thermal" && unit !== "both") {
     return false;
   }
   return true;
@@ -48,7 +49,7 @@ export interface CommonResponse {
 }
 
 export interface CommonDataResponse extends CommonResponse {
-  data?: any;
+  data?: unknown;
 }
 
 export interface CommonSettingsResponse extends CommonResponse {
@@ -65,21 +66,22 @@ export interface SettingResult extends Setting {
   result: boolean;
 }
 
-export function isInstanceOfSetting(object: any): object is Setting {
-  if (!object || typeof object !== "object") return false;
+export function isInstanceOfSetting(object: unknown): object is Setting {
+  if (!isObject(object)) return false;
   return (
     "index" in object &&
     "value" in object &&
     "unit" in object &&
-    Number.isInteger(object.index) &&
-    Number.isFinite(object.value) &&
-    (object.unit === "engine" || object.unit === "thermal")
+    Number.isInteger(object["index"]) &&
+    Number.isFinite(object["value"]) &&
+    (object["unit"] === "engine" || object["unit"] === "thermal")
   );
 }
 
-export function isInstanceOfArraySetting(object: any): object is Setting[] {
+export function isInstanceOfArraySetting(object: unknown): object is Setting[] {
   if (!object) return false;
   return (
-    Array.isArray(object) && object.every((o: any) => isInstanceOfSetting(o))
+    Array.isArray(object) &&
+    object.every((o: unknown) => isInstanceOfSetting(o))
   );
 }

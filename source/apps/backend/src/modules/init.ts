@@ -8,7 +8,7 @@ const DISABLED_VALUES = ["false", "0", "no", "off"];
  * Unset means enabled.
  */
 function isRestartEnabled(): boolean {
-  const raw = (process.env.RESTART_ENABLED ?? "").trim().toLowerCase();
+  const raw = (process.env["RESTART_ENABLED"] ?? "").trim().toLowerCase();
   return !DISABLED_VALUES.includes(raw);
 }
 

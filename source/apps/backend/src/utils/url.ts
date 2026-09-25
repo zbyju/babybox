@@ -32,7 +32,15 @@ export function actionToUnit(action: Action): Unit | undefined {
   return actionTargets[action].unit;
 }
 
+/*
+ * The routes are mounted only after main() set the config,
+ * so this throws only on a call before that.
+ * The old code threw in the same place on `null.units`.
+ */
 export function unitToIp(unit: Unit): string {
+  if (config === null) {
+    throw new Error("The config is not loaded yet.");
+  }
   return unit === Unit.Engine
     ? config.units.engine.ip
     : config.units.thermal.ip;

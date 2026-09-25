@@ -4,7 +4,7 @@ import moment from "moment";
 import winston from "winston";
 
 import { config } from "../index.js";
-import { RestartRepository } from "../types/restart.types.js";
+import type { RestartRepository } from "../types/restart.types.js";
 import {
   getFullTimeFormatted,
   getTimeDifferenceInSeconds,
@@ -18,11 +18,13 @@ export const restartRepository = function (): RestartRepository {
     transports: [new winston.transports.File({ filename: "logs/restart.log" })],
   });
 
-  let lastRequest = null as Moment;
+  let lastRequest: Moment | null = null;
   let errorStreak = 0;
   let isRestarting = false;
-  const errorThreshold = parseInt(process.env.RESTART_ERROR_THRESHOLD) || 9;
-  const interval: number = parseInt(process.env.RESTART_INTERVAL) || 20000;
+  const errorThreshold =
+    parseInt(process.env["RESTART_ERROR_THRESHOLD"] ?? "") || 9;
+  const interval: number =
+    parseInt(process.env["RESTART_INTERVAL"] ?? "") || 20000;
 
   function onIncomingRequest(): void {
     lastRequest = moment();

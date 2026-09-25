@@ -1,5 +1,5 @@
+import type { Request, Response } from "express";
 import express from "express";
-import { Request, Response } from "express";
 
 import { fetchDataCommon, updateWatchdog } from "../fetch/fetchFromUnits.js";
 import { Unit } from "../types/units.types.js";
@@ -10,7 +10,7 @@ export const router = express.Router();
 router.get("/data", async (req: Request, res: Response) => {
   const response = await fetchDataCommon(Unit.Engine, req.query);
 
-  const raw = req.query?.raw ? parseInt(req.query.raw.toString()) > 0 : false;
+  const raw = req.query["raw"] ? parseInt(String(req.query["raw"])) > 0 : false;
 
   const data = raw ? response.data : transformThermalData(response.data);
 

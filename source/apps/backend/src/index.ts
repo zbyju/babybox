@@ -92,7 +92,7 @@ async function main() {
    */
   let c = await fetchConfig();
   let attempt = 1;
-  while (!c.data) {
+  while (c.status !== 200 || !c.data) {
     console.log(
       `Config not available (attempt ${attempt}): ${c.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
     );
@@ -100,13 +100,20 @@ async function main() {
     c = await fetchConfig();
     attempt++;
   }
-  config = c.data;
+  /*
+   * Boot takes what configer sends without a check, as it always has.
+   * A check here would keep a box with one odd stored value from ever listening.
+   * POST /reload checks with isBackendReadableConfig before it swaps.
+   */
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- boot trusts configer, see above
+  const loaded = c.data as BackendReadableConfig;
+  config = loaded;
 
   const app = express();
-  const port = config?.backend.port || process.env.PORT || 5000;
+  const port = loaded.backend.port || process.env["PORT"] || 5000;
 
   // Setup logger - morgan
-  if (process.env.NODE_ENV === "development") {
+  if (process.env["NODE_ENV"] === "development") {
     app.use(morgan("dev"));
   }
 
@@ -120,7 +127,7 @@ async function main() {
   // Parse JSON in POST requests
   app.use(express.json());
 
-  const prefix = config.backend.url || process.env.API_PREFIX || "";
+  const prefix = loaded.backend.url || process.env["API_PREFIX"] || "";
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
@@ -137,7 +144,7 @@ async function main() {
   app.use(prefix + "/reload", reloadRoute);
 
   // Serve Frontend app if running in production
-  if (process.env.NODE_ENV === "production") {
+  if (process.env["NODE_ENV"] === "production") {
     app.use(express.static(PUBLIC_DIR, { setHeaders: setPanelCacheHeaders }));
 
     app.get("/", (req, res) => {
@@ -166,11 +173,11 @@ async function main() {
 
   app.listen(port, () => {
     const color =
-      process.env.NODE_ENV === "production" ? "\x1b[32m" : "\x1b[35m";
+      process.env["NODE_ENV"] === "production" ? "\x1b[32m" : "\x1b[35m";
 
     console.log(
       `Babybox backend running in ${color}\x1b[1m%s\x1b[0m and listening on port \x1b[1m%s`,
-      process.env.NODE_ENV,
+      process.env["NODE_ENV"],
       port
     );
   });
