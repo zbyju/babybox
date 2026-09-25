@@ -116,49 +116,52 @@ function pm2Args(spec, runtime) {
   return args;
 }
 
-function runPm2(run, args, cwd) {
+function spawnNamed(run, name, spawn) {
   let result;
   try {
+    result = spawn();
+  } catch (err) {
+    result = { status: null, error: err };
+  }
+  if (result && result.error) {
+    run.stdout.write(`${name} nejde spustit. ${result.error.message}\n`);
+  }
+  return result;
+}
+
+function runPm2(run, args, cwd) {
+  return spawnNamed(run, "pm2", () => {
     if (run.platform === "win32") {
       // pm2 is a .cmd shim. Quotes keep a path with spaces whole.
       const line = ["pm2"].concat(args.map((arg) => `"${arg}"`)).join(" ");
-      result = run.spawnSync(line, [], {
+      return run.spawnSync(line, [], {
         cwd,
         env: run.env,
         stdio: "inherit",
         windowsHide: true,
         shell: true,
       });
-    } else {
-      result = run.spawnSync("pm2", args, {
-        cwd,
-        env: run.env,
-        stdio: "inherit",
-        shell: false,
-      });
     }
-  } catch (err) {
-    result = { status: null, error: err };
-  }
-  if (result && result.error) {
-    run.stdout.write(`pm2 nejde spustit. ${result.error.message}\n`);
-  }
-  return result;
+    return run.spawnSync("pm2", args, {
+      cwd,
+      env: run.env,
+      stdio: "inherit",
+      shell: false,
+    });
+  });
 }
 
 function installDist(run, runtime, cwd) {
-  try {
-    // --no-save keeps the copied lock and writes nothing on stderr.
-    return run.spawnSync(runtime.exe, ["install", "--no-save"], {
+  // --no-save keeps the copied lock and writes nothing on stderr.
+  return spawnNamed(run, "bun install", () =>
+    run.spawnSync(runtime.exe, ["install", "--no-save"], {
       cwd,
       env: run.env,
       stdio: "inherit",
       windowsHide: true,
       shell: false,
-    });
-  } catch (err) {
-    return { status: null, error: err };
-  }
+    })
+  );
 }
 
 function start(name, options) {

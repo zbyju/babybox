@@ -194,6 +194,42 @@ describe("start on Bun", () => {
     });
   });
 
+  it.each([
+    [
+      "throws",
+      () => {
+        throw new Error("spawn bun EACCES");
+      },
+    ],
+    [
+      "returns an error",
+      () => ({
+        status: null,
+        signal: null,
+        error: new Error("spawn bun EACCES"),
+      }),
+    ],
+  ])(
+    "returns 1 and names the error when the install spawn %s",
+    (label, install) => {
+      withFixture((fx) => {
+        const exe = placeBun(fx);
+        const reply = (cmd, args) => {
+          if (args[0] === "install") {
+            return install();
+          }
+          return bunAnswers(PIN)(cmd, args);
+        };
+        expect(runStart(fx, "main", reply)).toBe(1);
+        expect(pm2Calls(fx)).toEqual([]);
+        expect(fx.stdout.text()).toBe(
+          `Spouštím babybox na Bun ${PIN} (${exe}).\n` +
+            "bun install nejde spustit. spawn bun EACCES\n"
+        );
+      });
+    }
+  );
+
   it("uses a Bun that answers with another version", () => {
     withFixture((fx) => {
       const exe = placeBun(fx);
