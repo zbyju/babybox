@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --ignore '*.json' --esm ./src/index.ts",
-    "start": "pm2 start ./dist/index.js -n configer",
+    "start": "node ../startup/start-app.js configer",
     "build": "tsc",
     "test": "vitest run"
   },

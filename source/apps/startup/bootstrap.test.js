@@ -924,7 +924,12 @@ describe("platform", () => {
 
 describe("syntax", () => {
   it("stays on Node 12 CommonJS and does not name a git branch or dist swap", () => {
-    const source = ["bootstrap.js", "last-record.js", "run-update.js"]
+    const source = [
+      "bootstrap.js",
+      "last-record.js",
+      "run-update.js",
+      "start-app.js",
+    ]
       .map((name) => fs.readFileSync(path.join(__dirname, name), "utf8"))
       .join("\n");
     expect(source.includes("??")).toBe(false);
