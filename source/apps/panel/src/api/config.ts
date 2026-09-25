@@ -46,8 +46,8 @@ function isObject(value: unknown): value is Fields {
 function isConfigError(value: unknown): value is ConfigError {
   return (
     isObject(value) &&
-    typeof value.path === "string" &&
-    typeof value.msg === "string"
+    typeof value["path"] === "string" &&
+    typeof value["msg"] === "string"
   );
 }
 
@@ -64,8 +64,10 @@ async function readFailure(
   if (!isObject(body)) return { errors: [] };
 
   return {
-    errors: Array.isArray(body.errors) ? body.errors.filter(isConfigError) : [],
-    msg: typeof body.msg === "string" ? body.msg : undefined,
+    errors: Array.isArray(body["errors"])
+      ? body["errors"].filter(isConfigError)
+      : [],
+    msg: typeof body["msg"] === "string" ? body["msg"] : undefined,
   };
 }
 

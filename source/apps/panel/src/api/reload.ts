@@ -27,9 +27,9 @@ function isPlainValue(value: unknown): value is string | number {
 function isUnappliedField(value: unknown): value is UnappliedField {
   return (
     isObject(value) &&
-    typeof value.path === "string" &&
-    isPlainValue(value.running) &&
-    isPlainValue(value.stored)
+    typeof value["path"] === "string" &&
+    isPlainValue(value["running"]) &&
+    isPlainValue(value["stored"])
   );
 }
 
@@ -39,8 +39,8 @@ function isUnappliedField(value: unknown): value is UnappliedField {
  * panel does not understand would wipe a warning it never checked.
  */
 function readUnapplied(body: unknown): UnappliedField[] | null {
-  if (!isObject(body) || !Array.isArray(body.unapplied)) return null;
-  return body.unapplied.filter(isUnappliedField);
+  if (!isObject(body) || !Array.isArray(body["unapplied"])) return null;
+  return body["unapplied"].filter(isUnappliedField);
 }
 
 /**

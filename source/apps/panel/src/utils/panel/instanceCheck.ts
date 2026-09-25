@@ -35,25 +35,25 @@ const isReadableConfig = (value: unknown): boolean => {
     return false;
 
   return (
-    isString(app.password) &&
-    isNumberOrUnset(app.refreshRequestLimit) &&
-    isString(babybox.name) &&
-    isString(backend.url) &&
-    isNumber(backend.port) &&
-    isNumber(backend.requestTimeout) &&
-    isString(camera.ip) &&
-    isString(camera.username) &&
-    isString(camera.password) &&
-    isString(camera.cameraType) &&
-    isNumber(camera.updateDelay) &&
-    isString(engine.ip) &&
-    isString(thermal.ip) &&
-    isNumber(units.requestDelay) &&
-    isNumber(units.warningThreshold) &&
-    isNumber(units.errorThreshold) &&
-    isNumber(voltage.divider) &&
-    isNumber(voltage.multiplier) &&
-    isNumber(voltage.addition)
+    isString(app["password"]) &&
+    isNumberOrUnset(app["refreshRequestLimit"]) &&
+    isString(babybox["name"]) &&
+    isString(backend["url"]) &&
+    isNumber(backend["port"]) &&
+    isNumber(backend["requestTimeout"]) &&
+    isString(camera["ip"]) &&
+    isString(camera["username"]) &&
+    isString(camera["password"]) &&
+    isString(camera["cameraType"]) &&
+    isNumber(camera["updateDelay"]) &&
+    isString(engine["ip"]) &&
+    isString(thermal["ip"]) &&
+    isNumber(units["requestDelay"]) &&
+    isNumber(units["warningThreshold"]) &&
+    isNumber(units["errorThreshold"]) &&
+    isNumber(voltage["divider"]) &&
+    isNumber(voltage["multiplier"]) &&
+    isNumber(voltage["addition"])
   );
 };
 
