@@ -57,9 +57,14 @@ function readText(filePath) {
   }
 }
 
-function firstLine(value) {
-  const text = value === undefined || value === null ? "" : String(value);
-  return text.split(/\r?\n/)[0].trim();
+// bootstrap.probeBun has no timeout. bootstrap.js stays as boot 1 runs it.
+function withTimeout(spawnSync) {
+  return (command, args, options) =>
+    spawnSync(
+      command,
+      args,
+      Object.assign({}, options, { timeout: PROBE_TIMEOUT_MS })
+    );
 }
 
 function onNode(reason, wanted) {
@@ -83,28 +88,17 @@ function chooseRuntime(run) {
   const wanted =
     bootstrap.readVersions(readText(run.versionsPath)).BUN_VERSION || "";
   // A CPU_HOLD box keeps the binary that traps. cpu-hold names its pin.
-  const hold = readText(path.join(run.home, ".bun", "cpu-hold")).trim();
+  const hold = bootstrap.readHoldVersion(
+    path.join(run.home, ".bun", "cpu-hold")
+  );
   if (hold !== "" && hold === wanted) {
     return onNode("CPU_HOLD", wanted);
   }
-  let result = null;
-  try {
-    result = run.spawnSync(exe, ["-v"], {
-      env: run.env,
-      encoding: "utf8",
-      windowsHide: true,
-      stdio: ["ignore", "pipe", "pipe"],
-      shell: false,
-      timeout: PROBE_TIMEOUT_MS,
-    });
-  } catch (err) {
-    result = null;
-  }
-  const version = result ? firstLine(result.stdout) : "";
-  if (!result || result.error || result.status !== 0 || version === "") {
+  const probed = bootstrap.probeBun(withTimeout(run.spawnSync), exe, run.env);
+  if (probed.state !== "version" || probed.version === "") {
     return onNode("PROBE", wanted);
   }
-  return { bun: exe, version, wanted, reason: "" };
+  return { bun: exe, version: probed.version, wanted, reason: "" };
 }
 
 function exitCode(result) {
@@ -193,8 +187,7 @@ function start(name, options) {
     bootstrap.prependPath(run.env, path.dirname(runtime.bun));
     const other =
       runtime.wanted !== "" &&
-      runtime.version !== runtime.wanted &&
-      runtime.version !== `v${runtime.wanted}`;
+      !bootstrap.versionsMatch(runtime.version, runtime.wanted);
     const note = other ? ` Chceme ${runtime.wanted}.` : "";
     run.stdout.write(
       `Spouštím ${spec.pm2Name} na Bun ${runtime.version} (${runtime.bun}).${note}\n`
