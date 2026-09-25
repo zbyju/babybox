@@ -1584,3 +1584,9 @@ One line per landed step: date, PR, what moved.
   6.0.14: the legacy `dist` starts on Bun after a failed build, the new
   `dist` after a good one. `@types/node` 24 and `@types/bun` move to the
   type-contract PR.
+- 2026-09-25 — #129 — configer, the backend and config-schema build with
+  TypeScript 6.0.3 under the contract flags. The backend is ESM. Its ten
+  test files run on vitest 0.9.4. The backend and configer dev servers run
+  under `bun --watch`. The panel stays on TypeScript 4.7.4 and `vue-tsc`
+  0.38.9. `@types/node` stays 18.x in the backend and configer until the
+  owner confirms.
