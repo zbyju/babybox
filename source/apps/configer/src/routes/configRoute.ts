@@ -1,5 +1,5 @@
 import * as express from "express";
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { DbFactory } from "../services/db/factory.js";
 import type { UpdateResult } from "../services/db/main.js";
 export const router = express.Router();
