@@ -67,8 +67,8 @@ function withTimeout(spawnSync) {
     );
 }
 
-function onNode(reason, wanted) {
-  return { bun: "", version: "", wanted, reason };
+function onNode(reason) {
+  return { kind: "NODE", reason };
 }
 
 /*
@@ -78,12 +78,12 @@ function onNode(reason, wanted) {
  */
 function chooseRuntime(run) {
   if (bootstrap.isOsHold(run.platform, run.release)) {
-    return onNode("OS_HOLD", "");
+    return onNode("OS_HOLD");
   }
   const exeName = run.platform === "win32" ? "bun.exe" : "bun";
   const exe = path.join(run.home, ".bun", "bin", exeName);
   if (!fs.existsSync(exe)) {
-    return onNode("MISSING", "");
+    return onNode("MISSING");
   }
   const wanted =
     bootstrap.readVersions(readText(run.versionsPath)).BUN_VERSION || "";
@@ -92,13 +92,13 @@ function chooseRuntime(run) {
     path.join(run.home, ".bun", "cpu-hold")
   );
   if (hold !== "" && hold === wanted) {
-    return onNode("CPU_HOLD", wanted);
+    return onNode("CPU_HOLD");
   }
   const probed = bootstrap.probeBun(withTimeout(run.spawnSync), exe, run.env);
   if (probed.state !== "version" || probed.version === "") {
-    return onNode("PROBE", wanted);
+    return onNode("PROBE");
   }
-  return { bun: exe, version: probed.version, wanted, reason: "" };
+  return { kind: "BUN", exe, version: probed.version, wanted };
 }
 
 function exitCode(result) {
@@ -110,8 +110,8 @@ function exitCode(result) {
 
 function pm2Args(spec, runtime) {
   const args = ["start", spec.script, "-n", spec.pm2Name];
-  if (runtime.bun !== "") {
-    args.push("--interpreter", runtime.bun);
+  if (runtime.kind === "BUN") {
+    args.push("--interpreter", runtime.exe);
   }
   return args;
 }
@@ -149,7 +149,7 @@ function runPm2(run, args, cwd) {
 function installDist(run, runtime, cwd) {
   try {
     // --no-save keeps the copied lock and writes nothing on stderr.
-    return run.spawnSync(runtime.bun, ["install", "--no-save"], {
+    return run.spawnSync(runtime.exe, ["install", "--no-save"], {
       cwd,
       env: run.env,
       stdio: "inherit",
@@ -182,15 +182,15 @@ function start(name, options) {
     return 1;
   }
   const runtime = chooseRuntime(run);
-  if (runtime.bun !== "") {
+  if (runtime.kind === "BUN") {
     // The app's GET /status runs bun -v from PATH.
-    bootstrap.prependPath(run.env, path.dirname(runtime.bun));
+    bootstrap.prependPath(run.env, path.dirname(runtime.exe));
     const other =
       runtime.wanted !== "" &&
       !bootstrap.versionsMatch(runtime.version, runtime.wanted);
     const note = other ? ` Chceme ${runtime.wanted}.` : "";
     run.stdout.write(
-      `Spouštím ${spec.pm2Name} na Bun ${runtime.version} (${runtime.bun}).${note}\n`
+      `Spouštím ${spec.pm2Name} na Bun ${runtime.version} (${runtime.exe}).${note}\n`
     );
   } else {
     run.stdout.write(
@@ -198,7 +198,7 @@ function start(name, options) {
     );
   }
   if (spec.install && !fs.existsSync(path.join(spec.cwd, "node_modules"))) {
-    if (runtime.bun === "") {
+    if (runtime.kind !== "BUN") {
       run.stdout.write("Balíčky v dist chybí a Bun nejde spustit.\n");
       return 1;
     }
