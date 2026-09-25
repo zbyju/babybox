@@ -5,6 +5,7 @@
     "target": "ES2022",
     "module": "node16",
     "moduleResolution": "node16",
+    "rootDir": "./src",
     "outDir": "./dist",
     "declaration": true,
     // The package uses no Node or test API, so it needs no ambient types at all.
