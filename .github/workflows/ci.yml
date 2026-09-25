@@ -112,6 +112,74 @@ jobs:
         working-directory: source
         run: bash apps/startup/tests/legacy-image-release.sh
 
+  # Prvni boot na stare krabici. Bezi stary startup z tagu legacy-runtime,
+  # stare pm2 a PATH bez ~/.bun/bin. Stary startup po chybe startu dist2
+  # neobnovi, takze chybny start je krabice, ktera nenabehne.
+  legacy-boot1:
+    name: legacy-boot1 (${{ matrix.os }}, pm2 ${{ matrix.pm2 }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        pm2: ["5.2.0", "6.0.14"]
+    steps:
+      - name: Checkout legacy-runtime
+        uses: actions/checkout@v4
+        with:
+          ref: legacy-runtime
+          fetch-depth: 0
+
+      # Skripty testu jsou jen v hlave PR, tag je nema.
+      - name: Fetch the pull request head
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "${PR_NUMBER}" ]; then
+            git fetch origin "pull/${PR_NUMBER}/head"
+          else
+            git fetch origin main
+          fi
+          got="$(git rev-parse FETCH_HEAD)"
+          if [ "${got}" != "${TARGET_SHA}" ]; then
+            echo "FETCH_HEAD ${got} is not ${TARGET_SHA}" >&2
+            exit 1
+          fi
+          git show "${TARGET_SHA}:source/apps/startup/tests/legacy-boot1.sh" >"${RUNNER_TEMP}/legacy-boot1.sh"
+          git show "${TARGET_SHA}:source/apps/startup/tests/assert-runtime.js" >"${RUNNER_TEMP}/assert-runtime.js"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 7.5.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.12.1
+
+      - name: Old pm2
+        shell: bash
+        env:
+          PM2_VERSION: ${{ matrix.pm2 }}
+        run: |
+          set -euo pipefail
+          npm install -g "pm2@${PM2_VERSION}"
+          got="$(pm2 --version | tail -n 1 | tr -d '\r')"
+          if [ "${got}" != "${PM2_VERSION}" ]; then
+            echo "pm2 is ${got}, want ${PM2_VERSION}" >&2
+            exit 1
+          fi
+
+      - name: Boot 1 with the old startup app
+        shell: bash
+        working-directory: source
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash "${RUNNER_TEMP}/legacy-boot1.sh"
+
   # Bun 1.4.2 je jedina brana pro install, build a testy.
   # Node 18 zustava jen v jobu legacy-image.
   bun:
