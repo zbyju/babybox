@@ -695,7 +695,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 |---|---|---|---|---|
 | typescript | ^4.7.4 | 7.0.2 | ≥16.20 | native compiler; see P6 |
 | ts-node | ^10.9.1 | 10.9.2 | — | remove. `bun --watch` replaces ts-node, tsx and nodemon |
-| @types/node | ^18.11.18 | 24.13.4 | — | bun's Node compat layer. npm's absolute latest is 26.5.1; do not follow it. Also add `@types/bun`. The type-contract PR (TypeScript ≥ 5.6). |
+| @types/node | ^18.11.18 | 24.13.4 | — | bun's Node compat layer. npm's absolute latest is 26.5.1; do not follow it. The type-contract PR kept 18.x in the backend and configer, and added no `@types/bun`: their `dist` can still start on Node 18. Owner to confirm, see "Open questions". |
 | @types/cors, @types/express, @types/lodash.merge | | | | move to the apps that use them; root should hold nothing |
 
 **`@babybox/config-schema`** (new since the first draft)
@@ -750,7 +750,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | open | ^8.4.0 | 11.0.4 | ≥20 | ESM-only since v9; backend is CommonJS; see "ESM-only packages" |
 | winston | ^3.8.1 | 3.19.0 | — | one file: `modules/restart.ts` |
 | axios | ^0.27.2 | 1.20.0 | — | one call site, `fetch/fetch.ts` |
-| jest, @types/jest | ^28.1.3 | 30.5.1, 30.0.0 | ≥18.14 | six test files; move to vitest in P4 |
+| jest, @types/jest | ^28.1.3 | 30.5.1, 30.0.0 | ≥18.14 | ten test files; moved to vitest 0.9.4 in the type-contract PR |
 | ts-jest | ^28.0.7 | 29.4.12 | — | peer `typescript <7` |
 | newman | ^5.3.2 | 6.2.2 | ≥16 | |
 | nodemon | ^2.0.19 | 3.1.14 | ≥10 | |
@@ -807,8 +807,10 @@ later. The panel is bundled by Vite, so ESM-only is invisible there. Configer an
 config-schema are already ESM. The backend is CommonJS with `import x = require("open")`.
 **Decided 2026-09-12: convert the backend to ESM**, the same shape as configer:
 `"type": "module"`, `module`/`moduleResolution: node16`, `.js` on relative import
-specifiers, `import.meta.dirname` for `__dirname`, plain `import` for `open`,
-`moment`, `winston`. `dist/package.json` is a copy of the backend's, so pm2 sees
+specifiers, `path.dirname(fileURLToPath(import.meta.url))` for `__dirname`, plain
+`import` for `open`, `moment`, `winston`. Not `import.meta.dirname`: it needs Node
+20.11, and the Node 18 fallback from P3 can start the new `dist`.
+`dist/package.json` is a copy of the backend's, so pm2 sees
 `"type": "module"` too. Jest is the only CommonJS-shaped tool in the backend and
 goes in the same phase. The config-schema `paths` entry must keep working as a
 type-only import after the move.
@@ -816,8 +818,9 @@ type-only import after the move.
 **TypeScript 6 and 7.** 6.0 is the last JS-based release and exists to flag what 7
 removes. Removed in 7, and present in this repo: `baseUrl` (panel `tsconfig.app.json`
 and now the backend tsconfig, for `@babybox/config-schema`; use relative `paths`
-without `baseUrl`), `moduleResolution: node10` (the backend gets it by default from
-`module: CommonJS`, and `@vue/tsconfig` 0.1.3 sets `Node`), and
+without `baseUrl`), `moduleResolution: node10` (`@vue/tsconfig` 0.1.3 sets `Node`;
+in TypeScript 6 `module: CommonJS` with no `moduleResolution` resolves as `Bundler`,
+not `node10`), and
 `preserveValueImports` / `importsNotUsedAsValues` (from `@vue/tsconfig` 0.1.3;
 0.9 uses `verbatimModuleSyntax`). Also changed defaults in 6: `strict: true`,
 `module: esnext`, `target: es2025`, `noUncheckedSideEffectImports: true`; the backend
@@ -825,6 +828,14 @@ has `noImplicitAny` only and would become fully strict — that is wanted, and
 the extra flags in "TypeScript contract" go on at the same time. `import x =
 require()` and `enum` are not deprecated. `tsc --build` and project
 references still work.
+
+Found in the type-contract PR on TypeScript 6.0.3. A deprecated option is an
+error, not a warning: `baseUrl` is TS5101 and `moduleResolution: node10` is
+TS5107. The PR needs no `ignoreDeprecations`. An emit with `outDir` and no
+`rootDir` fails with TS5011, so all three units set `rootDir`. TypeScript 6
+loads no `@types` package by itself, so each unit names what it needs in
+`types`. `tsc --build` writes `tsconfig.tsbuildinfo` and skips a project it
+thinks is up to date, so the backend builds with plain `tsc`.
 
 **TypeScript 7 has no stable JS API.** The `typescript@7` package is a 2.5 MB
 launcher for a Go binary. Everything that today loads TypeScript as a library keeps
@@ -939,7 +950,22 @@ still gets one merge after the canary.
    legacy-image job points at the process.
 4. **Type contract.** TypeScript 6, the contract flags, and the backend ESM
    move. If the panel fixes pass 5000 lines, the panel is the next pull
-   request.
+   request. The first pull request covers configer, the backend and
+   config-schema, about 1,100 lines with docs. The panel stays on
+   TypeScript 4.7.4 and `vue-tsc` 0.38.9 there.
+
+   Proposed, owner to decide: the panel contract lands before Libraries.
+   Confidence medium. The evidence is from the planner's prototype.
+   - The Libraries bumps need the panel on a newer TypeScript. pinia 4.0.3
+     wants TypeScript 5.6 or newer. The vue 3.5 types use `NoInfer`
+     (TypeScript 5.4).
+   - The panel contract does not need the vue bump. `vue-tsc` 3.3.11 only
+     peers on `typescript >=5.0.0` and runs on vue 3.2.37. The `vue ^3.4`
+     peer of `@vue/tsconfig` 0.9.1 is optional.
+   - Size: 19 errors on `@vue/tsconfig` 0.9.1 alone, 173 errors in 32 files
+     under the full contract (vue-tsc 3.3.11, TypeScript 6.0.3, vue 3.2.37).
+   - What would change this: a Libraries bump that the panel's TypeScript
+     4.7.4 can type-check, or a panel contract that only passes on vue 3.5.
 5. **Libraries.** The P4 bumps, including Express 5 and Pino 10. The review
    checks behavior. Czech text, JSON errors, and the startup log line stay
    the same.
@@ -1126,7 +1152,8 @@ run `pnpm install` and dirty the tree.
       Do not use `bun` from `PATH`. The apps stop running on Node.
       `start:configer` and `start:main` run `node apps/startup/start-app.js`.
       The helper runs on the legacy Node. The apps run on Bun.
-- `@types/node` and `@types/bun`: moved to the type-contract PR.
+- `@types/node` and `@types/bun`: moved to the type-contract PR, which kept
+  `@types/node` 18.x (see P4).
   TypeScript 4.7.4 cannot parse `bun-types` 1.4.2 (TS1005, TS1139).
   `skipLibCheck` does not cover a syntax error. `@types/node` 24.13.4 needs
   TypeScript 5.6.
@@ -1153,28 +1180,35 @@ Still the JS compiler, so `vue-tsc` keeps working. Fix everything TS 6
 deprecates, so P6 is a swap of the binary, not a migration. Turn on the
 TypeScript contract. Do not add `tsx`.
 
-- [ ] `typescript@6.0.3` in root, panel, backend; configer and config-schema use
-      the workspace `tsc` (or their own 6.0.3, then 7 in P6)
+- [x] `typescript@6.0.3` in root, backend, configer and config-schema.
+      Configer and config-schema pin their own 6.0.3, then 7 in P6.
+- [ ] `typescript@6.0.3` in the panel. It stays on 4.7.4 with `vue-tsc`
+      0.38.9 until the panel box below.
 - [ ] `@types/bun` and the `@types/node` version, moved here from P3.
-      TypeScript 4.7.4 cannot read either. The type-contract PR picks the
-      `@types/node` version. A box on the Node fallback still starts the
-      new `dist` on Node.
-- [ ] Every compile unit: the TypeScript contract flags. Configer first, then
-      backend, config-schema, panel. Tracked suppressions only. No flag off.
-- [ ] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
-      node16`, `.js` on relative imports, `import.meta.dirname`, drop every
-      `import x = require()`; the 6 jest test files move to vitest in the same
-      PR because ts-jest is the last CommonJS tool; replace `baseUrl` with a
-      relative `paths` entry for `@babybox/config-schema` so TS 7 can drop
-      `baseUrl`
+      TypeScript 4.7.4 cannot read either. A box on the Node fallback still
+      starts the new `dist` on Node. The type-contract PR kept `@types/node`
+      18.x in the backend and configer and added no `@types/bun`. The
+      compiler then rejects a Node 20+ API such as `import.meta.dirname`.
+      Owner to confirm, see "Open questions".
+- [x] The TypeScript contract flags in configer, the backend and
+      config-schema. Configer first. Two tracked suppressions. No flag off.
+- [ ] The TypeScript contract flags in the panel.
+- [x] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
+      node16`, `.js` on relative imports,
+      `path.dirname(fileURLToPath(import.meta.url))` (not
+      `import.meta.dirname`, which needs Node 20.11), drop every
+      `import x = require()`; the 10 jest test files move to vitest 0.9.4 in
+      the same PR because ts-jest is the last CommonJS tool; replace
+      `baseUrl` with a relative `paths` entry for `@babybox/config-schema` so
+      TS 7 can drop `baseUrl`
 - [ ] Panel: `@vue/tsconfig@0.9.1`, `vue-tsc@3.3.11`, remove `baseUrl`, make
       `paths` relative, fix the known typecheck errors (re-count first; 20 at
       1927135) down to zero under the contract, make `bun run build` actually
       run the type gate over `src` (learnings.md says it checks zero files
       today)
-- [ ] Configer: confirm with `tsc --noEmit` under the contract. Config-schema:
+- [x] Configer: confirm with `tsc --noEmit` under the contract. Config-schema:
       confirm the same; it is already on `node16` / `strict`
-- [ ] `ts-node` / `nodemon` → `bun --watch` for backend and configer
+- [x] `ts-node` / `nodemon` → `bun --watch` for backend and configer
 - [ ] vue 3.5.43, vue-router 5.3.1, pinia 4.0.3 + `@vue/devtools-api`, lodash 4.18.1,
       howler 2.2.4, moment 2.31.0, stylus 0.64.0
 - [ ] axios 1.20.0 in the backend only
@@ -1183,7 +1217,7 @@ TypeScript contract. Do not add `tsx`.
       `undefined` as well as `{}`
 - [ ] cors, dotenv 18.0.2 (silence any load banner), morgan, winston, fs-extra 11,
       newman 6, pino 10.3.1, pino-pretty 13.1.3 (prove #90's file format and
-      rotation still hold). Remove nodemon.
+      rotation still hold). nodemon is already gone (type-contract PR).
 - [ ] `open@11.0.4` as a plain ESM import once the backend is ESM
 - [ ] lowdb 7 in configer (`versions.json` only)
 - [ ] Full manual run: panel against a real engine and thermal unit, camera feed,
@@ -1286,8 +1320,9 @@ contract, which is where most of the migration risk sits.
 - The backend `dist` is installed standalone. No `workspace:*` in the backend
   `package.json`. Config-schema stays a type-only import.
 - Zod stays at 3.23.8. Zod 4 is out of scope.
-- `@types/node` is 24.x for Bun's Node compat. Do not follow npm's 26. Also
-  add `@types/bun`.
+- `@types/node` stays 18.x in the backend and configer while the Node
+  fallback can start their new `dist`. No `@types/bun` there. Pending owner
+  confirmation. Do not follow npm's 26.
 - Express stays Express. Vite stays Vite. Tests stay vitest.
 - Do not turn a TypeScript contract flag off to make a phase green.
 - Every registry dependency is pinned to one exact version in `package.json`.
@@ -1358,6 +1393,11 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | Does the startup app move to Bun after boot 2? | No | It must run on the oldest Node for boot 1 and for hold boxes. `startup.sh` and `startup.bat` still call Node. |
 | What if `bun -v` is not `BUN_VERSION`? | Run the apps on that Bun | That binary ran the last good `dist`. A hold OS, a CPU hold, a missing binary, or a `bun -v` that fails starts on Node. |
 | When do `@types/node` and `@types/bun` move? | In the type-contract PR | TypeScript 4.7.4 cannot read `@types/bun` 1.4.2 or `@types/node` 24.13.4. |
+| Which `@types/node` in the backend and configer? | 18.x, no `@types/bun`. Pending owner confirmation. | The new `dist` can start on the Node 18 fallback. The compiler must reject a Node 20+ API. |
+| How does the ESM backend find its folder? | `path.dirname(fileURLToPath(import.meta.url))` | `import.meta.dirname` needs Node 20.11. |
+| Which vitest runs the backend tests? | 0.9.4, the version configer and the panel use | vitest 5 needs vite 6.4 or newer and fails on Node 18. P5 moves every unit to 5. |
+| How is a cast tracked? | `// oxlint-disable-next-line typescript/consistent-type-assertions -- <reason>` on the line above | Two in this PR: configer boot merge, backend boot config. `as const` is not a cast. |
+| Are test files type-checked? | Not yet | They stay out of every tsconfig, as in configer. Test tsconfigs come in P5. |
 
 ## Open questions
 
@@ -1388,7 +1428,9 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 - [ ] `GET /status` `node` shows the Node version Bun reports (`v26.3.0`).
       Add a runtime field?
 - [ ] `bun install --no-save` in `dist` installs the backend
-      devDependencies too. This plan says `--omit dev`.
+      devDependencies too. This plan says `--omit dev`. Since the type
+      contract they include vitest 0.9.4, so also vite 2.9.14 and the
+      esbuild postinstall.
 - [ ] Owner: make `legacy-boot1` a required check. On two #128 runs it took
       about 1.5 minutes on Ubuntu and 3.5 to 5 minutes on Windows, in
       parallel with the other jobs. A whole run took 4.5 to 5 minutes. The
@@ -1397,6 +1439,37 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 - [ ] `bootstrap.js` logs `pm2 je [PM2] Spawning PM2 daemon …` when its
       `pm2 -v` starts the daemon. It reads the first stdout line. The log
       line is wrong. The build does not fail.
+- [ ] Owner: `@types/node` stays 18.x in the backend and configer, with no
+      `@types/bun`. Their new `dist` can start on the Node 18 fallback
+      (hold OS, CPU hold, missing Bun), so the compiler must reject a Node
+      20+ API. With 24.13.4, `import.meta.dirname` compiles and throws on
+      Node 18. This deviates from the P3 plan text (24.x plus `@types/bun`).
+      Move to 24.x when no box can start the apps on Node 18.
+- [ ] Owner: land the panel contract before Libraries. See "Pull requests
+      from here", item 4.
+- [ ] No tsconfig type-checks the test files. Under the contract they have
+      18 errors in the backend, 16 in configer and 56 in config-schema, and
+      about 50 `as`. Add a test tsconfig per unit in P5.
+- [ ] `tsc` does not clean `outDir`. A box keeps the old
+      `apps/backend/dist/__tests__/*.js` and `types/data.types.js`, and the
+      startup copies them into `dist`. Nothing imports them.
+- [ ] `?timeout` on the settings route is a string at run time, but
+      `GetUnitSettingsRequest` types it as a number. The data routes read it
+      through `queryTimeout()`; the settings route does not.
+- [ ] The root `dev` scripts still call `pnpm -F`.
+- [ ] `bun install --no-save` in a `dist` that has `.env` prints the `.env`
+      load and the resolve lines on stderr (Bun 1.4.2). Exit 0, the lock
+      does not change, and the startup does not fail on it. The same
+      happens before the type contract. The comment in `dist-release.js`
+      says the install writes nothing on stderr.
+- [ ] Small backend and configer leftovers: `restartRepository()` returns
+      `lastRequest` and `errorStreak` as values that never update; the
+      configer `DbFactory` error names a `getInstance` that does not exist;
+      the engine route calls `transformThermalData`; the backend
+      `package.json` `main` points at `./src/index.ts`.
+- [ ] npm reports vitest 5.0.2 on 2026-09-25; the plan pins 5.0.1.
+      Re-check at P5. `bun audit` still reports 79 (2 critical, 27 high,
+      38 moderate, 12 low).
 
 ## Progress log
 
