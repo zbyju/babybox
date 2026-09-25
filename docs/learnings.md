@@ -8,10 +8,12 @@ lesson: what happened, what to do instead.
 - **Never run the machine's pnpm here.** It rewrites the lockfile format. Use
   `npx pnpm@7.5.0`. CI and every babybox install with `--frozen-lockfile` from that
   version; a lockfile in another format means the box does not start.
-- **A green build proves little for the panel.** `pnpm typecheck` on the panel is red
-  with 20 pre-existing errors and the build's type gate checks zero files. The docs
-  said 17 until P3 counted them on `origin/main` at 1927135. Record your own baseline
-  before you start; the bar is no new errors, not a green run.
+- **The panel build type-checks `src`, and only `src`.** Its gate is
+  `vue-tsc --noEmit -p tsconfig.app.json`, 99 files. Until the panel contract it ran
+  `vue-tsc --noEmit` on the solution `tsconfig.json` (`files: []`) and checked none,
+  while `typecheck` was red with 20 errors. The tests and `vite.config.ts` are
+  checked by `typecheck` in CI, not on the box. Prove a gate with `--listFilesOnly`,
+  not with a green run.
 - **The startup app treats any stderr from `pnpm run build` as a failed build.**
   A warning printed by `tsc` or a package script fails the update on the box.
 - **TypeScript 6 loads no `@types` package by itself.** Name what a unit needs
@@ -46,6 +48,20 @@ lesson: what happened, what to do instead.
 - **`tsc --build` skips a project it thinks is up to date.** A types bump in the
   backend exited 0 because nothing was rebuilt. Test a types bump with
   `tsc --build --force`.
+- **`bun run` starts a bin with the first `node` on `PATH`.** Only with no `node`
+  there does the bin run on Bun. The panel build then fails, see "Panel".
+- **`composite` plus `vue-tsc -p` writes a `.tsbuildinfo` on every run.** A box
+  build would dirty the tree. The panel tsconfigs have no `composite`; TypeScript 6
+  accepts project references without it.
+- **vite 2.9 reads the tsconfig, but passes only six fields to esbuild:** `target`,
+  `jsxFactory`, `jsxFragmentFactory`, `useDefineForClassFields`,
+  `importsNotUsedAsValues`, `preserveValueImports`. `verbatimModuleSyntax` never
+  reaches esbuild. The new panel tsconfigs on unchanged `src` gave a byte-identical
+  bundle. vite also follows every reference of `tsconfig.json`, so a referenced
+  tsconfig whose `extends` does not resolve fails the vite build.
+- **zsh counts stderr wrong.** Its MULTIOS option copies a stream that is
+  redirected twice, so `2>&1 >/dev/null | wc -c` counts stdout too. Measure stderr
+  in bash.
 - **`npx -p node@12.22.12` does not run on Apple silicon.** There is no darwin-arm64
   build of Node 12, and npx exits 1 with no message. Use the `node:12.22.12`
   Docker image for a Node 12 parse.
@@ -236,6 +252,29 @@ lesson: what happened, what to do instead.
   and never reach configer, so it fails at boot with "Config file error". The
   "remote maintenance" `CLAUDE.md` talks about is a remote session on the box, not a
   browser pointed at it. That is what makes a loopback bind safe to consider.
+
+- **`vue-tsc` on the Bun runtime checks no `.vue` file.** It fails with TS2307
+  "Cannot find module './App.vue'" and exit 2. BUILD_PANEL works because the
+  runner runs on Node and `bun run` picks that `node`. Test the build with no
+  `node` on `PATH` before anything removes Node from a box.
+- **`vue-tsc` 3.3.11 does not start on Node 14.** `@volar/source-map` uses `??=`,
+  a SyntaxError there. Node 16.20.2 and 18.12.1 pass. `vue-tsc` 0.38.9 ran on 14,
+  so a box whose first `node` is 14 now fails BUILD_PANEL.
+- **chai's `should` breaks Vue's `UnwrapRef` when tests share a program with store
+  code.** vitest brings chai, which gives every object a `should` property. A
+  Moment inside a pinia store then no longer matches its own type. 13 of the 20
+  old panel errors were this. `vitest.env.d.ts` adds chai's `Assertion` to
+  `RefUnwrapBailTypes` on `@vue/reactivity`. That needs `@vue/reactivity` as a
+  direct devDependency: Bun does not link it into the panel, and vue 3.2.37 does
+  not re-export the interface.
+- **Vue 3.2 DOM types reject `undefined` under `exactOptionalPropertyTypes`.**
+  `:src="url || undefined"`, `:pattern="maybe"` and a style object with an
+  `undefined` value are errors. Leave the attribute off with `v-bind` of an object
+  that lacks the key. Never write `pattern=""`: an empty pattern rejects every
+  value that is not empty.
+- **vue-router 4.1.3 on vue 3.2.37 does not type-check `<router-link>` props.** It
+  extends `GlobalComponents`, which vue 3.2.37 does not have, so `:to="12345"`
+  passes the gate.
 
 - **Nothing in the panel may block the event loop.** `App.vue` heartbeats the backend
   every 5s and `restart.ts` reboots the machine after 9 missed ticks, so a
