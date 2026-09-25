@@ -35,7 +35,12 @@ export async function getConfig(): Promise<unknown> {
  */
 export type SaveResult =
   | { ok: true }
-  | { ok: false; status: number; errors: ConfigError[]; msg?: string };
+  | {
+      ok: false;
+      status: number;
+      errors: ConfigError[];
+      msg?: string | undefined;
+    };
 
 type Fields = Record<string, unknown>;
 
@@ -54,7 +59,7 @@ function isConfigError(value: unknown): value is ConfigError {
 /** The two useful parts of a refusal body. Both are absent when it is not JSON. */
 async function readFailure(
   response: Response,
-): Promise<{ errors: ConfigError[]; msg?: string }> {
+): Promise<{ errors: ConfigError[]; msg?: string | undefined }> {
   let body: unknown;
   try {
     body = await response.json();

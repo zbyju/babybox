@@ -5,19 +5,16 @@
       ref="imageRef"
       name="vivotek"
       scrolling="no"
-      :style="{
-        borderTopWidth: props.displayTopBorder ? undefined : '0px',
-        maxHeight: props.maxH + 'px',
-        maxWidth: props.maxW + 'px',
-      }"
+      :style="[
+        topBorder,
+        { maxHeight: props.maxH + 'px', maxWidth: props.maxW + 'px' },
+      ]"
     />
   </div>
   <div
     v-show="state === CameraState.Error"
     class="camera-error"
-    :style="{
-      borderTopWidth: props.displayTopBorder ? undefined : '0px',
-    }"
+    :style="topBorder"
   >
     <h4>Error</h4>
     <p>Chyba při načítání kamery.</p>
@@ -25,9 +22,7 @@
   <div
     v-show="state === CameraState.Loading"
     class="camera-loading"
-    :style="{
-      borderTopWidth: props.displayTopBorder ? undefined : '0px',
-    }"
+    :style="topBorder"
   >
     <h4>Načítám</h4>
   </div>
@@ -35,15 +30,15 @@
 
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
-  import { onMounted, ref } from "vue";
+  import { computed, onMounted, ref } from "vue";
 
   import { useConfigStore } from "@/pinia/configStore";
   import { CameraState } from "@/types/panel/camera.types";
 
   const props = defineProps<{
     displayTopBorder: boolean;
-    maxH?: number;
-    maxW?: number;
+    maxH?: number | undefined;
+    maxW?: number | undefined;
   }>();
 
   const emit = defineEmits<{
@@ -51,6 +46,10 @@
   }>();
 
   const state = ref(CameraState.Loading);
+
+  const topBorder = computed(() =>
+    props.displayTopBorder ? {} : { borderTopWidth: "0px" },
+  );
 
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);

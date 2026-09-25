@@ -138,7 +138,7 @@ export interface FieldState {
   /** Blocks a save. Every message the schema gave for this path. */
   errors: string[];
   /** Does not block a save. */
-  warning?: string;
+  warning: string | undefined;
 }
 
 export interface FormState {

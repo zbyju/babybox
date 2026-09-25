@@ -1,9 +1,9 @@
 <template>
   <select
     class="base-select"
-    :value="props.modelValue"
+    :value="props.modelValue ?? ''"
     :class="classState"
-    :disabled="props.disabled"
+    :disabled="props.disabled === true"
     @change="selectChange"
   >
     <option v-for="option in props.options" :key="option" :value="option">
