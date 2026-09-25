@@ -1,1 +1,1 @@
-ts-node --esm ../src/index.ts
+bun ../src/index.ts

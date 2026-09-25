@@ -8,7 +8,7 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --ignore '*.json' --esm ./src/index.ts",
+    "dev": "bun --watch src/index.ts",
     "start": "node ../startup/start-app.js configer",
     "build": "tsc",
     "test": "vitest run"

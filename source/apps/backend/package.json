@@ -11,7 +11,7 @@
   "author": "",
   "main": "./src/index.ts",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "bun --watch src/index.ts",
     "lint": "eslint --fix --ext .js,.ts .",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
     "test": "vitest run",
@@ -31,9 +31,7 @@
     "eslint-plugin-simple-import-sort": "7.0.0",
     "eslint-plugin-unused-imports": "2.0.0",
     "newman": "5.3.2",
-    "nodemon": "2.0.19",
     "prettier": "2.7.1",
-    "ts-node": "10.9.1",
     "typescript": "6.0.3",
     "vitest": "0.9.4"
   },
