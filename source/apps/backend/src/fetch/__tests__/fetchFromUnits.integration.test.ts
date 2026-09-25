@@ -140,6 +140,7 @@ describe("updateSettings against a unit that is ready", () => {
   let maxInFlight = 0;
   let stored: number | undefined;
   let reportWrongValue = false;
+  let verifyAsJson = false;
 
   beforeAll(async () => {
     server = http.createServer((req, res) => {
@@ -168,6 +169,7 @@ describe("updateSettings against a unit that is ready", () => {
 
       // Verification read. Slot 0 is setting index 100.
       if (url.startsWith("/get_sys[100]")) {
+        if (verifyAsJson) return json(String(stored ?? 0));
         res.setHeader("Content-Type", "text/plain");
         const slot = reportWrongValue ? (stored ?? 0) + 1 : stored ?? 0;
         return res.end(`${slot}|0|0`);
@@ -204,6 +206,7 @@ describe("updateSettings against a unit that is ready", () => {
     maxInFlight = 0;
     stored = undefined;
     reportWrongValue = false;
+    verifyAsJson = false;
   });
 
   it("should write the value, then the index, then verify", async () => {
@@ -243,6 +246,19 @@ describe("updateSettings against a unit that is ready", () => {
       1
     );
 
+    expect(results[0].result).toBe(false);
+  });
+
+  it("should fail the setting when the verification read is not text", async () => {
+    verifyAsJson = true;
+
+    const results = await unitApi.updateSettings(
+      [{ index: INDEX, value: VALUE, unit: Unit.Engine }],
+      5000,
+      1
+    );
+
+    expect(order.some((u) => u.startsWith("/get_sys[100]"))).toBe(true);
     expect(results[0].result).toBe(false);
   });
 });
