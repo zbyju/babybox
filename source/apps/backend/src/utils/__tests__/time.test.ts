@@ -1,6 +1,7 @@
-import moment = require("moment");
+import moment from "moment";
+import { describe, expect, it } from "vitest";
 
-import { getTimeDifferenceInSeconds } from "../time";
+import { getTimeDifferenceInSeconds } from "../time.js";
 
 describe("time.ts", () => {
   describe("getTimeDifferenceInSeconds", () => {

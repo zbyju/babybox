@@ -34,7 +34,7 @@ on_exit() {
   git update-index --no-skip-worktree package.json >/dev/null 2>&1 || true
   git update-index --no-skip-worktree apps/startup/versions.env >/dev/null 2>&1 || true
   git checkout -- apps/panel/package.json apps/backend/package.json package.json apps/startup/versions.env >/dev/null 2>&1 || true
-  rm -f apps/panel/fail-panel-build.js apps/backend/omit-dist-entry.js
+  rm -f apps/panel/fail-panel-build.js apps/backend/omit-dist-entry.cjs
   pm2 delete configer >/dev/null 2>&1 || true
   pm2 delete babybox >/dev/null 2>&1 || true
 }
@@ -70,7 +70,7 @@ hide_local_files() {
   touch "$exclude"
   for pattern in \
     "source/apps/panel/fail-panel-build.js" \
-    "source/apps/backend/omit-dist-entry.js"
+    "source/apps/backend/omit-dist-entry.cjs"
   do
     if ! grep -qxF "$pattern" "$exclude"; then
       printf '%s\n' "$pattern" >>"$exclude"
@@ -254,11 +254,11 @@ break_panel_build() {
 # seed_previous already copied the old entry into the live dist.
 # start:main stays the real script, so rollback can start that dist.
 break_new_dist_entry() {
-  cat >apps/backend/omit-dist-entry.js <<'EOF'
+  cat >apps/backend/omit-dist-entry.cjs <<'EOF'
 const fs = require("fs");
 fs.rmSync("dist/index.js");
 EOF
-  patch_script apps/backend/package.json build "tsc --build && node omit-dist-entry.js"
+  patch_script apps/backend/package.json build "tsc && node omit-dist-entry.cjs"
 }
 
 break_bun_sha() {
@@ -341,7 +341,7 @@ assert_marker
 assert_apps
 assert_runtime bun
 restore_tracked apps/backend/package.json
-rm -f apps/backend/omit-dist-entry.js
+rm -f apps/backend/omit-dist-entry.cjs
 cp "$RUNNER_TEMP/backend-index.js" apps/backend/dist/index.js
 stop_apps
 
