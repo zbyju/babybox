@@ -1,6 +1,11 @@
 {
   "extends": "./tsconfig.app.json",
-  "include": ["env.d.ts", "src/**/__tests__/**/*", "src/**/*.spec.ts"],
+  "include": [
+    "env.d.ts",
+    "vitest.env.d.ts",
+    "src/**/__tests__/**/*",
+    "src/**/*.spec.ts"
+  ],
   "exclude": [],
   "compilerOptions": {
     // The tests run on Node through vitest 0.9.4 with the jsdom environment.

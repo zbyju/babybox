@@ -50,9 +50,9 @@ describe("isInstanceOfConfig", () => {
     ).toBe(true);
 
     const value = config();
-    const app = { ...(value.app as Fields) };
-    delete app.refreshRequestLimit;
-    value.app = app;
+    const app = { ...(value["app"] as Fields) };
+    delete app["refreshRequestLimit"];
+    value["app"] = app;
 
     expect(isInstanceOfConfig(value)).toBe(true);
   });
@@ -75,7 +75,7 @@ describe("isInstanceOfConfig", () => {
 
   it("rejects a missing section", () => {
     const value = config();
-    delete value.units;
+    delete value["units"];
 
     expect(isInstanceOfConfig(value)).toBe(false);
   });

@@ -133,7 +133,7 @@ describe("runSave", () => {
   /* hasErrors already ran the same schema, so this branch is a guard, not a check. */
   it("sends nothing when the draft does not parse", async () => {
     const bad = draft() as Record<string, unknown>;
-    delete bad.units;
+    delete bad["units"];
     const deps = calls({ ok: true });
 
     const result = await runSave(bad, false, deps);
