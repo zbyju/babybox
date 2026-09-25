@@ -1211,8 +1211,9 @@ Context · Decision · Why · Gave up · Where
 - Why: the contract is in one place. A unit can only weaken it by setting
   a flag in its own tsconfig, which is easy to see in a diff. The emitted
   `dist` does not change.
-- Gave up: a CI step that checks each copy. The panel moves to the file in
-  #130.
+- Gave up: a CI step that checks each copy. The panel still copies the
+  flags: vite 2.9.14 cannot read the `extends` array it would need. See
+  the plan's "Open questions".
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
   contract" and "Open questions".
 

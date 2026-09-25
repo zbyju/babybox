@@ -260,6 +260,13 @@ lesson: what happened, what to do instead.
 - **`vue-tsc` 3.3.11 does not start on Node 14.** `@volar/source-map` uses `??=`,
   a SyntaxError there. Node 16.20.2 and 18.12.1 pass. `vue-tsc` 0.38.9 ran on 14,
   so a box whose first `node` is 14 now fails BUILD_PANEL.
+- **vite 2.9.14 cannot read a tsconfig `extends` array.** Its bundled
+  tsconfck passes the array to `path.isAbsolute` and throws. `vite build`
+  and vitest 0.9.4 reach `tsconfig.app.json` through the `references` in
+  the panel `tsconfig.json`, so an array there fails BUILD_PANEL and a
+  panel test suite. `vue-tsc` reads the array fine. `esbuild.tsconfigRaw`
+  in `vite.config.ts` does not help: `@vitejs/plugin-vue` reads the
+  tsconfig for `.vue` files itself.
 - **chai's `should` breaks Vue's `UnwrapRef` when tests share a program with store
   code.** vitest brings chai, which gives every object a `should` property. A
   Moment inside a pinia store then no longer matches its own type. 13 of the 20
