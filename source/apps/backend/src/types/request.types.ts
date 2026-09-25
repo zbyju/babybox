@@ -15,7 +15,11 @@ export interface PostUnitSettingsRequestBody {
   };
 }
 
-// Arrays pass too, as they did before; none of the checks below accepts one.
+/*
+ * Arrays pass too, as they did before.
+ * So isInstanceOfGetUnitSettingsRequest accepts `[]`, which has no `unit`.
+ * It only reads req.query, and Express never parses that into an array.
+ */
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
