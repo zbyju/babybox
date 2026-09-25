@@ -1501,3 +1501,11 @@ One line per landed step: date, PR, what moved.
   does not need a writable `/usr/local`. `startup.sh`, `bootstrap.js`, and
   `install-all.sh` already write that path. `install-all.sh` may still
   chown `/usr/local` for Node. That host stays.
+- 2026-09-25 — #128 — configer and the backend run on Bun 1.4.2. pm2 gets
+  the absolute Bun path from `apps/startup/start-app.js`. A hold OS, a CPU
+  hold, or a Bun that does not answer starts the same files on Node. The
+  pm2 daemon and the startup app stay on Node. The Windows install script
+  pins pm2. `legacy-boot1` runs the old startup app with pm2 5.2.0 and
+  6.0.14: the legacy `dist` starts on Bun after a failed build, the new
+  `dist` after a good one. `@types/node` 24 and `@types/bun` move to the
+  type-contract PR.
