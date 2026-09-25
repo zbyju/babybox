@@ -28,7 +28,9 @@
   }>();
 
   function inputChange(event: Event) {
-    emit("update:modelValue", (event.target as HTMLInputElement).value);
+    if (event.target instanceof HTMLInputElement) {
+      emit("update:modelValue", event.target.value);
+    }
   }
 
   /*

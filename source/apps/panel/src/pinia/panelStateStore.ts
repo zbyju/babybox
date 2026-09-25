@@ -1,12 +1,11 @@
 import { defineStore } from "pinia";
 
-import type { Maybe } from "@/types/generic.types";
-import type { Message, PanelState } from "@/types/panel/main.types";
+import type { PanelState } from "@/types/panel/main.types";
 
 export const usePanelStateStore = defineStore("panelState", {
-  state: () => ({
-    message: undefined as Maybe<Message>,
-    active: false as boolean,
+  state: (): PanelState => ({
+    message: undefined,
+    active: false,
   }),
   actions: {
     setState(state: PanelState) {

@@ -44,7 +44,8 @@ const MAX_INIT_DELAY = 20000;
  */
 const LOOP_TICK = 250;
 
-type LoopUnit = "engine" | "thermal";
+const LOOP_UNITS = ["engine", "thermal"] as const;
+type LoopUnit = typeof LOOP_UNITS[number];
 
 export class AppManager {
   private loopTimers: Record<LoopUnit, Maybe<ReturnType<typeof setInterval>>> =
@@ -352,7 +353,7 @@ export class AppManager {
 
   stopPanelLoop() {
     this.panelLoopRunning = false;
-    for (const unit of Object.keys(this.loopTimers) as LoopUnit[]) {
+    for (const unit of LOOP_UNITS) {
       const timer = this.loopTimers[unit];
       if (timer !== undefined) {
         clearInterval(timer);

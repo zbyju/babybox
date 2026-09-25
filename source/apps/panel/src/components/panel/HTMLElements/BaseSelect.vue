@@ -29,7 +29,9 @@
   }>();
 
   function selectChange(event: Event) {
-    emit("update:modelValue", (event.target as HTMLSelectElement).value);
+    if (event.target instanceof HTMLSelectElement) {
+      emit("update:modelValue", event.target.value);
+    }
   }
 
   const classState = computed(() =>

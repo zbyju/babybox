@@ -70,7 +70,7 @@ export const getChangedSettings = (
       }
       return res;
     },
-    [] as SettingsToSend[],
+    [],
   );
 };
 
@@ -85,15 +85,15 @@ export const updateValueBasedOnResult = (
       return {
         ...value,
         state: settingsResultsToState(
-          resultEngine!.result,
-          resultThermal!.result,
+          resultEngine.result,
+          resultThermal.result,
         ),
       };
     } else {
       // Only engine was sent
       return {
         ...value,
-        state: settingsResultsToState(resultEngine!.result, true),
+        state: settingsResultsToState(resultEngine.result, true),
       };
     }
   } else {
@@ -101,7 +101,7 @@ export const updateValueBasedOnResult = (
       // Only thermal was sent
       return {
         ...value,
-        state: settingsResultsToState(true, resultThermal!.result),
+        state: settingsResultsToState(true, resultThermal.result),
       };
     } else {
       // None of them were sent

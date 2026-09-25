@@ -16,11 +16,17 @@ import type {
 
 import { useConfigStore } from "./configStore";
 
+interface UnitsState {
+  engineUnit: Maybe<EngineUnit>;
+  thermalUnit: Maybe<ThermalUnit>;
+  time: Maybe<Moment>;
+}
+
 export const useUnitsStore = defineStore("engineUnit", {
-  state: () => ({
-    engineUnit: undefined as Maybe<EngineUnit>,
-    thermalUnit: undefined as Maybe<ThermalUnit>,
-    time: undefined as Maybe<Moment>,
+  state: (): UnitsState => ({
+    engineUnit: undefined,
+    thermalUnit: undefined,
+    time: undefined,
   }),
   getters: {}, // TODO: Add used getters
   actions: {
