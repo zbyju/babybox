@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.contract.json",
   "include": ["src"],
   "exclude": ["node_modules", "src/**/*.test.ts"],
   "compilerOptions": {
@@ -18,18 +19,6 @@
      */
     "paths": {
       "@babybox/config-schema": ["../../packages/config-schema/dist/index.d.ts"]
-    },
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    }
   }
 }
