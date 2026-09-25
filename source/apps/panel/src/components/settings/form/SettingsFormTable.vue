@@ -9,7 +9,7 @@
         </tr>
       </thead>
       <tbody>
-        <template v-for="(row, index) in rows" :key="row.label">
+        <template v-for="(row, index) in rows" :key="row.index">
           <SettingsFormTableRow
             :value="props.values[index].value"
             :engine="props.values[index].engine"
