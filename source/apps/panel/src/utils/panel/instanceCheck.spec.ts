@@ -129,15 +129,24 @@ describe("isInstanceOfConfig", () => {
 });
 
 describe("isInstanceOfVersions", () => {
+  const versions = {
+    startup: "1.0.0",
+    backend: "1.0.0",
+    configer: "1.0.0",
+    frontend: "1.0.0",
+  };
+
   it("accepts a full versions body", () => {
-    expect(
-      isInstanceOfVersions({
-        startup: "1.0.0",
-        backend: "1.0.0",
-        configer: "1.0.0",
-        frontend: "1.0.0",
-      }),
-    ).toBe(true);
+    expect(isInstanceOfVersions(versions)).toBe(true);
+  });
+
+  it.each([
+    ["startup", null],
+    ["backend", 1],
+    ["configer", {}],
+    ["frontend", ["1.0.0"]],
+  ])("rejects a %s that is not a string", (key, value) => {
+    expect(isInstanceOfVersions({ ...versions, [key]: value })).toBe(false);
   });
 
   // axios hands back a body it cannot parse as a string rather than throwing.

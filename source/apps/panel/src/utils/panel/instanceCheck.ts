@@ -61,13 +61,9 @@ export const isInstanceOfConfig = (object: unknown): object is Config => {
   return isReadableConfig(object);
 };
 
-export const isInstanceOfVersions = (object: unknown): object is Versions => {
-  return (
-    typeof object === "object" &&
-    object !== null &&
-    "startup" in object &&
-    "backend" in object &&
-    "configer" in object &&
-    "frontend" in object
-  );
-};
+export const isInstanceOfVersions = (object: unknown): object is Versions =>
+  isObject(object) &&
+  isString(object["startup"]) &&
+  isString(object["backend"]) &&
+  isString(object["configer"]) &&
+  isString(object["frontend"]);
