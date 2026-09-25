@@ -3,6 +3,7 @@ import type { ConfigError, MainConfig } from "@babybox/config-schema";
 import { CONFIGER_API_URL, CONFIGER_TIMEOUT } from "@/api/base";
 import { requestJson } from "@/api/http";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
+import { isObject } from "@/utils/general";
 
 /**
  * The whole config configer is running on, straight from the file.
@@ -18,7 +19,7 @@ import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
  * @returns the parsed body, unchecked — the caller validates it
  */
 export async function getConfig(): Promise<unknown> {
-  const { data } = await requestJson<unknown>(`${CONFIGER_API_URL}/main`, {
+  const { data } = await requestJson(`${CONFIGER_API_URL}/main`, {
     timeout: CONFIGER_TIMEOUT,
   });
   return data;
@@ -35,26 +36,25 @@ export async function getConfig(): Promise<unknown> {
  */
 export type SaveResult =
   | { ok: true }
-  | { ok: false; status: number; errors: ConfigError[]; msg?: string };
-
-type Fields = Record<string, unknown>;
-
-function isObject(value: unknown): value is Fields {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+  | {
+      ok: false;
+      status: number;
+      errors: ConfigError[];
+      msg?: string | undefined;
+    };
 
 function isConfigError(value: unknown): value is ConfigError {
   return (
     isObject(value) &&
-    typeof value.path === "string" &&
-    typeof value.msg === "string"
+    typeof value["path"] === "string" &&
+    typeof value["msg"] === "string"
   );
 }
 
 /** The two useful parts of a refusal body. Both are absent when it is not JSON. */
 async function readFailure(
   response: Response,
-): Promise<{ errors: ConfigError[]; msg?: string }> {
+): Promise<{ errors: ConfigError[]; msg?: string | undefined }> {
   let body: unknown;
   try {
     body = await response.json();
@@ -64,8 +64,10 @@ async function readFailure(
   if (!isObject(body)) return { errors: [] };
 
   return {
-    errors: Array.isArray(body.errors) ? body.errors.filter(isConfigError) : [],
-    msg: typeof body.msg === "string" ? body.msg : undefined,
+    errors: Array.isArray(body["errors"])
+      ? body["errors"].filter(isConfigError)
+      : [],
+    msg: typeof body["msg"] === "string" ? body["msg"] : undefined,
   };
 }
 

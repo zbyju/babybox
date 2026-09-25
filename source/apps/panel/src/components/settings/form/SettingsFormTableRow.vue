@@ -42,8 +42,9 @@
 
   const props = defineProps<{
     row: SettingsTableRow;
-    engine: string | null;
-    thermal: string | null;
+    // undefined: not loaded, or the answer has no value at this index. null: the row has no such unit.
+    engine: string | null | undefined;
+    thermal: string | null | undefined;
     value: string;
     state: SettingsTableRowState;
   }>();
@@ -111,6 +112,8 @@
   }>();
 
   function inputChange(event: Event) {
-    emit("update:value", (event.target as HTMLInputElement).value);
+    if (event.target instanceof HTMLInputElement) {
+      emit("update:value", event.target.value);
+    }
   }
 </script>

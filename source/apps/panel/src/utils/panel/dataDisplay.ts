@@ -67,9 +67,10 @@ const zeroFilled = (num: number, padlen: number): string => {
 
 export const secondsToTime = (
   seconds: number,
-  inspectionNotDoneForDays: number,
+  inspectionNotDoneForDays: Maybe<number>,
 ): string => {
-  if (inspectionNotDoneForDays > 0) return "Neprovedena";
+  if (inspectionNotDoneForDays !== undefined && inspectionNotDoneForDays > 0)
+    return "Neprovedena";
   if (seconds < 0) return "Neprovedena";
   const d = Math.floor(seconds / (3600 * 24));
   const h = Math.floor((seconds % (3600 * 24)) / 3600);

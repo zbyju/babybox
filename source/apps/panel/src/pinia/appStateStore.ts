@@ -3,11 +3,19 @@ import { defineStore } from "pinia";
 import { AppState } from "@/types/app/appState.types";
 import type { Maybe } from "@/types/generic.types";
 
+interface AppStateState {
+  state: AppState;
+  done: [config: Maybe<boolean>, backend: Maybe<boolean>];
+  message: Maybe<string>;
+  startedAt: number;
+  okScheduled: boolean;
+}
+
 export const useAppStateStore = defineStore("appState", {
-  state: () => ({
-    state: AppState.Loading as AppState,
-    done: [undefined, undefined] as Maybe<boolean>[],
-    message: undefined as Maybe<string>,
+  state: (): AppStateState => ({
+    state: AppState.Loading,
+    done: [undefined, undefined],
+    message: undefined,
     /*
      * performance.now() is monotonic, unlike Date.now().
      * These panels run for months, so an NTP step backwards must not stall the boot screen.

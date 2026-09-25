@@ -1,3 +1,5 @@
+import type { Maybe } from "@/types/generic.types";
+
 export interface Message {
   text: string;
   color: string;
@@ -5,6 +7,6 @@ export interface Message {
 }
 
 export interface PanelState {
-  message?: Message;
+  message: Maybe<Message>;
   active: boolean;
 }

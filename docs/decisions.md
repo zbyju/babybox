@@ -1211,7 +1211,123 @@ Context · Decision · Why · Gave up · Where
 - Why: the contract is in one place. A unit can only weaken it by setting
   a flag in its own tsconfig, which is easy to see in a diff. The emitted
   `dist` does not change.
-- Gave up: a CI step that checks each copy. The panel moves to the file in
-  #130.
+- Gave up: a CI step that checks each copy. The panel still copies the
+  flags: vite 2.9.14 cannot read the `extends` array it would need. It
+  moves with Vite 8, see the next entry.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
   contract" and "Open questions".
+
+## 2026-09-25 — The panel moves to the shared contract file with Vite 8
+
+- Context: the panel needs `"extends": ["@vue/tsconfig/tsconfig.dom.json",
+  "../../tsconfig.contract.json"]`. vite 2.9.14 throws on an `extends`
+  array, in `vite build` and in vitest 0.9.4.
+- Decision: the panel keeps its copy of the 12 flags until the Vite 8 bump
+  in P5. Then `tsconfig.app.json` extends both files, with the contract
+  last, and the copy goes. The owner chose this (option A).
+- Why: P5 changes vite anyway. On 2026-09-25 vite 8.3.0 with
+  @vitejs/plugin-vue 6.0.9 built the panel with the array. The bundle had
+  the same content hash, and all 12 flags resolved.
+- Gave up: a CI step that compares the panel copy with the shared file.
+  Also gave up dropping `@vue/tsconfig` to allow a one-file `extends`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5 and
+  "Open questions".
+
+## 2026-09-25 — The panel contract is built on vue 3.2.37
+
+- Context: the 2026-09-25 proposal put the panel contract before Libraries,
+  with medium confidence. `@vue/tsconfig` 0.9.1 has an optional vue ^3.4
+  peer.
+- Decision: the panel contract is its own pull request, stacked on the
+  type-contract pull request, on vue 3.2.37. vue, vue-router, pinia, vite
+  and vitest do not move. The owner decides the merge order.
+- Why: `vue-tsc` 3.3.11 and TypeScript 6.0.3 type-check the panel on vue
+  3.2.37. All 149 errors in `src` and the 13 in the tests are fixed there.
+  The vue 3.5 and pinia 4 types need TypeScript 5.4 and 5.6.
+- Gave up: the vue 3.5 attribute types. Eight Vue 3.2 workarounds stay
+  until then.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and
+  "Pull requests from here".
+
+## 2026-09-25 — The panel build checks src; CI checks the rest
+
+- Context: the panel build ran `vue-tsc --noEmit` on the solution
+  `tsconfig.json` and checked no file.
+- Decision: `build` runs `vue-tsc --noEmit -p tsconfig.app.json`, 99 files.
+  `typecheck` also checks `tsconfig.vitest.json` and
+  `tsconfig.vite-config.json`. CI runs it as "Panel typecheck". No
+  `composite` in the panel tsconfigs.
+- Why: a box needs `src` checked, not the tests. With `composite`,
+  `vue-tsc -p` writes `tsconfig.app.tsbuildinfo` on every build and dirties
+  the tree.
+- Gave up: a box that also type-checks the tests. The box now spends about
+  2 s more on each update on a fast CPU, and more on a box.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-25 — The panel tests are type-checked, with @vue/reactivity for chai
+
+- Context: vitest brings chai, whose `should` breaks `UnwrapRef` of a
+  Moment in a store. The tests program then fails on store code. The other
+  units keep their tests out of every tsconfig until P5.
+- Decision: the panel checks its tests. `vitest.env.ts` adds chai's
+  `Assertion` to `RefUnwrapBailTypes`. `@vue/reactivity` 3.2.37 is an exact
+  devDependency, types only. It moves with vue. The owner can drop it; then
+  the tests program leaves the gate.
+- Why: the panel already had `tsconfig.vitest.json`. Bun does not link
+  `@vue/reactivity` into the panel, and vue 3.2.37 does not re-export the
+  interface, so the declaration needs the package.
+- Gave up: one dependency fewer.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and the
+  package table.
+
+## 2026-09-25 — The panel keeps @types/node 18
+
+- Context: the panel had `@types/node` 16.11.46. Only its tests and
+  `vite.config.ts` load it.
+- Decision: 18.11.18, the root and configer pin.
+- Why: the tests run under vitest on Node. One version across the units
+  that still type-check against Node 18.
+- Gave up: Node 24 types for the tests.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), the package
+  table.
+
+## 2026-09-25 — Vue 3.2 DOM attributes with no value are not set at all
+
+- Context: under `exactOptionalPropertyTypes`, the Vue 3.2 DOM types and
+  csstype 2.6 reject `undefined` for an attribute or a style value.
+- Decision: do not set the attribute. `v-bind` of an object that lacks the
+  key for `src`, `placeholder` and `pattern`. A style object without
+  `borderTopWidth`. `value ?? ''` and `disabled === true` on inputs.
+  Never `pattern=""`.
+- Why: Vue already removed an `undefined` attribute. An empty pattern
+  rejects every value that is not empty.
+- Gave up: the shorter templates, until vue 3.5.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
+  questions".
+
+## 2026-09-25 — A read the contract now checks fails as it did before
+
+- Context: `noUncheckedIndexedAccess` flags reads of the unit answer, the
+  settings rows and the table values. `?? ""` would hide a short answer.
+- Decision: a short unit answer still throws. `updateEngineUnit` catches it
+  and counts a failed request, as before. A missing settings value throws
+  in the render, as before. A missing table value shows "Chyba", not an
+  empty cell.
+- Why: the old failure is what the operator and the connection alarm
+  already see. A silent empty value would look like a working unit.
+- Gave up: a render that survives a bug in the settings form.
+- Where: the panel contract pull request.
+
+## 2026-09-25 — The box build keeps the panel type gate
+
+- Context: BUILD_PANEL runs `vue-tsc` 3.3.11 on the box's first `node`.
+  It needs Node 16 and fails on Node 14.21.3. The review of #130 asked
+  whether the gate should run in CI only.
+- Decision: the box build keeps `vue-tsc --noEmit -p tsconfig.app.json`.
+  The owner confirmed on 2026-09-25 that all panel PCs run Node 18. The
+  Node 16 floor of `vue-tsc` 3.3.11 is accepted.
+- Why: every box that builds meets the floor. A box on OS_HOLD or
+  CPU_HOLD (Windows 7/8 among them) stops before BUILD_PANEL.
+- Gave up: `"build": "vite build"` with the gate in CI only.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
+  constraints" and "Open questions".

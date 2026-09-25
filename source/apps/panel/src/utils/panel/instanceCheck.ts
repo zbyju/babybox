@@ -2,11 +2,7 @@ import { validateMainConfig } from "@babybox/config-schema";
 
 import type { Config } from "@/types/panel/config.types";
 import type { Versions } from "@/types/panel/versions.types";
-
-type Fields = Record<string, unknown>;
-
-const isObject = (value: unknown): value is Fields =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+import { isObject } from "@/utils/general";
 
 const isString = (value: unknown): boolean => typeof value === "string";
 
@@ -35,25 +31,25 @@ const isReadableConfig = (value: unknown): boolean => {
     return false;
 
   return (
-    isString(app.password) &&
-    isNumberOrUnset(app.refreshRequestLimit) &&
-    isString(babybox.name) &&
-    isString(backend.url) &&
-    isNumber(backend.port) &&
-    isNumber(backend.requestTimeout) &&
-    isString(camera.ip) &&
-    isString(camera.username) &&
-    isString(camera.password) &&
-    isString(camera.cameraType) &&
-    isNumber(camera.updateDelay) &&
-    isString(engine.ip) &&
-    isString(thermal.ip) &&
-    isNumber(units.requestDelay) &&
-    isNumber(units.warningThreshold) &&
-    isNumber(units.errorThreshold) &&
-    isNumber(voltage.divider) &&
-    isNumber(voltage.multiplier) &&
-    isNumber(voltage.addition)
+    isString(app["password"]) &&
+    isNumberOrUnset(app["refreshRequestLimit"]) &&
+    isString(babybox["name"]) &&
+    isString(backend["url"]) &&
+    isNumber(backend["port"]) &&
+    isNumber(backend["requestTimeout"]) &&
+    isString(camera["ip"]) &&
+    isString(camera["username"]) &&
+    isString(camera["password"]) &&
+    isString(camera["cameraType"]) &&
+    isNumber(camera["updateDelay"]) &&
+    isString(engine["ip"]) &&
+    isString(thermal["ip"]) &&
+    isNumber(units["requestDelay"]) &&
+    isNumber(units["warningThreshold"]) &&
+    isNumber(units["errorThreshold"]) &&
+    isNumber(voltage["divider"]) &&
+    isNumber(voltage["multiplier"]) &&
+    isNumber(voltage["addition"])
   );
 };
 
@@ -65,13 +61,9 @@ export const isInstanceOfConfig = (object: unknown): object is Config => {
   return isReadableConfig(object);
 };
 
-export const isInstanceOfVersions = (object: any): object is Versions => {
-  return (
-    typeof object === "object" &&
-    object !== null &&
-    "startup" in object &&
-    "backend" in object &&
-    "configer" in object &&
-    "frontend" in object
-  );
-};
+export const isInstanceOfVersions = (object: unknown): object is Versions =>
+  isObject(object) &&
+  isString(object["startup"]) &&
+  isString(object["backend"]) &&
+  isString(object["configer"]) &&
+  isString(object["frontend"]);

@@ -31,7 +31,7 @@ describe("saveConfig", () => {
 
     expect(await saveConfig(config)).toEqual({ ok: true });
 
-    const [url, options] = fetchMock.mock.calls[0];
+    const [url, options] = fetchMock.mock.calls[0] ?? [];
     expect(url).toContain("/config/main");
     expect(options?.method).toBe("PATCH");
     expect(JSON.parse(String(options?.body))).toEqual(config);

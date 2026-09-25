@@ -48,7 +48,7 @@ const BLANK =
  */
 export default function useCamera(
   config: CameraConfig,
-  onUpdate?: () => any,
+  onUpdate?: () => void,
 ): {
   url: Ref<string>;
   state: Ref<CameraState>;

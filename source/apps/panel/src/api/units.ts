@@ -1,7 +1,9 @@
 import { backendApi } from "@/api/base";
 import { type JsonResponse, request, requestJson } from "@/api/http";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
+import type { SettingsToSend } from "@/types/settings/manager.types";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
+import { isObject } from "@/utils/general";
 
 export const getStatus = async (): Promise<boolean> => {
   const { baseUrl, timeout } = backendApi();
@@ -19,7 +21,10 @@ export const getData = async (
 ): Promise<RawEngineUnit | RawThermalUnit | undefined> => {
   try {
     const { data: body } = await requestJson(url, { timeout });
-    return body.data.split("|").map((x: string, i: number) => {
+    if (!isObject(body) || typeof body["data"] !== "string") {
+      return Promise.reject(undefined);
+    }
+    return body["data"].split("|").map((x: string, i: number) => {
       return { index: i, value: x };
     });
   } catch (err) {
@@ -84,7 +89,7 @@ export const getSettings = (): Promise<JsonResponse> => {
   return requestJson(`${baseUrl}/units/settings`, { timeout });
 };
 
-export const sendSettings = (data: any[]): Promise<JsonResponse> => {
+export const sendSettings = (data: SettingsToSend[]): Promise<JsonResponse> => {
   const { baseUrl } = backendApi();
 
   /*
