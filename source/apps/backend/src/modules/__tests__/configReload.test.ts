@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { MainConfig } from "../../types/config.types.js";
+import type { BoundAddress } from "../configReload.js";
 import {
-  BoundAddress,
   isBackendReadableConfig,
   reloadConfig,
   unappliedFields,
