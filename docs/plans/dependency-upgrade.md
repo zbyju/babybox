@@ -1531,9 +1531,6 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       views, `?? ''` and `=== true` on `value` and `disabled`.
 - [ ] The panel tests keep six `as` and one `let resolve!:`. P5 lint
       removes them.
-- [ ] The panel has four `isObject` helpers: `utils/general.ts`,
-      `api/config.ts`, `api/reload.ts` and `utils/panel/instanceCheck.ts`.
-      Keep one.
 - [ ] The panel no longer reads the root `@types` folder. TypeScript 6
       loads only what `types` names. The root `@types/*` can move to the
       apps that use them.

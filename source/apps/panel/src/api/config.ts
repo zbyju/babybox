@@ -3,6 +3,7 @@ import type { ConfigError, MainConfig } from "@babybox/config-schema";
 import { CONFIGER_API_URL, CONFIGER_TIMEOUT } from "@/api/base";
 import { requestJson } from "@/api/http";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
+import { isObject } from "@/utils/general";
 
 /**
  * The whole config configer is running on, straight from the file.
@@ -41,12 +42,6 @@ export type SaveResult =
       errors: ConfigError[];
       msg?: string | undefined;
     };
-
-type Fields = Record<string, unknown>;
-
-function isObject(value: unknown): value is Fields {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function isConfigError(value: unknown): value is ConfigError {
   return (

@@ -2,11 +2,7 @@ import { validateMainConfig } from "@babybox/config-schema";
 
 import type { Config } from "@/types/panel/config.types";
 import type { Versions } from "@/types/panel/versions.types";
-
-type Fields = Record<string, unknown>;
-
-const isObject = (value: unknown): value is Fields =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+import { isObject } from "@/utils/general";
 
 const isString = (value: unknown): boolean => typeof value === "string";
 

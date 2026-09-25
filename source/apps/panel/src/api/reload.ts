@@ -2,6 +2,7 @@ import type { UnappliedField } from "@babybox/config-schema";
 
 import { backendApi } from "@/api/base";
 import { requestJson } from "@/api/http";
+import { isObject } from "@/utils/general";
 
 /*
  * The backend reads the config from configer inside this call, and its own fetch
@@ -13,12 +14,6 @@ const RELOAD_TIMEOUT = 15000;
 export type ReloadResult =
   | { ok: true; unapplied: UnappliedField[] }
   | { ok: false };
-
-type Fields = Record<string, unknown>;
-
-function isObject(value: unknown): value is Fields {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function isPlainValue(value: unknown): value is string | number {
   return typeof value === "string" || typeof value === "number";
