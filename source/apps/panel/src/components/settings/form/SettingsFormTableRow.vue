@@ -42,7 +42,7 @@
 
   const props = defineProps<{
     row: SettingsTableRow;
-    // undefined: not loaded yet. null: the row has no such unit.
+    // undefined: not loaded, or the answer has no value at this index. null: the row has no such unit.
     engine: string | null | undefined;
     thermal: string | null | undefined;
     value: string;
