@@ -183,7 +183,7 @@ export class AppManager {
    * would stop the panel from ever retrying.
    */
   private async getConfig(): Promise<unknown> {
-    const { data } = await requestJson<unknown>(`${CONFIGER_API_URL}/main`, {
+    const { data } = await requestJson(`${CONFIGER_API_URL}/main`, {
       timeout: CONFIGER_TIMEOUT,
     });
     return data;
@@ -245,7 +245,7 @@ export class AppManager {
    * Each later attempt is scheduled after the current one settles,
    * so a hanging backend cannot collect overlapping status requests.
    */
-  async initializeGlobal(): Promise<any> {
+  async initializeGlobal(): Promise<void> {
     /*
      * Retries back off from 5 s to 20 s.
      * The old code meant to retry at 20 s but setInterval had already captured

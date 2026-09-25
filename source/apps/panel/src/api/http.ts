@@ -15,9 +15,9 @@ export class HttpError extends Error {
   }
 }
 
-export type JsonResponse<T = any> = {
+export type JsonResponse = {
   status: number;
-  data: T;
+  data: unknown;
 };
 
 /* Throws HttpError on a non-2xx response, which plain fetch does not do. */
@@ -32,10 +32,10 @@ export const request = async (
   return response;
 };
 
-export const requestJson = async <T = any>(
+export const requestJson = async (
   url: string,
   options: FetchWithTimeoutOptions = {},
-): Promise<JsonResponse<T>> => {
+): Promise<JsonResponse> => {
   const response = await request(url, options);
   return { status: response.status, data: await response.json() };
 };

@@ -60,7 +60,7 @@ export async function reloadBackendConfig(): Promise<ReloadResult> {
   if (!isConfigured) return { ok: false };
 
   try {
-    const { data } = await requestJson<unknown>(`${baseUrl}/reload`, {
+    const { data } = await requestJson(`${baseUrl}/reload`, {
       method: "POST",
       timeout: RELOAD_TIMEOUT,
     });

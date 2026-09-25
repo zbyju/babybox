@@ -105,18 +105,22 @@ export const getTableDoorsValues = (
       leftLoad: maybeValueToTableRowValue(
         engineData?.data.engine.left.load,
         prettyNumber,
+        [],
       ),
       rightLoad: maybeValueToTableRowValue(
         engineData?.data.engine.right.load,
         prettyNumber,
+        [],
       ),
       leftPosition: maybeValueToTableRowValue(
         engineData?.data.engine.left.position,
         prettyNumber,
+        [],
       ),
       rightPosition: maybeValueToTableRowValue(
         engineData?.data.engine.right.position,
         prettyNumber,
+        [],
       ),
       beamAboveContainer: maybeValueToTableRowValue(
         engineData?.data.door.isBarrierInterrupted,
@@ -159,34 +163,42 @@ export const getTableTemperaturesValues = (
       optimalTemperature: maybeValueToTableRowValue(
         thermalData?.settings.temperature.optimalInner,
         displayTemperature,
+        [],
       ),
       innerTemperature: maybeValueToTableRowValue(
         thermalData?.data.temperature.inner,
         displayTemperature,
+        [],
       ),
       outsideTemperature: maybeValueToTableRowValue(
         thermalData?.data.temperature.outside,
         displayTemperature,
+        [],
       ),
       bottomTemperature: maybeValueToTableRowValue(
         thermalData?.data.temperature.bottom,
         displayTemperature,
+        [],
       ),
       topTemperature: maybeValueToTableRowValue(
         thermalData?.data.temperature.top,
         displayTemperature,
+        [],
       ),
       casingTemperature: maybeValueToTableRowValue(
         thermalData?.data.temperature.casing,
         displayTemperature,
+        [],
       ),
       hystersionHeating: maybeValueToTableRowValue(
         thermalData?.settings.temperature.hysteresisHeating,
         displayTemperature,
+        [],
       ),
       hystersionCooling: maybeValueToTableRowValue(
         thermalData?.settings.temperature.hysteresisCooling,
         displayTemperature,
+        [],
       ),
     },
   };

@@ -18,7 +18,7 @@ import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
  * @returns the parsed body, unchecked — the caller validates it
  */
 export async function getConfig(): Promise<unknown> {
-  const { data } = await requestJson<unknown>(`${CONFIGER_API_URL}/main`, {
+  const { data } = await requestJson(`${CONFIGER_API_URL}/main`, {
     timeout: CONFIGER_TIMEOUT,
   });
   return data;

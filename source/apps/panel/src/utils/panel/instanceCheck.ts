@@ -65,7 +65,7 @@ export const isInstanceOfConfig = (object: unknown): object is Config => {
   return isReadableConfig(object);
 };
 
-export const isInstanceOfVersions = (object: any): object is Versions => {
+export const isInstanceOfVersions = (object: unknown): object is Versions => {
   return (
     typeof object === "object" &&
     object !== null &&

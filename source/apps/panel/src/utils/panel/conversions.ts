@@ -75,10 +75,10 @@ export const booleanToTableBlockState = (
   return TableBlockState.Inactive;
 };
 
-export function maybeValueToTableRowValue<T>(
+export function maybeValueToTableRowValue<T, A extends unknown[]>(
   val: Maybe<T>,
-  display: (value: T, ...args: any[]) => string,
-  args: any[] = [],
+  display: (value: T, ...args: A) => string,
+  args: A,
   okState: TableRowState = TableRowState.Ok,
 ) {
   if (val === undefined)
