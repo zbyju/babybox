@@ -231,6 +231,10 @@ jobs:
       - name: Build
         run: bun --filter babybox-panel build && bun --filter babybox-panel-backend build && bun --filter babybox-panel-configer build
 
+      # Build kontroluje jen src panelu. Testy a vite.config.ts kontroluje tenhle krok.
+      - name: Panel typecheck
+        run: bun --filter babybox-panel typecheck
+
       - name: Backend dist has no schema import
         run: |
           test -d apps/backend/dist
