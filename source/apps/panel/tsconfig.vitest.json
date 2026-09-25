@@ -4,7 +4,8 @@
     "env.d.ts",
     "vitest.env.ts",
     "src/**/__tests__/**/*",
-    "src/**/*.spec.ts"
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts"
   ],
   "exclude": [],
   "compilerOptions": {
