@@ -155,7 +155,7 @@ jobs:
         run: |
           (cd apps/backend && bun ./node_modules/.bin/eslint --ext .js,.ts .)
           (cd apps/panel && bun ./node_modules/.bin/eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore)
-          (cd apps/startup && bun ./node_modules/.bin/eslint src/ bootstrap.js bootstrap.test.js last-record.js last-record.test.js run-update.js run-update.test.js start-app.js start-app.test.js)
+          (cd apps/startup && bun ./node_modules/.bin/eslint src/ bootstrap.js bootstrap.test.js last-record.js last-record.test.js run-update.js run-update.test.js start-app.js start-app.test.js tests/assert-runtime.js)
 
       - name: Build config schema
         run: bun --filter @babybox/config-schema build
