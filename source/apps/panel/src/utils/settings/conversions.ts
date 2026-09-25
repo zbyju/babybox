@@ -7,12 +7,19 @@ import {
 
 import { isNumber } from "../number";
 
-export const typeToMeasureUnit = (type: SettingsTableRowValueType) => {
-  if (type === "string") return "";
-  if (type === "temperature") return "°C";
-  if (type === "voltage") return "V";
-  if (type === "seconds") return "s";
-  if (type === "days") return "den";
+export const typeToMeasureUnit = (type: SettingsTableRowValueType): string => {
+  switch (type) {
+    case SettingsTableRowValueType.String:
+      return "";
+    case SettingsTableRowValueType.Temperature:
+      return "°C";
+    case SettingsTableRowValueType.Voltage:
+      return "V";
+    case SettingsTableRowValueType.Seconds:
+      return "s";
+    case SettingsTableRowValueType.Days:
+      return "den";
+  }
 };
 
 export const settingsRowValueToValue = (
