@@ -251,7 +251,8 @@ jobs:
       - name: Startup tests
         run: (cd apps/startup && ./node_modules/.bin/jest --ci)
 
-  # bootstrap.js musi projit Node 12. Sken textu na Node 18 tu chybu nechyti.
+  # Kazdy soubor startupu musi projit Node 12. Sken textu na Node 18 tu chybu
+  # nechyti. Jmeno jobu zustava, muze to byt povinny check.
   bootstrap-syntax:
     name: bootstrap.js Node 12 parse
     runs-on: ubuntu-latest
@@ -262,16 +263,24 @@ jobs:
         with:
           node-version: 12.22.12
 
-      - name: Parse bootstrap.js with Node 12
+      - name: Parse every startup file with Node 12
         run: |
+          set -euo pipefail
           node_version="$(node -v)"
           if [ "${node_version}" != "v12.22.12" ]; then
             echo "node is ${node_version}, want v12.22.12" >&2
             exit 1
           fi
-          node --check source/apps/startup/bootstrap.js
-          node --check source/apps/startup/last-record.js
-          node --check source/apps/startup/run-update.js
+          files="$(git ls-files 'source/apps/startup/*.js' | grep -v '\.test\.js$')"
+          if ! grep -qx 'source/apps/startup/start-app.js' <<<"${files}"; then
+            echo "the file list has no start-app.js" >&2
+            exit 1
+          fi
+          for file in ${files}; do
+            echo "${file}"
+            node --check "${file}"
+          done
+          node -e "require('./source/apps/startup/start-app.js')"
 
   windows-startup:
     name: Windows startup.bat
