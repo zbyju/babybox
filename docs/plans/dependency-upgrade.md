@@ -723,7 +723,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | jsdom | ^16.7.0 | 30.1.0 | ^22.22.2 ‖ ^24.15 ‖ ≥26 | the strictest Node floor in the repo. P5 proves `bun install` accepts this engine. |
 | vue-tsc | ^0.38.2 | 3.3.11 | — | needs TS ≥5.0 **JS API**; not the TS 7 binary. Still 3.3.11. In the panel since the panel contract PR. Needs Node 16 or newer to run (fails on 14.21.3). |
 | @vue/tsconfig | ^0.1.3 | 0.9.1 | — | needs TS ≥5.8. Its vue ^3.4 peer is optional: 0.9.1 works with vue 3.2.37 (panel contract PR). 0.1.3 used `moduleResolution: Node` and `preserveValueImports`, both removed in TS 7 |
-| @vue/reactivity | none | 3.2.37 | — | added in the panel contract PR, types only. `vitest.env.d.ts` declares the chai bail type on it. Bump with vue. |
+| @vue/reactivity | none | 3.2.37 | — | added in the panel contract PR, types only. `vitest.env.ts` declares the chai bail type on it. Bump with vue. |
 | stylus | ^0.57.0 | 0.64.0 | ≥16 | 31 SFC style blocks |
 | eslint | ^8.19.0 | 10.11.0 | ^20.19 ‖ ^22.13 ‖ ≥24 | flat config rewrite; see "Lint stack". Removed, not upgraded. |
 | @typescript-eslint/* | ^5.30.5 | 8.70.0 | ≥18.18 | peer `typescript <6.1` |

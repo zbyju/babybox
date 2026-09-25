@@ -263,10 +263,14 @@ lesson: what happened, what to do instead.
 - **chai's `should` breaks Vue's `UnwrapRef` when tests share a program with store
   code.** vitest brings chai, which gives every object a `should` property. A
   Moment inside a pinia store then no longer matches its own type. 13 of the 20
-  old panel errors were this. `vitest.env.d.ts` adds chai's `Assertion` to
+  old panel errors were this. `vitest.env.ts` adds chai's `Assertion` to
   `RefUnwrapBailTypes` on `@vue/reactivity`. That needs `@vue/reactivity` as a
   direct devDependency: Bun does not link it into the panel, and vue 3.2.37 does
   not re-export the interface.
+- **`skipLibCheck` also skips our own `.d.ts` files.** As `vitest.env.d.ts`, a
+  wrong `Chai` name was not reported on its line. The bail type turned into
+  `any`, and the only error was a TS7006 in `appStateStore.ts`. Write such a file
+  as `.ts` with `export {}`, so the compiler checks it.
 - **Vue 3.2 DOM types reject `undefined` under `exactOptionalPropertyTypes`.**
   `:src="url || undefined"`, `:pattern="maybe"` and a style object with an
   `undefined` value are errors. Leave the attribute off with `v-bind` of an object

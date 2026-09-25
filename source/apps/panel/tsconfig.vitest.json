@@ -2,7 +2,7 @@
   "extends": "./tsconfig.app.json",
   "include": [
     "env.d.ts",
-    "vitest.env.d.ts",
+    "vitest.env.ts",
     "src/**/__tests__/**/*",
     "src/**/*.spec.ts"
   ],

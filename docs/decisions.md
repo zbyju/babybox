@@ -1236,7 +1236,7 @@ Context · Decision · Why · Gave up · Where
 - Context: vitest brings chai, whose `should` breaks `UnwrapRef` of a
   Moment in a store. The tests program then fails on store code. The other
   units keep their tests out of every tsconfig until P5.
-- Decision: the panel checks its tests. `vitest.env.d.ts` adds chai's
+- Decision: the panel checks its tests. `vitest.env.ts` adds chai's
   `Assertion` to `RefUnwrapBailTypes`. `@vue/reactivity` 3.2.37 is an exact
   devDependency, types only. It moves with vue. The owner can drop it; then
   the tests program leaves the gate.
