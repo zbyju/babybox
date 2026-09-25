@@ -1212,10 +1212,26 @@ Context · Decision · Why · Gave up · Where
   a flag in its own tsconfig, which is easy to see in a diff. The emitted
   `dist` does not change.
 - Gave up: a CI step that checks each copy. The panel still copies the
-  flags: vite 2.9.14 cannot read the `extends` array it would need. See
-  the plan's "Open questions".
+  flags: vite 2.9.14 cannot read the `extends` array it would need. It
+  moves with Vite 8, see the next entry.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
   contract" and "Open questions".
+
+## 2026-09-25 — The panel moves to the shared contract file with Vite 8
+
+- Context: the panel needs `"extends": ["@vue/tsconfig/tsconfig.dom.json",
+  "../../tsconfig.contract.json"]`. vite 2.9.14 throws on an `extends`
+  array, in `vite build` and in vitest 0.9.4.
+- Decision: the panel keeps its copy of the 12 flags until the Vite 8 bump
+  in P5. Then `tsconfig.app.json` extends both files, with the contract
+  last, and the copy goes. The owner chose this (option A).
+- Why: P5 changes vite anyway. On 2026-09-25 vite 8.3.0 with
+  @vitejs/plugin-vue 6.0.9 built the panel with the array. The bundle had
+  the same content hash, and all 12 flags resolved.
+- Gave up: a CI step that compares the panel copy with the shared file.
+  Also gave up dropping `@vue/tsconfig` to allow a one-file `extends`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5 and
+  "Open questions".
 
 ## 2026-09-25 — The panel contract is built on vue 3.2.37
 

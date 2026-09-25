@@ -883,7 +883,7 @@ The 12 flags live in one file, `source/tsconfig.contract.json`. Each unit's
 tsconfig extends it and sets none of the flags itself. Decided 2026-09-25 in
 the review of #129. The panel still copies the flags in
 `tsconfig.app.json`: vite 2.9.14 cannot read the `extends` array it would
-need (see "Open questions").
+need. It moves to the shared file with Vite 8 in P5 (decided 2026-09-25).
 
 **Dev runners.** `nodemon` in the backend uses `ts-node` under the hood,
 configer uses `nodemon --esm`. Both go to `bun --watch`. Do not add `tsx`.
@@ -1211,7 +1211,8 @@ TypeScript contract. Do not add `tsx`.
       config-schema. Configer first. Two tracked suppressions. No flag off.
 - [x] The TypeScript contract flags in the panel. No tracked suppression.
       No flag off. `tsconfig.app.json` copies the flag block. It cannot
-      extend `source/tsconfig.contract.json` while vite is 2.9.14.
+      extend `source/tsconfig.contract.json` while vite is 2.9.14. It moves
+      to the shared file with Vite 8 in P5.
 - [x] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
       node16`, `.js` on relative imports,
       `path.dirname(fileURLToPath(import.meta.url))` (not
@@ -1261,6 +1262,21 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
 
 - [ ] vite 8.3.0, @vitejs/plugin-vue 6.0.9, vitest 5.0.1, jsdom 30.1.0 in the panel;
       `vite.config.ts` to `import.meta.dirname`; run through `bun run`
+- [ ] Keep BUILD_PANEL stderr empty on Vite 8. On 2026-09-25 vite 8.3.0
+      printed a `configLoader: 'native'` warning on stderr for
+      `vite.config.ts`: ESM syntax in a file loaded as CommonJS. Any stderr
+      fails the box build. Fix it with `"type": "module"` in the panel
+      `package.json` or a `vite.config.mts`.
+- [ ] Run Vite 8 on a runtime it supports. It needs Node `^20.19` or
+      `>=22.12`. `bun run` starts a bin on the first `node` on PATH, and on
+      a box that is Node 18. So vite must run on the Bun runtime (for
+      example `bun --bun vite build`). `vue-tsc` must stay on Node: on Bun
+      it loads no `.vue` file. Not tested yet.
+- [ ] Panel `tsconfig.app.json`: `"extends": ["@vue/tsconfig/tsconfig.dom.json",
+      "../../tsconfig.contract.json"]`, with the contract last so its flags
+      win. Delete the panel copy of the 12 flags. Decided 2026-09-25.
+      Checked on vite 8.3.0 and @vitejs/plugin-vue 6.0.9: same bundle, all
+      12 flags. Check vitest 5 with the array before this box is ticked.
 - [ ] Prove `bun install` accepts jsdom 30.1.0 (`engines.node` is `^22.22.2 ||
       ^24.15.0 || >=26`). If it refuses, pin the newest jsdom that Bun accepts
       and record the pin here. Do not turn on `engine-strict`.
@@ -1439,7 +1455,8 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | Are the panel tests type-checked? | Yes, in CI | The panel already had `tsconfig.vitest.json`. `@vue/reactivity` 3.2.37 is a devDependency for the chai bail type. It moves with vue. |
 | `composite` in the panel? | No | With it, `vue-tsc -p` writes `tsconfig.app.tsbuildinfo` on every build. |
 | Vue 3.2 DOM types under `exactOptionalPropertyTypes`? | Leave the attribute off, never pass `undefined` | Eight workarounds in four SFCs until vue 3.5. Never `pattern=""`. |
-| Where do the contract flags live? | In `source/tsconfig.contract.json` | Each unit's tsconfig extends it and repeats no flag. The owner chose this in the #129 review. The panel still copies them, see "Open questions". |
+| Where do the contract flags live? | In `source/tsconfig.contract.json` | Each unit's tsconfig extends it and repeats no flag. The owner chose this in the #129 review. The panel still copies them until Vite 8. |
+| When does the panel extend the contract file? | With Vite 8, in P5 | vite 2.9.14 throws on the `extends` array the panel needs. vite 8.3.0 reads it (checked 2026-09-25). Until then `tsconfig.app.json` copies the 12 flags. |
 | Does the box build keep the panel type gate? | Yes, `vue-tsc` stays in `build` | The owner confirmed that all panel PCs run Node 18. The Node 16 floor of `vue-tsc` 3.3.11 is accepted. |
 
 ## Open questions
@@ -1525,7 +1542,7 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       Answered 2026-09-25 in the review of #129: yes. The backend, configer
       and config-schema extend it. The panel still copies the flags, see
       the next question.
-- [ ] Owner: when does the panel extend `source/tsconfig.contract.json`?
+- [x] Owner: when does the panel extend `source/tsconfig.contract.json`?
       It needs `"extends": ["@vue/tsconfig/tsconfig.dom.json",
       "../../tsconfig.contract.json"]`. vite 2.9.14 throws on an `extends`
       array, in `vite build` and in vitest 0.9.4 (see learnings.md). A
@@ -1533,7 +1550,11 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       `tsconfig.app.json` copies the 12 flags, and `tsconfig.vitest.json` and
       `tsconfig.vite-config.json` inherit them. Option A: move in P5 with
       Vite 8, after a check that it reads the array. Option B: a CI step
-      that compares the panel copy with the shared file.
+      that compares the panel copy with the shared file. Answered
+      2026-09-25: option A. Checked the same day in a scratch copy: vite
+      8.3.0 with @vitejs/plugin-vue 6.0.9 builds with the array. The bundle
+      has the same content hash, all 12 flags resolve, and `vue-tsc` finds
+      0 errors. vitest 5 with the array is not checked yet. See P5.
 - [x] Owner: run the panel type gate on the box, or only in CI. From the
       review of #130. `BUILD_PANEL` now runs `vue-tsc` 3.3.11, which needs
       Node 16. A box whose first `node` is older fails that step on every
