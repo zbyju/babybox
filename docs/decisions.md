@@ -1351,21 +1351,23 @@ Context · Decision · Why · Gave up · Where
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and
   "Pull requests from here".
 
-## 2026-09-28 — Only two of the five Vue 3.2 attribute workarounds were workarounds
+## 2026-09-28 — Three of the listed Vue 3.2 attribute workarounds were workarounds
 
 - Context: an open question listed five things to drop after vue 3.5: the
   optional attributes in `BaseInput`, `srcAttr` and `topBorder` in the
   camera views, and `?? ''` and `=== true` on `value` and `disabled`.
-- Decision: drop `BaseInput`'s `optionalAttrs` `v-bind` and the `=== true`
-  on `disabled`. Keep `?? ''` on `value`, keep `srcAttr`, and leave
-  `topBorder` alone.
+- Decision: drop `BaseInput`'s `optionalAttrs` `v-bind` and the `=== true` on
+  `disabled`, and the same `=== true` in `BaseSelect`. Keep `?? ''` on
+  `value` in both, keep `srcAttr`, and leave `topBorder` alone.
+  `BaseSelect` is the fourth of the four SFCs the note counted. It was missed
+  on the first pass and found in review.
 - Why: `srcAttr` guards a real browser behaviour, not a type. Its comment
   says an empty `src` resolves to the page URL and raised a camera Error
   before the first frame had been asked for. `topBorder` is an ordinary
   computed style object and never was a workaround. Removing `?? ''` drops
   the serialised `value=""` attribute; `el.value` is `""` either way, so the
-  change buys nothing on a nurse-facing input. The two that were dropped
-  render identically in all six prop cases, checked with the installed vue
-  and jsdom.
+  change buys nothing on a nurse-facing input. Everything dropped renders
+  identically, checked with the installed vue and jsdom on `el.value` and
+  `el.disabled`: six prop cases for `BaseInput`, five for `BaseSelect`.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
   questions".

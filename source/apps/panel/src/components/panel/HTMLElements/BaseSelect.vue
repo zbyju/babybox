@@ -3,7 +3,7 @@
     class="base-select"
     :value="props.modelValue ?? ''"
     :class="classState"
-    :disabled="props.disabled === true"
+    :disabled="props.disabled"
     @change="selectChange"
   >
     <option v-for="option in props.options" :key="option" :value="option">

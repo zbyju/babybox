@@ -1592,9 +1592,10 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 - [x] After vue 3.5, drop the Vue 3.2 attribute workarounds. Done
       2026-09-28, but only two of the five items on this list were really
       type workarounds:
-      - `BaseInput`'s `optionalAttrs` `v-bind` and `=== true` on `disabled`:
-        removed. `vue-tsc` stays at 0 errors and the rendered DOM is
-        identical in all six prop cases.
+      - `BaseInput`'s `optionalAttrs` `v-bind` and `=== true` on `disabled`,
+        and the same `=== true` in `BaseSelect`: removed. `vue-tsc` stays at
+        0 errors and the rendered DOM is identical in every prop case.
+        `BaseSelect` is the fourth SFC of the four the note counted.
       - `?? ''` on `value`: kept. Removing it drops the serialised
         `value=""` attribute. `el.value` is `""` either way, so nothing a
         nurse sees changes, but the panel gains nothing from the removal.
