@@ -7,6 +7,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 import { fetchConfig } from "./fetch/fetchConfig.js";
+import { jsonErrors } from "./middleware/jsonErrors.js";
 import type {
   BackendReadableConfig,
   BoundAddress,
@@ -17,6 +18,7 @@ import { router as reloadRoute } from "./routes/reloadRoute.js";
 import { router as restartRoute } from "./routes/restartRoute.js";
 import { router as thermalRoute } from "./routes/thermalRoute.js";
 import { router as unitsRoute } from "./routes/unitsRoute.js";
+import { safeRoutePrefix } from "./utils/routePrefix.js";
 import {
   cachedRuntimeVersions,
   startupLastFor,
@@ -62,7 +64,8 @@ function setPanelCacheHeaders(res: express.Response, filePath: string) {
 }
 
 // modulesObject() reads the RESTART_* vars, so .env has to be loaded before it.
-dotenv.config();
+// quiet: 18 prints the loaded file on stderr, which fails a box build.
+dotenv.config({ quiet: true });
 
 export const modules = modulesObject();
 
@@ -127,7 +130,13 @@ async function main() {
   // Parse JSON in POST requests
   app.use(express.json());
 
-  const prefix = loaded.backend.url || process.env["API_PREFIX"] || "";
+  const rawPrefix = loaded.backend.url || process.env["API_PREFIX"] || "";
+  const prefix = safeRoutePrefix(rawPrefix);
+  if (prefix !== rawPrefix) {
+    console.error(
+      `API prefix ${rawPrefix} is not a valid route, serving without one.`
+    );
+  }
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
@@ -159,15 +168,25 @@ async function main() {
      * "Cannot GET /config". The save path ends in window.location.reload(), so the
      * config page could not come back up. Registered after the API routes and after
      * express.static, so it only sees what nothing else matched.
+     * Express 5 rejects a bare "*": path-to-regexp 8 wants a named splat.
      */
-    app.get("*", (req, res) => {
+    app.get("/{*splat}", (req, res) => {
       res.sendFile(path.join(PUBLIC_DIR, "index.html"), {
         headers: { "Cache-Control": INDEX_CACHE_CONTROL },
       });
     });
 
-    open("http://localhost:" + port);
+    /*
+     * A browser that will not open is not a reason to stop serving. Without
+     * the catch the rejected promise ends the process on Node 15 and newer.
+     */
+    open("http://localhost:" + port).catch((err: unknown) => {
+      console.error(err instanceof Error ? err.message : String(err));
+    });
   }
+
+  // Last, so it sees what every route above threw.
+  app.use(jsonErrors);
 
   bound = { port, prefix };
 

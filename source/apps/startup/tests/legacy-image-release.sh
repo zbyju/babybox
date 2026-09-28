@@ -115,6 +115,28 @@ seed_previous() {
   printf '%s\n' '{"sha":"0000000000000000000000000000000000000000"}' >"$ROOT/dist/release.json"
 }
 
+# The production block of index.ts is what every box runs: express.static, the
+# SPA fallback and open(). seed_previous leaves NODE_ENV=development, so no
+# other case enters it. This one does, on Node, which is the Bun-less box.
+seed_previous_production() {
+  seed_previous
+  printf '%s\n' "NODE_ENV=production" "PORT=5000" "API_PREFIX=/api/v1" >"$ROOT/dist/.env"
+  mkdir -p "$ROOT/dist/public"
+  printf '%s\n' "<!doctype html><html><title>panel</title></html>" \
+    >"$ROOT/dist/public/index.html"
+}
+
+# A history-mode URL the SPA owns. Express 5 rejects a bare "*", so this is
+# what proves the route string in index.ts registers and still falls through.
+assert_spa_fallback() {
+  local page
+  page="$(curl -sf "http://127.0.0.1:5000/config" || true)"
+  if ! grep -qi "<html" <<<"$page"; then
+    show_logs
+    fail "the SPA fallback does not serve the panel page"
+  fi
+}
+
 assert_marker() {
   local text
   text="$(tr -d '\r' <"$ROOT/dist/marker.txt")"
@@ -360,6 +382,35 @@ run_startup || true
 assert_record "BOOTSTRAP_BUN" "Kontrolní součet"
 assert_marker
 assert_apps
+assert_runtime node
+restore_tracked apps/startup/versions.env
+stop_apps
+
+assert_clean
+
+# The one runtime and block pair nothing covered before: a Bun-less box runs
+# the production block on Node 18. Raised in the review of #132.
+echo "the production block serves the panel on Node"
+# The BOOTSTRAP_BUN case above deleted ~/.bun and never put it back, and the
+# seed needs bun to install the dist modules. versions.env is restored by now,
+# so one good run downloads it again.
+run_startup || true
+stop_apps
+assert_bun
+seed_previous_production
+bun_home="$(node -e "const os=require('os');const path=require('path');process.stdout.write(path.join(os.homedir(),'.bun'))")"
+if command -v cygpath >/dev/null 2>&1; then
+  bun_home="$(cygpath -u "$bun_home")"
+fi
+rm -rf "$bun_home"
+break_bun_sha
+assert_clean
+run_startup || true
+assert_record "BOOTSTRAP_BUN" "Kontrolní součet"
+assert_marker
+assert_apps
+assert_panel_page
+assert_spa_fallback
 assert_runtime node
 restore_tracked apps/startup/versions.env
 stop_apps

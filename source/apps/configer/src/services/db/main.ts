@@ -60,9 +60,9 @@ type CheckedBody =
 /*
  * Both writers merge the body over something, and lodash.merge spreads a string
  * or an array over the target, so neither may reach the merge.
- * express.json() also leaves req.body as {} when the Content-Type is not JSON:
- * without this a PUT with a forgotten header would reset the whole box to
- * base.json, and a PATCH would rewrite the file for nothing.
+ * express.json() leaves req.body undefined when the Content-Type is not JSON
+ * (Express 4 set it to {}): without this a PUT with a forgotten header would
+ * reset the whole box to base.json, and a PATCH would rewrite it for nothing.
  * It returns the narrowed body, so the merge never takes an unknown.
  */
 function checkBody(body: unknown): CheckedBody {

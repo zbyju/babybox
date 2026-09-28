@@ -37,7 +37,7 @@ describe("the panel fallback in production", () => {
       });
     });
 
-    app.get("*", (req, res) => {
+    app.get("/{*splat}", (req, res) => {
       res.sendFile(path.join(publicDir, "index.html"), {
         headers: { "Cache-Control": "no-cache" },
       });

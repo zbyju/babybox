@@ -1394,3 +1394,102 @@ Context · Decision · Why · Gave up · Where
   Rolldown, vitest 5 and jsdom 30; a red or fat result there should point at
   one cause.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5.
+
+## 2026-09-28 — The startup app stops at pino 9, not pino 10
+
+- Context: the P4 box says `pino 10.3.1`. The plan added "upgrade only after
+  Bun is the runtime", but the startup app never moves to Bun: it runs on Node
+  for boot 1, for hold boxes, and for the pm2 daemon (decided 2026-09-25).
+- Decision: `pino@9.14.0` with `pino-pretty@13.1.3`. Not pino 10.
+- Why: pino 10 does not load on Node 18.12.1. It throws
+  `TypeError: diagChan.tracingChannel is not a function` from
+  `pino/lib/tools.js:32`. `diagnostics_channel.tracingChannel` arrived in Node
+  19.9 and 20. The boxes run Node 18.12.1. pino 9.14.0 loads there, and the
+  #90 Czech one-line log file and its stdout stream are byte-identical across
+  pino 8.21.0, 9.14.0 and 10.3.1, checked with the real `logger.js` and
+  `strings.js` on a fixed clock. So the format was never the risk; the runtime
+  floor was. learnings.md already recorded the same `tracingChannel` failure
+  for `pnpm view` under Node 18.
+- Gave up: pino 10. Revisit only when every box runs Node 20 or newer.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-28 — The SPA fallback route needs a named splat
+
+- Context: `apps/backend/src/index.ts` served the panel's history-mode routes
+  with `app.get("*")`, inside the `NODE_ENV === "production"` block that every
+  box runs. The plan said no route string used `*`, `?`, `+` or a regex.
+- Decision: the route is `app.get("/{*splat}")`.
+- Why: that claim was wrong, and it was the one change in this pull request
+  that could stop a box from starting. Express 5 uses path-to-regexp 8, which
+  rejects a bare `*` when the route is registered:
+  `PathError: Missing parameter name at index 1: *`. The throw happens in
+  `main()`, so the backend would never listen. `/{*splat}` registers and routes
+  the same way: on Node 18.12.1 with express 5.2.1, `/api/v1/status` still
+  answers the API route, `/` still answers the index, and `/config`,
+  `/settings/deep/path` and `/favicon.ico` all fall through to the SPA.
+- Gave up: nothing. There is no reason to keep the old spelling.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-28 — A failed build only rolls back cleanly for the backend
+
+- Context: the safe-release design says a failed build keeps the last good
+  `dist` and starts that. `legacy-boot1` tests exactly this, in the case
+  "boot 1 with a failed build starts the legacy dist on Bun".
+- What we found: the guarantee holds for the backend and not for configer.
+  `start-app.js` starts the backend from `../dist` with `install: true`, so
+  that folder gets its own `node_modules` from the copied lockfile. configer
+  runs `apps/configer/dist/index.js` with `install: false`, so it resolves
+  from the shared `source/node_modules`. `INSTALL` runs before every build
+  step, so by the time a build fails the shared `node_modules` already holds
+  the new versions, and the kept configer `dist` is a stale compile against
+  them.
+- Decision: **no configer runtime dependency may move its import surface until
+  configer's `dist` has its own `node_modules`.** lowdb 7 is reverted; configer
+  stays on lowdb 3.0.0.
+- Why: lowdb 7 moved `JSONFile` from `lowdb` to `lowdb/node`. With lowdb 7
+  installed, the old configer `dist` dies at import with
+  `SyntaxError: Export named 'JSONFile' not found in module
+  '.../lowdb/lib/index.js'`, and pm2 restarts it 16 times before giving up. A
+  box whose build fails would have no configer at all, which is worse than not
+  upgrading. express 5 does not have this problem: the old configer `dist`
+  registers no wildcard route and still loads under express 5.
+- Gave up: lowdb 7. It only reads `versions.json`, so the upgrade buys little.
+- Owner decision still open: give configer's `dist` its own `node_modules`, the
+  way the backend already has, or accept that configer library majors are
+  blocked. See "Open questions".
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-28 — A bad API prefix must not stop the backend from listening
+
+- Context: `backend.url` is the free-text "Předpona API" field on the config
+  page, typed `z.string()` with no pattern, tier `backendRestart`. Both apps
+  register routes as `app.get(prefix + "/status")`.
+- Decision: `safeRoutePrefix()` drops a prefix that express 5 cannot parse and
+  falls back to `""`, with a line on stderr. Both apps use it.
+- Why: express 5 uses path-to-regexp 8, which throws at registration for
+  `{ } ( ) [ ] + ? !` and for `:` or `*` with no name after them. Measured on
+  Node 18.12.1 with express 5.2.1: `/api/v1?` gives
+  `Unexpected ? at index 7`, `/api*` gives `Missing parameter name at index 5`.
+  The throw happens inside `main()` before `app.listen`, so a typo in that
+  field would leave a box with nothing serving and no way in but a site visit.
+  Express 4 put `?` and `+` straight into the regexp and still served.
+  A box on the wrong prefix answers 404 to the panel, but the config page is
+  still reachable, so the operator can undo it.
+- Gave up: rejecting the value at save time in the schema. That would not help
+  a box whose `main.json` was edited by hand, and it is a wider change.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-28 — The JSON error middleware sends the status text, not the message
+
+- Context: the new middleware first answered with `err.message` for everything.
+- Decision: it sends `err.message` only when the thrower set `expose: true`,
+  and the standard status text otherwise. It logs the whole error, not the
+  message, so the stack survives.
+- Why: `send()` builds its errors with `expose: false` precisely so an install
+  path stays internal, and express in production answers with the status text
+  and nothing else. Answering with the raw message would put the box's absolute
+  install path on the hospital network: a missing `dist/public/index.html`
+  gives `ENOENT ... open '/home/.../dist/public/index.html'`. Logging the whole
+  error restores what `finalhandler`'s `logerror` used to print, which the
+  middleware now short-circuits.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".

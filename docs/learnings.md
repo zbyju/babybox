@@ -116,6 +116,47 @@ lesson: what happened, what to do instead.
 
 ## Backend
 
+- **Check which runtime and which code path each job actually exercises, not
+  just that a job is green.** `legacy-image-release.sh` seeds
+  `NODE_ENV=development`, so its only Node start skipped the production block,
+  while `legacy-boot1` entered that block only on Bun. The pair a Bun-less box
+  uses had no job at all, and that is where the `app.get("*")` throw lived.
+
+- **express 5 validates every route string at registration, including the ones
+  built from config.** path-to-regexp 8 throws for `{ } ( ) [ ] + ? !` and for
+  `:`/`*` with no name. `app.get(prefix + "/status")` with a config-set prefix
+  is therefore a startup crash waiting for a typo. Guard the prefix.
+- **An error middleware that answers `err.message` leaks the install path.**
+  `send()` marks its errors `expose: false` for that reason. Answer the status
+  text unless the thrower set `expose: true`, and log the whole error so the
+  stack is not lost with `finalhandler`.
+
+- **A green `legacy-image` job does not mean the rollback works.** `legacy-image`
+  only builds. `legacy-boot1` also forces a failed build and checks that the kept
+  `dist` still starts. A dependency major can pass the first and fail the second,
+  because `INSTALL` replaces `node_modules` before any build step runs, so the
+  kept `dist` is a stale compile against new packages.
+- **Only the backend `dist` is isolated.** `start-app.js` gives `../dist` its own
+  `node_modules` (`install: true`). configer runs from the shared
+  `source/node_modules`. So a configer dependency that moves an export breaks the
+  previous `dist`; the same bump in the backend does not.
+- **Read the test case name before you debug the error.** The lowdb crash in
+  `legacy-boot1` looked like the bug. It was the symptom of the deliberate
+  failed-build case one line above it in the log.
+
+- **Express 5 rejects a bare `*` route when it is registered.** path-to-regexp 8
+  throws `PathError: Missing parameter name at index 1: *`. Write `/{*splat}`.
+  The throw happens at registration, not on a request, so an app that only
+  registers the route in production fails to start on a box and passes every
+  test that does not build that block.
+- **`engines.node` is not a test of whether a package runs.** `open@11` declares
+  `>=20` and both loads and works on Node 18.12.1. `pino@10` declares no engines
+  at all and throws on Node 18, because it calls
+  `diagnostics_channel.tracingChannel`, which is Node 19.9+. Import it on the
+  runtime you care about and call it.
+- **dotenv 18 prints `◇ injected env (1) from .env` on stderr**, 31 bytes. Pass
+  `{ quiet: true }`. Measure in bash, not zsh.
+
 - **`fetchConfig()` returns no `data` key when it fails.** It answers
   `{ status: 408, msg }`, so `config = (await fetchConfig()).data` sets `undefined`
   and the next poll throws on `config.units.engine.ip`. Check for the key before any
