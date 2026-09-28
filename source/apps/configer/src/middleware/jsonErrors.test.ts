@@ -40,6 +40,21 @@ describe("the json error middleware", () => {
       Object.assign(err, { status: 418, expose: true });
       throw err;
     });
+    app.get("/status-out-of-range", () => {
+      const err = new Error("keep this quiet");
+      Object.assign(err, { status: 999 });
+      throw err;
+    });
+    app.get("/status-not-a-number", () => {
+      const err = new Error("keep this quiet");
+      Object.assign(err, { status: "400" });
+      throw err;
+    });
+    app.get("/expose-false", () => {
+      const err = new Error("keep this quiet");
+      Object.assign(err, { status: 404, expose: false });
+      throw err;
+    });
     app.use(jsonErrors);
 
     server = app.listen(0);
@@ -85,6 +100,27 @@ describe("the json error middleware", () => {
 
     expect(res.status).toBe(418);
     expect(await res.json()).toEqual({ error: "say this out loud" });
+  });
+
+  it("falls back to 500 for a status outside 400 to 599", async () => {
+    const res = await fetch(`${url}/status-out-of-range`);
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: "Internal Server Error" });
+  });
+
+  it("falls back to 500 for a status that is not a number", async () => {
+    const res = await fetch(`${url}/status-not-a-number`);
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: "Internal Server Error" });
+  });
+
+  it("hides the message when expose is false", async () => {
+    const res = await fetch(`${url}/expose-false`);
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "Not Found" });
   });
 
   /*
