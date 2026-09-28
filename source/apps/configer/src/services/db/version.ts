@@ -1,7 +1,7 @@
 import { JSONFile, Low } from "lowdb";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { VersionConfig } from "../../../src/types/versions.types.js";
+import type { VersionConfig } from "../../../src/types/versions.types.js";
 
 export type VersionDb = ReturnType<typeof versionConfig>;
 

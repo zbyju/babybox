@@ -134,14 +134,32 @@ describe("PATCH /config/main", () => {
 
   /* express.json() leaves the body as {} when the header is missing, so the request
    * arrives looking like an empty one. Nothing may be written for it. */
+  /*
+   * Express 5 leaves req.body undefined when no parser matched. Express 4 set
+   * it to {}, so this used to read "must not be empty". Both shapes are a 400
+   * that writes nothing, which is what matters here.
+   */
   it("answers 400 when the Content-Type header is missing", async () => {
     const res = await send("PATCH", { babybox: { name: "Brno" } }, {});
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
       msg: "Body is not a valid MainConfig",
+      errors: [{ path: "", msg: "must be an object" }],
+    });
+  });
+
+  it("answers 400 for an empty body and writes nothing", async () => {
+    const before = await (await fetch(url)).json();
+
+    const res = await patch({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      msg: "Body is not a valid MainConfig",
       errors: [{ path: "", msg: "must not be empty" }],
     });
+    expect(await (await fetch(url)).json()).toEqual(before);
   });
 
   it("answers 200 and leaves the keys the body does not name alone", async () => {

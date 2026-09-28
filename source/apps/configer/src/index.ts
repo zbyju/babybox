@@ -1,6 +1,6 @@
 import express from "express";
 import * as dotenv from "dotenv";
-import { join, dirname } from "node:path";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DbFactory } from "./services/db/factory.js";
 import { router as configRoute } from "./routes/configRoute.js";
@@ -10,10 +10,13 @@ import {
   statusBody,
 } from "./runtimeVersions.js";
 import cors from "cors";
+import { safeRoutePrefix } from "./services/routePrefix.js";
+import { jsonErrors } from "./middleware/jsonErrors.js";
 
 async function main() {
   // Load .env
-  dotenv.config();
+  // quiet: 18 prints the loaded file on stderr, which fails a box build.
+  dotenv.config({ quiet: true });
 
   const main = await DbFactory.getMainDb();
 
@@ -30,7 +33,13 @@ async function main() {
   app.use(express.json());
 
   // Routes
-  const prefix = main.data()?.configer.url || process.env.API_PREFIX;
+  const rawPrefix = main.data()?.configer.url || process.env["API_PREFIX"] || "";
+  const prefix = safeRoutePrefix(rawPrefix);
+  if (prefix !== rawPrefix) {
+    console.error(
+      `API prefix ${rawPrefix} is not a valid route, serving without one.`
+    );
+  }
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
@@ -45,14 +54,17 @@ async function main() {
   // Other routes
   app.use(prefix + "/config", configRoute);
 
-  const port = main.data()?.configer.port || process.env.PORT || 6000;
+  // Last, so it sees what every route above threw.
+  app.use(jsonErrors);
+
+  const port = main.data()?.configer.port || process.env["PORT"] || 6000;
   app.listen(port, () => {
     const color =
-      process.env.NODE_ENV === "production" ? "\x1b[32m" : "\x1b[35m";
+      process.env["NODE_ENV"] === "production" ? "\x1b[32m" : "\x1b[35m";
 
     console.log(
       `Babybox backend running in ${color}\x1b[1m%s\x1b[0m and listening on port \x1b[1m%s`,
-      process.env.NODE_ENV,
+      process.env["NODE_ENV"],
       port
     );
   });

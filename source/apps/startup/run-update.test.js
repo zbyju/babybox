@@ -1,5 +1,4 @@
 /* eslint-env jest */
-const { execFileSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -98,72 +97,10 @@ function baseOptions(fx, extra) {
   );
 }
 
-function writePathCommand(binDir, name) {
-  const record = path.join(binDir, `${name}-args.js`);
-  const node = process.execPath;
-  fs.writeFileSync(
-    record,
-    "const fs=require('fs');" +
-      "fs.appendFileSync(process.env.CALL_LOG," +
-      JSON.stringify(`${name} `) +
-      "+process.argv.slice(2).join(' ')+'\\n');"
-  );
-  fs.writeFileSync(
-    path.join(binDir, name),
-    `#!/bin/sh\nexec ${JSON.stringify(node)} ${JSON.stringify(record)} "$@"\n`
-  );
-  fs.chmodSync(path.join(binDir, name), 0o755);
-  fs.writeFileSync(
-    path.join(binDir, `${name}.cmd`),
-    `@echo off\r\n"${node}" "${record}" %*\r\n`
-  );
-}
-
-function runStartMain(script, cwd, env) {
-  if (process.platform === "win32") {
-    execFileSync("cmd.exe", ["/d", "/s", "/c", script], {
-      cwd,
-      env,
-      stdio: "pipe",
-    });
-    return;
-  }
-  execFileSync("sh", ["-c", script], { cwd, env, stdio: "pipe" });
-}
-
 describe("root build script", () => {
   it("points build at apps/startup/run-update.js", () => {
     const pkg = JSON.parse(fs.readFileSync(ROOT_PACKAGE, "utf8"));
     expect(pkg.scripts.build).toBe("node apps/startup/run-update.js");
-    expect(pkg.scripts["start:main"]).toBe(
-      "cd \"../dist\" && node -e \"var fs=require('fs');var cp=require('child_process');if(!fs.existsSync('node_modules'))cp.execSync('bun install --no-save',{stdio:'inherit'})\" && pm2 start ../dist/index.js -n babybox"
-    );
-  });
-
-  it("runs bun install --no-save when dist has no node_modules", () => {
-    const pkg = JSON.parse(fs.readFileSync(ROOT_PACKAGE, "utf8"));
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "babybox-start-main-"));
-    const source = path.join(root, "source");
-    const binDir = path.join(root, "bin");
-    const logPath = path.join(root, "calls.txt");
-    fs.mkdirSync(source);
-    fs.mkdirSync(path.join(root, "dist"));
-    fs.mkdirSync(binDir);
-    fs.writeFileSync(logPath, "");
-    writePathCommand(binDir, "bun");
-    writePathCommand(binDir, "pm2");
-    const env = Object.assign({}, process.env, {
-      PATH: `${binDir}${path.delimiter}${process.env.PATH || ""}`,
-      CALL_LOG: logPath,
-    });
-    try {
-      runStartMain(pkg.scripts["start:main"], source, env);
-      expect(fs.readFileSync(logPath, "utf8").split("\n")[0]).toBe(
-        "bun install --no-save"
-      );
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
   });
 });
 

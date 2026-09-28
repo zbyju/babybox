@@ -1,8 +1,8 @@
 # Dependency upgrade
 
-Status: **P1 in progress** on `feat/toolchain-jump`. `main` has no upgrade code.
+Status: **P3 done, P4 open** on `feat/toolchain-jump`. `main` has no upgrade code.
 Owner: —
-Last updated: 2026-09-23
+Last updated: 2026-09-25
 
 ## Goal
 
@@ -42,7 +42,7 @@ bootstrap from Node 18.
 
 | Piece | Target | Not |
 |---|---|---|
-| Runtime for backend, configer, panel build, startup after boot 2 | Bun 1.4.2, pinned | Node 24 |
+| Runtime for backend, configer, panel build | Bun 1.4.2, pinned | Node 24 |
 | Package manager | `bun install`, `bun.lock` | pnpm 12, npm, yarn |
 | Legacy hook (boot 1, forever) | `pnpm run build` on the box's old pnpm 7 | changing autostart before the pull |
 | Process manager | pm2 7.0.4, apps spawned with the absolute Bun path | replacing pm2 |
@@ -54,7 +54,8 @@ bootstrap from Node 18.
 | HTTP servers | Express 5 on Bun | Elysia / `Bun.serve` |
 
 Node 18 and pnpm 7 stay on disk as the bootstrap host and the `pnpm run build`
-hook. They are not upgraded. They stop serving HTTP after P3.
+hook. They are not upgraded. They stop serving HTTP after P3. Node also runs
+the pm2 daemon and the startup app.
 
 ## Safe release
 
@@ -269,6 +270,15 @@ from `dist/release.json`. The job asserts that the build runs.
 The job gates the merge. A red job means the tip is not safe to check out on
 a box. The fake Windows 8 case does not replace the real Windows 8 canary.
 
+The `legacy-boot1` job runs the real startup app from the `legacy-runtime`
+tag, with pm2 5.2.0 or 6.0.14 and no `~/.bun/bin` on `PATH`. It runs on
+Ubuntu and on Windows. It first builds and starts the tag, as a legacy box
+would. Then it pulls a tip with a panel build that exits 1. The legacy
+`dist` must start on Bun. Then it pulls the pull request head. The new
+`dist` must start on Bun. Each case checks the pm2 interpreter and the real
+process executable. The old startup never puts `dist2` back after a failed
+start, so this job is the only proof that boot 1 starts.
+
 ## Review 2026-09-21
 
 Checked against `origin/main` at `6eb4fbf` (#98). Commits after the
@@ -357,7 +367,7 @@ mistaken for P1. The 2026-09-13 target runtime (Node 24 LTS 24.21.0 and pnpm
 |---|---|---|
 | `@babybox/config-schema` with `zod@3.23.8` | #86 | New package in the inventory. Already `module: node16` and `strict: true`. Backend imports the type only, through `baseUrl` + `paths`, because a `workspace:*` dep breaks the standalone `dist` install (learnings.md, Startup). TS 7 removes `baseUrl`; P4 must replace that path with a relative `paths` entry. Zod stays on 3.23.8 in this plan. Zod 4 is a separate project. |
 | Config write path, PATCH, panel config page, apply-on-save | #85 #88 #89 #91 | Manual run in P4 includes the config page, PUT and PATCH. Express 5 now has 11 async route handlers (7 backend, 4 configer), not 9. Empty-body tests exist for PUT and PATCH; they still assume Express 4's `req.body = {}` when the header is missing. |
-| Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. Do not upgrade pino until Bun is the runtime (P4). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
+| Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. pino stops at 9.14.0: pino 10 needs Node 19.9 or newer and the startup app always runs on Node (2026-09-28). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
 | Startup has tests | #90 | `apps/startup/src/logger.test.js` runs under jest. P0 must not remove jest from startup. P5 moves those tests to vitest and puts them in CI. CI today lints startup and does not test it. |
 | `installAll.sh` removed | #54 | Ubuntu provisioning is `install-all.sh` only. Both `install-all.sh` and the old script used `n` and chowned `/usr/local`. |
 | Panel no longer imports axios | #76 | `axios` is still in `apps/panel/package.json` and the leftover `apps/panel/pnpm-lock.yaml`. Dead weight for P0. Backend still has one axios call site. |
@@ -625,8 +635,8 @@ Half the fleet. Facts that shape the bootstrap there:
   with no UAC prompt. That account was `juricj`. The usual fleet account
   name is `babybox`. The path is the profile of whoever is logged in.
 - **nvm-windows stays as the leftover Node host.** The jump does not call
-  `nvm use`. If pm2 cannot run as a Bun process, the daemon stays on the
-  existing Node and only the app interpreter changes in P3.
+  `nvm use`. The pm2 daemon stays on that Node (decided 2026-09-25). Only
+  the app interpreter changes in P3.
 
 What the bootstrap does on Windows:
 
@@ -685,7 +695,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 |---|---|---|---|---|
 | typescript | ^4.7.4 | 7.0.2 | ≥16.20 | native compiler; see P6 |
 | ts-node | ^10.9.1 | 10.9.2 | — | remove. `bun --watch` replaces ts-node, tsx and nodemon |
-| @types/node | ^18.11.18 | 24.13.4 | — | bun's Node compat layer. npm's absolute latest is 26.5.1; do not follow it. Also add `@types/bun`. P3. |
+| @types/node | ^18.11.18 | 24.13.4 | — | bun's Node compat layer. npm's absolute latest is 26.5.1; do not follow it. The type-contract PR kept 18.x in the backend and configer, and added no `@types/bun`: their `dist` can still start on Node 18. Owner to confirm, see "Open questions". |
 | @types/cors, @types/express, @types/lodash.merge | | | | move to the apps that use them; root should hold nothing |
 
 **`@babybox/config-schema`** (new since the first draft)
@@ -711,8 +721,9 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | @vitejs/plugin-vue | ^2.3.1 | 6.0.9 | ^20.19 ‖ ≥22.12 | |
 | vitest | ^0.9.3 | 5.0.1 | ^22.12 ‖ ^24 ‖ ≥26 | |
 | jsdom | ^16.7.0 | 30.1.0 | ^22.22.2 ‖ ^24.15 ‖ ≥26 | the strictest Node floor in the repo. P5 proves `bun install` accepts this engine. |
-| vue-tsc | ^0.38.2 | 3.3.11 | — | needs TS ≥5.0 **JS API**; not the TS 7 binary. Still 3.3.11. |
-| @vue/tsconfig | ^0.1.3 | 0.9.1 | — | needs TS ≥5.8, vue ^3.4; 0.1.3 uses `moduleResolution: Node` and `preserveValueImports`, both removed in TS 7 |
+| vue-tsc | ^0.38.2 | 3.3.11 | — | needs TS ≥5.0 **JS API**; not the TS 7 binary. Still 3.3.11. In the panel since the panel contract PR. Needs Node 16 or newer to run (fails on 14.21.3). |
+| @vue/tsconfig | ^0.1.3 | 0.9.1 | — | needs TS ≥5.8. Its vue ^3.4 peer is optional: 0.9.1 works with vue 3.2.37 (panel contract PR). 0.1.3 used `moduleResolution: Node` and `preserveValueImports`, both removed in TS 7 |
+| @vue/reactivity | none | 3.2.37 | — | added in the panel contract PR, types only. `vitest.env.ts` declares the chai bail type on it. Bump with vue. |
 | stylus | ^0.57.0 | 0.64.0 | ≥16 | 31 SFC style blocks |
 | eslint | ^8.19.0 | 10.11.0 | ^20.19 ‖ ^22.13 ‖ ≥24 | flat config rewrite; see "Lint stack". Removed, not upgraded. |
 | @typescript-eslint/* | ^5.30.5 | 8.70.0 | ≥18.18 | peer `typescript <6.1` |
@@ -724,7 +735,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | eslint-plugin-unused-imports | ^2.0.0 | 4.4.1 | — | |
 | @rushstack/eslint-patch | ^1.1.4 | 1.16.1 | — | not needed with flat config; remove |
 | prettier | ^2.7.1 | 3.9.6 | ≥14 | |
-| @types/jsdom, @types/howler, @types/lodash, @types/node | | 30.0.0, 2.2.13, 4.17.25, 24.13.4 | | |
+| @types/jsdom, @types/howler, @types/lodash, @types/node | | 30.0.0, 2.2.13, 4.17.25, 24.13.4 | | The panel contract PR removed `@types/jsdom` (nothing imports jsdom) and moved the panel `@types/node` to 18.11.18, the root and configer pin. Only the tests and `vite.config.ts` load it. |
 | `apps/panel/pnpm-lock.yaml` | stale, format 5.4 | — | | leftover from before the workspace; delete |
 
 **Backend**
@@ -740,7 +751,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | open | ^8.4.0 | 11.0.4 | ≥20 | ESM-only since v9; backend is CommonJS; see "ESM-only packages" |
 | winston | ^3.8.1 | 3.19.0 | — | one file: `modules/restart.ts` |
 | axios | ^0.27.2 | 1.20.0 | — | one call site, `fetch/fetch.ts` |
-| jest, @types/jest | ^28.1.3 | 30.5.1, 30.0.0 | ≥18.14 | six test files; move to vitest in P4 |
+| jest, @types/jest | ^28.1.3 | 30.5.1, 30.0.0 | ≥18.14 | ten test files; moved to vitest 0.9.4 in the type-contract PR |
 | ts-jest | ^28.0.7 | 29.4.12 | — | peer `typescript <7` |
 | newman | ^5.3.2 | 6.2.2 | ≥16 | |
 | nodemon | ^2.0.19 | 3.1.14 | ≥10 | |
@@ -763,7 +774,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 |---|---|---|---|---|
 | fs-extra | ^10.1.0 | 11.4.0 | ≥14.14 | |
 | moment | ^2.29.3 | 2.31.0 | — | |
-| pino | ^8.21.0 | 10.3.1 | — | loaded through try/catch. Upgrade in P4 after Bun is the runtime. Keep the Czech one-line file + rotation from #90. |
+| pino | ^8.21.0 | **9.14.0**, not 10.3.1 | — | loaded through try/catch. pino 10 throws `diagChan.tracingChannel is not a function` on Node 18.12.1, and the startup app always runs on Node. The Czech one-line file + rotation from #90 is byte-identical on 9. |
 | pino-pretty | ^10.3.1 | 13.1.3 | — | with pino |
 | sudo-prompt | ^9.2.1 | 9.2.1 | — | last release 2024-12; no upgrade exists; still needed for Windows elevation |
 | eslint, eslint-config-prettier, plugins, prettier | as backend | as backend | | removed in P5 |
@@ -776,7 +787,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 | Bun | absent | 1.4.2 pinned | | Runtime and package manager. GitHub release zip, sha256 in `versions.env`. One x64 binary. SSE4.2 required. No baseline fallback. |
 | Node | 18.12.1 | leave in place | | Bootstrap host and `pnpm run build` hook. Not upgraded. Stops serving HTTP after P3. |
 | pnpm | 7.5.0 | leave in place | ≥18 | Legacy `pnpm run build` only. Lockfile 5.4 stays until P7. Not upgraded. |
-| pm2 | `latest` | 7.0.4 | ≥18 | pin it; `latest` on an unattended install is a risk we already carry. P3 spawns apps with the absolute Bun path. |
+| pm2 | `latest` | 7.0.4 | ≥18 | 7.0.4 from `versions.env` (startup.sh, startup.bat, both install scripts). A box keeps its old pm2 until boot 2. P3 spawns apps with the absolute Bun path. |
 | typescript, ts-node (global) | removed from the install scripts | — | | P0. Workspace `typescript` and `ts-node` stay until later phases. |
 
 ## Things that change behaviour, not just versions
@@ -789,16 +800,26 @@ middleware, so we need one and it must return JSON, not the HTML default page.
 The non-object check covers it. The existing tests (`main.test.ts` empty body,
 `configRoute.test.ts` missing Content-Type) still assume `{}`; extend them so
 both `{}` and `undefined` return 400 and write nothing. Route strings with
-`*`, `?`, `+` or regex parts changed syntax; we have none (`["/version", "/versions"]`
-arrays are fine). `req.query` is a getter now; nothing assigns to it.
+`*`, `?`, `+` or regex parts changed syntax. **This plan said we have none. That
+was wrong.** `apps/backend/src/index.ts` registers `app.get("*")` for the SPA
+history fallback, inside the `NODE_ENV === "production"` block that every box
+runs. Express 5 uses path-to-regexp 8, which rejects a bare `*` at registration
+with `PathError: Missing parameter name at index 1: *`. The backend would throw
+at startup on every box. It is now `app.get("/{*splat}")`, which registers and
+routes the same way (checked on Node 18.12.1: `/api/v1/status` still answers the
+API, `/config` still falls through to the SPA). `apps/backend/src/__tests__/
+panelFallback.test.ts` had the same bare `*`. `["/version", "/versions"]` arrays
+are fine. `req.query` is a getter now; nothing assigns to it.
 
 **ESM-only packages.** `open` (≥9), `pinia` (4), `lowdb` (≥4), and Vue Router 6
 later. The panel is bundled by Vite, so ESM-only is invisible there. Configer and
 config-schema are already ESM. The backend is CommonJS with `import x = require("open")`.
 **Decided 2026-09-12: convert the backend to ESM**, the same shape as configer:
 `"type": "module"`, `module`/`moduleResolution: node16`, `.js` on relative import
-specifiers, `import.meta.dirname` for `__dirname`, plain `import` for `open`,
-`moment`, `winston`. `dist/package.json` is a copy of the backend's, so pm2 sees
+specifiers, `path.dirname(fileURLToPath(import.meta.url))` for `__dirname`, plain
+`import` for `open`, `moment`, `winston`. Not `import.meta.dirname`: it needs Node
+20.11, and the Node 18 fallback from P3 can start the new `dist`.
+`dist/package.json` is a copy of the backend's, so pm2 sees
 `"type": "module"` too. Jest is the only CommonJS-shaped tool in the backend and
 goes in the same phase. The config-schema `paths` entry must keep working as a
 type-only import after the move.
@@ -806,8 +827,9 @@ type-only import after the move.
 **TypeScript 6 and 7.** 6.0 is the last JS-based release and exists to flag what 7
 removes. Removed in 7, and present in this repo: `baseUrl` (panel `tsconfig.app.json`
 and now the backend tsconfig, for `@babybox/config-schema`; use relative `paths`
-without `baseUrl`), `moduleResolution: node10` (the backend gets it by default from
-`module: CommonJS`, and `@vue/tsconfig` 0.1.3 sets `Node`), and
+without `baseUrl`), `moduleResolution: node10` (`@vue/tsconfig` 0.1.3 sets `Node`;
+in TypeScript 6 `module: CommonJS` with no `moduleResolution` resolves as `Bundler`,
+not `node10`), and
 `preserveValueImports` / `importsNotUsedAsValues` (from `@vue/tsconfig` 0.1.3;
 0.9 uses `verbatimModuleSyntax`). Also changed defaults in 6: `strict: true`,
 `module: esnext`, `target: es2025`, `noUncheckedSideEffectImports: true`; the backend
@@ -815,6 +837,14 @@ has `noImplicitAny` only and would become fully strict — that is wanted, and
 the extra flags in "TypeScript contract" go on at the same time. `import x =
 require()` and `enum` are not deprecated. `tsc --build` and project
 references still work.
+
+Found in the type-contract PR on TypeScript 6.0.3. A deprecated option is an
+error, not a warning: `baseUrl` is TS5101 and `moduleResolution: node10` is
+TS5107. The PR needs no `ignoreDeprecations`. An emit with `outDir` and no
+`rootDir` fails with TS5011, so all three units set `rootDir`. TypeScript 6
+loads no `@types` package by itself, so each unit names what it needs in
+`types`. `tsc --build` writes `tsconfig.tsbuildinfo` and skips a project it
+thinks is up to date, so the backend builds with plain `tsc`.
 
 **TypeScript 7 has no stable JS API.** The `typescript@7` package is a 2.5 MB
 launcher for a Go binary. Everything that today loads TypeScript as a library keeps
@@ -830,6 +860,8 @@ builds of backend, configer and config-schema on 7; dev runners on `bun --watch`
 the panel keeps `typescript@6.0.3` as its own devDependency. Bun workspaces give
 each app its own `typescript`, so this is a per-`package.json` choice. Re-test
 `vue-tsc` on 7 at each Volar major; move the panel when it passes.
+`vue-tsc` also needs Node itself. Under the Bun runtime it loads no `.vue`
+file and fails with TS2307 (checked in the panel contract PR).
 
 **TypeScript contract. Decided 2026-09-14: very strict, every compile unit.**
 `strict: true` is the floor, not the goal. Every `tsconfig` (backend, configer,
@@ -855,6 +887,12 @@ to the line. oxlint enforces the same with `typescript/no-explicit-any`,
 must not grow; P4 re-counts and then fixes down to zero under this contract.
 Do not turn a flag off to make a phase green.
 
+The 12 flags live in one file, `source/tsconfig.contract.json`. Each unit's
+tsconfig extends it and sets none of the flags itself. Decided 2026-09-25 in
+the review of #129. The panel still copies the flags in
+`tsconfig.app.json`: vite 2.9.14 cannot read the `extends` array it would
+need. It moves to the shared file with Vite 8 in P5 (decided 2026-09-25).
+
 **Dev runners.** `nodemon` in the backend uses `ts-node` under the hood,
 configer uses `nodemon --esm`. Both go to `bun --watch`. Do not add `tsx`.
 `erasableSyntaxOnly` is not required while we still emit with `tsc` into
@@ -871,9 +909,9 @@ in production without emit.
   update runner. The old `pnpm-lock.yaml` (format 5.4) stays in the tree so
   pnpm 7 cannot invent a format-9 file. Workspace layout stays `apps/*` and
   `packages/*` via Bun workspaces in root `package.json`.
-- P3 starts pm2 apps with interpreter `bun`. Prove an old compiled `dist`
-  still starts. If the pm2 daemon cannot itself run on Bun, leave the daemon
-  on the existing Node and only switch the app interpreter.
+- P3 starts pm2 apps with the absolute Bun path as the interpreter. An old
+  compiled `dist` still starts. The daemon stays on Node (decided
+  2026-09-25).
 - Express stays. Vite stays. vitest stays. This is not Elysia and not
   `bun test`.
 - `bun install` trusted-dependency / lifecycle scripts: record what must be
@@ -906,10 +944,15 @@ once, at `source/`, with per-app overrides. Config-schema is a fifth target, not
 listed in the first draft. CI: `oxlint --deny-warnings` and `oxfmt --check`.
 Warnings are errors.
 
-**Pino 8 → 10.** Startup's public log is a Czech one-line file with size rotation
-(#90, decisions live in that PR). `pino@10` and `pino-pretty@13` change the default
-shape. Upgrade only after Bun is the runtime, in the P4 library PR, and treat a
-broken log format as a failed phase. `bootstrap.js` never imports pino.
+**Pino 8 → 9, not 10.** Startup's public log is a Czech one-line file with size
+rotation (#90, decisions live in that PR). Done 2026-09-28: `pino@9.14.0` with
+`pino-pretty@13.1.3`. The file and the stdout stream are byte-identical to pino
+8.21.0, so the format was never the risk. **pino 10 cannot ship.** It calls
+`diagnostics_channel.tracingChannel`, which arrived in Node 19.9, and throws
+`TypeError: diagChan.tracingChannel is not a function` on Node 18.12.1. The
+earlier note said to wait for Bun; that premise was wrong, because the startup
+app always runs on Node (decided 2026-09-25). Revisit pino 10 only when every
+box runs Node 20 or newer. `bootstrap.js` never imports pino.
 
 **Zod.** Leave at `3.23.8`. A bump to 3.25 or 4 is not this project.
 
@@ -929,8 +972,29 @@ still gets one merge after the canary.
    legacy-image job points at the process.
 4. **Type contract.** TypeScript 6, the contract flags, and the backend ESM
    move. If the panel fixes pass 5000 lines, the panel is the next pull
-   request.
-5. **Libraries.** The P4 bumps, including Express 5 and Pino 10. The review
+   request. The first pull request covers configer, the backend and
+   config-schema, about 1,100 lines with docs. The panel stays on
+   TypeScript 4.7.4 and `vue-tsc` 0.38.9 there.
+
+   The panel contract is its own pull request. It is stacked on the
+   type-contract pull request and comes before Libraries. It keeps vue
+   3.2.37, vue-router, pinia, vite and vitest.
+
+   Proposed, owner to decide: the panel contract lands before Libraries.
+   Confidence medium. The evidence is from the planner's prototype.
+   - The Libraries bumps need the panel on a newer TypeScript. pinia 4.0.3
+     wants TypeScript 5.6 or newer. The vue 3.5 types use `NoInfer`
+     (TypeScript 5.4).
+   - The panel contract does not need the vue bump. `vue-tsc` 3.3.11 only
+     peers on `typescript >=5.0.0` and runs on vue 3.2.37. The `vue ^3.4`
+     peer of `@vue/tsconfig` 0.9.1 is optional.
+   - Size: 19 errors on `@vue/tsconfig` 0.9.1 alone, 173 errors in 32 files
+     under the full contract (vue-tsc 3.3.11, TypeScript 6.0.3, vue 3.2.37).
+     The panel contract PR counted 149 errors in 20 files in `src` and 13
+     in the tests, and fixed all of them on vue 3.2.37.
+   - What would change this: a Libraries bump that the panel's TypeScript
+     4.7.4 can type-check, or a panel contract that only passes on vue 3.5.
+5. **Libraries.** The P4 bumps, including Express 5 and Pino 9. The review
    checks behavior. Czech text, JSON errors, and the startup log line stay
    the same.
 6. **Test and lint tools.** Vite 8, vitest 5, oxlint, and oxfmt.
@@ -1112,21 +1176,31 @@ run `pnpm install` and dirty the tree.
 
 ### P3 — Apps run on Bun
 
-- [ ] pm2 starts configer and the panel backend with the absolute Bun path.
-      Do not use `bun` from `PATH`. `start:main` / `start:configer` stop
-      calling Node.
-- [ ] `@types/node` → 24.x everywhere (24.13.4 today, not 26.x) plus
-      `@types/bun`. Remove the root copy if no root code needs it.
-- [ ] pm2 → 7.0.4 pinned. If the pm2 daemon cannot run on Bun, leave it on
+- [x] pm2 starts configer and the panel backend with the absolute Bun path.
+      Do not use `bun` from `PATH`. The apps stop running on Node.
+      `start:configer` and `start:main` run `node apps/startup/start-app.js`.
+      The helper runs on the legacy Node. The apps run on Bun.
+- `@types/node` and `@types/bun`: moved to the type-contract PR, which kept
+  `@types/node` 18.x (see P4).
+  TypeScript 4.7.4 cannot parse `bun-types` 1.4.2 (TS1005, TS1139).
+  `skipLibCheck` does not cover a syntax error. `@types/node` 24.13.4 needs
+  TypeScript 5.6.
+- [x] pm2 → 7.0.4 pinned. If the pm2 daemon cannot run on Bun, leave it on
       the existing Node and only switch the app interpreter. Record which.
-- [ ] Prove last good `dist` (compiled JS from before this phase) still
-      starts when the interpreter is Bun.
-- [ ] After boot 2, `startup.sh` / `startup.bat` may call the runner with
+      The daemon stays on Node. Only the app interpreter changed.
+      `install/windows.js` reads `PM2_VERSION`.
+- [x] Prove last good `dist` (compiled JS from before this phase) still
+      starts when the interpreter is Bun. legacy-boot1 builds the tag with
+      the legacy toolchain. A failed boot 1 build then starts that dist on
+      Bun.
+- [x] After boot 2, `startup.sh` / `startup.bat` may call the runner with
       `bun` or still `node`. Either is fine. Legacy autostart still uses
-      `pnpm run build`.
-- [ ] Legacy-image job asserts the spawned apps are Bun processes.
+      `pnpm run build`. Both still call Node.
+- [x] Legacy-image job asserts the spawned apps are Bun processes.
+      `assert-runtime.js` checks `pm2 jlist` and the process executable.
+      The BOOTSTRAP_BUN case expects Node.
 
-Size: ~0.5 day.
+Size: ~1 day (the boot 1 job).
 
 ### P4 — TypeScript 4.7 → 6.0.3, the contract, and the libraries
 
@@ -1134,35 +1208,86 @@ Still the JS compiler, so `vue-tsc` keeps working. Fix everything TS 6
 deprecates, so P6 is a swap of the binary, not a migration. Turn on the
 TypeScript contract. Do not add `tsx`.
 
-- [ ] `typescript@6.0.3` in root, panel, backend; configer and config-schema use
-      the workspace `tsc` (or their own 6.0.3, then 7 in P6)
-- [ ] Every compile unit: the TypeScript contract flags. Configer first, then
-      backend, config-schema, panel. Tracked suppressions only. No flag off.
-- [ ] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
-      node16`, `.js` on relative imports, `import.meta.dirname`, drop every
-      `import x = require()`; the 6 jest test files move to vitest in the same
-      PR because ts-jest is the last CommonJS tool; replace `baseUrl` with a
-      relative `paths` entry for `@babybox/config-schema` so TS 7 can drop
-      `baseUrl`
-- [ ] Panel: `@vue/tsconfig@0.9.1`, `vue-tsc@3.3.11`, remove `baseUrl`, make
+- [x] `typescript@6.0.3` in root, backend, configer and config-schema.
+      Configer and config-schema pin their own 6.0.3, then 7 in P6.
+- [x] `typescript@6.0.3` in the panel, with `vue-tsc` 3.3.11. The panel
+      contract PR, after the type-contract PR.
+- [ ] `@types/bun` and the `@types/node` version, moved here from P3.
+      TypeScript 4.7.4 cannot read either. A box on the Node fallback still
+      starts the new `dist` on Node. The type-contract PR kept `@types/node`
+      18.x in the backend and configer and added no `@types/bun`. The
+      compiler then rejects a Node 20+ API such as `import.meta.dirname`.
+      Owner to confirm, see "Open questions". The panel contract PR moved
+      the panel `@types/node` to 18.11.18. Only its tests and
+      `vite.config.ts` load it.
+- [x] The TypeScript contract flags in configer, the backend and
+      config-schema. Configer first. Two tracked suppressions. No flag off.
+- [x] The TypeScript contract flags in the panel. No tracked suppression.
+      No flag off. `tsconfig.app.json` copies the flag block. It cannot
+      extend `source/tsconfig.contract.json` while vite is 2.9.14. It moves
+      to the shared file with Vite 8 in P5.
+- [x] Backend to ESM: `"type": "module"`, tsconfig `module`/`moduleResolution:
+      node16`, `.js` on relative imports,
+      `path.dirname(fileURLToPath(import.meta.url))` (not
+      `import.meta.dirname`, which needs Node 20.11), drop every
+      `import x = require()`; the 10 jest test files move to vitest 0.9.4 in
+      the same PR because ts-jest is the last CommonJS tool; replace
+      `baseUrl` with a relative `paths` entry for `@babybox/config-schema` so
+      TS 7 can drop `baseUrl`
+- [x] Panel: `@vue/tsconfig@0.9.1`, `vue-tsc@3.3.11`, remove `baseUrl`, make
       `paths` relative, fix the known typecheck errors (re-count first; 20 at
       1927135) down to zero under the contract, make `bun run build` actually
       run the type gate over `src` (learnings.md says it checks zero files
-      today)
-- [ ] Configer: confirm with `tsc --noEmit` under the contract. Config-schema:
+      today).
+      The gate is `vue-tsc --noEmit -p tsconfig.app.json`. It checks 99
+      files: `env.d.ts`, 56 `.ts` and 42 `.vue`. It checked none before.
+      Contract: 149 errors in 20 files, now 0. Tests: 13, now 0. The CI
+      step "Panel typecheck" checks the tests and `vite.config.ts`. The 20
+      at 1927135 counted the tests together with the app. 13 of them came
+      from chai's `should`, 2 exist only on TypeScript 4.7, and 5 were
+      strict errors in the app.
+      Measured on Node 18.12.1 in Docker (arm64 on Apple silicon, 10 cores):
+      the panel `build` takes 4.3 to 4.5 s and 340 MB peak RSS. Before it
+      took 2.3 to 2.6 s and 278 MB. The type check alone takes 2.3 s. A box
+      CPU is slower. Not yet measured on a box.
+- [x] Configer: confirm with `tsc --noEmit` under the contract. Config-schema:
       confirm the same; it is already on `node16` / `strict`
-- [ ] `ts-node` / `nodemon` → `bun --watch` for backend and configer
-- [ ] vue 3.5.43, vue-router 5.3.1, pinia 4.0.3 + `@vue/devtools-api`, lodash 4.18.1,
-      howler 2.2.4, moment 2.31.0, stylus 0.64.0
-- [ ] axios 1.20.0 in the backend only
-- [ ] express 5.2.1 + `@types/express@5` in backend and configer; add a JSON error
-      middleware to both; extend the empty-body and missing-Content-Type tests for
-      `undefined` as well as `{}`
-- [ ] cors, dotenv 18.0.2 (silence any load banner), morgan, winston, fs-extra 11,
-      newman 6, pino 10.3.1, pino-pretty 13.1.3 (prove #90's file format and
-      rotation still hold). Remove nodemon.
-- [ ] `open@11.0.4` as a plain ESM import once the backend is ESM
-- [ ] lowdb 7 in configer (`versions.json` only)
+- [x] `ts-node` / `nodemon` → `bun --watch` for backend and configer
+- [x] vue 3.5.43, vue-router 5.3.1, pinia 4.0.3 + `@vue/devtools-api` 8.2.1,
+      lodash 4.18.1, howler 2.2.4, moment 2.31.0, stylus 0.64.0.
+      `@vue/reactivity` moved to 3.5.43 with vue, and `@types/howler` to
+      2.2.13 and `@types/lodash` to 4.17.25.
+      Done on vite 2.9.14 and `@vitejs/plugin-vue` 2.3.3. This bump does
+      **not** need Vite 8; see the decision of 2026-09-28.
+- [x] axios 1.20.0 in the backend only. `axios.default.get` became
+      `axios.get`; the 0.27 comment said to do exactly that when 1.x landed.
+- [x] express 5.2.1 + `@types/express@5` in backend and configer; a JSON error
+      middleware in both (`src/middleware/jsonErrors.ts`), registered last;
+      the empty-body and missing-Content-Type tests now cover `undefined` as
+      well as `{}`. The missing-header case answers `must be an object` where
+      Express 4 answered `must not be empty`: both are a 400 that writes
+      nothing. Also needed the splat fix above.
+- [x] cors 2.8.6, dotenv 18.0.3, morgan 1.12.1, winston 3.19.0, fs-extra 11.4.1,
+      newman 6.2.2, **pino 9.14.0 (not 10.3.1)**, pino-pretty 13.1.3.
+      dotenv 18 prints `◇ injected env (1) from .env` on stderr, 31 bytes, so
+      both apps now call `dotenv.config({ quiet: true })`, measured back to 0.
+      **pino 10 cannot ship**: it throws
+      `TypeError: diagChan.tracingChannel is not a function` on Node 18.12.1,
+      and the startup app always runs on Node. pino 9.14.0 loads there and the
+      #90 Czech one-line file is byte-identical to pino 8. See the decision of
+      2026-09-28. nodemon is already gone (type-contract PR).
+- [x] `open@11.0.4` as a plain ESM import. `engines.node` is `>=20`, but it
+      loads and runs on Node 18.12.1, so the Node fallback still opens the
+      panel. Not checked on the Windows `powershell-utils` path.
+- [ ] lowdb 7 in configer (`versions.json` only). **Tried and reverted on
+      2026-09-28. Do not retry until configer's `dist` has its own
+      `node_modules`.** lowdb 7 moves `JSONFile` to `lowdb/node`, so a configer
+      `dist` compiled against lowdb 3 cannot start once lowdb 7 is installed.
+      `legacy-boot1` caught it: in the "boot 1 with a failed build starts the
+      legacy dist" case, `bun install` has already replaced `node_modules`, and
+      the kept `dist` then dies with
+      `SyntaxError: Export named 'JSONFile' not found`. See the decision of
+      2026-09-28 on the rollback hazard.
 - [ ] Full manual run: panel against a real engine and thermal unit, camera feed,
       sound alerts, settings page, restart route, config page save (PUT and PATCH
       from #85/#88/#91)
@@ -1174,6 +1299,26 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
 
 - [ ] vite 8.3.0, @vitejs/plugin-vue 6.0.9, vitest 5.0.1, jsdom 30.1.0 in the panel;
       `vite.config.ts` to `import.meta.dirname`; run through `bun run`
+- [ ] Keep BUILD_PANEL stderr empty on Vite 8. On 2026-09-25 vite 8.3.0
+      printed a `configLoader: 'native'` warning on stderr for
+      `vite.config.ts`: ESM syntax in a file loaded as CommonJS. Any stderr
+      fails the box build. Fix it with `"type": "module"` in the panel
+      `package.json` or a `vite.config.mts`.
+- [ ] Run Vite 8 on a runtime it supports. It needs Node `^20.19` or
+      `>=22.12`. `bun run` starts a bin on the first `node` on PATH, and on
+      a box that is Node 18. So vite must run on the Bun runtime (for
+      example `bun --bun vite build`). `vue-tsc` must stay on Node: on Bun
+      it loads no `.vue` file. Not tested yet.
+- [ ] Panel `tsconfig.app.json`: `"extends": ["@vue/tsconfig/tsconfig.dom.json",
+      "../../tsconfig.contract.json"]`, with the contract last so its flags
+      win. Delete the panel copy of the 12 flags. Decided 2026-09-25.
+      Checked on vite 8.3.0 and @vitejs/plugin-vue 6.0.9: same bundle, all
+      12 flags. Check vitest 5 with the array before this box is ticked.
+- [x] `apps/panel/vite.config.ts` sets `define: { __VUE_PROD_DEVTOOLS__: false }`.
+      pinia 4 needs `@vue/devtools-api` as a non-optional peer, and only a
+      guard on that flag keeps `@vue/devtools-kit` out of the bundle. Added in
+      #131 so the Vite 8 swap cannot quietly undo it. `legacy-image` never
+      reads bundle content, so a regression would be silent.
 - [ ] Prove `bun install` accepts jsdom 30.1.0 (`engines.node` is `^22.22.2 ||
       ^24.15.0 || >=26`). If it refuses, pin the newest jsdom that Bun accepts
       and record the pin here. Do not turn on `engine-strict`.
@@ -1199,7 +1344,8 @@ Size: ~1.5 days.
 - [ ] Root: `typescript@7.0.2`, or nothing if no root code compiles
 - [ ] Panel: stays on `typescript@6.0.3`; `vue-tsc` 3.3.11 crashes on 7 (tested
       2026-09-12, still the latest Volar on 2026-09-13). Re-test at each Volar
-      major and move when it passes
+      major and move when it passes. `vue-tsc` also needs a Node runtime. On
+      Bun it loads no `.vue` file (TS2307).
 - [ ] Remove any `ignoreDeprecations` left from P4
 - [ ] TS 7 pulls a platform binary (`@typescript/typescript-linux-x64`,
       `-win32-x64`); the legacy-image job on Linux and the Windows runner both
@@ -1263,9 +1409,16 @@ contract, which is where most of the migration risk sits.
 - The backend `dist` is installed standalone. No `workspace:*` in the backend
   `package.json`. Config-schema stays a type-only import.
 - Zod stays at 3.23.8. Zod 4 is out of scope.
-- `@types/node` is 24.x for Bun's Node compat. Do not follow npm's 26. Also
-  add `@types/bun`.
+- `@types/node` stays 18.x in the backend and configer while the Node
+  fallback can start their new `dist`. No `@types/bun` there. Pending owner
+  confirmation. Do not follow npm's 26.
 - Express stays Express. Vite stays Vite. Tests stay vitest.
+- BUILD_PANEL runs `vue-tsc` on the first `node` on `PATH`. Without one it
+  fails with TS2307. It needs Node 16 or newer: `vue-tsc` 3.3.11 fails on
+  Node 14.21.3 with a SyntaxError (`??=`). 16.20.2 and 18.12.1 pass.
+- The panel build type-checks `src` on every box update. A slow or
+  out-of-memory check fails BUILD_PANEL. The last good `dist` starts, but
+  the box does not update.
 - Do not turn a TypeScript contract flag off to make a phase green.
 - Every registry dependency is pinned to one exact version in `package.json`.
   The lockfile records that same version. A bump writes the new exact version.
@@ -1326,6 +1479,28 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 |---|---|---|
 | Where does the Ubuntu Bun zip land? | `$HOME/.bun/bin` | The jump does not need a writable `/usr/local`. `startup.sh`, `bootstrap.js`, and `install-all.sh` already write that path. `install-all.sh` may still chown `/usr/local` for Node. That host stays. |
 
+## Decisions taken (2026-09-25)
+
+| Question | Answer | Consequence |
+|---|---|---|
+| How does pm2 get the Bun path? | A Node helper, `apps/startup/start-app.js` | The root start scripts call only `node`. The helper passes the absolute Bun path to pm2. Not `bun` from `PATH`, not `$HOME` in a script, not an ecosystem file. |
+| Where does the pm2 daemon run? | On Node | Every pm2 call starts the daemon on the Node its shim finds. Bun brings nothing to that process. |
+| Does the startup app move to Bun after boot 2? | No | It must run on the oldest Node for boot 1 and for hold boxes. `startup.sh` and `startup.bat` still call Node. |
+| What if `bun -v` is not `BUN_VERSION`? | Run the apps on that Bun | That binary ran the last good `dist`. A hold OS, a CPU hold, a missing binary, or a `bun -v` that fails starts on Node. |
+| When do `@types/node` and `@types/bun` move? | In the type-contract PR | TypeScript 4.7.4 cannot read `@types/bun` 1.4.2 or `@types/node` 24.13.4. |
+| Which `@types/node` in the backend and configer? | 18.x, no `@types/bun`. Pending owner confirmation. | The new `dist` can start on the Node 18 fallback. The compiler must reject a Node 20+ API. |
+| How does the ESM backend find its folder? | `path.dirname(fileURLToPath(import.meta.url))` | `import.meta.dirname` needs Node 20.11. |
+| Which vitest runs the backend tests? | 0.9.4, the version configer and the panel use | vitest 5 needs vite 6.4 or newer and fails on Node 18. P5 moves every unit to 5. |
+| How is a cast tracked? | `// oxlint-disable-next-line typescript/consistent-type-assertions -- <reason>` on the line above | Two in this PR: configer boot merge, backend boot config. `as const` is not a cast. |
+| Are test files type-checked? | Not yet | They stay out of every tsconfig, as in configer. Test tsconfigs come in P5. The panel is the exception, see below. |
+| What does the panel build check? | `src`, with `vue-tsc --noEmit -p tsconfig.app.json` | 99 files. The CI step "Panel typecheck" checks the tests and `vite.config.ts`. The box does not. |
+| Are the panel tests type-checked? | Yes, in CI | The panel already had `tsconfig.vitest.json`. `@vue/reactivity` 3.2.37 is a devDependency for the chai bail type. It moves with vue. |
+| `composite` in the panel? | No | With it, `vue-tsc -p` writes `tsconfig.app.tsbuildinfo` on every build. |
+| Vue 3.2 DOM types under `exactOptionalPropertyTypes`? | Leave the attribute off, never pass `undefined` | Eight workarounds in four SFCs until vue 3.5. Never `pattern=""`. |
+| Where do the contract flags live? | In `source/tsconfig.contract.json` | Each unit's tsconfig extends it and repeats no flag. The owner chose this in the #129 review. The panel still copies them until Vite 8. |
+| When does the panel extend the contract file? | With Vite 8, in P5 | vite 2.9.14 throws on the `extends` array the panel needs. vite 8.3.0 reads it (checked 2026-09-25). Until then `tsconfig.app.json` copies the 12 flags. |
+| Does the box build keep the panel type gate? | Yes, `vue-tsc` stays in `build` | The owner confirmed that all panel PCs run Node 18. The Node 16 floor of `vue-tsc` 3.3.11 is accepted. |
+
 ## Open questions
 
 - [x] Windows 8: answered 2026-09-21. Hold in place. Do not park on another branch.
@@ -1339,9 +1514,164 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       Node.
 - [ ] What Node do the Windows boxes actually run? nvm-windows "mimicked" 18.12.1, but
       Node 18 does not install on Windows 7/8. Sets the syntax floor for
-      `bootstrap.js`; assumed Node 12 until known.
-- [ ] Can the pm2 daemon run on Bun, or only the apps? Decide in P3 with a
-      proof on one box. The app interpreter is the absolute Bun path either way.
+      `bootstrap.js`; assumed Node 12 until known. It also decides whether
+      pm2 7.0.4 (engines Node ≥ 18) runs there. It ran on Node 16.20.2 in
+      one local check. Node 14 was not tested. Since the panel contract PR,
+      BUILD_PANEL also needs Node 16 or newer: `vue-tsc` 3.3.11 fails on
+      Node 14.21.3. The old `vue-tsc` 0.38.9 ran there.
+      2026-09-25, owner: all panel PCs run Node 18.
+      This plan says Node 18 does not install on Windows 7/8. Hold boxes never
+      run the build, so the box type gate decision holds either way.
+- [x] Can the pm2 daemon run on Bun, or only the apps? Answered 2026-09-25.
+      The daemon stays on Node. Every pm2 call starts it on the Node its
+      shim finds, including the old startup's `pm2 delete`. The app
+      interpreter is the absolute Bun path.
+- [ ] `START_CONFIGER` and `START_PANEL` pass when pm2 accepts the process.
+      Should `START_PANEL` wait for `GET /status` before it writes
+      `release.json`? A Bun crash after `pm2 start` returns 0 is not rolled
+      back.
+- [ ] `dist-release.js` spawns `pnpm.cmd` with `shell: false`. Node 18.20.2+
+      and 20.12.2+ refuse that (EINVAL). The owner said on 2026-09-25 that
+      all panel PCs run Node 18. The minor version is not known.
+- [ ] `GET /status` `node` shows the Node version Bun reports (`v26.3.0`).
+      Add a runtime field?
+- [ ] `bun install --no-save` in `dist` installs the backend
+      devDependencies too. This plan says `--omit dev`. Since the type
+      contract they include vitest 0.9.4, so also vite 2.9.14 and the
+      esbuild postinstall.
+- [ ] Owner: make `legacy-boot1` a required check. On two #128 runs it took
+      about 1.5 minutes on Ubuntu and 3.5 to 5 minutes on Windows, in
+      parallel with the other jobs. A whole run took 4.5 to 5 minutes. The
+      longest job before this pull request took about 4.5 minutes.
+- [ ] The install scripts still install `nodemon` at `latest`.
+- [ ] `bootstrap.js` logs `pm2 je [PM2] Spawning PM2 daemon …` when its
+      `pm2 -v` starts the daemon. It reads the first stdout line. The log
+      line is wrong. The build does not fail.
+- [ ] Owner: `@types/node` stays 18.x in the backend and configer, with no
+      `@types/bun`. Their new `dist` can start on the Node 18 fallback
+      (hold OS, CPU hold, missing Bun), so the compiler must reject a Node
+      20+ API. With 24.13.4, `import.meta.dirname` compiles and throws on
+      Node 18. This deviates from the P3 plan text (24.x plus `@types/bun`).
+      Move to 24.x when no box can start the apps on Node 18.
+- [ ] Owner: land the panel contract before Libraries. See "Pull requests
+      from here", item 4.
+- [ ] No tsconfig type-checks the test files. Under the contract they have
+      18 errors in the backend, 16 in configer and 56 in config-schema, and
+      about 50 `as`. Add a test tsconfig per unit in P5. The panel tests
+      are checked since the panel contract PR.
+- [ ] `tsc` does not clean `outDir`. A box keeps the old
+      `apps/backend/dist/__tests__/*.js` and `types/data.types.js`, and the
+      startup copies them into `dist`. Nothing imports them.
+- [ ] `?timeout` on the settings route is a string at run time, but
+      `GetUnitSettingsRequest` types it as a number. The data routes read it
+      through `queryTimeout()`; the settings route does not.
+- [ ] The root `dev` scripts still call `pnpm -F`.
+- [ ] `bun install --no-save` in a `dist` that has `.env` prints the `.env`
+      load and the resolve lines on stderr (Bun 1.4.2). Exit 0, the lock
+      does not change, and the startup does not fail on it. The same
+      happens before the type contract. The comment in `dist-release.js`
+      says the install writes nothing on stderr.
+- [ ] Small backend and configer leftovers: `restartRepository()` returns
+      `lastRequest` and `errorStreak` as values that never update; the
+      configer `DbFactory` error names a `getInstance` that does not exist;
+      the engine route calls `transformThermalData`; the backend
+      `package.json` `main` points at `./src/index.ts`.
+- [ ] npm reports vitest 5.0.2 on 2026-09-25; the plan pins 5.0.1.
+      Re-check at P5. `bun audit` still reports 79 (2 critical, 27 high,
+      38 moderate, 12 low).
+- [x] Owner: one shared `source/tsconfig.contract.json` that every unit
+      extends, instead of a copy of the contract flags in each tsconfig.
+      Answered 2026-09-25 in the review of #129: yes. The backend, configer
+      and config-schema extend it. The panel still copies the flags, see
+      the next question.
+- [x] Owner: when does the panel extend `source/tsconfig.contract.json`?
+      It needs `"extends": ["@vue/tsconfig/tsconfig.dom.json",
+      "../../tsconfig.contract.json"]`. vite 2.9.14 throws on an `extends`
+      array, in `vite build` and in vitest 0.9.4 (see learnings.md). A
+      one-file `extends` chain cannot hold both. Until then
+      `tsconfig.app.json` copies the 12 flags, and `tsconfig.vitest.json` and
+      `tsconfig.vite-config.json` inherit them. Option A: move in P5 with
+      Vite 8, after a check that it reads the array. Option B: a CI step
+      that compares the panel copy with the shared file. Answered
+      2026-09-25: option A. Checked the same day in a scratch copy: vite
+      8.3.0 with @vitejs/plugin-vue 6.0.9 builds with the array. The bundle
+      has the same content hash, all 12 flags resolve, and `vue-tsc` finds
+      0 errors. vitest 5 with the array is not checked yet. See P5.
+- [x] Owner: run the panel type gate on the box, or only in CI. From the
+      review of #130. `BUILD_PANEL` now runs `vue-tsc` 3.3.11, which needs
+      Node 16. A box whose first `node` is older fails that step on every
+      update and keeps the last good `dist`. CI runs the same check on the
+      same lockfile. Option A: `"build": "vite build"`, and CI keeps the
+      gate. Option B: keep the box gate after `GET /status` shows Node 16 or
+      newer on every Windows 10/11 box. Answered 2026-09-25: option B. The
+      box build keeps `vue-tsc`. The owner confirmed that all panel PCs run
+      Node 18. Not checked through `GET /status`. The Node 16 floor of
+      `vue-tsc` 3.3.11 is accepted.
+- [x] `legacy-image-release.sh` runs the backend's production block on Node.
+      Added in #132 after the review. Before it, no job ran that block on
+      Node 18: `seed_previous` writes `NODE_ENV=development`, and
+      `legacy-boot1` reaches the block only on Bun. A Bun-less box runs
+      exactly that pair. The new case seeds `NODE_ENV=production` with a
+      one-line `public/index.html`, removes Bun, then asserts `/` serves the
+      page, `/config` falls through to the SPA route, and the apps run on
+      Node. `open()` was checked on a headless `node:18.12.1-bullseye`: it
+      neither rejects nor ends the process, and it now has a `.catch` anyway.
+- [ ] Owner: give configer's `dist` its own `node_modules`, the way the backend
+      `dist` already has. Today `start-app.js` starts the backend from `../dist`
+      with `install: true` and configer from `apps/configer` with
+      `install: false`, so configer resolves from the shared
+      `source/node_modules`. `INSTALL` runs before every build step, so after a
+      failed build the kept configer `dist` is a stale compile against the new
+      packages. That blocks every configer library major, lowdb 7 first.
+      Found 2026-09-28 by `legacy-boot1`, not by `legacy-image`.
+- [ ] `dist-release.js` keeps its own copy of the Bun path and the CPU hold
+      check (`installedBunVersion`, `readCpuHold`). `start-app.js` uses the
+      `bootstrap.js` exports. Fold the startup copy in in a later change.
+- [ ] `isInstanceOfGetUnitSettingsRequest` accepts `?unit=` (an empty
+      string). `GET /units/settings?unit=` then answers 200 with no data,
+      not 400. The logic is the same as before #129. A fix changes
+      behaviour.
+- [ ] `vue-tsc` needs a Node runtime. If P7 removes Node from the boxes,
+      BUILD_PANEL has no `node` to run it on.
+- [ ] Measure the panel build on a real box. The P4 numbers come from
+      Docker on Apple silicon.
+- [x] `<router-link>` and `<router-view>` props are not type-checked.
+      vue-router 4.1.3 extends `GlobalComponents`, which vue 3.2.37 does not
+      have. Answered 2026-09-28: vue 3.5.43 has `GlobalComponents` and
+      vue-router 5.3.1 extends it, so the props are type-checked now.
+      `:to="123"` gives `TS2322: Type 'number' is not assignable to type
+      'string | RouteLocationAsRelativeGeneric | RouteLocationAsPathGeneric'`.
+      The one call site in `TheNav.vue` already passes a correct `to`, so
+      nothing had to change. An extra unknown attribute still passes, because
+      that is a legal fall-through attribute, not a hole in the typing.
+- [x] After vue 3.5, drop the Vue 3.2 attribute workarounds. Done
+      2026-09-28, but only two of the five items on this list were really
+      type workarounds:
+      - `BaseInput`'s `optionalAttrs` `v-bind` and `=== true` on `disabled`,
+        and the same `=== true` in `BaseSelect`: removed. `vue-tsc` stays at
+        0 errors and the rendered DOM is identical in every prop case.
+        `BaseSelect` is the fourth SFC of the four the note counted.
+      - `?? ''` on `value`: kept. Removing it drops the serialised
+        `value=""` attribute. `el.value` is `""` either way, so nothing a
+        nurse sees changes, but the panel gains nothing from the removal.
+      - `srcAttr` in `SnapshotCameraView`: kept. It is not a type
+        workaround. Its comment says an empty `src` resolves to the page URL
+        and raised a camera Error before the first frame was asked for.
+        vue 3.5 does not change that.
+      - `topBorder` in both camera views: nothing to remove. It is an
+        ordinary computed style object, never a workaround.
+- [ ] The panel tests keep six `as` and one `let resolve!:`. P5 lint
+      removes them.
+- [ ] The panel no longer reads the root `@types` folder. TypeScript 6
+      loads only what `types` names. The root `@types/*` can move to the
+      apps that use them.
+- [ ] Small panel leftovers: `VivotekCameraView` types `imageRef` as
+      `HTMLImageElement`, binds it to an `<iframe>`, and never reads it.
+      `SettingsFormTableRow` passes `:value` to `BaseInput` as a
+      fall-through attribute, not as `modelValue`. `maxH + 'px'` renders
+      `undefinedpx` when no size is passed. `settingsRowValueToValue` reads
+      `multiplier` and never uses it. `ConnectionResult` is defined twice.
+      `logic/settings/table.ts` is an empty file.
 
 ## Progress log
 
@@ -1448,3 +1778,36 @@ One line per landed step: date, PR, what moved.
   does not need a writable `/usr/local`. `startup.sh`, `bootstrap.js`, and
   `install-all.sh` already write that path. `install-all.sh` may still
   chown `/usr/local` for Node. That host stays.
+- 2026-09-25 — #128 — configer and the backend run on Bun 1.4.2. pm2 gets
+  the absolute Bun path from `apps/startup/start-app.js`. A hold OS, a CPU
+  hold, or a Bun that does not answer starts the same files on Node. The
+  pm2 daemon and the startup app stay on Node. The Windows install script
+  pins pm2. `legacy-boot1` runs the old startup app with pm2 5.2.0 and
+  6.0.14: the legacy `dist` starts on Bun after a failed build, the new
+  `dist` after a good one. `@types/node` 24 and `@types/bun` move to the
+  type-contract PR.
+- 2026-09-25 — #129 — configer, the backend and config-schema build with
+  TypeScript 6.0.3 under the contract flags. The backend is ESM. Its ten
+  test files run on vitest 0.9.4. The backend and configer dev servers run
+  under `bun --watch`. The panel stays on TypeScript 4.7.4 and `vue-tsc`
+  0.38.9. `@types/node` stays 18.x in the backend and configer until the
+  owner confirms.
+- 2026-09-25 — #130 — the panel builds with TypeScript 6.0.3 and
+  `vue-tsc` 3.3.11 under the contract flags. The build type-checks 99 files
+  in `src`; it checked none before. The tests and `vite.config.ts` are
+  checked in CI. vue, vue-router, pinia, vite and vitest are unchanged.
+- 2026-09-28 — #131 — the panel runs on vue 3.5.43, vue-router 5.3.1 and
+  pinia 4.0.3, still on vite 2.9.14. `vue-tsc` is at 0 errors on all three
+  tsconfigs, build stderr is 0 bytes, and the compiled CSS and every Czech
+  string are unchanged. The review added two test files, so the suite is 18
+  files and 189 tests, up from 16 and 172: the rendered `BaseInput`
+  attributes, and every panel route under vue-router 5.
+- 2026-09-28 — #132 — `legacy-image-release.sh` now runs the backend's
+  production block on Node, the pair a Bun-less box uses and the only one no
+  job covered.
+- 2026-09-28 — #132 — the backend and configer run on express 5.2.1 with a
+  JSON error middleware, and the backend, configer and startup libraries are
+  current. The SPA fallback is `/{*splat}`: express 5 rejects a bare `*` at
+  registration, which would have stopped every box from starting. pino stops
+  at 9.14.0, because pino 10 does not load on Node 18. lowdb stays at 3.0.0:
+  lowdb 7 breaks the failed-build rollback for configer.

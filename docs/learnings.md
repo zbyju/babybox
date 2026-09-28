@@ -8,16 +8,28 @@ lesson: what happened, what to do instead.
 - **Never run the machine's pnpm here.** It rewrites the lockfile format. Use
   `npx pnpm@7.5.0`. CI and every babybox install with `--frozen-lockfile` from that
   version; a lockfile in another format means the box does not start.
-- **A green build proves little for the panel.** `pnpm typecheck` on the panel is red
-  with 20 pre-existing errors and the build's type gate checks zero files. The docs
-  said 17 until P3 counted them on `origin/main` at 1927135. Record your own baseline
-  before you start; the bar is no new errors, not a green run.
+- **The panel build type-checks `src`, and only `src`.** Its gate is
+  `vue-tsc --noEmit -p tsconfig.app.json`, 99 files. Until the panel contract it ran
+  `vue-tsc --noEmit` on the solution `tsconfig.json` (`files: []`) and checked none,
+  while `typecheck` was red with 20 errors. The tests and `vite.config.ts` are
+  checked by `typecheck` in CI, not on the box. Prove a gate with `--listFilesOnly`,
+  not with a green run.
 - **The startup app treats any stderr from `pnpm run build` as a failed build.**
   A warning printed by `tsc` or a package script fails the update on the box.
-- **`tsc` picks up `bun-types` from a parent `node_modules`** (TS1005/TS1139 noise).
-  A package that needs no ambient types sets `"types": []` in its tsconfig, as
-  config-schema does. The backend needs Node types, so pass
-  `--typeRoots ./node_modules/@types` there.
+- **TypeScript 6 loads no `@types` package by itself.** Name what a unit needs
+  in `types`: `["node"]` in the backend and configer, `[]` in config-schema.
+  TypeScript 4.7 loaded every `@types` folder it found, `bun-types` from a
+  parent `node_modules` included (TS1005/TS1139 noise).
+- **TypeScript 6 fails an emit with `outDir` and no `rootDir`** (TS5011).
+  `tsc --noEmit` does not show it. Build once before you call a unit green.
+- **TypeScript 6 `tsc --build` writes `tsconfig.tsbuildinfo`** and then skips
+  a project it thinks is up to date. The backend builds with plain `tsc`.
+- **`verbatimModuleSyntax` keeps an unused value import in the emitted JS.**
+  A type needs `import type`, and an unused import has to go, or the `dist`
+  imports it at run time.
+- **Port 5000 on macOS is AirPlay** (`ControlCenter`), so the backend cannot
+  listen there on a Mac. Start a `dist` in Docker (`node:18.12.1-bullseye`
+  is arm64) to check `GET /status`.
 - **pnpm 7.5.0 cannot reach the registry on Node 20+** (`ERR_INVALID_THIS` from
   undici). Run it under Node 18 through npx instead:
   `npx -y -p node@18.12.1 -p pnpm@7.5.0 pnpm install` from `source/`. npx puts a
@@ -29,6 +41,30 @@ lesson: what happened, what to do instead.
 - **`pnpm view` is not a test of the above.** It shells out to the machine's npm, which
   fails under Node 18 with `tracingChannel is not a function`. Test with
   `pnpm install --lockfile-only` in a scratch folder.
+- **TypeScript 4.7 cannot read `@types/bun` 1.4.2 or `@types/node` 24.13.4.**
+  `bun-types` gives TS1005 and TS1139 parse errors, and `skipLibCheck` does not
+  hide a parse error. Check the package's `ts4.x` dist-tag before a types bump.
+  The `@types/bun` `ts4.7` tag is 1.1.5.
+- **`tsc --build` skips a project it thinks is up to date.** A types bump in the
+  backend exited 0 because nothing was rebuilt. Test a types bump with
+  `tsc --build --force`.
+- **`bun run` starts a bin with the first `node` on `PATH`.** Only with no `node`
+  there does the bin run on Bun. The panel build then fails, see "Panel".
+- **`composite` plus `vue-tsc -p` writes a `.tsbuildinfo` on every run.** A box
+  build would dirty the tree. The panel tsconfigs have no `composite`; TypeScript 6
+  accepts project references without it.
+- **vite 2.9 reads the tsconfig, but passes only six fields to esbuild:** `target`,
+  `jsxFactory`, `jsxFragmentFactory`, `useDefineForClassFields`,
+  `importsNotUsedAsValues`, `preserveValueImports`. `verbatimModuleSyntax` never
+  reaches esbuild. The new panel tsconfigs on unchanged `src` gave a byte-identical
+  bundle. vite also follows every reference of `tsconfig.json`, so a referenced
+  tsconfig whose `extends` does not resolve fails the vite build.
+- **zsh counts stderr wrong.** Its MULTIOS option copies a stream that is
+  redirected twice, so `2>&1 >/dev/null | wc -c` counts stdout too. Measure stderr
+  in bash.
+- **`npx -p node@12.22.12` does not run on Apple silicon.** There is no darwin-arm64
+  build of Node 12, and npx exits 1 with no message. Use the `node:12.22.12`
+  Docker image for a Node 12 parse.
 
 ## Configer
 
@@ -40,9 +76,9 @@ lesson: what happened, what to do instead.
 - **The db factory caches the init promise.** Each call to `mainConfig()` gets its
   own `data`. Two independent calls would drift apart the moment either one saw a
   PUT. Do not call it directly, use `DbFactory.getMainDb()`.
-- **vitest 0.9.4 runs configer's ESM TypeScript with no config file**, but vite 2 does
-  not resolve a `.js` import specifier to a `.ts` file. Import without the extension in
-  `*.test.ts`; the rest of `src` keeps `.js` because `tsc` runs with `module: node16`.
+- **vitest 0.9.4 runs configer's ESM TypeScript with no config file.** vite 2
+  resolves `./x.js` to `./x.ts`, which the backend tests rely on. A stale `x.js`
+  next to `x.ts` wins, so delete compiled output that lands in `src`.
 - **lowdb 3 already wrote a temp file and renamed it.** `JSONFile` goes through steno
   2.1.0, so a power cut could not leave a half-written `main.json`. What was missing was
   the `fsync` before the rename, a backup, and a boot that survives a corrupt file.
@@ -80,6 +116,47 @@ lesson: what happened, what to do instead.
 
 ## Backend
 
+- **Check which runtime and which code path each job actually exercises, not
+  just that a job is green.** `legacy-image-release.sh` seeds
+  `NODE_ENV=development`, so its only Node start skipped the production block,
+  while `legacy-boot1` entered that block only on Bun. The pair a Bun-less box
+  uses had no job at all, and that is where the `app.get("*")` throw lived.
+
+- **express 5 validates every route string at registration, including the ones
+  built from config.** path-to-regexp 8 throws for `{ } ( ) [ ] + ? !` and for
+  `:`/`*` with no name. `app.get(prefix + "/status")` with a config-set prefix
+  is therefore a startup crash waiting for a typo. Guard the prefix.
+- **An error middleware that answers `err.message` leaks the install path.**
+  `send()` marks its errors `expose: false` for that reason. Answer the status
+  text unless the thrower set `expose: true`, and log the whole error so the
+  stack is not lost with `finalhandler`.
+
+- **A green `legacy-image` job does not mean the rollback works.** `legacy-image`
+  only builds. `legacy-boot1` also forces a failed build and checks that the kept
+  `dist` still starts. A dependency major can pass the first and fail the second,
+  because `INSTALL` replaces `node_modules` before any build step runs, so the
+  kept `dist` is a stale compile against new packages.
+- **Only the backend `dist` is isolated.** `start-app.js` gives `../dist` its own
+  `node_modules` (`install: true`). configer runs from the shared
+  `source/node_modules`. So a configer dependency that moves an export breaks the
+  previous `dist`; the same bump in the backend does not.
+- **Read the test case name before you debug the error.** The lowdb crash in
+  `legacy-boot1` looked like the bug. It was the symptom of the deliberate
+  failed-build case one line above it in the log.
+
+- **Express 5 rejects a bare `*` route when it is registered.** path-to-regexp 8
+  throws `PathError: Missing parameter name at index 1: *`. Write `/{*splat}`.
+  The throw happens at registration, not on a request, so an app that only
+  registers the route in production fails to start on a box and passes every
+  test that does not build that block.
+- **`engines.node` is not a test of whether a package runs.** `open@11` declares
+  `>=20` and both loads and works on Node 18.12.1. `pino@10` declares no engines
+  at all and throws on Node 18, because it calls
+  `diagnostics_channel.tracingChannel`, which is Node 19.9+. Import it on the
+  runtime you care about and call it.
+- **dotenv 18 prints `◇ injected env (1) from .env` on stderr**, 31 bytes. Pass
+  `{ quiet: true }`. Measure in bash, not zsh.
+
 - **`fetchConfig()` returns no `data` key when it fails.** It answers
   `{ status: 408, msg }`, so `config = (await fetchConfig()).data` sets `undefined`
   and the next poll throws on `config.units.engine.ip`. Check for the key before any
@@ -89,19 +166,29 @@ lesson: what happened, what to do instead.
   process really serves may never have come from the config. Anything that compares
   a new config against "what we are running" has to compare against a value captured
   at listen time, not against `config.backend`.
-- **The backend's tests land in `dist`.** `tsconfig.json` includes all of `src` with
-  no test exclusion, unlike configer's. A test file that imports the schema for real
-  would fail CI's `! grep -rl config-schema apps/backend/dist`, so use `import type`
-  in tests too.
+- **The backend's tests used to land in `dist`.** Since the type contract its
+  tsconfig excludes `src/**/*.test.ts`, as configer's does. A box still keeps the
+  old `dist/__tests__/*.js`, because `tsc` does not clean `outDir`. Use
+  `import type` for the schema in tests anyway, so nothing can import it for real.
 - **Lint the backend before you build it in a clone.** eslint picks up
   `apps/backend/dist` once it exists, which produces phantom failures. CI lints
   before it builds, so it never sees them.
-- **jest ran every backend test twice on CI, and this file said it did not.** The
-  claim above used to cover jest as well. It was wrong: CI's order is install, lint,
-  build, grep, tests, so the jest step runs after `dist` exists and `jest --listTests`
-  found both copies — 172 cases where `src` alone has 86. `jest.config.json` now sets
-  `testPathIgnorePatterns` to `["/node_modules/", "/dist/"]`. Review finding on the P4
-  PR. Check the CI step order before writing down that a step never sees a build.
+- **jest ran every backend test twice on CI, and this file said it did not.** CI's
+  order is install, lint, build, grep, tests, so the jest step ran after `dist`
+  existed and found both copies. The backend now runs vitest, whose default exclude
+  has `**/dist/**`, and `dist` holds no test. Check the CI step order before writing
+  down that a step never sees a build.
+- **An ES module cannot call a namespace import.** `import * as express` then
+  `express()` is TS2349 and a TypeError at run time. Use a default import for a
+  CommonJS package (`express`, `cors`, `morgan`, `open`, `moment`, `winston`).
+  `import * as` stays fine for `path`, `fs` and `dotenv`, whose members we call.
+- **axios 0.27 is `axios.default` from an ES module.** Its types describe the
+  CommonJS entry as `{ default }`. At run time `module.exports.default` is the
+  same client. Back to `axios.get` with axios 1.x.
+- **`__dirname` compiles and runs on Bun, and throws on Node 18 in an ES
+  module.** `@types/node` declares it, and Bun defines it in ESM. The box's Node
+  18 fallback then fails with `ReferenceError`. Use
+  `path.dirname(fileURLToPath(import.meta.url))`.
 
 - **Both servers answer every interface and every origin.** `app.listen(port, cb)`
   with no host binds `0.0.0.0` in the backend and in configer, and both mount
@@ -123,6 +210,29 @@ lesson: what happened, what to do instead.
   backend's `package.json` breaks that install, so the backend can only share types.
 - **After `git pull` the box runs the root `build` script**, nothing else. A new build
   step belongs there, or the box never runs it.
+- **pm2 treats a Bun interpreter three ways.** 4.5.6 to 5.4.3 spawn
+  `<bun> <script>` directly. 6.0.x wraps any path that contains `bun` in
+  `ProcessContainerForkBun.js`. 7.0.4 wraps only a path that ends in `bun`, so it
+  spawns `bun.exe` directly. All of them accept an absolute interpreter path.
+- **Under Bun 1.4.2 `process.version` is `v26.3.0`.** The `node` field of
+  `GET /status` shows that value when the app runs on Bun.
+- **The legacy-image job never ran the old startup app.** It runs `git pull` and
+  `pnpm run build` itself, then HEAD's startup app. Boot 1 with the old app had no
+  test until `legacy-boot1`.
+- **`pm2 -v` after `pm2 kill` prints `[PM2] Spawning PM2 daemon` first.** It
+  starts the daemon. Read `pm2 jlist` from the first `[{` or `[]`, not from the
+  first `[`.
+- **A `.js` file under a `"type": "module"` package is ESM.** The legacy-image
+  helper that runs `require("fs")` in `apps/backend` had to become
+  `omit-dist-entry.cjs`. `node -e` code stays CommonJS.
+- **`bun install --no-save` prints on stderr when the folder has `.env`.** Bun
+  1.4.2 writes the `.env` load and the resolve lines there. Exit 0, the lock does
+  not change. Without `.env` it prints nothing. A step that fails on stderr must
+  not run it in `dist`.
+- **Docker on Apple silicon runs the x64 image through rosetta.**
+  `/proc/<pid>/exe` then points at `/run/rosetta/rosetta`, not at the real
+  binary. The executable check in `assert-runtime.js` only holds on a real x64
+  host such as CI.
 
 ## Process
 
@@ -152,6 +262,22 @@ lesson: what happened, what to do instead.
   `pnpm run build:schema` from `source/` first.
 
 ## Panel
+
+- **`@vitejs/plugin-vue` resolves `@vue/compiler-sfc` from the installed vue**, so a
+  four-year gap between the plugin and the compiler still compiles. plugin-vue 2.3.3
+  builds vue 3.5.43 SFCs on vite 2.9.14: 411 modules, 0 stderr, `vue-tsc` at 0 errors,
+  172 unit tests green. Do not assume a vue bump needs the matching plugin major.
+  Check it with a build.
+- **Not every `v-bind` of an optional attribute is a type workaround.** Before you
+  remove one, read why it is there. `srcAttr` in `SnapshotCameraView` keeps `src` off
+  the `<img>` while the url is empty, because an empty `src` resolves to the page URL
+  and raises the camera Error before the first frame is asked for. `topBorder` is a
+  plain computed style. Only `BaseInput`'s `optionalAttrs` and its `=== true` on
+  `disabled` were there for vue 3.2's DOM types.
+- **Compare the rendered DOM, not the HTML string, when you change a binding.**
+  Dropping `?? ''` from `:value` leaves `el.value` as `""` but removes the serialised
+  `value=""` attribute, so an `innerHTML` diff shows a change that no user can see.
+  Check `el.value` and `el.disabled` as well.
 
 - **The config store is set once at boot, so no field is "live".** `setConfig()` runs
   in `initializeConfig()` and nowhere else. A component that reads the store
@@ -184,6 +310,40 @@ lesson: what happened, what to do instead.
   "remote maintenance" `CLAUDE.md` talks about is a remote session on the box, not a
   browser pointed at it. That is what makes a loopback bind safe to consider.
 
+- **`vue-tsc` on the Bun runtime checks no `.vue` file.** It fails with TS2307
+  "Cannot find module './App.vue'" and exit 2. BUILD_PANEL works because the
+  runner runs on Node and `bun run` picks that `node`. Test the build with no
+  `node` on `PATH` before anything removes Node from a box.
+- **`vue-tsc` 3.3.11 does not start on Node 14.** `@volar/source-map` uses `??=`,
+  a SyntaxError there. Node 16.20.2 and 18.12.1 pass. `vue-tsc` 0.38.9 ran on 14,
+  so a box whose first `node` is 14 now fails BUILD_PANEL.
+- **vite 2.9.14 cannot read a tsconfig `extends` array.** Its bundled
+  tsconfck passes the array to `path.isAbsolute` and throws. `vite build`
+  and vitest 0.9.4 reach `tsconfig.app.json` through the `references` in
+  the panel `tsconfig.json`, so an array there fails BUILD_PANEL and a
+  panel test suite. `vue-tsc` reads the array fine. `esbuild.tsconfigRaw`
+  in `vite.config.ts` does not help: `@vitejs/plugin-vue` reads the
+  tsconfig for `.vue` files itself.
+- **chai's `should` breaks Vue's `UnwrapRef` when tests share a program with store
+  code.** vitest brings chai, which gives every object a `should` property. A
+  Moment inside a pinia store then no longer matches its own type. 13 of the 20
+  old panel errors were this. `vitest.env.ts` adds chai's `Assertion` to
+  `RefUnwrapBailTypes` on `@vue/reactivity`. That needs `@vue/reactivity` as a
+  direct devDependency: Bun does not link it into the panel, and vue 3.2.37 does
+  not re-export the interface.
+- **`skipLibCheck` also skips our own `.d.ts` files.** As `vitest.env.d.ts`, a
+  wrong `Chai` name was not reported on its line. The bail type turned into
+  `any`, and the only error was a TS7006 in `appStateStore.ts`. Write such a file
+  as `.ts` with `export {}`, so the compiler checks it.
+- **Vue 3.2 DOM types reject `undefined` under `exactOptionalPropertyTypes`.**
+  `:src="url || undefined"`, `:pattern="maybe"` and a style object with an
+  `undefined` value are errors. Leave the attribute off with `v-bind` of an object
+  that lacks the key. Never write `pattern=""`: an empty pattern rejects every
+  value that is not empty.
+- **vue-router 4.1.3 on vue 3.2.37 does not type-check `<router-link>` props.** It
+  extends `GlobalComponents`, which vue 3.2.37 does not have, so `:to="12345"`
+  passes the gate.
+
 - **Nothing in the panel may block the event loop.** `App.vue` heartbeats the backend
   every 5s and `restart.ts` reboots the machine after 9 missed ticks, so a
   `window.confirm`, an `alert` or a sync XHR reboots the box in about three minutes.
@@ -198,9 +358,15 @@ lesson: what happened, what to do instead.
 - **jest 28's node environment does not expose the global `fetch`** that Node 18 has.
   A backend test that needs an HTTP client uses `axios`, which the backend already
   depends on, or `node:http` directly.
-- **A backend route that reads `index.ts` needs `jest.doMock("../..")`.** Importing
-  `index.ts` for real starts the whole server, `main()` runs on import. Mock it and
-  the route's own `fetchConfig`, then mount the router on a bare express app.
+- **A backend route that reads `index.ts` needs `vi.doMock("../../index.js")`.**
+  Importing `index.ts` for real starts the whole server, `main()` runs on import.
+  Call `vi.resetModules()`, mock it and the route's own `fetchConfig`, then
+  `await import("../reloadRoute.js")` and mount the router on a bare express app.
+- **vitest 0.9.4 cannot run on the Bun runtime.** `bun --bun vitest run` fails on
+  `node:v8` `takeCoverage`. Run it on Node, as `bun --filter … test` does.
+- **vitest 5 needs vite 6.4 or newer, and it must be a direct dependency.** Without
+  it Bun links the panel's vite 2.9.14 and vitest crashes. A non-frozen install
+  prints a peer warning on stderr. With vite 8.3.0 it fails on Node 18.
 - **The panel's vitest run is `--environment jsdom`, so `sessionStorage` is there.**
   A test of it has to `sessionStorage.clear()` between cases; the store is shared
   across the file.

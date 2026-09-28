@@ -1,10 +1,11 @@
 import axios from "axios";
-import * as express from "express";
+import express from "express";
 import * as fs from "fs";
 import * as http from "http";
 import type { AddressInfo } from "net";
 import * as os from "os";
 import * as path from "path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 /*
  * The production block of index.ts, rebuilt here. Importing index.ts for real runs
@@ -36,7 +37,7 @@ describe("the panel fallback in production", () => {
       });
     });
 
-    app.get("*", (req, res) => {
+    app.get("/{*splat}", (req, res) => {
       res.sendFile(path.join(publicDir, "index.html"), {
         headers: { "Cache-Control": "no-cache" },
       });

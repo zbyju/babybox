@@ -1,7 +1,13 @@
-export const isNullish = (val: any): boolean => {
+export const isNullish = (val: unknown): val is null | undefined => {
   return val === null || val === undefined;
 };
 
-export const whenNotNullish = (val: any, to: any): any => {
+export const whenNotNullish = <T>(
+  val: unknown,
+  to: T,
+): T | null | undefined => {
   return isNullish(val) ? val : to;
 };
+
+export const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);

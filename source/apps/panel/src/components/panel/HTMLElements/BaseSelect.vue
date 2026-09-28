@@ -1,7 +1,7 @@
 <template>
   <select
     class="base-select"
-    :value="props.modelValue"
+    :value="props.modelValue ?? ''"
     :class="classState"
     :disabled="props.disabled"
     @change="selectChange"
@@ -29,7 +29,9 @@
   }>();
 
   function selectChange(event: Event) {
-    emit("update:modelValue", (event.target as HTMLSelectElement).value);
+    if (event.target instanceof HTMLSelectElement) {
+      emit("update:modelValue", event.target.value);
+    }
   }
 
   const classState = computed(() =>

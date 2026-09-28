@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { describe, expect, it } from "vitest";
 
 import {
   cachedRuntimeVersions,
@@ -9,7 +10,7 @@ import {
   runtimeVersions,
   startupLastFor,
   statusBody,
-} from "../runtimeVersions";
+} from "../runtimeVersions.js";
 
 describe("runtimeVersions", () => {
   it("reports node and the command output", () => {

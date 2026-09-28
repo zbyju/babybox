@@ -1,30 +1,39 @@
-import * as cors from "cors";
+import cors from "cors";
 import * as dotenv from "dotenv";
-import * as express from "express";
-import * as morgan from "morgan";
+import express from "express";
+import morgan from "morgan";
+import open from "open";
 import * as path from "path";
-import open = require("open");
-import { fetchConfig } from "./fetch/fetchConfig";
+import { fileURLToPath } from "url";
+
+import { fetchConfig } from "./fetch/fetchConfig.js";
+import { jsonErrors } from "./middleware/jsonErrors.js";
 import type {
   BackendReadableConfig,
   BoundAddress,
-} from "./modules/configReload";
-import { modulesObject } from "./modules/init";
-import { router as engineRoute } from "./routes/engineRoute";
-import { router as reloadRoute } from "./routes/reloadRoute";
-import { router as restartRoute } from "./routes/restartRoute";
-import { router as thermalRoute } from "./routes/thermalRoute";
-import { router as unitsRoute } from "./routes/unitsRoute";
+} from "./modules/configReload.js";
+import { modulesObject } from "./modules/init.js";
+import { router as engineRoute } from "./routes/engineRoute.js";
+import { router as reloadRoute } from "./routes/reloadRoute.js";
+import { router as restartRoute } from "./routes/restartRoute.js";
+import { router as thermalRoute } from "./routes/thermalRoute.js";
+import { router as unitsRoute } from "./routes/unitsRoute.js";
+import { safeRoutePrefix } from "./utils/routePrefix.js";
 import {
   cachedRuntimeVersions,
   startupLastFor,
   statusBody,
-} from "./utils/runtimeVersions";
-import { wait } from "./utils/wait";
+} from "./utils/runtimeVersions.js";
+import { wait } from "./utils/wait.js";
 
 const CONFIG_RETRY_DELAY_MS = 5000;
 
-const PUBLIC_DIR = path.join(__dirname, "public");
+/*
+ * Not import.meta.dirname: that needs Node 20.11.
+ * The box's Node 18 starts this dist when Bun is missing.
+ */
+const APP_DIR = path.dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = path.join(APP_DIR, "public");
 const HASHED_ASSETS_DIR = path.join(PUBLIC_DIR, "assets");
 
 /* Revalidate on every load, so a deployed update is picked up right away. */
@@ -55,7 +64,8 @@ function setPanelCacheHeaders(res: express.Response, filePath: string) {
 }
 
 // modulesObject() reads the RESTART_* vars, so .env has to be loaded before it.
-dotenv.config();
+// quiet: 18 prints the loaded file on stderr, which fails a box build.
+dotenv.config({ quiet: true });
 
 export const modules = modulesObject();
 
@@ -85,7 +95,7 @@ async function main() {
    */
   let c = await fetchConfig();
   let attempt = 1;
-  while (!c.data) {
+  while (c.status !== 200 || !c.data) {
     console.log(
       `Config not available (attempt ${attempt}): ${c.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
     );
@@ -93,13 +103,20 @@ async function main() {
     c = await fetchConfig();
     attempt++;
   }
-  config = c.data;
+  /*
+   * Boot takes what configer sends without a check, as it always has.
+   * A check here would keep a box with one odd stored value from ever listening.
+   * POST /reload checks with isBackendReadableConfig before it swaps.
+   */
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- boot trusts configer, see above
+  const loaded = c.data as BackendReadableConfig;
+  config = loaded;
 
   const app = express();
-  const port = config?.backend.port || process.env.PORT || 5000;
+  const port = loaded.backend.port || process.env["PORT"] || 5000;
 
   // Setup logger - morgan
-  if (process.env.NODE_ENV === "development") {
+  if (process.env["NODE_ENV"] === "development") {
     app.use(morgan("dev"));
   }
 
@@ -113,12 +130,18 @@ async function main() {
   // Parse JSON in POST requests
   app.use(express.json());
 
-  const prefix = config.backend.url || process.env.API_PREFIX || "";
+  const rawPrefix = loaded.backend.url || process.env["API_PREFIX"] || "";
+  const prefix = safeRoutePrefix(rawPrefix);
+  if (prefix !== rawPrefix) {
+    console.error(
+      `API prefix ${rawPrefix} is not a valid route, serving without one.`
+    );
+  }
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
     res.status(200).send(
-      statusBody(cachedRuntimeVersions(), startupLastFor(__dirname))
+      statusBody(cachedRuntimeVersions(), startupLastFor(APP_DIR))
     );
   });
 
@@ -130,7 +153,7 @@ async function main() {
   app.use(prefix + "/reload", reloadRoute);
 
   // Serve Frontend app if running in production
-  if (process.env.NODE_ENV === "production") {
+  if (process.env["NODE_ENV"] === "production") {
     app.use(express.static(PUBLIC_DIR, { setHeaders: setPanelCacheHeaders }));
 
     app.get("/", (req, res) => {
@@ -145,25 +168,35 @@ async function main() {
      * "Cannot GET /config". The save path ends in window.location.reload(), so the
      * config page could not come back up. Registered after the API routes and after
      * express.static, so it only sees what nothing else matched.
+     * Express 5 rejects a bare "*": path-to-regexp 8 wants a named splat.
      */
-    app.get("*", (req, res) => {
+    app.get("/{*splat}", (req, res) => {
       res.sendFile(path.join(PUBLIC_DIR, "index.html"), {
         headers: { "Cache-Control": INDEX_CACHE_CONTROL },
       });
     });
 
-    open("http://localhost:" + port);
+    /*
+     * A browser that will not open is not a reason to stop serving. Without
+     * the catch the rejected promise ends the process on Node 15 and newer.
+     */
+    open("http://localhost:" + port).catch((err: unknown) => {
+      console.error(err instanceof Error ? err.message : String(err));
+    });
   }
+
+  // Last, so it sees what every route above threw.
+  app.use(jsonErrors);
 
   bound = { port, prefix };
 
   app.listen(port, () => {
     const color =
-      process.env.NODE_ENV === "production" ? "\x1b[32m" : "\x1b[35m";
+      process.env["NODE_ENV"] === "production" ? "\x1b[32m" : "\x1b[35m";
 
     console.log(
       `Babybox backend running in ${color}\x1b[1m%s\x1b[0m and listening on port \x1b[1m%s`,
-      process.env.NODE_ENV,
+      process.env["NODE_ENV"],
       port
     );
   });

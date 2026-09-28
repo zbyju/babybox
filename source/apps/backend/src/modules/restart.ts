@@ -1,15 +1,14 @@
-import { Moment } from "moment";
-import moment = require("moment");
-
 import { exec } from "child_process";
+import type { Moment } from "moment";
+import moment from "moment";
+import winston from "winston";
 
-import { RestartRepository } from "../types/restart.types";
+import { config } from "../index.js";
+import type { RestartRepository } from "../types/restart.types.js";
 import {
   getFullTimeFormatted,
   getTimeDifferenceInSeconds,
-} from "../utils/time";
-import winston = require("winston");
-import { config } from "..";
+} from "../utils/time.js";
 
 export const restartRepository = function (): RestartRepository {
   const logger = winston.createLogger({
@@ -19,11 +18,13 @@ export const restartRepository = function (): RestartRepository {
     transports: [new winston.transports.File({ filename: "logs/restart.log" })],
   });
 
-  let lastRequest = null as Moment;
+  let lastRequest: Moment | null = null;
   let errorStreak = 0;
   let isRestarting = false;
-  const errorThreshold = parseInt(process.env.RESTART_ERROR_THRESHOLD) || 9;
-  const interval: number = parseInt(process.env.RESTART_INTERVAL) || 20000;
+  const errorThreshold =
+    parseInt(process.env["RESTART_ERROR_THRESHOLD"] ?? "") || 9;
+  const interval: number =
+    parseInt(process.env["RESTART_INTERVAL"] ?? "") || 20000;
 
   function onIncomingRequest(): void {
     lastRequest = moment();

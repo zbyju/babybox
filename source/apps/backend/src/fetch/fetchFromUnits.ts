@@ -1,29 +1,42 @@
-import { config } from "..";
-import {
-  CommonDataRequestQuery,
+import type {
   CommonDataResponse,
   CommonResponse,
-  GetUnitSettingsRequest,
-  isInstanceOfGetUnitSettingsRequest,
   Setting,
   SettingResult,
-} from "../types/request.types";
-import { Action, Unit } from "../types/units.types";
-import { actionToUnit, actionToUrl, unitToIp } from "../utils/url";
-import { wait } from "../utils/wait";
-import { defaultFetchTimeout } from "./constants";
-import { fetchFromUrl } from "./fetch";
-import { onUnit, sharedOnUnit } from "./unitGate";
+} from "../types/request.types.js";
+import { isInstanceOfGetUnitSettingsRequest } from "../types/request.types.js";
+import type { Action } from "../types/units.types.js";
+import { Unit } from "../types/units.types.js";
+import { actionToUnit, actionToUrl, unitToIp } from "../utils/url.js";
+import { wait } from "../utils/wait.js";
+import { defaultFetchTimeout } from "./constants.js";
+import { fetchFromUrl } from "./fetch.js";
+import { onUnit, sharedOnUnit } from "./unitGate.js";
+
+/*
+ * The panel sends no timeout. A test or a person with curl may.
+ * Only a whole number of ms from 1 to 2147483647 is used.
+ * Anything else is the default,
+ * because axios turns a fraction below 1 into 0, which means no timeout,
+ * and Node fires a longer timer after 1 ms.
+ */
+function queryTimeout(query: unknown): number {
+  if (typeof query !== "object" || query === null || !("timeout" in query)) {
+    return defaultFetchTimeout();
+  }
+  const timeout = Number(query.timeout);
+  return Number.isInteger(timeout) && timeout >= 1 && timeout <= 2147483647
+    ? timeout
+    : defaultFetchTimeout();
+}
 
 export async function fetchDataCommon(
   unit: Unit,
   query: unknown
 ): Promise<CommonDataResponse> {
-  const { timeout = defaultFetchTimeout() } = query as CommonDataRequestQuery;
+  const timeout = queryTimeout(query);
 
-  const url = `http://${
-    unit === Unit.Engine ? config.units.engine.ip : config.units.thermal.ip
-  }/get_ram[0]?rn=60`;
+  const url = `http://${unitToIp(unit)}/get_ram[0]?rn=60`;
 
   try {
     const data = await sharedOnUnit(unit, `data:${timeout}`, () =>
@@ -51,8 +64,7 @@ export async function fetchSettings(
       msg: "Unit was specified, but it is wrong. Expected values are: 'engine' or 'thermal'.",
     };
   }
-  const { unit = "both", timeout = defaultFetchTimeout() } =
-    query as GetUnitSettingsRequest;
+  const { unit = "both", timeout = defaultFetchTimeout() } = query;
 
   const timestamp = new Date().getTime();
   const settingsUrl = (u: Unit) =>
@@ -146,7 +158,7 @@ export async function fetchAction(action: Action): Promise<CommonDataResponse> {
 export async function updateWatchdog(): Promise<CommonResponse> {
   try {
     await onUnit(Unit.Engine, () =>
-      fetchFromUrl(`http://${config.units.engine.ip}/sdscep?sys141=115`)
+      fetchFromUrl(`http://${unitToIp(Unit.Engine)}/sdscep?sys141=115`)
     );
     return {
       status: 200,
@@ -256,6 +268,7 @@ async function updateSetting(
     const valueResult = await fetchFromUrl(urlValue, timeout);
     const indexResult = await fetchFromUrl(urlIndex, timeout);
     const verification = await fetchFromUrl(urlVerification, timeout);
+    if (typeof verification.data !== "string") return false;
     const verificationArray = verification.data.split("|");
     return (
       isStatusOk(indexResult.status) &&
