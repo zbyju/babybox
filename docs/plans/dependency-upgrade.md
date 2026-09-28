@@ -1770,3 +1770,8 @@ One line per landed step: date, PR, what moved.
   string are unchanged. The review added two test files, so the suite is 18
   files and 189 tests, up from 16 and 172: the rendered `BaseInput`
   attributes, and every panel route under vue-router 5.
+- 2026-09-28 — #132 — the backend and configer run on express 5.2.1 with a
+  JSON error middleware, and the backend, configer and startup libraries are
+  current. The SPA fallback is `/{*splat}`: express 5 rejects a bare `*` at
+  registration, which would have stopped every box from starting. pino stops
+  at 9.14.0, because pino 10 does not load on Node 18.
