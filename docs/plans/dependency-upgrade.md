@@ -1740,3 +1740,7 @@ One line per landed step: date, PR, what moved.
   `vue-tsc` 3.3.11 under the contract flags. The build type-checks 99 files
   in `src`; it checked none before. The tests and `vite.config.ts` are
   checked in CI. vue, vue-router, pinia, vite and vitest are unchanged.
+- 2026-09-28 — #131 — the panel runs on vue 3.5.43, vue-router 5.3.1 and
+  pinia 4.0.3, still on vite 2.9.14. `vue-tsc` is at 0 errors on all three
+  tsconfigs, the 172 unit tests pass, build stderr is 0 bytes, and the
+  compiled CSS and every Czech string are unchanged.
