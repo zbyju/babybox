@@ -1314,6 +1314,11 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
       win. Delete the panel copy of the 12 flags. Decided 2026-09-25.
       Checked on vite 8.3.0 and @vitejs/plugin-vue 6.0.9: same bundle, all
       12 flags. Check vitest 5 with the array before this box is ticked.
+- [x] `apps/panel/vite.config.ts` sets `define: { __VUE_PROD_DEVTOOLS__: false }`.
+      pinia 4 needs `@vue/devtools-api` as a non-optional peer, and only a
+      guard on that flag keeps `@vue/devtools-kit` out of the bundle. Added in
+      #131 so the Vite 8 swap cannot quietly undo it. `legacy-image` never
+      reads bundle content, so a regression would be silent.
 - [ ] Prove `bun install` accepts jsdom 30.1.0 (`engines.node` is `^22.22.2 ||
       ^24.15.0 || >=26`). If it refuses, pin the newest jsdom that Bun accepts
       and record the pin here. Do not turn on `engine-strict`.

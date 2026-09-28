@@ -1372,6 +1372,29 @@ Context · Decision · Why · Gave up · Where
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
   questions".
 
+## 2026-09-28 — The panel says __VUE_PROD_DEVTOOLS__ is false
+
+- Context: pinia 4 declares `@vue/devtools-api` as a peer with
+  `"optional": false`, so the panel must declare it, and it pulls
+  `@vue/devtools-kit`. Vite resolves pinia's `.` export to `dist/pinia.js`,
+  which imports devtools behind a `typeof __VUE_PROD_DEVTOOLS__` guard. The
+  panel's `vite.config.ts` set no `define`, so the guard was folded by whatever
+  bundler happened to be installed.
+- Decision: `define: { __VUE_PROD_DEVTOOLS__: false }` in
+  `apps/panel/vite.config.ts`. Owner chose this in the review of #131.
+- Why: today Rollup 2 folds the guard and the bundle is clean, but nothing in
+  the repo says it must be. P5 replaces Rollup 2 with Rolldown, and
+  `legacy-image` only checks the exit code, an empty stderr and a clean tree —
+  it never reads bundle content or size. So a regression there would be
+  silent, on the screen a nurse uses. Measured with the define on vite 2.9.14:
+  build exit 0, 0 bytes of stderr, no `devtools` string in the assets,
+  `vue-tsc` clean on all three tsconfigs, 189 tests green, and the bundle is 5
+  bytes smaller (353 180 against 353 185).
+- Gave up: leaving it to the Vite 8 pull request. That one already carries
+  Rolldown, vitest 5 and jsdom 30; a red or fat result there should point at
+  one cause.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5.
+
 ## 2026-09-28 — The startup app stops at pino 9, not pino 10
 
 - Context: the P4 box says `pino 10.3.1`. The plan added "upgrade only after
