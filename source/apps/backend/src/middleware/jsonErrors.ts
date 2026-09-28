@@ -20,7 +20,8 @@ function statusOf(err: unknown): number {
  * Without this the built-in handler answers with an HTML page,
  * and the panel reads every answer as JSON.
  */
-export const jsonErrors: ErrorRequestHandler = (err, _req, res, next) => {
+// err: express types it any, and the contract bans any.
+export const jsonErrors: ErrorRequestHandler = (err: unknown, _req, res, next) => {
   if (res.headersSent) {
     next(err);
     return;
