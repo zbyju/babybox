@@ -1,6 +1,5 @@
 import cors from "cors";
 import * as dotenv from "dotenv";
-import { jsonErrors } from "./middleware/jsonErrors.js";
 import express from "express";
 import morgan from "morgan";
 import open from "open";
@@ -8,6 +7,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 import { fetchConfig } from "./fetch/fetchConfig.js";
+import { jsonErrors } from "./middleware/jsonErrors.js";
 import type {
   BackendReadableConfig,
   BoundAddress,
