@@ -222,6 +222,22 @@ lesson: what happened, what to do instead.
 
 ## Panel
 
+- **`@vitejs/plugin-vue` resolves `@vue/compiler-sfc` from the installed vue**, so a
+  four-year gap between the plugin and the compiler still compiles. plugin-vue 2.3.3
+  builds vue 3.5.43 SFCs on vite 2.9.14: 411 modules, 0 stderr, `vue-tsc` at 0 errors,
+  172 unit tests green. Do not assume a vue bump needs the matching plugin major.
+  Check it with a build.
+- **Not every `v-bind` of an optional attribute is a type workaround.** Before you
+  remove one, read why it is there. `srcAttr` in `SnapshotCameraView` keeps `src` off
+  the `<img>` while the url is empty, because an empty `src` resolves to the page URL
+  and raises the camera Error before the first frame is asked for. `topBorder` is a
+  plain computed style. Only `BaseInput`'s `optionalAttrs` and its `=== true` on
+  `disabled` were there for vue 3.2's DOM types.
+- **Compare the rendered DOM, not the HTML string, when you change a binding.**
+  Dropping `?? ''` from `:value` leaves `el.value` as `""` but removes the serialised
+  `value=""` attribute, so an `innerHTML` diff shows a change that no user can see.
+  Check `el.value` and `el.disabled` as well.
+
 - **The config store is set once at boot, so no field is "live".** `setConfig()` runs
   in `initializeConfig()` and nowhere else. A component that reads the store
   reactively still follows a value that never changes, and `BabyboxName.vue` copies

@@ -1240,8 +1240,12 @@ TypeScript contract. Do not add `tsx`.
 - [x] Configer: confirm with `tsc --noEmit` under the contract. Config-schema:
       confirm the same; it is already on `node16` / `strict`
 - [x] `ts-node` / `nodemon` → `bun --watch` for backend and configer
-- [ ] vue 3.5.43, vue-router 5.3.1, pinia 4.0.3 + `@vue/devtools-api`, lodash 4.18.1,
-      howler 2.2.4, moment 2.31.0, stylus 0.64.0
+- [x] vue 3.5.43, vue-router 5.3.1, pinia 4.0.3 + `@vue/devtools-api` 8.2.1,
+      lodash 4.18.1, howler 2.2.4, moment 2.31.0, stylus 0.64.0.
+      `@vue/reactivity` moved to 3.5.43 with vue, and `@types/howler` to
+      2.2.13 and `@types/lodash` to 4.17.25.
+      Done on vite 2.9.14 and `@vitejs/plugin-vue` 2.3.3. This bump does
+      **not** need Vite 8; see the decision of 2026-09-28.
 - [ ] axios 1.20.0 in the backend only
 - [ ] express 5.2.1 + `@types/express@5` in backend and configer; add a JSON error
       middleware to both; extend the empty-body and missing-Content-Type tests for
@@ -1576,12 +1580,30 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       BUILD_PANEL has no `node` to run it on.
 - [ ] Measure the panel build on a real box. The P4 numbers come from
       Docker on Apple silicon.
-- [ ] `<router-link>` and `<router-view>` props are not type-checked.
+- [x] `<router-link>` and `<router-view>` props are not type-checked.
       vue-router 4.1.3 extends `GlobalComponents`, which vue 3.2.37 does not
-      have. Check again after vue 3.5.
-- [ ] After vue 3.5, drop the Vue 3.2 attribute workarounds: the optional
-      attributes in `BaseInput`, `srcAttr` and `topBorder` in the camera
-      views, `?? ''` and `=== true` on `value` and `disabled`.
+      have. Answered 2026-09-28: vue 3.5.43 has `GlobalComponents` and
+      vue-router 5.3.1 extends it, so the props are type-checked now.
+      `:to="123"` gives `TS2322: Type 'number' is not assignable to type
+      'string | RouteLocationAsRelativeGeneric | RouteLocationAsPathGeneric'`.
+      The one call site in `TheNav.vue` already passes a correct `to`, so
+      nothing had to change. An extra unknown attribute still passes, because
+      that is a legal fall-through attribute, not a hole in the typing.
+- [x] After vue 3.5, drop the Vue 3.2 attribute workarounds. Done
+      2026-09-28, but only two of the five items on this list were really
+      type workarounds:
+      - `BaseInput`'s `optionalAttrs` `v-bind` and `=== true` on `disabled`:
+        removed. `vue-tsc` stays at 0 errors and the rendered DOM is
+        identical in all six prop cases.
+      - `?? ''` on `value`: kept. Removing it drops the serialised
+        `value=""` attribute. `el.value` is `""` either way, so nothing a
+        nurse sees changes, but the panel gains nothing from the removal.
+      - `srcAttr` in `SnapshotCameraView`: kept. It is not a type
+        workaround. Its comment says an empty `src` resolves to the page URL
+        and raised a camera Error before the first frame was asked for.
+        vue 3.5 does not change that.
+      - `topBorder` in both camera views: nothing to remove. It is an
+        ordinary computed style object, never a workaround.
 - [ ] The panel tests keep six `as` and one `let resolve!:`. P5 lint
       removes them.
 - [ ] The panel no longer reads the root `@types` folder. TypeScript 6

@@ -1331,3 +1331,41 @@ Context · Decision · Why · Gave up · Where
 - Gave up: `"build": "vite build"` with the gate in CI only.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
   constraints" and "Open questions".
+
+## 2026-09-28 — The vue 3.5 bump does not need Vite 8
+
+- Context: the plan's "Pull requests from here" item 4 assumed the panel
+  library bumps might have to move into or after the Vite 8 pull request,
+  because `@vitejs/plugin-vue` 2.3.3 is four years older than vue 3.5's
+  compiler and pinia 4 is ESM-only.
+- Decision: the vue, vue-router and pinia bumps land on the current
+  toolchain, before Vite 8, as their own pull request.
+- Why: measured. On vite 2.9.14 with `@vitejs/plugin-vue` 2.3.3, a panel on
+  vue 3.5.43, pinia 4.0.3 and vue-router 5.3.1 builds 411 modules with 0
+  bytes of stderr, `vue-tsc` finds 0 errors on all three tsconfigs, and all
+  172 unit tests pass. plugin-vue resolves `@vue/compiler-sfc` from the
+  installed vue, so the plugin's own age does not matter. esbuild 0.14
+  handles pinia 4.
+- Gave up: stacking the library bumps on the Vite 8 pull request. That
+  would have made the Vite 8 change carry two risks at once.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and
+  "Pull requests from here".
+
+## 2026-09-28 — Only two of the five Vue 3.2 attribute workarounds were workarounds
+
+- Context: an open question listed five things to drop after vue 3.5: the
+  optional attributes in `BaseInput`, `srcAttr` and `topBorder` in the
+  camera views, and `?? ''` and `=== true` on `value` and `disabled`.
+- Decision: drop `BaseInput`'s `optionalAttrs` `v-bind` and the `=== true`
+  on `disabled`. Keep `?? ''` on `value`, keep `srcAttr`, and leave
+  `topBorder` alone.
+- Why: `srcAttr` guards a real browser behaviour, not a type. Its comment
+  says an empty `src` resolves to the page URL and raised a camera Error
+  before the first frame had been asked for. `topBorder` is an ordinary
+  computed style object and never was a workaround. Removing `?? ''` drops
+  the serialised `value=""` attribute; `el.value` is `""` either way, so the
+  change buys nothing on a nurse-facing input. The two that were dropped
+  render identically in all six prop cases, checked with the installed vue
+  and jsdom.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
+  questions".
