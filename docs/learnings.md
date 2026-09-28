@@ -116,6 +116,19 @@ lesson: what happened, what to do instead.
 
 ## Backend
 
+- **A green `legacy-image` job does not mean the rollback works.** `legacy-image`
+  only builds. `legacy-boot1` also forces a failed build and checks that the kept
+  `dist` still starts. A dependency major can pass the first and fail the second,
+  because `INSTALL` replaces `node_modules` before any build step runs, so the
+  kept `dist` is a stale compile against new packages.
+- **Only the backend `dist` is isolated.** `start-app.js` gives `../dist` its own
+  `node_modules` (`install: true`). configer runs from the shared
+  `source/node_modules`. So a configer dependency that moves an export breaks the
+  previous `dist`; the same bump in the backend does not.
+- **Read the test case name before you debug the error.** The lowdb crash in
+  `legacy-boot1` looked like the bug. It was the symptom of the deliberate
+  failed-build case one line above it in the log.
+
 - **Express 5 rejects a bare `*` route when it is registered.** path-to-regexp 8
   throws `PathError: Missing parameter name at index 1: *`. Write `/{*splat}`.
   The throw happens at registration, not on a request, so an app that only

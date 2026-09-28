@@ -1406,3 +1406,32 @@ Context · Decision · Why · Gave up · Where
   `/settings/deep/path` and `/favicon.ico` all fall through to the SPA.
 - Gave up: nothing. There is no reason to keep the old spelling.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-28 — A failed build only rolls back cleanly for the backend
+
+- Context: the safe-release design says a failed build keeps the last good
+  `dist` and starts that. `legacy-boot1` tests exactly this, in the case
+  "boot 1 with a failed build starts the legacy dist on Bun".
+- What we found: the guarantee holds for the backend and not for configer.
+  `start-app.js` starts the backend from `../dist` with `install: true`, so
+  that folder gets its own `node_modules` from the copied lockfile. configer
+  runs `apps/configer/dist/index.js` with `install: false`, so it resolves
+  from the shared `source/node_modules`. `INSTALL` runs before every build
+  step, so by the time a build fails the shared `node_modules` already holds
+  the new versions, and the kept configer `dist` is a stale compile against
+  them.
+- Decision: **no configer runtime dependency may move its import surface until
+  configer's `dist` has its own `node_modules`.** lowdb 7 is reverted; configer
+  stays on lowdb 3.0.0.
+- Why: lowdb 7 moved `JSONFile` from `lowdb` to `lowdb/node`. With lowdb 7
+  installed, the old configer `dist` dies at import with
+  `SyntaxError: Export named 'JSONFile' not found in module
+  '.../lowdb/lib/index.js'`, and pm2 restarts it 16 times before giving up. A
+  box whose build fails would have no configer at all, which is worse than not
+  upgrading. express 5 does not have this problem: the old configer `dist`
+  registers no wildcard route and still loads under express 5.
+- Gave up: lowdb 7. It only reads `versions.json`, so the upgrade buys little.
+- Owner decision still open: give configer's `dist` its own `node_modules`, the
+  way the backend already has, or accept that configer library majors are
+  blocked. See "Open questions".
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.

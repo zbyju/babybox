@@ -1274,10 +1274,15 @@ TypeScript contract. Do not add `tsx`.
 - [x] `open@11.0.4` as a plain ESM import. `engines.node` is `>=20`, but it
       loads and runs on Node 18.12.1, so the Node fallback still opens the
       panel. Not checked on the Windows `powershell-utils` path.
-- [x] lowdb 7 in configer (`versions.json` only). `JSONFile` moved to
-      `lowdb/node` and `Low` now wants default data, so it is
-      `new Low<VersionConfig | null>(adapter, null)`. `null` keeps the lowdb 3
-      shape that the one caller already reads.
+- [ ] lowdb 7 in configer (`versions.json` only). **Tried and reverted on
+      2026-09-28. Do not retry until configer's `dist` has its own
+      `node_modules`.** lowdb 7 moves `JSONFile` to `lowdb/node`, so a configer
+      `dist` compiled against lowdb 3 cannot start once lowdb 7 is installed.
+      `legacy-boot1` caught it: in the "boot 1 with a failed build starts the
+      legacy dist" case, `bun install` has already replaced `node_modules`, and
+      the kept `dist` then dies with
+      `SyntaxError: Export named 'JSONFile' not found`. See the decision of
+      2026-09-28 on the rollback hazard.
 - [ ] Full manual run: panel against a real engine and thermal unit, camera feed,
       sound alerts, settings page, restart route, config page save (PUT and PATCH
       from #85/#88/#91)
@@ -1592,6 +1597,14 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       box build keeps `vue-tsc`. The owner confirmed that all panel PCs run
       Node 18. Not checked through `GET /status`. The Node 16 floor of
       `vue-tsc` 3.3.11 is accepted.
+- [ ] Owner: give configer's `dist` its own `node_modules`, the way the backend
+      `dist` already has. Today `start-app.js` starts the backend from `../dist`
+      with `install: true` and configer from `apps/configer` with
+      `install: false`, so configer resolves from the shared
+      `source/node_modules`. `INSTALL` runs before every build step, so after a
+      failed build the kept configer `dist` is a stale compile against the new
+      packages. That blocks every configer library major, lowdb 7 first.
+      Found 2026-09-28 by `legacy-boot1`, not by `legacy-image`.
 - [ ] `dist-release.js` keeps its own copy of the Bun path and the CPU hold
       check (`installedBunVersion`, `readCpuHold`). `start-app.js` uses the
       `bootstrap.js` exports. Fold the startup copy in in a later change.
@@ -1774,4 +1787,5 @@ One line per landed step: date, PR, what moved.
   JSON error middleware, and the backend, configer and startup libraries are
   current. The SPA fallback is `/{*splat}`: express 5 rejects a bare `*` at
   registration, which would have stopped every box from starting. pino stops
-  at 9.14.0, because pino 10 does not load on Node 18.
+  at 9.14.0, because pino 10 does not load on Node 18. lowdb stays at 3.0.0:
+  lowdb 7 breaks the failed-build rollback for configer.

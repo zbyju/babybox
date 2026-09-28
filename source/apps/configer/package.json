@@ -22,7 +22,7 @@
     "dotenv": "18.0.3",
     "express": "5.2.1",
     "lodash.merge": "4.6.2",
-    "lowdb": "7.0.1"
+    "lowdb": "3.0.0"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",
