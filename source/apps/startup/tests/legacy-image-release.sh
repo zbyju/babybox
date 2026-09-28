@@ -391,6 +391,12 @@ assert_clean
 # The one runtime and block pair nothing covered before: a Bun-less box runs
 # the production block on Node 18. Raised in the review of #132.
 echo "the production block serves the panel on Node"
+# The BOOTSTRAP_BUN case above deleted ~/.bun and never put it back, and the
+# seed needs bun to install the dist modules. versions.env is restored by now,
+# so one good run downloads it again.
+run_startup || true
+stop_apps
+assert_bun
 seed_previous_production
 bun_home="$(node -e "const os=require('os');const path=require('path');process.stdout.write(path.join(os.homedir(),'.bun'))")"
 if command -v cygpath >/dev/null 2>&1; then
@@ -400,6 +406,7 @@ rm -rf "$bun_home"
 break_bun_sha
 assert_clean
 run_startup || true
+assert_record "BOOTSTRAP_BUN" "Kontrolní součet"
 assert_marker
 assert_apps
 assert_panel_page
