@@ -1435,3 +1435,38 @@ Context · Decision · Why · Gave up · Where
   way the backend already has, or accept that configer library majors are
   blocked. See "Open questions".
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-28 — A bad API prefix must not stop the backend from listening
+
+- Context: `backend.url` is the free-text "Předpona API" field on the config
+  page, typed `z.string()` with no pattern, tier `backendRestart`. Both apps
+  register routes as `app.get(prefix + "/status")`.
+- Decision: `safeRoutePrefix()` drops a prefix that express 5 cannot parse and
+  falls back to `""`, with a line on stderr. Both apps use it.
+- Why: express 5 uses path-to-regexp 8, which throws at registration for
+  `{ } ( ) [ ] + ? !` and for `:` or `*` with no name after them. Measured on
+  Node 18.12.1 with express 5.2.1: `/api/v1?` gives
+  `Unexpected ? at index 7`, `/api*` gives `Missing parameter name at index 5`.
+  The throw happens inside `main()` before `app.listen`, so a typo in that
+  field would leave a box with nothing serving and no way in but a site visit.
+  Express 4 put `?` and `+` straight into the regexp and still served.
+  A box on the wrong prefix answers 404 to the panel, but the config page is
+  still reachable, so the operator can undo it.
+- Gave up: rejecting the value at save time in the schema. That would not help
+  a box whose `main.json` was edited by hand, and it is a wider change.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-28 — The JSON error middleware sends the status text, not the message
+
+- Context: the new middleware first answered with `err.message` for everything.
+- Decision: it sends `err.message` only when the thrower set `expose: true`,
+  and the standard status text otherwise. It logs the whole error, not the
+  message, so the stack survives.
+- Why: `send()` builds its errors with `expose: false` precisely so an install
+  path stays internal, and express in production answers with the status text
+  and nothing else. Answering with the raw message would put the box's absolute
+  install path on the hospital network: a missing `dist/public/index.html`
+  gives `ENOENT ... open '/home/.../dist/public/index.html'`. Logging the whole
+  error restores what `finalhandler`'s `logerror` used to print, which the
+  middleware now short-circuits.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".

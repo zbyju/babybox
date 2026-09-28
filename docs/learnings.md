@@ -116,6 +116,15 @@ lesson: what happened, what to do instead.
 
 ## Backend
 
+- **express 5 validates every route string at registration, including the ones
+  built from config.** path-to-regexp 8 throws for `{ } ( ) [ ] + ? !` and for
+  `:`/`*` with no name. `app.get(prefix + "/status")` with a config-set prefix
+  is therefore a startup crash waiting for a typo. Guard the prefix.
+- **An error middleware that answers `err.message` leaks the install path.**
+  `send()` marks its errors `expose: false` for that reason. Answer the status
+  text unless the thrower set `expose: true`, and log the whole error so the
+  stack is not lost with `finalhandler`.
+
 - **A green `legacy-image` job does not mean the rollback works.** `legacy-image`
   only builds. `legacy-boot1` also forces a failed build and checks that the kept
   `dist` still starts. A dependency major can pass the first and fail the second,

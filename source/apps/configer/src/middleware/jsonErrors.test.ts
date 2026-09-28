@@ -35,6 +35,11 @@ describe("the json error middleware", () => {
     app.post("/parsed", express.json(), (_req, res) => {
       res.json({ ok: true });
     });
+    app.get("/exposed", () => {
+      const err = new Error("say this out loud");
+      Object.assign(err, { status: 418, expose: true });
+      throw err;
+    });
     app.use(jsonErrors);
 
     server = app.listen(0);
@@ -51,21 +56,21 @@ describe("the json error middleware", () => {
 
     expect(res.status).toBe(500);
     expect(res.headers.get("content-type")).toContain("application/json");
-    expect(await res.json()).toEqual({ error: "sync boom" });
+    expect(await res.json()).toEqual({ error: "Internal Server Error" });
   });
 
   it("answers a rejected async handler with json", async () => {
     const res = await fetch(`${url}/rejects`);
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ error: "async boom" });
+    expect(await res.json()).toEqual({ error: "Internal Server Error" });
   });
 
   it("answers when something other than an Error is thrown", async () => {
     const res = await fetch(`${url}/not-an-error`);
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ error: "just a string" });
+    expect(await res.json()).toEqual({ error: "Internal Server Error" });
   });
 
   it("leaves an answer that was already sent alone", async () => {
@@ -73,6 +78,13 @@ describe("the json error middleware", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
+  });
+
+  it("sends a message the thrower marked safe", async () => {
+    const res = await fetch(`${url}/exposed`);
+
+    expect(res.status).toBe(418);
+    expect(await res.json()).toEqual({ error: "say this out loud" });
   });
 
   /*

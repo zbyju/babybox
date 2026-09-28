@@ -18,6 +18,7 @@ import { router as reloadRoute } from "./routes/reloadRoute.js";
 import { router as restartRoute } from "./routes/restartRoute.js";
 import { router as thermalRoute } from "./routes/thermalRoute.js";
 import { router as unitsRoute } from "./routes/unitsRoute.js";
+import { safeRoutePrefix } from "./utils/routePrefix.js";
 import {
   cachedRuntimeVersions,
   startupLastFor,
@@ -129,7 +130,13 @@ async function main() {
   // Parse JSON in POST requests
   app.use(express.json());
 
-  const prefix = loaded.backend.url || process.env["API_PREFIX"] || "";
+  const rawPrefix = loaded.backend.url || process.env["API_PREFIX"] || "";
+  const prefix = safeRoutePrefix(rawPrefix);
+  if (prefix !== rawPrefix) {
+    console.error(
+      `API prefix ${rawPrefix} is not a valid route, serving without one.`
+    );
+  }
 
   // Status route
   app.get(prefix + "/status", (req, res) => {

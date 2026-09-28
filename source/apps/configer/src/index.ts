@@ -10,6 +10,7 @@ import {
   statusBody,
 } from "./runtimeVersions.js";
 import cors from "cors";
+import { safeRoutePrefix } from "./services/routePrefix.js";
 import { jsonErrors } from "./middleware/jsonErrors.js";
 
 async function main() {
@@ -32,7 +33,13 @@ async function main() {
   app.use(express.json());
 
   // Routes
-  const prefix = main.data()?.configer.url || process.env["API_PREFIX"];
+  const rawPrefix = main.data()?.configer.url || process.env["API_PREFIX"] || "";
+  const prefix = safeRoutePrefix(rawPrefix);
+  if (prefix !== rawPrefix) {
+    console.error(
+      `API prefix ${rawPrefix} is not a valid route, serving without one.`
+    );
+  }
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
