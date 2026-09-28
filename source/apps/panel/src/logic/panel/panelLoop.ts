@@ -44,7 +44,8 @@ const MAX_INIT_DELAY = 20000;
  */
 const LOOP_TICK = 250;
 
-type LoopUnit = "engine" | "thermal";
+const LOOP_UNITS = ["engine", "thermal"] as const;
+type LoopUnit = typeof LOOP_UNITS[number];
 
 export class AppManager {
   private loopTimers: Record<LoopUnit, Maybe<ReturnType<typeof setInterval>>> =
@@ -183,7 +184,7 @@ export class AppManager {
    * would stop the panel from ever retrying.
    */
   private async getConfig(): Promise<unknown> {
-    const { data } = await requestJson<unknown>(`${CONFIGER_API_URL}/main`, {
+    const { data } = await requestJson(`${CONFIGER_API_URL}/main`, {
       timeout: CONFIGER_TIMEOUT,
     });
     return data;
@@ -245,7 +246,7 @@ export class AppManager {
    * Each later attempt is scheduled after the current one settles,
    * so a hanging backend cannot collect overlapping status requests.
    */
-  async initializeGlobal(): Promise<any> {
+  async initializeGlobal(): Promise<void> {
     /*
      * Retries back off from 5 s to 20 s.
      * The old code meant to retry at 20 s but setInterval had already captured
@@ -352,7 +353,7 @@ export class AppManager {
 
   stopPanelLoop() {
     this.panelLoopRunning = false;
-    for (const unit of Object.keys(this.loopTimers) as LoopUnit[]) {
+    for (const unit of LOOP_UNITS) {
       const timer = this.loopTimers[unit];
       if (timer !== undefined) {
         clearInterval(timer);

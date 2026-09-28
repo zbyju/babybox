@@ -1211,7 +1211,285 @@ Context · Decision · Why · Gave up · Where
 - Why: the contract is in one place. A unit can only weaken it by setting
   a flag in its own tsconfig, which is easy to see in a diff. The emitted
   `dist` does not change.
-- Gave up: a CI step that checks each copy. The panel moves to the file in
-  #130.
+- Gave up: a CI step that checks each copy. The panel still copies the
+  flags: vite 2.9.14 cannot read the `extends` array it would need. It
+  moves with Vite 8, see the next entry.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
   contract" and "Open questions".
+
+## 2026-09-25 — The panel moves to the shared contract file with Vite 8
+
+- Context: the panel needs `"extends": ["@vue/tsconfig/tsconfig.dom.json",
+  "../../tsconfig.contract.json"]`. vite 2.9.14 throws on an `extends`
+  array, in `vite build` and in vitest 0.9.4.
+- Decision: the panel keeps its copy of the 12 flags until the Vite 8 bump
+  in P5. Then `tsconfig.app.json` extends both files, with the contract
+  last, and the copy goes. The owner chose this (option A).
+- Why: P5 changes vite anyway. On 2026-09-25 vite 8.3.0 with
+  @vitejs/plugin-vue 6.0.9 built the panel with the array. The bundle had
+  the same content hash, and all 12 flags resolved.
+- Gave up: a CI step that compares the panel copy with the shared file.
+  Also gave up dropping `@vue/tsconfig` to allow a one-file `extends`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5 and
+  "Open questions".
+
+## 2026-09-25 — The panel contract is built on vue 3.2.37
+
+- Context: the 2026-09-25 proposal put the panel contract before Libraries,
+  with medium confidence. `@vue/tsconfig` 0.9.1 has an optional vue ^3.4
+  peer.
+- Decision: the panel contract is its own pull request, stacked on the
+  type-contract pull request, on vue 3.2.37. vue, vue-router, pinia, vite
+  and vitest do not move. The owner decides the merge order.
+- Why: `vue-tsc` 3.3.11 and TypeScript 6.0.3 type-check the panel on vue
+  3.2.37. All 149 errors in `src` and the 13 in the tests are fixed there.
+  The vue 3.5 and pinia 4 types need TypeScript 5.4 and 5.6.
+- Gave up: the vue 3.5 attribute types. Eight Vue 3.2 workarounds stay
+  until then.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and
+  "Pull requests from here".
+
+## 2026-09-25 — The panel build checks src; CI checks the rest
+
+- Context: the panel build ran `vue-tsc --noEmit` on the solution
+  `tsconfig.json` and checked no file.
+- Decision: `build` runs `vue-tsc --noEmit -p tsconfig.app.json`, 99 files.
+  `typecheck` also checks `tsconfig.vitest.json` and
+  `tsconfig.vite-config.json`. CI runs it as "Panel typecheck". No
+  `composite` in the panel tsconfigs.
+- Why: a box needs `src` checked, not the tests. With `composite`,
+  `vue-tsc -p` writes `tsconfig.app.tsbuildinfo` on every build and dirties
+  the tree.
+- Gave up: a box that also type-checks the tests. The box now spends about
+  2 s more on each update on a fast CPU, and more on a box.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-25 — The panel tests are type-checked, with @vue/reactivity for chai
+
+- Context: vitest brings chai, whose `should` breaks `UnwrapRef` of a
+  Moment in a store. The tests program then fails on store code. The other
+  units keep their tests out of every tsconfig until P5.
+- Decision: the panel checks its tests. `vitest.env.ts` adds chai's
+  `Assertion` to `RefUnwrapBailTypes`. `@vue/reactivity` 3.2.37 is an exact
+  devDependency, types only. It moves with vue. The owner can drop it; then
+  the tests program leaves the gate.
+- Why: the panel already had `tsconfig.vitest.json`. Bun does not link
+  `@vue/reactivity` into the panel, and vue 3.2.37 does not re-export the
+  interface, so the declaration needs the package.
+- Gave up: one dependency fewer.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and the
+  package table.
+
+## 2026-09-25 — The panel keeps @types/node 18
+
+- Context: the panel had `@types/node` 16.11.46. Only its tests and
+  `vite.config.ts` load it.
+- Decision: 18.11.18, the root and configer pin.
+- Why: the tests run under vitest on Node. One version across the units
+  that still type-check against Node 18.
+- Gave up: Node 24 types for the tests.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), the package
+  table.
+
+## 2026-09-25 — Vue 3.2 DOM attributes with no value are not set at all
+
+- Context: under `exactOptionalPropertyTypes`, the Vue 3.2 DOM types and
+  csstype 2.6 reject `undefined` for an attribute or a style value.
+- Decision: do not set the attribute. `v-bind` of an object that lacks the
+  key for `src`, `placeholder` and `pattern`. A style object without
+  `borderTopWidth`. `value ?? ''` and `disabled === true` on inputs.
+  Never `pattern=""`.
+- Why: Vue already removed an `undefined` attribute. An empty pattern
+  rejects every value that is not empty.
+- Gave up: the shorter templates, until vue 3.5.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
+  questions".
+
+## 2026-09-25 — A read the contract now checks fails as it did before
+
+- Context: `noUncheckedIndexedAccess` flags reads of the unit answer, the
+  settings rows and the table values. `?? ""` would hide a short answer.
+- Decision: a short unit answer still throws. `updateEngineUnit` catches it
+  and counts a failed request, as before. A missing settings value throws
+  in the render, as before. A missing table value shows "Chyba", not an
+  empty cell.
+- Why: the old failure is what the operator and the connection alarm
+  already see. A silent empty value would look like a working unit.
+- Gave up: a render that survives a bug in the settings form.
+- Where: the panel contract pull request.
+
+## 2026-09-25 — The box build keeps the panel type gate
+
+- Context: BUILD_PANEL runs `vue-tsc` 3.3.11 on the box's first `node`.
+  It needs Node 16 and fails on Node 14.21.3. The review of #130 asked
+  whether the gate should run in CI only.
+- Decision: the box build keeps `vue-tsc --noEmit -p tsconfig.app.json`.
+  The owner confirmed on 2026-09-25 that all panel PCs run Node 18. The
+  Node 16 floor of `vue-tsc` 3.3.11 is accepted.
+- Why: every box that builds meets the floor. A box on OS_HOLD or
+  CPU_HOLD (Windows 7/8 among them) stops before BUILD_PANEL.
+- Gave up: `"build": "vite build"` with the gate in CI only.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
+  constraints" and "Open questions".
+
+## 2026-09-28 — The vue 3.5 bump does not need Vite 8
+
+- Context: the plan's "Pull requests from here" item 4 assumed the panel
+  library bumps might have to move into or after the Vite 8 pull request,
+  because `@vitejs/plugin-vue` 2.3.3 is four years older than vue 3.5's
+  compiler and pinia 4 is ESM-only.
+- Decision: the vue, vue-router and pinia bumps land on the current
+  toolchain, before Vite 8, as their own pull request.
+- Why: measured. On vite 2.9.14 with `@vitejs/plugin-vue` 2.3.3, a panel on
+  vue 3.5.43, pinia 4.0.3 and vue-router 5.3.1 builds 411 modules with 0
+  bytes of stderr, `vue-tsc` finds 0 errors on all three tsconfigs, and all
+  172 unit tests pass. plugin-vue resolves `@vue/compiler-sfc` from the
+  installed vue, so the plugin's own age does not matter. esbuild 0.14
+  handles pinia 4.
+- Gave up: stacking the library bumps on the Vite 8 pull request. That
+  would have made the Vite 8 change carry two risks at once.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and
+  "Pull requests from here".
+
+## 2026-09-28 — Three of the listed Vue 3.2 attribute workarounds were workarounds
+
+- Context: an open question listed five things to drop after vue 3.5: the
+  optional attributes in `BaseInput`, `srcAttr` and `topBorder` in the
+  camera views, and `?? ''` and `=== true` on `value` and `disabled`.
+- Decision: drop `BaseInput`'s `optionalAttrs` `v-bind` and the `=== true` on
+  `disabled`, and the same `=== true` in `BaseSelect`. Keep `?? ''` on
+  `value` in both, keep `srcAttr`, and leave `topBorder` alone.
+  `BaseSelect` is the fourth of the four SFCs the note counted. It was missed
+  on the first pass and found in review.
+- Why: `srcAttr` guards a real browser behaviour, not a type. Its comment
+  says an empty `src` resolves to the page URL and raised a camera Error
+  before the first frame had been asked for. `topBorder` is an ordinary
+  computed style object and never was a workaround. Removing `?? ''` drops
+  the serialised `value=""` attribute; `el.value` is `""` either way, so the
+  change buys nothing on a nurse-facing input. Everything dropped renders
+  identically, checked with the installed vue and jsdom on `el.value` and
+  `el.disabled`: six prop cases for `BaseInput`, five for `BaseSelect`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
+  questions".
+
+## 2026-09-28 — The panel says __VUE_PROD_DEVTOOLS__ is false
+
+- Context: pinia 4 declares `@vue/devtools-api` as a peer with
+  `"optional": false`, so the panel must declare it, and it pulls
+  `@vue/devtools-kit`. Vite resolves pinia's `.` export to `dist/pinia.js`,
+  which imports devtools behind a `typeof __VUE_PROD_DEVTOOLS__` guard. The
+  panel's `vite.config.ts` set no `define`, so the guard was folded by whatever
+  bundler happened to be installed.
+- Decision: `define: { __VUE_PROD_DEVTOOLS__: false }` in
+  `apps/panel/vite.config.ts`. Owner chose this in the review of #131.
+- Why: today Rollup 2 folds the guard and the bundle is clean, but nothing in
+  the repo says it must be. P5 replaces Rollup 2 with Rolldown, and
+  `legacy-image` only checks the exit code, an empty stderr and a clean tree —
+  it never reads bundle content or size. So a regression there would be
+  silent, on the screen a nurse uses. Measured with the define on vite 2.9.14:
+  build exit 0, 0 bytes of stderr, no `devtools` string in the assets,
+  `vue-tsc` clean on all three tsconfigs, 189 tests green, and the bundle is 5
+  bytes smaller (353 180 against 353 185).
+- Gave up: leaving it to the Vite 8 pull request. That one already carries
+  Rolldown, vitest 5 and jsdom 30; a red or fat result there should point at
+  one cause.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5.
+
+## 2026-09-28 — The startup app stops at pino 9, not pino 10
+
+- Context: the P4 box says `pino 10.3.1`. The plan added "upgrade only after
+  Bun is the runtime", but the startup app never moves to Bun: it runs on Node
+  for boot 1, for hold boxes, and for the pm2 daemon (decided 2026-09-25).
+- Decision: `pino@9.14.0` with `pino-pretty@13.1.3`. Not pino 10.
+- Why: pino 10 does not load on Node 18.12.1. It throws
+  `TypeError: diagChan.tracingChannel is not a function` from
+  `pino/lib/tools.js:32`. `diagnostics_channel.tracingChannel` arrived in Node
+  19.9 and 20. The boxes run Node 18.12.1. pino 9.14.0 loads there, and the
+  #90 Czech one-line log file and its stdout stream are byte-identical across
+  pino 8.21.0, 9.14.0 and 10.3.1, checked with the real `logger.js` and
+  `strings.js` on a fixed clock. So the format was never the risk; the runtime
+  floor was. learnings.md already recorded the same `tracingChannel` failure
+  for `pnpm view` under Node 18.
+- Gave up: pino 10. Revisit only when every box runs Node 20 or newer.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-28 — The SPA fallback route needs a named splat
+
+- Context: `apps/backend/src/index.ts` served the panel's history-mode routes
+  with `app.get("*")`, inside the `NODE_ENV === "production"` block that every
+  box runs. The plan said no route string used `*`, `?`, `+` or a regex.
+- Decision: the route is `app.get("/{*splat}")`.
+- Why: that claim was wrong, and it was the one change in this pull request
+  that could stop a box from starting. Express 5 uses path-to-regexp 8, which
+  rejects a bare `*` when the route is registered:
+  `PathError: Missing parameter name at index 1: *`. The throw happens in
+  `main()`, so the backend would never listen. `/{*splat}` registers and routes
+  the same way: on Node 18.12.1 with express 5.2.1, `/api/v1/status` still
+  answers the API route, `/` still answers the index, and `/config`,
+  `/settings/deep/path` and `/favicon.ico` all fall through to the SPA.
+- Gave up: nothing. There is no reason to keep the old spelling.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-28 — A failed build only rolls back cleanly for the backend
+
+- Context: the safe-release design says a failed build keeps the last good
+  `dist` and starts that. `legacy-boot1` tests exactly this, in the case
+  "boot 1 with a failed build starts the legacy dist on Bun".
+- What we found: the guarantee holds for the backend and not for configer.
+  `start-app.js` starts the backend from `../dist` with `install: true`, so
+  that folder gets its own `node_modules` from the copied lockfile. configer
+  runs `apps/configer/dist/index.js` with `install: false`, so it resolves
+  from the shared `source/node_modules`. `INSTALL` runs before every build
+  step, so by the time a build fails the shared `node_modules` already holds
+  the new versions, and the kept configer `dist` is a stale compile against
+  them.
+- Decision: **no configer runtime dependency may move its import surface until
+  configer's `dist` has its own `node_modules`.** lowdb 7 is reverted; configer
+  stays on lowdb 3.0.0.
+- Why: lowdb 7 moved `JSONFile` from `lowdb` to `lowdb/node`. With lowdb 7
+  installed, the old configer `dist` dies at import with
+  `SyntaxError: Export named 'JSONFile' not found in module
+  '.../lowdb/lib/index.js'`, and pm2 restarts it 16 times before giving up. A
+  box whose build fails would have no configer at all, which is worse than not
+  upgrading. express 5 does not have this problem: the old configer `dist`
+  registers no wildcard route and still loads under express 5.
+- Gave up: lowdb 7. It only reads `versions.json`, so the upgrade buys little.
+- Owner decision still open: give configer's `dist` its own `node_modules`, the
+  way the backend already has, or accept that configer library majors are
+  blocked. See "Open questions".
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-28 — A bad API prefix must not stop the backend from listening
+
+- Context: `backend.url` is the free-text "Předpona API" field on the config
+  page, typed `z.string()` with no pattern, tier `backendRestart`. Both apps
+  register routes as `app.get(prefix + "/status")`.
+- Decision: `safeRoutePrefix()` drops a prefix that express 5 cannot parse and
+  falls back to `""`, with a line on stderr. Both apps use it.
+- Why: express 5 uses path-to-regexp 8, which throws at registration for
+  `{ } ( ) [ ] + ? !` and for `:` or `*` with no name after them. Measured on
+  Node 18.12.1 with express 5.2.1: `/api/v1?` gives
+  `Unexpected ? at index 7`, `/api*` gives `Missing parameter name at index 5`.
+  The throw happens inside `main()` before `app.listen`, so a typo in that
+  field would leave a box with nothing serving and no way in but a site visit.
+  Express 4 put `?` and `+` straight into the regexp and still served.
+  A box on the wrong prefix answers 404 to the panel, but the config page is
+  still reachable, so the operator can undo it.
+- Gave up: rejecting the value at save time in the schema. That would not help
+  a box whose `main.json` was edited by hand, and it is a wider change.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-28 — The JSON error middleware sends the status text, not the message
+
+- Context: the new middleware first answered with `err.message` for everything.
+- Decision: it sends `err.message` only when the thrower set `expose: true`,
+  and the standard status text otherwise. It logs the whole error, not the
+  message, so the stack survives.
+- Why: `send()` builds its errors with `expose: false` precisely so an install
+  path stays internal, and express in production answers with the status text
+  and nothing else. Answering with the raw message would put the box's absolute
+  install path on the hospital network: a missing `dist/public/index.html`
+  gives `ENOENT ... open '/home/.../dist/public/index.html'`. Logging the whole
+  error restores what `finalhandler`'s `logerror` used to print, which the
+  middleware now short-circuits.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".

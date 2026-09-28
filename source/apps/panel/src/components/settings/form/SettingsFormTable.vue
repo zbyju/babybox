@@ -9,12 +9,12 @@
         </tr>
       </thead>
       <tbody>
-        <template v-for="(row, index) in rows" :key="row.label">
+        <template v-for="(row, index) in rows" :key="row.index">
           <SettingsFormTableRow
-            :value="props.values[index].value"
-            :engine="props.values[index].engine"
-            :thermal="values[index].thermal"
-            :state="values[index].state"
+            :value="valueAt(index).value"
+            :engine="valueAt(index).engine"
+            :thermal="valueAt(index).thermal"
+            :state="valueAt(index).state"
             :row="row"
             @update:value="
               (value: string) => emit('valueUpdated', value, index)
@@ -43,6 +43,18 @@
   const emit = defineEmits<{
     (e: "valueUpdated", newValue: string, index: number): void;
   }>();
+
+  /*
+   * The form builds one value per row, so a missing one is a bug.
+   * Throw, so the render fails as it did before.
+   */
+  function valueAt(index: number): SettingsTableRowValue {
+    const value = props.values[index];
+    if (value === undefined) {
+      throw new Error(`The settings table has no value for row ${index}.`);
+    }
+    return value;
+  }
 </script>
 
 <style lang="stylus">

@@ -8,10 +8,12 @@ lesson: what happened, what to do instead.
 - **Never run the machine's pnpm here.** It rewrites the lockfile format. Use
   `npx pnpm@7.5.0`. CI and every babybox install with `--frozen-lockfile` from that
   version; a lockfile in another format means the box does not start.
-- **A green build proves little for the panel.** `pnpm typecheck` on the panel is red
-  with 20 pre-existing errors and the build's type gate checks zero files. The docs
-  said 17 until P3 counted them on `origin/main` at 1927135. Record your own baseline
-  before you start; the bar is no new errors, not a green run.
+- **The panel build type-checks `src`, and only `src`.** Its gate is
+  `vue-tsc --noEmit -p tsconfig.app.json`, 99 files. Until the panel contract it ran
+  `vue-tsc --noEmit` on the solution `tsconfig.json` (`files: []`) and checked none,
+  while `typecheck` was red with 20 errors. The tests and `vite.config.ts` are
+  checked by `typecheck` in CI, not on the box. Prove a gate with `--listFilesOnly`,
+  not with a green run.
 - **The startup app treats any stderr from `pnpm run build` as a failed build.**
   A warning printed by `tsc` or a package script fails the update on the box.
 - **TypeScript 6 loads no `@types` package by itself.** Name what a unit needs
@@ -46,6 +48,20 @@ lesson: what happened, what to do instead.
 - **`tsc --build` skips a project it thinks is up to date.** A types bump in the
   backend exited 0 because nothing was rebuilt. Test a types bump with
   `tsc --build --force`.
+- **`bun run` starts a bin with the first `node` on `PATH`.** Only with no `node`
+  there does the bin run on Bun. The panel build then fails, see "Panel".
+- **`composite` plus `vue-tsc -p` writes a `.tsbuildinfo` on every run.** A box
+  build would dirty the tree. The panel tsconfigs have no `composite`; TypeScript 6
+  accepts project references without it.
+- **vite 2.9 reads the tsconfig, but passes only six fields to esbuild:** `target`,
+  `jsxFactory`, `jsxFragmentFactory`, `useDefineForClassFields`,
+  `importsNotUsedAsValues`, `preserveValueImports`. `verbatimModuleSyntax` never
+  reaches esbuild. The new panel tsconfigs on unchanged `src` gave a byte-identical
+  bundle. vite also follows every reference of `tsconfig.json`, so a referenced
+  tsconfig whose `extends` does not resolve fails the vite build.
+- **zsh counts stderr wrong.** Its MULTIOS option copies a stream that is
+  redirected twice, so `2>&1 >/dev/null | wc -c` counts stdout too. Measure stderr
+  in bash.
 - **`npx -p node@12.22.12` does not run on Apple silicon.** There is no darwin-arm64
   build of Node 12, and npx exits 1 with no message. Use the `node:12.22.12`
   Docker image for a Node 12 parse.
@@ -99,6 +115,47 @@ lesson: what happened, what to do instead.
   config deep-equals the running one.
 
 ## Backend
+
+- **Check which runtime and which code path each job actually exercises, not
+  just that a job is green.** `legacy-image-release.sh` seeds
+  `NODE_ENV=development`, so its only Node start skipped the production block,
+  while `legacy-boot1` entered that block only on Bun. The pair a Bun-less box
+  uses had no job at all, and that is where the `app.get("*")` throw lived.
+
+- **express 5 validates every route string at registration, including the ones
+  built from config.** path-to-regexp 8 throws for `{ } ( ) [ ] + ? !` and for
+  `:`/`*` with no name. `app.get(prefix + "/status")` with a config-set prefix
+  is therefore a startup crash waiting for a typo. Guard the prefix.
+- **An error middleware that answers `err.message` leaks the install path.**
+  `send()` marks its errors `expose: false` for that reason. Answer the status
+  text unless the thrower set `expose: true`, and log the whole error so the
+  stack is not lost with `finalhandler`.
+
+- **A green `legacy-image` job does not mean the rollback works.** `legacy-image`
+  only builds. `legacy-boot1` also forces a failed build and checks that the kept
+  `dist` still starts. A dependency major can pass the first and fail the second,
+  because `INSTALL` replaces `node_modules` before any build step runs, so the
+  kept `dist` is a stale compile against new packages.
+- **Only the backend `dist` is isolated.** `start-app.js` gives `../dist` its own
+  `node_modules` (`install: true`). configer runs from the shared
+  `source/node_modules`. So a configer dependency that moves an export breaks the
+  previous `dist`; the same bump in the backend does not.
+- **Read the test case name before you debug the error.** The lowdb crash in
+  `legacy-boot1` looked like the bug. It was the symptom of the deliberate
+  failed-build case one line above it in the log.
+
+- **Express 5 rejects a bare `*` route when it is registered.** path-to-regexp 8
+  throws `PathError: Missing parameter name at index 1: *`. Write `/{*splat}`.
+  The throw happens at registration, not on a request, so an app that only
+  registers the route in production fails to start on a box and passes every
+  test that does not build that block.
+- **`engines.node` is not a test of whether a package runs.** `open@11` declares
+  `>=20` and both loads and works on Node 18.12.1. `pino@10` declares no engines
+  at all and throws on Node 18, because it calls
+  `diagnostics_channel.tracingChannel`, which is Node 19.9+. Import it on the
+  runtime you care about and call it.
+- **dotenv 18 prints `◇ injected env (1) from .env` on stderr**, 31 bytes. Pass
+  `{ quiet: true }`. Measure in bash, not zsh.
 
 - **`fetchConfig()` returns no `data` key when it fails.** It answers
   `{ status: 408, msg }`, so `config = (await fetchConfig()).data` sets `undefined`
@@ -206,6 +263,22 @@ lesson: what happened, what to do instead.
 
 ## Panel
 
+- **`@vitejs/plugin-vue` resolves `@vue/compiler-sfc` from the installed vue**, so a
+  four-year gap between the plugin and the compiler still compiles. plugin-vue 2.3.3
+  builds vue 3.5.43 SFCs on vite 2.9.14: 411 modules, 0 stderr, `vue-tsc` at 0 errors,
+  172 unit tests green. Do not assume a vue bump needs the matching plugin major.
+  Check it with a build.
+- **Not every `v-bind` of an optional attribute is a type workaround.** Before you
+  remove one, read why it is there. `srcAttr` in `SnapshotCameraView` keeps `src` off
+  the `<img>` while the url is empty, because an empty `src` resolves to the page URL
+  and raises the camera Error before the first frame is asked for. `topBorder` is a
+  plain computed style. Only `BaseInput`'s `optionalAttrs` and its `=== true` on
+  `disabled` were there for vue 3.2's DOM types.
+- **Compare the rendered DOM, not the HTML string, when you change a binding.**
+  Dropping `?? ''` from `:value` leaves `el.value` as `""` but removes the serialised
+  `value=""` attribute, so an `innerHTML` diff shows a change that no user can see.
+  Check `el.value` and `el.disabled` as well.
+
 - **The config store is set once at boot, so no field is "live".** `setConfig()` runs
   in `initializeConfig()` and nowhere else. A component that reads the store
   reactively still follows a value that never changes, and `BabyboxName.vue` copies
@@ -236,6 +309,40 @@ lesson: what happened, what to do instead.
   and never reach configer, so it fails at boot with "Config file error". The
   "remote maintenance" `CLAUDE.md` talks about is a remote session on the box, not a
   browser pointed at it. That is what makes a loopback bind safe to consider.
+
+- **`vue-tsc` on the Bun runtime checks no `.vue` file.** It fails with TS2307
+  "Cannot find module './App.vue'" and exit 2. BUILD_PANEL works because the
+  runner runs on Node and `bun run` picks that `node`. Test the build with no
+  `node` on `PATH` before anything removes Node from a box.
+- **`vue-tsc` 3.3.11 does not start on Node 14.** `@volar/source-map` uses `??=`,
+  a SyntaxError there. Node 16.20.2 and 18.12.1 pass. `vue-tsc` 0.38.9 ran on 14,
+  so a box whose first `node` is 14 now fails BUILD_PANEL.
+- **vite 2.9.14 cannot read a tsconfig `extends` array.** Its bundled
+  tsconfck passes the array to `path.isAbsolute` and throws. `vite build`
+  and vitest 0.9.4 reach `tsconfig.app.json` through the `references` in
+  the panel `tsconfig.json`, so an array there fails BUILD_PANEL and a
+  panel test suite. `vue-tsc` reads the array fine. `esbuild.tsconfigRaw`
+  in `vite.config.ts` does not help: `@vitejs/plugin-vue` reads the
+  tsconfig for `.vue` files itself.
+- **chai's `should` breaks Vue's `UnwrapRef` when tests share a program with store
+  code.** vitest brings chai, which gives every object a `should` property. A
+  Moment inside a pinia store then no longer matches its own type. 13 of the 20
+  old panel errors were this. `vitest.env.ts` adds chai's `Assertion` to
+  `RefUnwrapBailTypes` on `@vue/reactivity`. That needs `@vue/reactivity` as a
+  direct devDependency: Bun does not link it into the panel, and vue 3.2.37 does
+  not re-export the interface.
+- **`skipLibCheck` also skips our own `.d.ts` files.** As `vitest.env.d.ts`, a
+  wrong `Chai` name was not reported on its line. The bail type turned into
+  `any`, and the only error was a TS7006 in `appStateStore.ts`. Write such a file
+  as `.ts` with `export {}`, so the compiler checks it.
+- **Vue 3.2 DOM types reject `undefined` under `exactOptionalPropertyTypes`.**
+  `:src="url || undefined"`, `:pattern="maybe"` and a style object with an
+  `undefined` value are errors. Leave the attribute off with `v-bind` of an object
+  that lacks the key. Never write `pattern=""`: an empty pattern rejects every
+  value that is not empty.
+- **vue-router 4.1.3 on vue 3.2.37 does not type-check `<router-link>` props.** It
+  extends `GlobalComponents`, which vue 3.2.37 does not have, so `:to="12345"`
+  passes the gate.
 
 - **Nothing in the panel may block the event loop.** `App.vue` heartbeats the backend
   every 5s and `restart.ts` reboots the machine after 9 missed ticks, so a

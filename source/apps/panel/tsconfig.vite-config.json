@@ -1,12 +1,10 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.node.json",
-  "include": ["vite.config.*"],
+  "extends": "./tsconfig.app.json",
+  "include": ["vite.config.ts"],
+  "exclude": [],
   "compilerOptions": {
-    "composite": true,
-    "types": ["node", "vitest"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    // vite.config.ts runs on Node, not in the browser.
+    "lib": ["ES2022"],
+    "types": ["node"]
   }
 }

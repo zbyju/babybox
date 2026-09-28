@@ -56,6 +56,7 @@
   import {
     getChangedSettings,
     isSettingChanged,
+    readUnitSettings,
     settingsSendToStates,
     settingsSendToStatesError,
   } from "@/utils/settings/settings";
@@ -87,6 +88,7 @@
   function onValueUpdated(newValue: string, index: number) {
     const value = values.value[index];
     const row = rows[index];
+    if (value === undefined || row === undefined) return;
     value.value = newValue;
     if (newValue === "") {
       return (value.state = SettingsTableRowState.Neutral);
@@ -146,9 +148,11 @@
   function onInsertRecommendedAction() {
     addLogMessage("Vloženy doporučené hodnoty");
     values.value = values.value.map((v: SettingsTableRowValue, i: number) => {
+      const row = rows[i];
+      if (row === undefined) return v;
       return {
         ...v,
-        value: rows[i].recommended,
+        value: row.recommended,
       };
     });
   }
@@ -187,16 +191,20 @@
     }
 
     try {
-      if (response.status >= 200 && response.status <= 299) {
+      const settings = readUnitSettings(response.data);
+      if (
+        response.status >= 200 &&
+        response.status <= 299 &&
+        settings !== undefined
+      ) {
         values.value = values.value.map(
           (v: SettingsTableRowValue, i: number) => {
-            const engineData = response.data.data.engine.split("|");
-            const thermalData = response.data.data.thermal.split("|");
             const row = rows[i];
+            if (row === undefined) return v;
             const engine =
-              row.engine !== null ? engineData[row.engine - 100] : null;
+              row.engine !== null ? settings.engine[row.engine - 100] : null;
             const thermal =
-              row.thermal !== null ? thermalData[row.thermal - 100] : null;
+              row.thermal !== null ? settings.thermal[row.thermal - 100] : null;
             return {
               ...v,
               engine,

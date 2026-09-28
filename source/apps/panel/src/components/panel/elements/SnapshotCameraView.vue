@@ -1,21 +1,18 @@
 <template>
   <img
     v-show="state === CameraState.Ok"
-    :src="url || undefined"
-    :style="{
-      borderTopWidth: props.displayTopBorder ? undefined : '0px',
-      maxHeight: props.maxH + 'px',
-      maxWidth: props.maxW + 'px',
-    }"
+    v-bind="srcAttr"
+    :style="[
+      topBorder,
+      { maxHeight: props.maxH + 'px', maxWidth: props.maxW + 'px' },
+    ]"
     @error="onError"
     @load="onLoad"
   />
   <div
     v-show="state === CameraState.Error"
     class="camera-error"
-    :style="{
-      borderTopWidth: props.displayTopBorder ? undefined : '0px',
-    }"
+    :style="topBorder"
   >
     <h4>Error</h4>
     <p>Chyba při načítání kamery.</p>
@@ -23,9 +20,7 @@
   <div
     v-show="state === CameraState.Loading"
     class="camera-loading"
-    :style="{
-      borderTopWidth: props.displayTopBorder ? undefined : '0px',
-    }"
+    :style="topBorder"
   >
     <h4>Načítám</h4>
   </div>
@@ -33,6 +28,7 @@
 
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
+  import { computed } from "vue";
 
   import useCamera from "@/composables/useCamera";
   import { useConfigStore } from "@/pinia/configStore";
@@ -40,8 +36,8 @@
 
   const props = defineProps<{
     displayTopBorder: boolean;
-    maxH?: number;
-    maxW?: number;
+    maxH?: number | undefined;
+    maxW?: number | undefined;
   }>();
 
   const configStore = useConfigStore();
@@ -55,4 +51,9 @@
    * the first frame had even been asked for.
    */
   const { url, state, onLoad, onError } = useCamera(camera.value);
+  const srcAttr = computed(() => (url.value ? { src: url.value } : {}));
+
+  const topBorder = computed(() =>
+    props.displayTopBorder ? {} : { borderTopWidth: "0px" },
+  );
 </script>
