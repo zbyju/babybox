@@ -1,5 +1,6 @@
 import cors from "cors";
 import * as dotenv from "dotenv";
+import { jsonErrors } from "./middleware/jsonErrors.js";
 import express from "express";
 import morgan from "morgan";
 import open from "open";
@@ -62,7 +63,8 @@ function setPanelCacheHeaders(res: express.Response, filePath: string) {
 }
 
 // modulesObject() reads the RESTART_* vars, so .env has to be loaded before it.
-dotenv.config();
+// quiet: 18 prints the loaded file on stderr, which fails a box build.
+dotenv.config({ quiet: true });
 
 export const modules = modulesObject();
 
@@ -159,8 +161,9 @@ async function main() {
      * "Cannot GET /config". The save path ends in window.location.reload(), so the
      * config page could not come back up. Registered after the API routes and after
      * express.static, so it only sees what nothing else matched.
+     * Express 5 rejects a bare "*": path-to-regexp 8 wants a named splat.
      */
-    app.get("*", (req, res) => {
+    app.get("/{*splat}", (req, res) => {
       res.sendFile(path.join(PUBLIC_DIR, "index.html"), {
         headers: { "Cache-Control": INDEX_CACHE_CONTROL },
       });
@@ -168,6 +171,9 @@ async function main() {
 
     open("http://localhost:" + port);
   }
+
+  // Last, so it sees what every route above threw.
+  app.use(jsonErrors);
 
   bound = { port, prefix };
 

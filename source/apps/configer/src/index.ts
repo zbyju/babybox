@@ -10,10 +10,12 @@ import {
   statusBody,
 } from "./runtimeVersions.js";
 import cors from "cors";
+import { jsonErrors } from "./middleware/jsonErrors.js";
 
 async function main() {
   // Load .env
-  dotenv.config();
+  // quiet: 18 prints the loaded file on stderr, which fails a box build.
+  dotenv.config({ quiet: true });
 
   const main = await DbFactory.getMainDb();
 
@@ -44,6 +46,9 @@ async function main() {
 
   // Other routes
   app.use(prefix + "/config", configRoute);
+
+  // Last, so it sees what every route above threw.
+  app.use(jsonErrors);
 
   const port = main.data()?.configer.port || process.env["PORT"] || 6000;
   app.listen(port, () => {
