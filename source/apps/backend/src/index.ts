@@ -169,7 +169,13 @@ async function main() {
       });
     });
 
-    open("http://localhost:" + port);
+    /*
+     * A browser that will not open is not a reason to stop serving. Without
+     * the catch the rejected promise ends the process on Node 15 and newer.
+     */
+    open("http://localhost:" + port).catch((err: unknown) => {
+      console.error(err instanceof Error ? err.message : String(err));
+    });
   }
 
   // Last, so it sees what every route above threw.

@@ -367,7 +367,7 @@ mistaken for P1. The 2026-09-13 target runtime (Node 24 LTS 24.21.0 and pnpm
 |---|---|---|
 | `@babybox/config-schema` with `zod@3.23.8` | #86 | New package in the inventory. Already `module: node16` and `strict: true`. Backend imports the type only, through `baseUrl` + `paths`, because a `workspace:*` dep breaks the standalone `dist` install (learnings.md, Startup). TS 7 removes `baseUrl`; P4 must replace that path with a relative `paths` entry. Zod stays on 3.23.8 in this plan. Zod 4 is a separate project. |
 | Config write path, PATCH, panel config page, apply-on-save | #85 #88 #89 #91 | Manual run in P4 includes the config page, PUT and PATCH. Express 5 now has 11 async route handlers (7 backend, 4 configer), not 9. Empty-body tests exist for PUT and PATCH; they still assume Express 4's `req.body = {}` when the header is missing. |
-| Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. Do not upgrade pino until Bun is the runtime (P4). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
+| Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. pino stops at 9.14.0: pino 10 needs Node 19.9 or newer and the startup app always runs on Node (2026-09-28). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
 | Startup has tests | #90 | `apps/startup/src/logger.test.js` runs under jest. P0 must not remove jest from startup. P5 moves those tests to vitest and puts them in CI. CI today lints startup and does not test it. |
 | `installAll.sh` removed | #54 | Ubuntu provisioning is `install-all.sh` only. Both `install-all.sh` and the old script used `n` and chowned `/usr/local`. |
 | Panel no longer imports axios | #76 | `axios` is still in `apps/panel/package.json` and the leftover `apps/panel/pnpm-lock.yaml`. Dead weight for P0. Backend still has one axios call site. |
@@ -774,7 +774,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 |---|---|---|---|---|
 | fs-extra | ^10.1.0 | 11.4.0 | ≥14.14 | |
 | moment | ^2.29.3 | 2.31.0 | — | |
-| pino | ^8.21.0 | 10.3.1 | — | loaded through try/catch. Upgrade in P4 after Bun is the runtime. Keep the Czech one-line file + rotation from #90. |
+| pino | ^8.21.0 | **9.14.0**, not 10.3.1 | — | loaded through try/catch. pino 10 throws `diagChan.tracingChannel is not a function` on Node 18.12.1, and the startup app always runs on Node. The Czech one-line file + rotation from #90 is byte-identical on 9. |
 | pino-pretty | ^10.3.1 | 13.1.3 | — | with pino |
 | sudo-prompt | ^9.2.1 | 9.2.1 | — | last release 2024-12; no upgrade exists; still needed for Windows elevation |
 | eslint, eslint-config-prettier, plugins, prettier | as backend | as backend | | removed in P5 |
@@ -944,10 +944,15 @@ once, at `source/`, with per-app overrides. Config-schema is a fifth target, not
 listed in the first draft. CI: `oxlint --deny-warnings` and `oxfmt --check`.
 Warnings are errors.
 
-**Pino 8 → 10.** Startup's public log is a Czech one-line file with size rotation
-(#90, decisions live in that PR). `pino@10` and `pino-pretty@13` change the default
-shape. Upgrade only after Bun is the runtime, in the P4 library PR, and treat a
-broken log format as a failed phase. `bootstrap.js` never imports pino.
+**Pino 8 → 9, not 10.** Startup's public log is a Czech one-line file with size
+rotation (#90, decisions live in that PR). Done 2026-09-28: `pino@9.14.0` with
+`pino-pretty@13.1.3`. The file and the stdout stream are byte-identical to pino
+8.21.0, so the format was never the risk. **pino 10 cannot ship.** It calls
+`diagnostics_channel.tracingChannel`, which arrived in Node 19.9, and throws
+`TypeError: diagChan.tracingChannel is not a function` on Node 18.12.1. The
+earlier note said to wait for Bun; that premise was wrong, because the startup
+app always runs on Node (decided 2026-09-25). Revisit pino 10 only when every
+box runs Node 20 or newer. `bootstrap.js` never imports pino.
 
 **Zod.** Leave at `3.23.8`. A bump to 3.25 or 4 is not this project.
 
@@ -989,7 +994,7 @@ still gets one merge after the canary.
      in the tests, and fixed all of them on vue 3.2.37.
    - What would change this: a Libraries bump that the panel's TypeScript
      4.7.4 can type-check, or a panel contract that only passes on vue 3.5.
-5. **Libraries.** The P4 bumps, including Express 5 and Pino 10. The review
+5. **Libraries.** The P4 bumps, including Express 5 and Pino 9. The review
    checks behavior. Czech text, JSON errors, and the startup log line stay
    the same.
 6. **Test and lint tools.** Vite 8, vitest 5, oxlint, and oxfmt.
