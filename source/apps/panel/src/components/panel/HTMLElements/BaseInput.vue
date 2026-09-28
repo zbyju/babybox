@@ -1,10 +1,11 @@
 <template>
   <input
     :type="type"
-    v-bind="optionalAttrs"
+    :placeholder="props.placeholder"
+    :pattern="props.pattern"
     :value="props.modelValue ?? ''"
     :class="classState"
-    :disabled="props.disabled === true"
+    :disabled="props.disabled"
     @input="inputChange"
   />
 </template>
@@ -32,17 +33,6 @@
       emit("update:modelValue", event.target.value);
     }
   }
-
-  /*
-   * Not set when there is no value, as Vue did with undefined.
-   * An empty pattern would reject every value.
-   */
-  const optionalAttrs = computed(() => {
-    const attrs: { placeholder?: string; pattern?: string } = {};
-    if (props.placeholder !== undefined) attrs.placeholder = props.placeholder;
-    if (props.pattern !== undefined) attrs.pattern = props.pattern;
-    return attrs;
-  });
 
   const classState = computed(() =>
     props.state === BaseInputState.Accent

@@ -367,7 +367,7 @@ mistaken for P1. The 2026-09-13 target runtime (Node 24 LTS 24.21.0 and pnpm
 |---|---|---|
 | `@babybox/config-schema` with `zod@3.23.8` | #86 | New package in the inventory. Already `module: node16` and `strict: true`. Backend imports the type only, through `baseUrl` + `paths`, because a `workspace:*` dep breaks the standalone `dist` install (learnings.md, Startup). TS 7 removes `baseUrl`; P4 must replace that path with a relative `paths` entry. Zod stays on 3.23.8 in this plan. Zod 4 is a separate project. |
 | Config write path, PATCH, panel config page, apply-on-save | #85 #88 #89 #91 | Manual run in P4 includes the config page, PUT and PATCH. Express 5 now has 11 async route handlers (7 backend, 4 configer), not 9. Empty-body tests exist for PUT and PATCH; they still assume Express 4's `req.body = {}` when the header is missing. |
-| Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. Do not upgrade pino until Bun is the runtime (P4). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
+| Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. pino stops at 9.14.0: pino 10 needs Node 19.9 or newer and the startup app always runs on Node (2026-09-28). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
 | Startup has tests | #90 | `apps/startup/src/logger.test.js` runs under jest. P0 must not remove jest from startup. P5 moves those tests to vitest and puts them in CI. CI today lints startup and does not test it. |
 | `installAll.sh` removed | #54 | Ubuntu provisioning is `install-all.sh` only. Both `install-all.sh` and the old script used `n` and chowned `/usr/local`. |
 | Panel no longer imports axios | #76 | `axios` is still in `apps/panel/package.json` and the leftover `apps/panel/pnpm-lock.yaml`. Dead weight for P0. Backend still has one axios call site. |
@@ -774,7 +774,7 @@ the start of P4 and P5. The Latest column is the exact specifier to write in
 |---|---|---|---|---|
 | fs-extra | ^10.1.0 | 11.4.0 | ≥14.14 | |
 | moment | ^2.29.3 | 2.31.0 | — | |
-| pino | ^8.21.0 | 10.3.1 | — | loaded through try/catch. Upgrade in P4 after Bun is the runtime. Keep the Czech one-line file + rotation from #90. |
+| pino | ^8.21.0 | **9.14.0**, not 10.3.1 | — | loaded through try/catch. pino 10 throws `diagChan.tracingChannel is not a function` on Node 18.12.1, and the startup app always runs on Node. The Czech one-line file + rotation from #90 is byte-identical on 9. |
 | pino-pretty | ^10.3.1 | 13.1.3 | — | with pino |
 | sudo-prompt | ^9.2.1 | 9.2.1 | — | last release 2024-12; no upgrade exists; still needed for Windows elevation |
 | eslint, eslint-config-prettier, plugins, prettier | as backend | as backend | | removed in P5 |
@@ -800,8 +800,16 @@ middleware, so we need one and it must return JSON, not the HTML default page.
 The non-object check covers it. The existing tests (`main.test.ts` empty body,
 `configRoute.test.ts` missing Content-Type) still assume `{}`; extend them so
 both `{}` and `undefined` return 400 and write nothing. Route strings with
-`*`, `?`, `+` or regex parts changed syntax; we have none (`["/version", "/versions"]`
-arrays are fine). `req.query` is a getter now; nothing assigns to it.
+`*`, `?`, `+` or regex parts changed syntax. **This plan said we have none. That
+was wrong.** `apps/backend/src/index.ts` registers `app.get("*")` for the SPA
+history fallback, inside the `NODE_ENV === "production"` block that every box
+runs. Express 5 uses path-to-regexp 8, which rejects a bare `*` at registration
+with `PathError: Missing parameter name at index 1: *`. The backend would throw
+at startup on every box. It is now `app.get("/{*splat}")`, which registers and
+routes the same way (checked on Node 18.12.1: `/api/v1/status` still answers the
+API, `/config` still falls through to the SPA). `apps/backend/src/__tests__/
+panelFallback.test.ts` had the same bare `*`. `["/version", "/versions"]` arrays
+are fine. `req.query` is a getter now; nothing assigns to it.
 
 **ESM-only packages.** `open` (≥9), `pinia` (4), `lowdb` (≥4), and Vue Router 6
 later. The panel is bundled by Vite, so ESM-only is invisible there. Configer and
@@ -936,10 +944,15 @@ once, at `source/`, with per-app overrides. Config-schema is a fifth target, not
 listed in the first draft. CI: `oxlint --deny-warnings` and `oxfmt --check`.
 Warnings are errors.
 
-**Pino 8 → 10.** Startup's public log is a Czech one-line file with size rotation
-(#90, decisions live in that PR). `pino@10` and `pino-pretty@13` change the default
-shape. Upgrade only after Bun is the runtime, in the P4 library PR, and treat a
-broken log format as a failed phase. `bootstrap.js` never imports pino.
+**Pino 8 → 9, not 10.** Startup's public log is a Czech one-line file with size
+rotation (#90, decisions live in that PR). Done 2026-09-28: `pino@9.14.0` with
+`pino-pretty@13.1.3`. The file and the stdout stream are byte-identical to pino
+8.21.0, so the format was never the risk. **pino 10 cannot ship.** It calls
+`diagnostics_channel.tracingChannel`, which arrived in Node 19.9, and throws
+`TypeError: diagChan.tracingChannel is not a function` on Node 18.12.1. The
+earlier note said to wait for Bun; that premise was wrong, because the startup
+app always runs on Node (decided 2026-09-25). Revisit pino 10 only when every
+box runs Node 20 or newer. `bootstrap.js` never imports pino.
 
 **Zod.** Leave at `3.23.8`. A bump to 3.25 or 4 is not this project.
 
@@ -981,7 +994,7 @@ still gets one merge after the canary.
      in the tests, and fixed all of them on vue 3.2.37.
    - What would change this: a Libraries bump that the panel's TypeScript
      4.7.4 can type-check, or a panel contract that only passes on vue 3.5.
-5. **Libraries.** The P4 bumps, including Express 5 and Pino 10. The review
+5. **Libraries.** The P4 bumps, including Express 5 and Pino 9. The review
    checks behavior. Czech text, JSON errors, and the startup log line stay
    the same.
 6. **Test and lint tools.** Vite 8, vitest 5, oxlint, and oxfmt.
@@ -1240,17 +1253,41 @@ TypeScript contract. Do not add `tsx`.
 - [x] Configer: confirm with `tsc --noEmit` under the contract. Config-schema:
       confirm the same; it is already on `node16` / `strict`
 - [x] `ts-node` / `nodemon` → `bun --watch` for backend and configer
-- [ ] vue 3.5.43, vue-router 5.3.1, pinia 4.0.3 + `@vue/devtools-api`, lodash 4.18.1,
-      howler 2.2.4, moment 2.31.0, stylus 0.64.0
-- [ ] axios 1.20.0 in the backend only
-- [ ] express 5.2.1 + `@types/express@5` in backend and configer; add a JSON error
-      middleware to both; extend the empty-body and missing-Content-Type tests for
-      `undefined` as well as `{}`
-- [ ] cors, dotenv 18.0.2 (silence any load banner), morgan, winston, fs-extra 11,
-      newman 6, pino 10.3.1, pino-pretty 13.1.3 (prove #90's file format and
-      rotation still hold). nodemon is already gone (type-contract PR).
-- [ ] `open@11.0.4` as a plain ESM import once the backend is ESM
-- [ ] lowdb 7 in configer (`versions.json` only)
+- [x] vue 3.5.43, vue-router 5.3.1, pinia 4.0.3 + `@vue/devtools-api` 8.2.1,
+      lodash 4.18.1, howler 2.2.4, moment 2.31.0, stylus 0.64.0.
+      `@vue/reactivity` moved to 3.5.43 with vue, and `@types/howler` to
+      2.2.13 and `@types/lodash` to 4.17.25.
+      Done on vite 2.9.14 and `@vitejs/plugin-vue` 2.3.3. This bump does
+      **not** need Vite 8; see the decision of 2026-09-28.
+- [x] axios 1.20.0 in the backend only. `axios.default.get` became
+      `axios.get`; the 0.27 comment said to do exactly that when 1.x landed.
+- [x] express 5.2.1 + `@types/express@5` in backend and configer; a JSON error
+      middleware in both (`src/middleware/jsonErrors.ts`), registered last;
+      the empty-body and missing-Content-Type tests now cover `undefined` as
+      well as `{}`. The missing-header case answers `must be an object` where
+      Express 4 answered `must not be empty`: both are a 400 that writes
+      nothing. Also needed the splat fix above.
+- [x] cors 2.8.6, dotenv 18.0.3, morgan 1.12.1, winston 3.19.0, fs-extra 11.4.1,
+      newman 6.2.2, **pino 9.14.0 (not 10.3.1)**, pino-pretty 13.1.3.
+      dotenv 18 prints `◇ injected env (1) from .env` on stderr, 31 bytes, so
+      both apps now call `dotenv.config({ quiet: true })`, measured back to 0.
+      **pino 10 cannot ship**: it throws
+      `TypeError: diagChan.tracingChannel is not a function` on Node 18.12.1,
+      and the startup app always runs on Node. pino 9.14.0 loads there and the
+      #90 Czech one-line file is byte-identical to pino 8. See the decision of
+      2026-09-28. nodemon is already gone (type-contract PR).
+- [x] `open@11.0.4` as a plain ESM import. `engines.node` is `>=20`, but it
+      loads and runs on Node 18.12.1, so the Node fallback still opens the
+      panel. Not checked on the Windows `powershell-utils` path.
+- [ ] lowdb 7 in configer (`versions.json` only). **Tried and reverted on
+      2026-09-28. Do not retry until configer's `dist` has its own
+      `node_modules`.** lowdb 7 moves `JSONFile` to `lowdb/node`, so a configer
+      `dist` compiled against lowdb 3 cannot start once lowdb 7 is installed.
+      `legacy-boot1` caught it: in the "boot 1 with a failed build starts the
+      legacy dist" case, `bun install` has already replaced `node_modules`, and
+      the kept `dist` then dies with
+      `SyntaxError: Export named 'JSONFile' not found`. See the decision of
+      2026-09-28 on the rollback hazard.
 - [ ] Full manual run: panel against a real engine and thermal unit, camera feed,
       sound alerts, settings page, restart route, config page save (PUT and PATCH
       from #85/#88/#91)
@@ -1277,6 +1314,11 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
       win. Delete the panel copy of the 12 flags. Decided 2026-09-25.
       Checked on vite 8.3.0 and @vitejs/plugin-vue 6.0.9: same bundle, all
       12 flags. Check vitest 5 with the array before this box is ticked.
+- [x] `apps/panel/vite.config.ts` sets `define: { __VUE_PROD_DEVTOOLS__: false }`.
+      pinia 4 needs `@vue/devtools-api` as a non-optional peer, and only a
+      guard on that flag keeps `@vue/devtools-kit` out of the bundle. Added in
+      #131 so the Vite 8 swap cannot quietly undo it. `legacy-image` never
+      reads bundle content, so a regression would be silent.
 - [ ] Prove `bun install` accepts jsdom 30.1.0 (`engines.node` is `^22.22.2 ||
       ^24.15.0 || >=26`). If it refuses, pin the newest jsdom that Bun accepts
       and record the pin here. Do not turn on `engine-strict`.
@@ -1565,6 +1607,23 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       box build keeps `vue-tsc`. The owner confirmed that all panel PCs run
       Node 18. Not checked through `GET /status`. The Node 16 floor of
       `vue-tsc` 3.3.11 is accepted.
+- [x] `legacy-image-release.sh` runs the backend's production block on Node.
+      Added in #132 after the review. Before it, no job ran that block on
+      Node 18: `seed_previous` writes `NODE_ENV=development`, and
+      `legacy-boot1` reaches the block only on Bun. A Bun-less box runs
+      exactly that pair. The new case seeds `NODE_ENV=production` with a
+      one-line `public/index.html`, removes Bun, then asserts `/` serves the
+      page, `/config` falls through to the SPA route, and the apps run on
+      Node. `open()` was checked on a headless `node:18.12.1-bullseye`: it
+      neither rejects nor ends the process, and it now has a `.catch` anyway.
+- [ ] Owner: give configer's `dist` its own `node_modules`, the way the backend
+      `dist` already has. Today `start-app.js` starts the backend from `../dist`
+      with `install: true` and configer from `apps/configer` with
+      `install: false`, so configer resolves from the shared
+      `source/node_modules`. `INSTALL` runs before every build step, so after a
+      failed build the kept configer `dist` is a stale compile against the new
+      packages. That blocks every configer library major, lowdb 7 first.
+      Found 2026-09-28 by `legacy-boot1`, not by `legacy-image`.
 - [ ] `dist-release.js` keeps its own copy of the Bun path and the CPU hold
       check (`installedBunVersion`, `readCpuHold`). `start-app.js` uses the
       `bootstrap.js` exports. Fold the startup copy in in a later change.
@@ -1576,12 +1635,31 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       BUILD_PANEL has no `node` to run it on.
 - [ ] Measure the panel build on a real box. The P4 numbers come from
       Docker on Apple silicon.
-- [ ] `<router-link>` and `<router-view>` props are not type-checked.
+- [x] `<router-link>` and `<router-view>` props are not type-checked.
       vue-router 4.1.3 extends `GlobalComponents`, which vue 3.2.37 does not
-      have. Check again after vue 3.5.
-- [ ] After vue 3.5, drop the Vue 3.2 attribute workarounds: the optional
-      attributes in `BaseInput`, `srcAttr` and `topBorder` in the camera
-      views, `?? ''` and `=== true` on `value` and `disabled`.
+      have. Answered 2026-09-28: vue 3.5.43 has `GlobalComponents` and
+      vue-router 5.3.1 extends it, so the props are type-checked now.
+      `:to="123"` gives `TS2322: Type 'number' is not assignable to type
+      'string | RouteLocationAsRelativeGeneric | RouteLocationAsPathGeneric'`.
+      The one call site in `TheNav.vue` already passes a correct `to`, so
+      nothing had to change. An extra unknown attribute still passes, because
+      that is a legal fall-through attribute, not a hole in the typing.
+- [x] After vue 3.5, drop the Vue 3.2 attribute workarounds. Done
+      2026-09-28, but only two of the five items on this list were really
+      type workarounds:
+      - `BaseInput`'s `optionalAttrs` `v-bind` and `=== true` on `disabled`,
+        and the same `=== true` in `BaseSelect`: removed. `vue-tsc` stays at
+        0 errors and the rendered DOM is identical in every prop case.
+        `BaseSelect` is the fourth SFC of the four the note counted.
+      - `?? ''` on `value`: kept. Removing it drops the serialised
+        `value=""` attribute. `el.value` is `""` either way, so nothing a
+        nurse sees changes, but the panel gains nothing from the removal.
+      - `srcAttr` in `SnapshotCameraView`: kept. It is not a type
+        workaround. Its comment says an empty `src` resolves to the page URL
+        and raised a camera Error before the first frame was asked for.
+        vue 3.5 does not change that.
+      - `topBorder` in both camera views: nothing to remove. It is an
+        ordinary computed style object, never a workaround.
 - [ ] The panel tests keep six `as` and one `let resolve!:`. P5 lint
       removes them.
 - [ ] The panel no longer reads the root `@types` folder. TypeScript 6
@@ -1718,3 +1796,18 @@ One line per landed step: date, PR, what moved.
   `vue-tsc` 3.3.11 under the contract flags. The build type-checks 99 files
   in `src`; it checked none before. The tests and `vite.config.ts` are
   checked in CI. vue, vue-router, pinia, vite and vitest are unchanged.
+- 2026-09-28 — #131 — the panel runs on vue 3.5.43, vue-router 5.3.1 and
+  pinia 4.0.3, still on vite 2.9.14. `vue-tsc` is at 0 errors on all three
+  tsconfigs, build stderr is 0 bytes, and the compiled CSS and every Czech
+  string are unchanged. The review added two test files, so the suite is 18
+  files and 189 tests, up from 16 and 172: the rendered `BaseInput`
+  attributes, and every panel route under vue-router 5.
+- 2026-09-28 — #132 — `legacy-image-release.sh` now runs the backend's
+  production block on Node, the pair a Bun-less box uses and the only one no
+  job covered.
+- 2026-09-28 — #132 — the backend and configer run on express 5.2.1 with a
+  JSON error middleware, and the backend, configer and startup libraries are
+  current. The SPA fallback is `/{*splat}`: express 5 rejects a bare `*` at
+  registration, which would have stopped every box from starting. pino stops
+  at 9.14.0, because pino 10 does not load on Node 18. lowdb stays at 3.0.0:
+  lowdb 7 breaks the failed-build rollback for configer.
