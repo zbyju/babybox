@@ -1743,5 +1743,7 @@ One line per landed step: date, PR, what moved.
   checked in CI. vue, vue-router, pinia, vite and vitest are unchanged.
 - 2026-09-28 — #131 — the panel runs on vue 3.5.43, vue-router 5.3.1 and
   pinia 4.0.3, still on vite 2.9.14. `vue-tsc` is at 0 errors on all three
-  tsconfigs, the 172 unit tests pass, build stderr is 0 bytes, and the
-  compiled CSS and every Czech string are unchanged.
+  tsconfigs, build stderr is 0 bytes, and the compiled CSS and every Czech
+  string are unchanged. The review added two test files, so the suite is 18
+  files and 189 tests, up from 16 and 172: the rendered `BaseInput`
+  attributes, and every panel route under vue-router 5.
