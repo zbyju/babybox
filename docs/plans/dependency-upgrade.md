@@ -1607,6 +1607,15 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       box build keeps `vue-tsc`. The owner confirmed that all panel PCs run
       Node 18. Not checked through `GET /status`. The Node 16 floor of
       `vue-tsc` 3.3.11 is accepted.
+- [x] `legacy-image-release.sh` runs the backend's production block on Node.
+      Added in #132 after the review. Before it, no job ran that block on
+      Node 18: `seed_previous` writes `NODE_ENV=development`, and
+      `legacy-boot1` reaches the block only on Bun. A Bun-less box runs
+      exactly that pair. The new case seeds `NODE_ENV=production` with a
+      one-line `public/index.html`, removes Bun, then asserts `/` serves the
+      page, `/config` falls through to the SPA route, and the apps run on
+      Node. `open()` was checked on a headless `node:18.12.1-bullseye`: it
+      neither rejects nor ends the process, and it now has a `.catch` anyway.
 - [ ] Owner: give configer's `dist` its own `node_modules`, the way the backend
       `dist` already has. Today `start-app.js` starts the backend from `../dist`
       with `install: true` and configer from `apps/configer` with
@@ -1793,6 +1802,9 @@ One line per landed step: date, PR, what moved.
   string are unchanged. The review added two test files, so the suite is 18
   files and 189 tests, up from 16 and 172: the rendered `BaseInput`
   attributes, and every panel route under vue-router 5.
+- 2026-09-28 — #132 — `legacy-image-release.sh` now runs the backend's
+  production block on Node, the pair a Bun-less box uses and the only one no
+  job covered.
 - 2026-09-28 — #132 — the backend and configer run on express 5.2.1 with a
   JSON error middleware, and the backend, configer and startup libraries are
   current. The SPA fallback is `/{*splat}`: express 5 rejects a bare `*` at

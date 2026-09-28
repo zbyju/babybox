@@ -116,6 +116,12 @@ lesson: what happened, what to do instead.
 
 ## Backend
 
+- **Check which runtime and which code path each job actually exercises, not
+  just that a job is green.** `legacy-image-release.sh` seeds
+  `NODE_ENV=development`, so its only Node start skipped the production block,
+  while `legacy-boot1` entered that block only on Bun. The pair a Bun-less box
+  uses had no job at all, and that is where the `app.get("*")` throw lived.
+
 - **express 5 validates every route string at registration, including the ones
   built from config.** path-to-regexp 8 throws for `{ } ( ) [ ] + ? !` and for
   `:`/`*` with no name. `app.get(prefix + "/status")` with a config-set prefix
