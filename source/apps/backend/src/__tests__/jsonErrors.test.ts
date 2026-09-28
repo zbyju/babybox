@@ -32,6 +32,9 @@ describe("the json error middleware", () => {
       res.status(200).json({ ok: true });
       throw new Error("too late");
     });
+    app.post("/parsed", express.json(), (_req, res) => {
+      res.json({ ok: true });
+    });
     app.use(jsonErrors);
 
     server = app.listen(0);
@@ -70,5 +73,20 @@ describe("the json error middleware", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
+  });
+
+  /*
+   * express.json() puts 400 on the error it throws for a bad body. Answering
+   * 500 there would call the sender's mistake ours, and Express 4 said 400.
+   */
+  it("keeps the 400 that express.json puts on a bad body", async () => {
+    const res = await fetch(`${url}/parsed`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{not json",
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.headers.get("content-type")).toContain("application/json");
   });
 });
