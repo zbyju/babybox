@@ -116,6 +116,19 @@ lesson: what happened, what to do instead.
 
 ## Backend
 
+- **Express 5 rejects a bare `*` route when it is registered.** path-to-regexp 8
+  throws `PathError: Missing parameter name at index 1: *`. Write `/{*splat}`.
+  The throw happens at registration, not on a request, so an app that only
+  registers the route in production fails to start on a box and passes every
+  test that does not build that block.
+- **`engines.node` is not a test of whether a package runs.** `open@11` declares
+  `>=20` and both loads and works on Node 18.12.1. `pino@10` declares no engines
+  at all and throws on Node 18, because it calls
+  `diagnostics_channel.tracingChannel`, which is Node 19.9+. Import it on the
+  runtime you care about and call it.
+- **dotenv 18 prints `◇ injected env (1) from .env` on stderr**, 31 bytes. Pass
+  `{ quiet: true }`. Measure in bash, not zsh.
+
 - **`fetchConfig()` returns no `data` key when it fails.** It answers
   `{ status: 408, msg }`, so `config = (await fetchConfig()).data` sets `undefined`
   and the next poll throws on `config.units.engine.ip`. Check for the key before any

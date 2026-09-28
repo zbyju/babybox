@@ -800,8 +800,16 @@ middleware, so we need one and it must return JSON, not the HTML default page.
 The non-object check covers it. The existing tests (`main.test.ts` empty body,
 `configRoute.test.ts` missing Content-Type) still assume `{}`; extend them so
 both `{}` and `undefined` return 400 and write nothing. Route strings with
-`*`, `?`, `+` or regex parts changed syntax; we have none (`["/version", "/versions"]`
-arrays are fine). `req.query` is a getter now; nothing assigns to it.
+`*`, `?`, `+` or regex parts changed syntax. **This plan said we have none. That
+was wrong.** `apps/backend/src/index.ts` registers `app.get("*")` for the SPA
+history fallback, inside the `NODE_ENV === "production"` block that every box
+runs. Express 5 uses path-to-regexp 8, which rejects a bare `*` at registration
+with `PathError: Missing parameter name at index 1: *`. The backend would throw
+at startup on every box. It is now `app.get("/{*splat}")`, which registers and
+routes the same way (checked on Node 18.12.1: `/api/v1/status` still answers the
+API, `/config` still falls through to the SPA). `apps/backend/src/__tests__/
+panelFallback.test.ts` had the same bare `*`. `["/version", "/versions"]` arrays
+are fine. `req.query` is a getter now; nothing assigns to it.
 
 **ESM-only packages.** `open` (≥9), `pinia` (4), `lowdb` (≥4), and Vue Router 6
 later. The panel is bundled by Vite, so ESM-only is invisible there. Configer and
@@ -1246,15 +1254,30 @@ TypeScript contract. Do not add `tsx`.
       2.2.13 and `@types/lodash` to 4.17.25.
       Done on vite 2.9.14 and `@vitejs/plugin-vue` 2.3.3. This bump does
       **not** need Vite 8; see the decision of 2026-09-28.
-- [ ] axios 1.20.0 in the backend only
-- [ ] express 5.2.1 + `@types/express@5` in backend and configer; add a JSON error
-      middleware to both; extend the empty-body and missing-Content-Type tests for
-      `undefined` as well as `{}`
-- [ ] cors, dotenv 18.0.2 (silence any load banner), morgan, winston, fs-extra 11,
-      newman 6, pino 10.3.1, pino-pretty 13.1.3 (prove #90's file format and
-      rotation still hold). nodemon is already gone (type-contract PR).
-- [ ] `open@11.0.4` as a plain ESM import once the backend is ESM
-- [ ] lowdb 7 in configer (`versions.json` only)
+- [x] axios 1.20.0 in the backend only. `axios.default.get` became
+      `axios.get`; the 0.27 comment said to do exactly that when 1.x landed.
+- [x] express 5.2.1 + `@types/express@5` in backend and configer; a JSON error
+      middleware in both (`src/middleware/jsonErrors.ts`), registered last;
+      the empty-body and missing-Content-Type tests now cover `undefined` as
+      well as `{}`. The missing-header case answers `must be an object` where
+      Express 4 answered `must not be empty`: both are a 400 that writes
+      nothing. Also needed the splat fix above.
+- [x] cors 2.8.6, dotenv 18.0.3, morgan 1.12.1, winston 3.19.0, fs-extra 11.4.1,
+      newman 6.2.2, **pino 9.14.0 (not 10.3.1)**, pino-pretty 13.1.3.
+      dotenv 18 prints `◇ injected env (1) from .env` on stderr, 31 bytes, so
+      both apps now call `dotenv.config({ quiet: true })`, measured back to 0.
+      **pino 10 cannot ship**: it throws
+      `TypeError: diagChan.tracingChannel is not a function` on Node 18.12.1,
+      and the startup app always runs on Node. pino 9.14.0 loads there and the
+      #90 Czech one-line file is byte-identical to pino 8. See the decision of
+      2026-09-28. nodemon is already gone (type-contract PR).
+- [x] `open@11.0.4` as a plain ESM import. `engines.node` is `>=20`, but it
+      loads and runs on Node 18.12.1, so the Node fallback still opens the
+      panel. Not checked on the Windows `powershell-utils` path.
+- [x] lowdb 7 in configer (`versions.json` only). `JSONFile` moved to
+      `lowdb/node` and `Low` now wants default data, so it is
+      `new Low<VersionConfig | null>(adapter, null)`. `null` keeps the lowdb 3
+      shape that the one caller already reads.
 - [ ] Full manual run: panel against a real engine and thermal unit, camera feed,
       sound alerts, settings page, restart route, config page save (PUT and PATCH
       from #85/#88/#91)

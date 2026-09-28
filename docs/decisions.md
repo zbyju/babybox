@@ -1371,3 +1371,38 @@ Context · Decision · Why · Gave up · Where
   `el.disabled`: six prop cases for `BaseInput`, five for `BaseSelect`.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
   questions".
+
+## 2026-09-28 — The startup app stops at pino 9, not pino 10
+
+- Context: the P4 box says `pino 10.3.1`. The plan added "upgrade only after
+  Bun is the runtime", but the startup app never moves to Bun: it runs on Node
+  for boot 1, for hold boxes, and for the pm2 daemon (decided 2026-09-25).
+- Decision: `pino@9.14.0` with `pino-pretty@13.1.3`. Not pino 10.
+- Why: pino 10 does not load on Node 18.12.1. It throws
+  `TypeError: diagChan.tracingChannel is not a function` from
+  `pino/lib/tools.js:32`. `diagnostics_channel.tracingChannel` arrived in Node
+  19.9 and 20. The boxes run Node 18.12.1. pino 9.14.0 loads there, and the
+  #90 Czech one-line log file and its stdout stream are byte-identical across
+  pino 8.21.0, 9.14.0 and 10.3.1, checked with the real `logger.js` and
+  `strings.js` on a fixed clock. So the format was never the risk; the runtime
+  floor was. learnings.md already recorded the same `tracingChannel` failure
+  for `pnpm view` under Node 18.
+- Gave up: pino 10. Revisit only when every box runs Node 20 or newer.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-28 — The SPA fallback route needs a named splat
+
+- Context: `apps/backend/src/index.ts` served the panel's history-mode routes
+  with `app.get("*")`, inside the `NODE_ENV === "production"` block that every
+  box runs. The plan said no route string used `*`, `?`, `+` or a regex.
+- Decision: the route is `app.get("/{*splat}")`.
+- Why: that claim was wrong, and it was the one change in this pull request
+  that could stop a box from starting. Express 5 uses path-to-regexp 8, which
+  rejects a bare `*` when the route is registered:
+  `PathError: Missing parameter name at index 1: *`. The throw happens in
+  `main()`, so the backend would never listen. `/{*splat}` registers and routes
+  the same way: on Node 18.12.1 with express 5.2.1, `/api/v1/status` still
+  answers the API route, `/` still answers the index, and `/config`,
+  `/settings/deep/path` and `/favicon.ico` all fall through to the SPA.
+- Gave up: nothing. There is no reason to keep the old spelling.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
