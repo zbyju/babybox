@@ -5,7 +5,9 @@ import type { VersionDb } from "./version.js";
 
 export class DbFactory {
   constructor() {
-    throw new Error("Don't call constructor, use static `getInstance` method");
+    throw new Error(
+      "Do not call the constructor. Call DbFactory.getMainDb or DbFactory.getVersionDb."
+    );
   }
 
   /*
