@@ -33,7 +33,6 @@ async function installDeps() {
     const pm2Version = pinnedPm2Version();
     await exec("npm install -g pnpm@7.5.0");
     await exec(`npm install -g pm2@${pm2Version}`);
-    await exec("npm install -g nodemon");
   } catch (err) {
     logger.error("install", strings.installDepsFailed, err);
     throw err;
