@@ -1,8 +1,5 @@
 <template>
-  <div
-    id="CameraWrapper"
-    :style="{ maxHeight: props.maxH + 'px', maxWidth: props.maxW + 'px' }"
-  >
+  <div id="CameraWrapper" :style="maxSize">
     <div v-if="doors !== undefined" id="DoorBars">
       <HorizontalPositionBar
         :max-value="doors.max"
@@ -38,6 +35,11 @@
     maxH?: number;
     displayDoors: boolean;
   }>();
+
+  const maxSize = computed(() => ({
+    ...(props.maxH === undefined ? {} : { maxHeight: `${props.maxH}px` }),
+    ...(props.maxW === undefined ? {} : { maxWidth: `${props.maxW}px` }),
+  }));
 
   const unitsStore = useUnitsStore();
   const { engineUnit } = storeToRefs(unitsStore);

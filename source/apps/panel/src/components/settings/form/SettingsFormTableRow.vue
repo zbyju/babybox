@@ -8,9 +8,9 @@
       <div class="newvalue-wrapper">
         <BaseInput
           type="text"
-          :value="props.value"
+          :model-value="props.value"
           :state="inputState"
-          @input="inputChange"
+          @update:model-value="(value: string) => emit('update:value', value)"
         />
         <span v-if="props.row.type !== 'string'" class="measure-unit"
           >[{{ typeToMeasureUnit(props.row.type) }}]</span
@@ -110,10 +110,4 @@
   const emit = defineEmits<{
     (e: "update:value", value: string): void;
   }>();
-
-  function inputChange(event: Event) {
-    if (event.target instanceof HTMLInputElement) {
-      emit("update:value", event.target.value);
-    }
-  }
 </script>
