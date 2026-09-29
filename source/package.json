@@ -14,14 +14,14 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm run build:schema && (pnpm -F babybox-panel-configer dev & pnpm -F babybox-panel dev & pnpm -F babybox-panel-backend dev)",
-    "dev:backend": "pnpm -F babybox-panel-backend dev",
-    "dev:panel": "pnpm -F babybox-panel dev",
-    "dev:configer": "pnpm -F babybox-panel-configer dev",
+    "dev": "bun run build:schema && (bun --filter babybox-panel-configer dev & bun --filter babybox-panel dev & bun --filter babybox-panel-backend dev)",
+    "dev:backend": "bun --filter babybox-panel-backend dev",
+    "dev:panel": "bun --filter babybox-panel dev",
+    "dev:configer": "bun --filter babybox-panel-configer dev",
     "stop": "pm2 delete configer && pm2 delete babybox",
     "start:configer": "node apps/startup/start-app.js configer",
     "start:main": "node apps/startup/start-app.js main",
-    "build:schema": "pnpm -F @babybox/config-schema build",
+    "build:schema": "bun --filter @babybox/config-schema build",
     "build": "node apps/startup/run-update.js",
     "echo": "echo test"
   },
