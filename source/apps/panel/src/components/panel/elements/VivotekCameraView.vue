@@ -2,13 +2,9 @@
   <div id="container">
     <iframe
       v-show="state === CameraState.Ok"
-      ref="imageRef"
       name="vivotek"
       scrolling="no"
-      :style="[
-        topBorder,
-        { maxHeight: props.maxH + 'px', maxWidth: props.maxW + 'px' },
-      ]"
+      :style="[topBorder, maxSize]"
     />
   </div>
   <div
@@ -51,10 +47,14 @@
     props.displayTopBorder ? {} : { borderTopWidth: "0px" },
   );
 
+  const maxSize = computed(() => ({
+    ...(props.maxH === undefined ? {} : { maxHeight: `${props.maxH}px` }),
+    ...(props.maxW === undefined ? {} : { maxWidth: `${props.maxW}px` }),
+  }));
+
   const configStore = useConfigStore();
   const { camera } = storeToRefs(configStore);
 
-  const imageRef = ref<HTMLImageElement | null>(null);
   onMounted(() => {
     try {
       window.open(`http://${camera.value.ip}/`, "vivotek");
