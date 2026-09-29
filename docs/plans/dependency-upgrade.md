@@ -1813,5 +1813,5 @@ One line per landed step: date, PR, what moved.
   registration, which would have stopped every box from starting. pino stops
   at 9.14.0, because pino 10 does not load on Node 18. lowdb stays at 3.0.0:
   lowdb 7 breaks the failed-build rollback for configer.
-- 2026-09-29 — the Ubuntu and Windows install scripts no longer run
+- 2026-09-29 — #134 — the Ubuntu and Windows install scripts no longer run
   `npm install -g nodemon`.
