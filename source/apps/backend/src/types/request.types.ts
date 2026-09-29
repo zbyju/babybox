@@ -31,9 +31,13 @@ export function isInstanceOfPostUnitSettingsRequestBody(
   return "settings" in object && isInstanceOfArraySetting(object["settings"]);
 }
 
+/*
+ * Express sends `?timeout` as a string.
+ * fetchSettings reads that string with queryTimeout.
+ * This type holds `unit` only.
+ */
 export interface GetUnitSettingsRequest {
   unit?: BothUnit;
-  timeout?: number;
 }
 
 export function isInstanceOfGetUnitSettingsRequest(

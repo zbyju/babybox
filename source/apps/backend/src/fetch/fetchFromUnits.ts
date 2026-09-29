@@ -64,7 +64,8 @@ export async function fetchSettings(
       msg: "Unit was specified, but it is wrong. Expected values are: 'engine' or 'thermal'.",
     };
   }
-  const { unit = "both", timeout = defaultFetchTimeout() } = query;
+  const { unit = "both" } = query;
+  const timeout = queryTimeout(query);
 
   const timestamp = new Date().getTime();
   const settingsUrl = (u: Unit) =>

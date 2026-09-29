@@ -57,3 +57,45 @@ describe("fetchDataCommon ?timeout", () => {
     expect(fetchFromUrl).toHaveBeenCalledWith(expect.any(String), expected);
   });
 });
+
+describe("fetchSettings ?timeout", () => {
+  const fetchFromUrl = vi.fn();
+  let unitApi: typeof import("../fetchFromUnits.js");
+
+  beforeAll(async () => {
+    vi.resetModules();
+    vi.doMock("../../index.js", () => ({
+      config: {
+        units: { engine: { ip: "10.1.1.5" }, thermal: { ip: "10.1.1.6" } },
+      },
+    }));
+    vi.doMock("../fetch.js", () => ({ fetchFromUrl }));
+    unitApi = await import("../fetchFromUnits.js");
+  });
+
+  beforeEach(() => {
+    fetchFromUrl.mockReset();
+    fetchFromUrl.mockResolvedValue({ status: 200, data: "0|1|2" });
+  });
+
+  it.each([["abc"], ["0.5"], ["0"], ["2147483648"]])(
+    "should use the default for ?timeout=%s",
+    async (timeout) => {
+      await unitApi.fetchSettings({ unit: "engine", timeout });
+
+      expect(fetchFromUrl).toHaveBeenCalledWith(
+        expect.any(String),
+        defaultFetchTimeout()
+      );
+    }
+  );
+
+  it.each([
+    ["2000", 2000],
+    ["2147483647", 2147483647],
+  ])("should use ?timeout=%s as a number of ms", async (timeout, expected) => {
+    await unitApi.fetchSettings({ unit: "engine", timeout });
+
+    expect(fetchFromUrl).toHaveBeenCalledWith(expect.any(String), expected);
+  });
+});
