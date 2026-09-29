@@ -1543,7 +1543,9 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       about 1.5 minutes on Ubuntu and 3.5 to 5 minutes on Windows, in
       parallel with the other jobs. A whole run took 4.5 to 5 minutes. The
       longest job before this pull request took about 4.5 minutes.
-- [ ] The install scripts still install `nodemon` at `latest`.
+- [x] The install scripts still install `nodemon` at `latest`.
+      Answered 2026-09-29. `ubuntu.js` and `windows.js` no longer run
+      `npm install -g nodemon`.
 - [ ] `bootstrap.js` logs `pm2 je [PM2] Spawning PM2 daemon …` when its
       `pm2 -v` starts the daemon. It reads the first stdout line. The log
       line is wrong. The build does not fail.
@@ -1816,6 +1818,8 @@ One line per landed step: date, PR, what moved.
   registration, which would have stopped every box from starting. pino stops
   at 9.14.0, because pino 10 does not load on Node 18. lowdb stays at 3.0.0:
   lowdb 7 breaks the failed-build rollback for configer.
+- 2026-09-29 — #134 — the Ubuntu and Windows install scripts no longer run
+  `npm install -g nodemon`.
 - 2026-09-29 — #136 — the settings fetch reads `?timeout` with `queryTimeout`.
   `GetUnitSettingsRequest` holds `unit` only. `restartRepository` returns the
   object the interval updates. The configer error names `getMainDb` and
