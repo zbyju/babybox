@@ -118,6 +118,20 @@ function firstLine(value) {
   return line.trim();
 }
 
+// `pm2 -v` prints the daemon spawn text first when it starts the daemon.
+// The version is a later line. That line is only X.Y.Z.
+function pm2VersionFromOutput(value) {
+  const text = value === undefined || value === null ? "" : String(value);
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i].trim();
+    if (/^\d+\.\d+\.\d+$/.test(line)) {
+      return line;
+    }
+  }
+  return "";
+}
+
 /**
  * The check uses os.release() numbers. It does not look for a product name.
  */
@@ -324,7 +338,7 @@ function comparePm2(state, spawnSync, env, platform, wanted) {
     writeLine(state, "WARN", `pm2 chybí, chceme ${wanted}.`);
     return;
   }
-  const have = firstLine(result.stdout);
+  const have = pm2VersionFromOutput(result.stdout);
   if (have === "") {
     writeLine(
       state,

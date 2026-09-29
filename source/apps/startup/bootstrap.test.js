@@ -775,6 +775,101 @@ describe("already installed", () => {
     );
   });
 
+  it("still exits 0 and logs the pm2 version when pm2 -v starts the daemon", async () => {
+    await withFixture(
+      {
+        spawnSync(cmd) {
+          if (isBunPath(cmd)) {
+            return { status: 0, signal: null, stdout: "1.4.2\n", stderr: "" };
+          }
+          if (cmd === "pm2") {
+            return {
+              status: 0,
+              signal: null,
+              stdout:
+                "[PM2] Spawning PM2 daemon with pm2_home=C:\\Users\\babybox\\.pm2\r\n" +
+                "[PM2] PM2 Successfully daemonized\r\n" +
+                "5.1.2\r\n",
+              stderr: "pm2 chatter\n",
+            };
+          }
+          throw new Error(`unexpected spawn ${cmd}`);
+        },
+      },
+      async (fx) => {
+        placeExe(fx.home, "bun", "present");
+        expect(await fx.run()).toBe(0);
+        expect(fx.stdout.text()).toContain("pm2 je 5.1.2, chceme 7.0.4.");
+        expect(fx.stdout.text()).not.toContain("Spawning");
+        expect(fx.stdout.text()).not.toContain("pm2 chatter");
+      }
+    );
+  });
+
+  it("logs a pm2 match when the version follows the daemon banner", async () => {
+    await withFixture(
+      {
+        spawnSync(cmd) {
+          if (isBunPath(cmd)) {
+            return { status: 0, signal: null, stdout: "1.4.2\n", stderr: "" };
+          }
+          if (cmd === "pm2") {
+            return {
+              status: 0,
+              signal: null,
+              stdout:
+                "\n" +
+                "                          Runtime Edition\n" +
+                "[PM2] Spawning PM2 daemon with pm2_home=/tmp/pm2-home\n" +
+                "[PM2] PM2 Successfully daemonized\n" +
+                "7.0.4\n",
+              stderr: "",
+            };
+          }
+          throw new Error(`unexpected spawn ${cmd}`);
+        },
+      },
+      async (fx) => {
+        placeExe(fx.home, "bun", "present");
+        expect(await fx.run()).toBe(0);
+        expect(fx.stdout.text()).toContain("pm2 7.0.4 se shoduje.");
+        expect(fx.stdout.text()).not.toContain("Spawning");
+        expect(fx.stdout.text()).not.toContain("Runtime Edition");
+      }
+    );
+  });
+
+  it("still exits 0 when pm2 -v starts the daemon and prints no version", async () => {
+    await withFixture(
+      {
+        spawnSync(cmd) {
+          if (isBunPath(cmd)) {
+            return { status: 0, signal: null, stdout: "1.4.2\n", stderr: "" };
+          }
+          if (cmd === "pm2") {
+            return {
+              status: 0,
+              signal: null,
+              stdout:
+                "[PM2] Spawning PM2 daemon with pm2_home=/tmp/pm2-home\n" +
+                "[PM2] PM2 Successfully daemonized\n",
+              stderr: "",
+            };
+          }
+          throw new Error(`unexpected spawn ${cmd}`);
+        },
+      },
+      async (fx) => {
+        placeExe(fx.home, "bun", "present");
+        expect(await fx.run()).toBe(0);
+        expect(fx.stdout.text()).toContain(
+          "pm2 nevrátil verzi, chceme 7.0.4."
+        );
+        expect(fx.stdout.text()).not.toContain("pm2 je [PM2]");
+      }
+    );
+  });
+
   it("still exits 0 when pm2 returns no version", async () => {
     await withFixture(
       {
