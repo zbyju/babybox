@@ -2,10 +2,7 @@
   <img
     v-show="state === CameraState.Ok"
     v-bind="srcAttr"
-    :style="[
-      topBorder,
-      { maxHeight: props.maxH + 'px', maxWidth: props.maxW + 'px' },
-    ]"
+    :style="[topBorder, maxSize]"
     @error="onError"
     @load="onLoad"
   />
@@ -56,4 +53,9 @@
   const topBorder = computed(() =>
     props.displayTopBorder ? {} : { borderTopWidth: "0px" },
   );
+
+  const maxSize = computed(() => ({
+    ...(props.maxH === undefined ? {} : { maxHeight: `${props.maxH}px` }),
+    ...(props.maxW === undefined ? {} : { maxWidth: `${props.maxW}px` }),
+  }));
 </script>

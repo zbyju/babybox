@@ -1564,20 +1564,25 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 - [ ] `tsc` does not clean `outDir`. A box keeps the old
       `apps/backend/dist/__tests__/*.js` and `types/data.types.js`, and the
       startup copies them into `dist`. Nothing imports them.
-- [ ] `?timeout` on the settings route is a string at run time, but
+- [x] `?timeout` on the settings route is a string at run time, but
       `GetUnitSettingsRequest` types it as a number. The data routes read it
       through `queryTimeout()`; the settings route does not.
+      Fixed in #136. `fetchSettings` reads the string with `queryTimeout`.
+      `GetUnitSettingsRequest` holds `unit` only.
 - [ ] The root `dev` scripts still call `pnpm -F`.
 - [ ] `bun install --no-save` in a `dist` that has `.env` prints the `.env`
       load and the resolve lines on stderr (Bun 1.4.2). Exit 0, the lock
       does not change, and the startup does not fail on it. The same
       happens before the type contract. The comment in `dist-release.js`
       says the install writes nothing on stderr.
-- [ ] Small backend and configer leftovers: `restartRepository()` returns
+- [x] Small backend and configer leftovers: `restartRepository()` returns
       `lastRequest` and `errorStreak` as values that never update; the
       configer `DbFactory` error names a `getInstance` that does not exist;
       the engine route calls `transformThermalData`; the backend
       `package.json` `main` points at `./src/index.ts`.
+      Fixed in #136. The returned object is the one the interval updates.
+      The error names `getMainDb` and `getVersionDb`. The engine route sends
+      the unit payload. `main` is `./dist/index.js`.
 - [ ] npm reports vitest 5.0.2 on 2026-09-25; the plan pins 5.0.1.
       Re-check at P5. `bun audit` still reports 79 (2 critical, 27 high,
       38 moderate, 12 low).
@@ -1815,3 +1820,8 @@ One line per landed step: date, PR, what moved.
   lowdb 7 breaks the failed-build rollback for configer.
 - 2026-09-29 — #134 — the Ubuntu and Windows install scripts no longer run
   `npm install -g nodemon`.
+- 2026-09-29 — #136 — the settings fetch reads `?timeout` with `queryTimeout`.
+  `GetUnitSettingsRequest` holds `unit` only. `restartRepository` returns the
+  object the interval updates. The configer error names `getMainDb` and
+  `getVersionDb`. The engine route sends the unit payload. The backend
+  `main` field is `./dist/index.js`.

@@ -9,7 +9,7 @@
   "type": "module",
   "keywords": [],
   "author": "",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "lint": "eslint --fix --ext .js,.ts .",
