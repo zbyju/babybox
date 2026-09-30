@@ -1,6 +1,5 @@
 import express from "express";
 import * as http from "http";
-import type { AddressInfo } from "net";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { jsonErrors } from "./jsonErrors.js";
@@ -59,7 +58,11 @@ describe("the json error middleware", () => {
 
     server = app.listen(0);
     await new Promise((done) => server.once("listening", done));
-    url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const address = server.address();
+    if (address === null || typeof address === "string") {
+      throw new Error("server is not listening on a tcp port");
+    }
+    url = `http://127.0.0.1:${address.port}`;
   });
 
   afterAll(async () => {
