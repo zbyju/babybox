@@ -1,7 +1,6 @@
 import axios from "axios";
 import express from "express";
 import * as http from "http";
-import type { AddressInfo } from "net";
 import {
   afterAll,
   beforeAll,
@@ -12,6 +11,7 @@ import {
   vi,
 } from "vitest";
 
+import { tcpPort } from "../../../test/tcpPort.js";
 import type { MainConfig } from "../../types/config.types.js";
 
 function storedConfig(): MainConfig {
@@ -60,7 +60,7 @@ async function startRoute(bound: unknown) {
   const server = http.createServer(app);
 
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const { port } = server.address() as AddressInfo;
+  const port = tcpPort(server);
   return { server, url: `http://127.0.0.1:${port}/api/v1/reload` };
 }
 
@@ -111,7 +111,7 @@ describe("POST /reload", () => {
 
   it("keeps the old config when the stored one lost a field the backend reads", async () => {
     const config = storedConfig();
-    delete (config.units.engine as Partial<MainConfig["units"]["engine"]>).ip;
+    Reflect.deleteProperty(config.units.engine, "ip");
     fetchConfig.mockResolvedValue({ status: 200, data: config });
 
     const response = await post(url);

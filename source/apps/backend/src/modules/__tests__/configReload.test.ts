@@ -57,7 +57,7 @@ describe("isBackendReadableConfig", () => {
   it("accepts a value the write path would refuse but the backend never reads", () => {
     const config = storedConfig();
     config.units.requestDelay = 0;
-    (config.camera as Record<string, unknown>).cameraType = "something else";
+    Reflect.set(config.camera, "cameraType", "something else");
 
     expect(isBackendReadableConfig(config)).toBe(true);
   });
@@ -65,33 +65,22 @@ describe("isBackendReadableConfig", () => {
   it.each([
     [
       "units.engine.ip missing",
-      (c: MainConfig) =>
-        delete (c.units.engine as Partial<MainConfig["units"]["engine"]>).ip,
+      (c: MainConfig) => Reflect.deleteProperty(c.units.engine, "ip"),
     ],
     [
       "units.thermal.ip missing",
-      (c: MainConfig) =>
-        delete (c.units.thermal as Partial<MainConfig["units"]["thermal"]>).ip,
+      (c: MainConfig) => Reflect.deleteProperty(c.units.thermal, "ip"),
     ],
-    [
-      "pc.os missing",
-      (c: MainConfig) => delete (c.pc as Partial<MainConfig["pc"]>).os,
-    ],
+    ["pc.os missing", (c: MainConfig) => Reflect.deleteProperty(c.pc, "os")],
     [
       "backend.port a string",
-      (c: MainConfig) =>
-        ((c.backend as unknown as Record<string, unknown>).port = "5000"),
+      (c: MainConfig) => Reflect.set(c.backend, "port", "5000"),
     ],
     [
       "backend.url missing",
-      (c: MainConfig) =>
-        delete (c.backend as Partial<MainConfig["backend"]>).url,
+      (c: MainConfig) => Reflect.deleteProperty(c.backend, "url"),
     ],
-    [
-      "units not an object",
-      (c: MainConfig) =>
-        ((c as unknown as Record<string, unknown>).units = "nope"),
-    ],
+    ["units not an object", (c: MainConfig) => Reflect.set(c, "units", "nope")],
   ])("refuses a config with %s", (_name, breakIt) => {
     const config = storedConfig();
     breakIt(config);
@@ -196,7 +185,7 @@ describe("reloadConfig", () => {
 
   it("fails when the stored config lost a field the backend reads", async () => {
     const config = storedConfig();
-    delete (config.units.engine as Partial<MainConfig["units"]["engine"]>).ip;
+    Reflect.deleteProperty(config.units.engine, "ip");
 
     const result = await reloadConfig(answerWith(config), bound);
 

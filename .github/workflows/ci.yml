@@ -235,6 +235,10 @@ jobs:
       - name: Panel typecheck
         run: bun --filter babybox-panel typecheck
 
+      # The emit build excludes tests. This step checks them. noEmit writes nothing.
+      - name: Backend test typecheck
+        run: bun --filter babybox-panel-backend typecheck
+
       # Build kontroluje jen src configeru. Testy kontroluje tenhle krok.
       - name: Configer typecheck
         run: bun --filter babybox-panel-configer typecheck
