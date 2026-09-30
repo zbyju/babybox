@@ -11,7 +11,8 @@
     "dev": "bun --watch src/index.ts",
     "start": "node ../startup/start-app.js configer",
     "build": "tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "keywords": [],
   "author": "",

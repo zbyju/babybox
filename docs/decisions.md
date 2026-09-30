@@ -1494,6 +1494,47 @@ Context · Decision · Why · Gave up · Where
   middleware now short-circuits.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
 
+## 2026-09-30 — Configer tests have their own typecheck
+
+- Context: no tsconfig type-checks the configer tests. The plan counted 16
+  errors under the contract. A recount on 2026-09-30 is 16. The compiler is
+  TypeScript 6.0.3. The flags are the contract. The module settings are the
+  emit settings (`node16`). Four errors are TS2835. Those test imports have
+  no `.js` suffix.
+- Decision: `source/apps/configer/tsconfig.test.json` extends
+  `source/tsconfig.contract.json`. It sets `moduleResolution` to `bundler`
+  and `noEmit` to true. It sets none of the contract flags. CI runs
+  `bun --filter babybox-panel-configer typecheck`. The emit tsconfig still
+  excludes `src/**/*.test.ts`.
+- Why: `node16` wants a `.js` suffix on the extensionless test imports. Those
+  imports stay as they are. Production imports keep `.js`. `bundler` accepts
+  both, and this project does not emit. The box build stays on `node16`.
+  The errors are fixed in the tests. PUT, PATCH, the backup, and the boot
+  read do not change.
+- Gave up: one module resolution for the test program and the emit program.
+  Backend tests and config-schema tests stay unchecked.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
+  question on test tsconfigs. This change covers configer only.
+
+## 2026-09-30 — Config-schema tests are type-checked under the contract
+
+- Context: the emit tsconfig excludes `src/**/*.test.ts`, and no other tsconfig
+  included them. The plan counted 56 errors. A fresh count on TypeScript 6.0.3
+  with the contract flags is 56: 35 TS4111, 15 TS7006, and 6 TS2835. The two
+  test files also contain 16 `as` casts. The panel tests are already checked.
+  The configer tests are checked in the entry above. The backend tests are not.
+- Decision: `source/packages/config-schema/tsconfig.tests.json` extends
+  `source/tsconfig.contract.json`, sets `noEmit`, and includes `src/**/*.ts`.
+  CI runs `bun --filter @babybox/config-schema typecheck`. The emit tsconfig
+  still excludes tests. The tests lose the casts. The schema accepts and
+  writes the same values.
+- Why: a test that does not type-check can drift from `MainConfig` and still
+  pass. The emit program must stay free of tests, so `dist` does not contain
+  them.
+- Gave up: a test tsconfig for the backend. That stays for a later change.
+  Also gave up a tracked `as` suppression in this package. None was needed.
+- Where: this file. The plan file stays as it is.
+
 ## 2026-09-30 — Backend tests are type-checked on their own tsconfig
 
 - Context: No tsconfig included the backend tests. The plan counted 18 errors
@@ -1510,8 +1551,8 @@ Context · Decision · Why · Gave up · Where
 - Why: The emit program is the one the box runs. A test file in `dist` that
   mentions the schema fails the CI grep. Startup installs that `dist` outside
   the workspace. `noEmit` keeps the typecheck from writing those files.
-- Gave up: A test tsconfig for configer and for config-schema. The plan still
-  counts 16 and 56 errors there. Also gave up editing the plan file.
+- Gave up: an edit to the plan file. The configer and config-schema test
+  tsconfigs are already in the entries above.
 - Where: the backend test typecheck pull request into `feat/toolchain-jump`.
   The plan text stays in [dependency upgrade plan](plans/dependency-upgrade.md),
   "Open questions".
