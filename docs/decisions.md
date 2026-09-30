@@ -1493,3 +1493,25 @@ Context · Decision · Why · Gave up · Where
   error restores what `finalhandler`'s `logerror` used to print, which the
   middleware now short-circuits.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-30 — Configer tests have their own typecheck
+
+- Context: no tsconfig type-checks the configer tests. The plan counted 16
+  errors under the contract. A recount on 2026-09-30 is 16. The compiler is
+  TypeScript 6.0.3. The flags are the contract. The module settings are the
+  emit settings (`node16`). Four errors are TS2835. Those test imports have
+  no `.js` suffix.
+- Decision: `source/apps/configer/tsconfig.test.json` extends
+  `source/tsconfig.contract.json`. It sets `moduleResolution` to `bundler`
+  and `noEmit` to true. It sets none of the contract flags. CI runs
+  `bun --filter babybox-panel-configer typecheck`. The emit tsconfig still
+  excludes `src/**/*.test.ts`.
+- Why: `node16` wants a `.js` suffix on the extensionless test imports. Those
+  imports stay as they are. Production imports keep `.js`. `bundler` accepts
+  both, and this project does not emit. The box build stays on `node16`.
+  The errors are fixed in the tests. PUT, PATCH, the backup, and the boot
+  read do not change.
+- Gave up: one module resolution for the test program and the emit program.
+  Backend tests and config-schema tests stay unchecked.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
+  question on test tsconfigs. This change covers configer only.
