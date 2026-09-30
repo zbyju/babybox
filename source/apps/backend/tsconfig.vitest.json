@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.contract.json",
+  "include": ["src/**/*.test.ts", "test/**/*.ts"],
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "node16",
+    "moduleResolution": "node16",
+    // Node's API only, same as the emit tsconfig. The tests run on vitest 0.9.4.
+    "types": ["node"],
+    /*
+     * Do not write this program to disk. The emit tsconfig excludes tests, and
+     * a test file in dist that mentions config-schema fails the CI grep.
+     * startup installs that dist outside the workspace.
+     */
+    "noEmit": true,
+    /*
+     * Same path as tsconfig.json. This file extends the contract, which has
+     * no paths. Keep the two entries equal. The import stays type-only.
+     */
+    "paths": {
+      "@babybox/config-schema": ["../../packages/config-schema/dist/index.d.ts"]
+    }
+  }
+}
