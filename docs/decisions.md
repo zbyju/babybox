@@ -1493,3 +1493,23 @@ Context · Decision · Why · Gave up · Where
   error restores what `finalhandler`'s `logerror` used to print, which the
   middleware now short-circuits.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-30 — Config-schema tests are type-checked under the contract
+
+- Context: the emit tsconfig excludes `src/**/*.test.ts`, and no other tsconfig
+  included them. The plan counted 56 errors. A fresh count on TypeScript 6.0.3
+  with the contract flags is 56: 35 TS4111, 15 TS7006, and 6 TS2835. The two
+  test files also contain 16 `as` casts. The panel tests are already checked.
+  The backend tests and the configer tests are not.
+- Decision: `source/packages/config-schema/tsconfig.tests.json` extends
+  `source/tsconfig.contract.json`, sets `noEmit`, and includes `src/**/*.ts`.
+  CI runs `bun --filter @babybox/config-schema typecheck`. The emit tsconfig
+  still excludes tests. The tests lose the casts. The schema accepts and
+  writes the same values.
+- Why: a test that does not type-check can drift from `MainConfig` and still
+  pass. The emit program must stay free of tests, so `dist` does not contain
+  them.
+- Gave up: a test tsconfig for the backend and for configer. Those stay for a
+  later change. Also gave up a tracked `as` suppression in this package. None
+  was needed.
+- Where: this file. The plan file stays as it is.
