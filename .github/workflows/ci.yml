@@ -244,6 +244,10 @@ jobs:
           test -d apps/backend/dist
           ! grep -rl "config-schema" apps/backend/dist
 
+      # The build checks src only. This step checks the tests.
+      - name: Config schema typecheck
+        run: bun --filter @babybox/config-schema typecheck
+
       - name: Config schema tests
         run: bun --filter @babybox/config-schema test
 

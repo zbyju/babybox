@@ -1516,6 +1516,25 @@ Context · Decision · Why · Gave up · Where
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
   question on test tsconfigs. This change covers configer only.
 
+## 2026-09-30 — Config-schema tests are type-checked under the contract
+
+- Context: the emit tsconfig excludes `src/**/*.test.ts`, and no other tsconfig
+  included them. The plan counted 56 errors. A fresh count on TypeScript 6.0.3
+  with the contract flags is 56: 35 TS4111, 15 TS7006, and 6 TS2835. The two
+  test files also contain 16 `as` casts. The panel tests are already checked.
+  The configer tests are checked in the entry above. The backend tests are not.
+- Decision: `source/packages/config-schema/tsconfig.tests.json` extends
+  `source/tsconfig.contract.json`, sets `noEmit`, and includes `src/**/*.ts`.
+  CI runs `bun --filter @babybox/config-schema typecheck`. The emit tsconfig
+  still excludes tests. The tests lose the casts. The schema accepts and
+  writes the same values.
+- Why: a test that does not type-check can drift from `MainConfig` and still
+  pass. The emit program must stay free of tests, so `dist` does not contain
+  them.
+- Gave up: a test tsconfig for the backend. That stays for a later change.
+  Also gave up a tracked `as` suppression in this package. None was needed.
+- Where: this file. The plan file stays as it is.
+
 ## 2026-09-30 — Configer's dist keeps its own node_modules
 
 - Context: the 2026-09-28 entry blocked a configer dependency from moving its
