@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { defaultConfig } from "./defaults";
-import { applyTierLabels, configForm, configFormFields } from "./form";
-import { mainConfigSchema } from "./schema";
+import { defaultConfig } from "./defaults.js";
+import { applyTierLabels, configForm, configFormFields } from "./form.js";
+import type { MainConfig } from "./schema.js";
+import { mainConfigSchema } from "./schema.js";
 
 /*
  * This test is why the descriptor lives beside the schema. The descriptor is a
@@ -22,6 +23,14 @@ function leafPaths(shape: z.ZodRawShape, prefix = ""): string[] {
     if (inner instanceof z.ZodObject) return leafPaths(inner.shape, path);
     return [path];
   });
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isSection(config: MainConfig, value: string): value is keyof MainConfig {
+  return Object.hasOwn(config, value);
 }
 
 const schemaPaths = leafPaths(mainConfigSchema.shape);
@@ -146,11 +155,24 @@ describe("configForm field metadata", () => {
     for (const field of configFormFields) {
       if (field.widget !== "select") continue;
       for (const option of field.options ?? []) {
-        const [section, key] = field.path.split(".");
+        const parts = field.path.split(".");
+        const section = parts[0];
+        const key = parts[1];
+        if (
+          section === undefined ||
+          key === undefined ||
+          !isSection(config, section)
+        ) {
+          throw new Error(`expected a section path, got ${field.path}`);
+        }
+        const current = config[section];
+        if (!isRecord(current)) {
+          throw new Error(`section ${section} is not an object`);
+        }
         const value = {
           ...config,
           [section]: {
-            ...config[section as keyof typeof config],
+            ...current,
             [key]: option,
           },
         };

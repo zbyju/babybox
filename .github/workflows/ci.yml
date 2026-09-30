@@ -235,10 +235,18 @@ jobs:
       - name: Panel typecheck
         run: bun --filter babybox-panel typecheck
 
+      # Build kontroluje jen src configeru. Testy kontroluje tenhle krok.
+      - name: Configer typecheck
+        run: bun --filter babybox-panel-configer typecheck
+
       - name: Backend dist has no schema import
         run: |
           test -d apps/backend/dist
           ! grep -rl "config-schema" apps/backend/dist
+
+      # The build checks src only. This step checks the tests.
+      - name: Config schema typecheck
+        run: bun --filter @babybox/config-schema typecheck
 
       - name: Config schema tests
         run: bun --filter @babybox/config-schema test
