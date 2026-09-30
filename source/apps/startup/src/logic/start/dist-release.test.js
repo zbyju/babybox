@@ -1,12 +1,14 @@
 /* eslint-env jest */
 const { EventEmitter } = require("events");
 const fs = require("fs");
+const http = require("http");
 const os = require("os");
 const path = require("path");
 
 const fsExtra = require("fs-extra");
 
 const { onStartup } = require("./dist-release");
+const strings = require("../../strings");
 const ubuntuStart = require("./ubuntu");
 const windowsStart = require("./windows");
 
@@ -140,6 +142,7 @@ function baseOptions(root, harness, extra) {
       bunVersion: "1.4.2",
       wantedBun: "1.4.2",
       bootstrapRun: async () => 0,
+      httpGet: async () => 200,
     },
     extra
   );
@@ -195,6 +198,73 @@ function commands(harness) {
   return harness.execCalls.map((call) => call.command);
 }
 
+function prepareRelease(harness) {
+  harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
+  harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
+  harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
+  allowPm2(harness);
+}
+
+function configDir(root) {
+  return path.join(root, "source", "apps", "configer", "configs");
+}
+
+function writeConfig(root, name, value) {
+  const dir = configDir(root);
+  fs.mkdirSync(dir, { recursive: true });
+  const body = typeof value === "string" ? value : `${JSON.stringify(value)}\n`;
+  fs.writeFileSync(path.join(dir, name), body);
+}
+
+function statusUrl(port, prefix) {
+  const pathName = prefix ? `${prefix}/status` : "/status";
+  return `http://127.0.0.1:${port}${pathName}`;
+}
+
+function manualClock() {
+  let clock = 0;
+  return {
+    nowMs() {
+      return clock;
+    },
+    async delay(ms) {
+      clock += ms;
+    },
+    advance(ms) {
+      clock += ms;
+    },
+  };
+}
+
+function missed(url, ms) {
+  return strings.statusUnanswered
+    .replace("{url}", url)
+    .replace("{ms}", String(ms));
+}
+
+function listenStatus(readyPath) {
+  const hits = [];
+  const server = http.createServer((req, res) => {
+    hits.push(req.url);
+    if (req.url === readyPath) {
+      res.statusCode = 200;
+      res.end("ok");
+      return;
+    }
+    res.statusCode = 404;
+    res.end("no");
+  });
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      resolve({
+        server,
+        hits,
+        port: address.port,
+      });
+    });
+  });
+}
 describe("dist-next release", () => {
   it("keeps the live dist until dist-next is installed, then swaps and starts both apps", async () => {
     const root = createRoot();
@@ -1188,5 +1258,506 @@ describe("dist-next release", () => {
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  it("rolls back when configer exits 0 and never answers status", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const clock = manualClock();
+    const budget = 30000;
+    const url = statusUrl(5001, "/api/v1");
+    writeReleaseFile(root, OTHER_SHA);
+    prepareRelease(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          nowMs: clock.nowMs,
+          delay: clock.delay,
+          httpGet: async (target) => {
+            expect(target).toBe(url);
+            clock.advance(budget);
+            throw new Error("down");
+          },
+        })
+      );
+      expect(code).toBe(true);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+        ["start:configer"],
+        ["start:main"],
+      ]);
+      expect(readRecord(root).step).toBe("START_CONFIGER");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toBe(missed(url, budget));
+      expect(
+        harness.logger.lines.find(
+          (line) => line.stage === "START_CONFIGER" && line.level === "error"
+        ).message
+      ).toBe("Krok START_CONFIGER se nezdařil.");
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
+      ).toBe(OTHER_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("rolls back when the panel exits 0 and the backend never answers status", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const clock = manualClock();
+    const budget = 30000;
+    const configer = statusUrl(5001, "/api/v1");
+    const backend = statusUrl(5000, "/api/v1");
+    writeReleaseFile(root, OTHER_SHA);
+    prepareRelease(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          nowMs: clock.nowMs,
+          delay: clock.delay,
+          httpGet: async (target) => {
+            if (target === configer) {
+              return 200;
+            }
+            expect(target).toBe(backend);
+            clock.advance(budget);
+            return 404;
+          },
+        })
+      );
+      expect(code).toBe(true);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+        ["start:main"],
+        ["start:configer"],
+        ["start:main"],
+      ]);
+      expect(readRecord(root).step).toBe("START_PANEL");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toBe(missed(backend, budget));
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
+      ).toBe(OTHER_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("records START_CONFIGER when configer dies after the panel answers", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const clock = manualClock();
+    const budget = 30000;
+    const configer = statusUrl(5001, "/api/v1");
+    const backend = statusUrl(5000, "/api/v1");
+    let configerHits = 0;
+    writeReleaseFile(root, OTHER_SHA);
+    prepareRelease(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          nowMs: clock.nowMs,
+          delay: clock.delay,
+          httpGet: async (target) => {
+            if (target === backend) {
+              expect(
+                fs.existsSync(path.join(root, "dist", "release.json"))
+              ).toBe(false);
+              return 200;
+            }
+            configerHits += 1;
+            if (configerHits > 1) {
+              clock.advance(budget);
+              throw new Error("down");
+            }
+            return 200;
+          },
+        })
+      );
+      expect(code).toBe(true);
+      expect(configerHits).toBe(2);
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
+      expect(readRecord(root).step).toBe("START_CONFIGER");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toBe(missed(configer, budget));
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
+      ).toBe(OTHER_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("writes release.json only after both status routes answer", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const configerPort = 5002;
+    const backendPort = 5003;
+    const prefix = "/box";
+    const configer = statusUrl(configerPort, prefix);
+    const backend = statusUrl(backendPort, prefix);
+    const seen = [];
+    writeConfig(root, "main.json", {
+      configer: { port: configerPort, url: prefix },
+      backend: { port: backendPort, url: prefix },
+    });
+    prepareRelease(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          httpGet: async (target) => {
+            seen.push(target);
+            if (target === backend) {
+              expect(
+                fs.existsSync(path.join(root, "dist", "release.json"))
+              ).toBe(false);
+            }
+            return 200;
+          },
+        })
+      );
+      expect(code).toBe(true);
+      expect(seen).toEqual([configer, backend, configer]);
+      expect(readRecord(root).step).toBe("START_PANEL");
+      expect(readRecord(root).ok).toBe(true);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        )
+      ).toEqual({
+        sha: HEAD_SHA,
+      });
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("probes the default ports and prefix when no config file exists", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const seen = [];
+    prepareRelease(harness);
+    try {
+      await onStartup(
+        baseOptions(root, harness, {
+          httpGet: async (target) => {
+            seen.push(target);
+            return 200;
+          },
+        })
+      );
+      expect(seen).toEqual([
+        statusUrl(5001, "/api/v1"),
+        statusUrl(5000, "/api/v1"),
+        statusUrl(5001, "/api/v1"),
+      ]);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps base.json ports when main.json only sets the babybox name", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const seen = [];
+    writeConfig(root, "base.json", {
+      configer: { port: 5001, url: "/api/v1" },
+      backend: { port: 5000, url: "/api/v1" },
+    });
+    writeConfig(root, "main.json", { babybox: { name: "Praha" } });
+    prepareRelease(harness);
+    try {
+      await onStartup(
+        baseOptions(root, harness, {
+          httpGet: async (target) => {
+            seen.push(target);
+            return 200;
+          },
+        })
+      );
+      expect(seen[0]).toBe(statusUrl(5001, "/api/v1"));
+      expect(seen[1]).toBe(statusUrl(5000, "/api/v1"));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reads ports from main.json.bak when main.json is not an object", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const seen = [];
+    writeConfig(root, "base.json", {
+      configer: { port: 5001, url: "/api/v1" },
+      backend: { port: 5000, url: "/api/v1" },
+    });
+    writeConfig(root, "main.json", "{");
+    writeConfig(root, "main.json.bak", {
+      configer: { port: 5008, url: "/bak" },
+      backend: { port: 5009, url: "/bak" },
+    });
+    prepareRelease(harness);
+    try {
+      await onStartup(
+        baseOptions(root, harness, {
+          httpGet: async (target) => {
+            seen.push(target);
+            return 200;
+          },
+        })
+      );
+      expect(seen[0]).toBe(statusUrl(5008, "/bak"));
+      expect(seen[1]).toBe(statusUrl(5009, "/bak"));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("probes /status when the stored prefix is not a valid route", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const seen = [];
+    writeConfig(root, "base.json", {
+      configer: { port: 5001, url: "/api/v1" },
+      backend: { port: 5000, url: "/api/v1" },
+    });
+    writeConfig(root, "main.json", { configer: { url: "/api/v1?" } });
+    prepareRelease(harness);
+    try {
+      await onStartup(
+        baseOptions(root, harness, {
+          httpGet: async (target) => {
+            seen.push(target);
+            return 200;
+          },
+        })
+      );
+      expect(seen[0]).toBe(statusUrl(5001, ""));
+      expect(seen[1]).toBe(statusUrl(5000, "/api/v1"));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("uses PORT and API_PREFIX when the stored port and prefix are empty", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const seen = [];
+    writeConfig(root, "base.json", {
+      configer: { port: 5001, url: "/api/v1" },
+      backend: { port: 5000, url: "/api/v1" },
+    });
+    writeConfig(root, "main.json", {
+      configer: { port: 0, url: "" },
+      backend: { port: 5000, url: "/api/v1" },
+    });
+    prepareRelease(harness);
+    try {
+      await onStartup(
+        baseOptions(root, harness, {
+          env: { PORT: "5010", API_PREFIX: "/from-env" },
+          httpGet: async (target) => {
+            seen.push(target);
+            return 200;
+          },
+        })
+      );
+      expect(seen[0]).toBe(statusUrl(5010, "/from-env"));
+      expect(seen[1]).toBe(statusUrl(5000, "/api/v1"));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("retries status until a later answer is 200", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const clock = manualClock();
+    let configerHits = 0;
+    prepareRelease(harness);
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          nowMs: clock.nowMs,
+          delay: clock.delay,
+          httpGet: async (target) => {
+            if (target === statusUrl(5001, "/api/v1")) {
+              configerHits += 1;
+              if (configerHits === 1) {
+                return 404;
+              }
+            }
+            return 200;
+          },
+        })
+      );
+      expect(code).toBe(true);
+      expect(configerHits).toBe(3);
+      expect(readRecord(root).ok).toBe(true);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
+      ).toBe(HEAD_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("ends the status wait when the request never returns", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const budget = 50;
+    writeReleaseFile(root, OTHER_SHA);
+    prepareRelease(harness);
+    const started = Date.now();
+    try {
+      const code = await onStartup(
+        baseOptions(root, harness, {
+          statusWaitMs: budget,
+          httpGet: () => new Promise(() => {}),
+        })
+      );
+      expect(Date.now() - started).toBeLessThan(500);
+      expect(code).toBe(true);
+      expect(readRecord(root).step).toBe("START_CONFIGER");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toBe(
+        missed(statusUrl(5001, "/api/v1"), budget)
+      );
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("still records START_PANEL when the runner writes stderr and status answers", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    harness.spawnQueue.push(
+      { code: 0, stderr: "pm2 warn\n" },
+      { code: 0, stderr: "dotenv loaded .env\n" }
+    );
+    prepareRelease(harness);
+    try {
+      const code = await onStartup(baseOptions(root, harness));
+      expect(code).toBe(true);
+      expect(readRecord(root).step).toBe("START_PANEL");
+      expect(readRecord(root).ok).toBe(true);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
+      ).toBe(HEAD_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not probe status when the live dist starts without a swap", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    let probed = false;
+    writeReleaseFile(root);
+    const bin = path.join(root, ".bun", "bin");
+    fs.mkdirSync(bin, { recursive: true });
+    fs.writeFileSync(path.join(bin, "bun"), "#!/bin/sh\n");
+    alreadyCurrent(harness);
+    allowPm2(harness);
+    try {
+      const opts = baseOptions(root, harness, {
+        spawnSync: () => ({ status: 0, stdout: "v1.4.2\n" }),
+        httpGet: async () => {
+          probed = true;
+          return 200;
+        },
+      });
+      delete opts.bunVersion;
+      delete opts.wantedBun;
+      opts.versionsPath = path.join(__dirname, "../../../versions.env");
+      const code = await onStartup(opts);
+      expect(code).toBe(true);
+      expect(probed).toBe(false);
+      expect(commands(harness)).not.toContain("pnpm run build");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("uses the real HTTP client against the bound status routes", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const readyPath = "/api/v1/status";
+    const configer = await listenStatus(readyPath);
+    const backend = await listenStatus(readyPath);
+    writeConfig(root, "main.json", {
+      configer: { port: configer.port, url: "/api/v1" },
+      backend: { port: backend.port, url: "/api/v1" },
+    });
+    prepareRelease(harness);
+    try {
+      const opts = baseOptions(root, harness);
+      delete opts.httpGet;
+      const code = await onStartup(opts);
+      expect(code).toBe(true);
+      expect(configer.hits).toEqual([readyPath, readyPath]);
+      expect(backend.hits).toEqual([readyPath]);
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
+      ).toBe(HEAD_SHA);
+    } finally {
+      await new Promise((resolve) => configer.server.close(resolve));
+      await new Promise((resolve) => backend.server.close(resolve));
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("uses the app port fallbacks when a config file sets no ports", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const seen = [];
+    writeConfig(root, "base.json", {});
+    prepareRelease(harness);
+    try {
+      await onStartup(
+        baseOptions(root, harness, {
+          httpGet: async (target) => {
+            seen.push(target);
+            return 200;
+          },
+        })
+      );
+      expect(seen[0]).toBe(statusUrl(6000, ""));
+      expect(seen[1]).toBe(statusUrl(5000, ""));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps dist-release.js free of nullish and optional chains", () => {
+    const source = fs.readFileSync(
+      path.join(__dirname, "dist-release.js"),
+      "utf8"
+    );
+    expect(source.includes("??")).toBe(false);
+    expect(source.includes("?.")).toBe(false);
   });
 });

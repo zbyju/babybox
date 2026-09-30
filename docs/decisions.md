@@ -1493,3 +1493,35 @@ Context · Decision · Why · Gave up · Where
   error restores what `finalhandler`'s `logerror` used to print, which the
   middleware now short-circuits.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-30 — A start counts only when status answers
+
+- Context: `startNew()` treated exit 0 from `pnpm start:main` as success and
+  then wrote `dist/release.json`. `pm2 start` returns 0 when it accepts the
+  process. A crash after that still wrote the sha. The next boot skipped the
+  build. The upgrade plan leaves open whether `START_PANEL` should wait for
+  `GET /status` before it writes `release.json`.
+- Decision: `START_CONFIGER` and `START_PANEL` succeed only after the existing
+  status route returns HTTP 200. The probe reads configer `main.json` merged
+  over `base.json`, and it uses the prefix and port each app binds. With no
+  config file, configer is `127.0.0.1:5001` and the backend is
+  `127.0.0.1:5000`, both under `/api/v1`. Each probe waits 30000 ms. It polls
+  every 250 ms. One request aborts after 1000 ms. Configer is probed before
+  the panel starts. Both are probed again before `release.json` is written.
+  A miss swaps back, starts the previous `dist`, and records `START_CONFIGER`
+  or `START_PANEL`. The step names stay those two. `startLive` keeps today's
+  start, with no status probe and no `release.json` write.
+- Why: 30000 ms is the same bound as the Bun probe in `start-app.js`. The
+  panel starts only after configer has answered, so the backend should not
+  spend its 5 second config retries. A dead app fails in this boot. A live
+  app returns on the first 200. Exit 0 with stderr still counts as a started
+  process. `start:main` runs `bun install --no-save` in `dist` when
+  `node_modules` is missing, and that command writes to stderr when `.env`
+  is present. Treating that stderr as failure would roll back every new
+  panel. `build()` still fails when the build writes to stderr.
+- Gave up: a new step name. Also gave up reading the app `.env` for `PORT`
+  and `API_PREFIX`. Revisit that only if a box sets those values only in
+  `.env` and the probe then misses a live app.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
+  question on `START_PANEL` and `release.json`. This change does not edit
+  that file.
