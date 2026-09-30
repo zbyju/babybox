@@ -1493,3 +1493,25 @@ Context · Decision · Why · Gave up · Where
   error restores what `finalhandler`'s `logerror` used to print, which the
   middleware now short-circuits.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-30 — Backend tests are type-checked on their own tsconfig
+
+- Context: No tsconfig included the backend tests. The plan counted 18 errors
+  under the contract. A recount on 2026-09-30 reports 16. The program extends
+  `source/tsconfig.contract.json` and includes `src/**/*.test.ts`. The codes
+  are TS2345 (8), TS4111 (3), TS2532 (3) and TS2454 (2).
+- Decision: `source/apps/backend/tsconfig.vitest.json` extends the contract,
+  sets `noEmit`, and repeats the backend module, Node 18 types, and schema
+  path. CI runs `tsc -p` on it after the config-schema build. The emit
+  tsconfig still excludes `src/**/*.test.ts`. Tests keep `import type` for
+  `@babybox/config-schema`. `stringToAction` accepts `string | null |
+  undefined` because `actions.test.ts` locks those inputs. The function body
+  stays the same. Door URL builders and the reload path stay as they are.
+- Why: The emit program is the one the box runs. A test file in `dist` that
+  mentions the schema fails the CI grep. Startup installs that `dist` outside
+  the workspace. `noEmit` keeps the typecheck from writing those files.
+- Gave up: A test tsconfig for configer and for config-schema. The plan still
+  counts 16 and 56 errors there. Also gave up editing the plan file.
+- Where: the backend test typecheck pull request into `feat/toolchain-jump`.
+  The plan text stays in [dependency upgrade plan](plans/dependency-upgrade.md),
+  "Open questions".

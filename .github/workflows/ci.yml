@@ -235,6 +235,10 @@ jobs:
       - name: Panel typecheck
         run: bun --filter babybox-panel typecheck
 
+      # The emit build excludes tests. This step checks them. noEmit writes nothing.
+      - name: Backend test typecheck
+        run: bun --filter babybox-panel-backend typecheck
+
       - name: Backend dist has no schema import
         run: |
           test -d apps/backend/dist

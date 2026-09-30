@@ -4,13 +4,19 @@ import type { UnitReadResult } from "../unitGate.js";
 import { UnitQueue } from "../unitGate.js";
 
 function deferred<T>() {
-  let resolve: (value: T) => void;
-  let reject: (reason: unknown) => void;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
+  let settled:
+    | {
+        resolve: (value: T | PromiseLike<T>) => void;
+        reject: (reason?: unknown) => void;
+      }
+    | undefined;
+  const promise = new Promise<T>((resolve, reject) => {
+    settled = { resolve, reject };
   });
-  return { promise, resolve, reject };
+  if (settled === undefined) {
+    throw new Error("The promise executor did not run.");
+  }
+  return { promise, resolve: settled.resolve, reject: settled.reject };
 }
 
 describe("unitGate.ts", () => {
