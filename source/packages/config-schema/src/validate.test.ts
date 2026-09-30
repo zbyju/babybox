@@ -17,7 +17,7 @@ function fields(value: unknown): Fields {
   return value;
 }
 
-// Each call starts from a new defaultConfig(), so one test cannot change the next.
+// fresh copy, so one test cannot change the next
 function config(): Fields {
   return fields(defaultConfig());
 }
