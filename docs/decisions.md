@@ -1515,3 +1515,36 @@ Context · Decision · Why · Gave up · Where
   Backend tests and config-schema tests stay unchecked.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
   question on test tsconfigs. This change covers configer only.
+
+## 2026-09-30 — Configer's dist keeps its own node_modules
+
+- Context: the 2026-09-28 entry blocked a configer dependency from moving its
+  import surface. `start-app.js` started configer from `apps/configer` with
+  `install: false`, so the process resolved packages from `source/node_modules`.
+  `INSTALL` runs before the build. A failed build left the old
+  `apps/configer/dist` importing the new packages. lowdb 7 had already shown
+  that: `JSONFile` moved to `lowdb/node`, the kept dist died, and pm2 gave up.
+  The open choice was to give configer's dist its own `node_modules`, the way
+  the backend dist already has, or to keep blocking those majors.
+- Decision: configer resolves runtime packages from
+  `apps/configer/dist/node_modules`. That tree is a copy of the packages from
+  the last `BUILD_CONFIGER` success, stamped with that record's time. A later
+  root `bun install` does not refresh it. A failed build does not refresh it.
+  The next successful `BUILD_CONFIGER` does. `@babybox/config-schema` is copied
+  as files, not linked to `packages/config-schema`, so a schema build that
+  lands before a failed configer build is not what the old dist imports.
+  `apps/configer/configs/main.json` and `versions.json` stay where they are.
+  The backend dist install is unchanged. lowdb stays 3.0.0.
+- Why: the compiled files stay in `apps/configer/dist`. `services/db/main.ts`
+  and `version.ts` read `../../../configs`, which is `apps/configer/configs`.
+  Moving the dist would break that. `bun install` in the workspace cannot
+  install `@babybox/config-schema` as `workspace:*` without pointing at the
+  live package. A copy taken after the configer build is the set that matches
+  that dist, and it survives the next install.
+- Gave up: installing configer with `bun install --no-save` the way the
+  backend dist does. That install would keep a workspace link. Also gave up
+  lowdb 7 in this change. A later change can move a configer import surface.
+  This change does not bump a dependency.
+- Where: `source/apps/startup/start-app.js`,
+  `source/apps/startup/configer-modules.js`, `start-app.test.js`,
+  `tests/legacy-boot1.sh`, `tests/assert-runtime.js`.
