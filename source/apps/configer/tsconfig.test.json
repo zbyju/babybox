@@ -7,7 +7,7 @@
     "module": "ES2022",
     "moduleResolution": "bundler",
     // Tests import both "./main" and "./factory.js". Production stays on
-    // node16 and keeps the .js suffix. This program does not emit.
+    // node16 and keeps the .js suffix.
     "noEmit": true,
     "types": ["node"]
   }
