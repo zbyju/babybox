@@ -1,8 +1,8 @@
 import { Action } from "../types/units.types.js";
 
 /*
- * A missing or empty action is undefined. The route still passes a string.
  * actions.test.ts locks null and undefined.
+ * The route still passes a string.
  */
 export function stringToAction(
   str: string | null | undefined
