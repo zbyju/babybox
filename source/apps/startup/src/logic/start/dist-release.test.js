@@ -1597,13 +1597,19 @@ describe("dist-next release", () => {
     const harness = createHarness();
     const clock = manualClock();
     let configerHits = 0;
+    const requestLimits = [];
+    const pauses = [];
     prepareRelease(harness);
     try {
       const code = await onStartup(
         baseOptions(root, harness, {
           nowMs: clock.nowMs,
-          delay: clock.delay,
-          httpGet: async (target) => {
+          delay: async (ms) => {
+            pauses.push(ms);
+            await clock.delay(ms);
+          },
+          httpGet: async (target, limitMs) => {
+            requestLimits.push(limitMs);
             if (target === statusUrl(5001, "/api/v1")) {
               configerHits += 1;
               if (configerHits === 1) {
@@ -1616,6 +1622,8 @@ describe("dist-next release", () => {
       );
       expect(code).toBe(true);
       expect(configerHits).toBe(3);
+      expect(pauses).toEqual([250]);
+      expect(requestLimits).toEqual([1000, 1000, 1000, 1000]);
       expect(readRecord(root).ok).toBe(true);
       expect(
         JSON.parse(
