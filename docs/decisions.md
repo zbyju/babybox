@@ -1548,9 +1548,13 @@ Context · Decision · Why · Gave up · Where
   config file, configer is `127.0.0.1:5001` and the backend is
   `127.0.0.1:5000`, both under `/api/v1`. Each probe waits 30000 ms. It polls
   every 250 ms. One request aborts after 1000 ms. Configer is probed before
-  the panel starts. Both are probed again before `release.json` is written.
-  A miss swaps back, starts the previous `dist`, and records `START_CONFIGER`
-  or `START_PANEL`. The step names stay those two. `startLive` keeps today's
+  the panel starts. After the panel starts, the backend is probed and then
+  configer is probed once more, before `release.json` is written. A miss swaps
+  back, starts the previous `dist`, and records `START_CONFIGER` or
+  `START_PANEL`. The probe follows the bind rules of the apps. An empty stored
+  port or prefix falls back to the process env `PORT` or `API_PREFIX`. A
+  `main.json` that is not an object falls back to `main.json.bak`. A config
+  file with no configer port gives 6000, which is what configer binds. The step names stay those two. `startLive` keeps today's
   start, with no status probe and no `release.json` write.
 - Why: 30000 ms is the same bound as the Bun probe in `start-app.js`. The
   panel starts only after configer has answered, so the backend should not
@@ -1562,7 +1566,11 @@ Context · Decision · Why · Gave up · Where
   panel. `build()` still fails when the build writes to stderr.
 - Gave up: a new step name. Also gave up reading the app `.env` for `PORT`
   and `API_PREFIX`. Revisit that only if a box sets those values only in
-  `.env` and the probe then misses a live app.
+  `.env` and the probe then misses a live app. A configer miss is recorded
+  and is not rolled back. Configer runs from `apps/configer/dist`, outside the
+  `dist` swap, so the swap restores only the backend and the panel. Putting
+  configer into the swap is a separate change. The probe also repeats the bind
+  rules of configer and the backend, and no test ties the copies together.
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
   question on `START_PANEL` and `release.json`. This change does not edit
   that file.
