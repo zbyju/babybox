@@ -1364,6 +1364,7 @@ describe("dist-next release", () => {
     const configer = statusUrl(5001, "/api/v1");
     const backend = statusUrl(5000, "/api/v1");
     let configerHits = 0;
+    const releaseSeen = [];
     writeReleaseFile(root, OTHER_SHA);
     prepareRelease(harness);
     try {
@@ -1372,10 +1373,10 @@ describe("dist-next release", () => {
           nowMs: clock.nowMs,
           delay: clock.delay,
           httpGet: async (target) => {
+            releaseSeen.push(
+              fs.existsSync(path.join(root, "dist", "release.json"))
+            );
             if (target === backend) {
-              expect(
-                fs.existsSync(path.join(root, "dist", "release.json"))
-              ).toBe(false);
               return 200;
             }
             configerHits += 1;
@@ -1389,6 +1390,7 @@ describe("dist-next release", () => {
       );
       expect(code).toBe(true);
       expect(configerHits).toBe(2);
+      expect(releaseSeen).toEqual([false, false, false]);
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
         "old"
       );
@@ -1419,6 +1421,7 @@ describe("dist-next release", () => {
     const configer = statusUrl(configerPort, prefix);
     const backend = statusUrl(backendPort, prefix);
     const seen = [];
+    const releaseSeen = [];
     writeConfig(root, "main.json", {
       configer: { port: configerPort, url: prefix },
       backend: { port: backendPort, url: prefix },
@@ -1429,17 +1432,16 @@ describe("dist-next release", () => {
         baseOptions(root, harness, {
           httpGet: async (target) => {
             seen.push(target);
-            if (target === backend) {
-              expect(
-                fs.existsSync(path.join(root, "dist", "release.json"))
-              ).toBe(false);
-            }
+            releaseSeen.push(
+              fs.existsSync(path.join(root, "dist", "release.json"))
+            );
             return 200;
           },
         })
       );
       expect(code).toBe(true);
       expect(seen).toEqual([configer, backend, configer]);
+      expect(releaseSeen).toEqual([false, false, false]);
       expect(readRecord(root).step).toBe("START_PANEL");
       expect(readRecord(root).ok).toBe(true);
       expect(
