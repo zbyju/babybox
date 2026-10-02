@@ -1747,6 +1747,75 @@ describe("dist-next release", () => {
     }
   });
 
+  it("rolls back when nothing listens on the configer port", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const budget = 300;
+    const closed = await listenStatus("/api/v1/status");
+    await new Promise((resolve) => closed.server.close(resolve));
+    writeConfig(root, "main.json", {
+      configer: { port: closed.port, url: "/api/v1" },
+    });
+    writeReleaseFile(root, OTHER_SHA);
+    prepareRelease(harness);
+    try {
+      const opts = baseOptions(root, harness, { statusWaitMs: budget });
+      delete opts.httpGet;
+      const code = await onStartup(opts);
+      expect(code).toBe(true);
+      expect(readRecord(root).step).toBe("START_CONFIGER");
+      expect(readRecord(root).ok).toBe(false);
+      expect(readRecord(root).message).toBe(
+        missed(statusUrl(closed.port, "/api/v1"), budget)
+      );
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
+      ).toBe(OTHER_SHA);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("retries after a 404 from the real HTTP client", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const readyPath = "/api/v1/status";
+    let configerHits = 0;
+    const configer = {
+      server: http.createServer((req, res) => {
+        configerHits += 1;
+        res.statusCode = configerHits === 1 ? 404 : 200;
+        res.end("x");
+      }),
+    };
+    await new Promise((resolve) =>
+      configer.server.listen(0, "127.0.0.1", resolve)
+    );
+    const backend = await listenStatus(readyPath);
+    writeConfig(root, "main.json", {
+      configer: { port: configer.server.address().port, url: "/api/v1" },
+      backend: { port: backend.port, url: "/api/v1" },
+    });
+    prepareRelease(harness);
+    try {
+      const opts = baseOptions(root, harness);
+      delete opts.httpGet;
+      const code = await onStartup(opts);
+      expect(code).toBe(true);
+      expect(configerHits).toBe(3);
+      expect(readRecord(root).ok).toBe(true);
+    } finally {
+      await new Promise((resolve) => configer.server.close(resolve));
+      await new Promise((resolve) => backend.server.close(resolve));
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("uses the app port fallbacks when a config file sets no ports", async () => {
     const root = createRoot();
     const harness = createHarness();
