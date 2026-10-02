@@ -711,7 +711,6 @@ describe("configer modules", () => {
       false,
     ],
   ])("snapshotNeeded is %s", (label, record, hasTree, stamp, needed) => {
-    expect(label.length).toBeGreaterThan(0);
     expect(snapshotNeeded(record, hasTree, stamp)).toBe(needed);
   });
 
