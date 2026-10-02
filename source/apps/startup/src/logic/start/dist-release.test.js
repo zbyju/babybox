@@ -1342,6 +1342,11 @@ describe("dist-next release", () => {
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe(missed(backend, budget));
       expect(
+        harness.logger.lines.find(
+          (line) => line.stage === "START_PANEL" && line.level === "error"
+        ).message
+      ).toBe("Krok START_PANEL se nezdařil.");
+      expect(
         JSON.parse(
           fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
         ).sha
@@ -1390,6 +1395,11 @@ describe("dist-next release", () => {
       expect(readRecord(root).step).toBe("START_CONFIGER");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe(missed(configer, budget));
+      expect(
+        harness.logger.lines.find(
+          (line) => line.stage === "START_CONFIGER" && line.level === "error"
+        ).message
+      ).toBe("Krok START_CONFIGER se nezdařil.");
       expect(
         JSON.parse(
           fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
