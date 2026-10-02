@@ -8,7 +8,6 @@ const path = require("path");
 const fsExtra = require("fs-extra");
 
 const { onStartup } = require("./dist-release");
-const strings = require("../../strings");
 const ubuntuStart = require("./ubuntu");
 const windowsStart = require("./windows");
 
@@ -237,9 +236,7 @@ function manualClock() {
 }
 
 function missed(url, ms) {
-  return strings.statusUnanswered
-    .replace("{url}", url)
-    .replace("{ms}", String(ms));
+  return `Adresa ${url} neodpověděla do ${ms} ms.`;
 }
 
 function listenStatus(readyPath) {
