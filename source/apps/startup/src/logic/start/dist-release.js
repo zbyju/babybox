@@ -90,7 +90,10 @@ function createContext(options) {
     spawnSync: pick(opts.spawnSync, childProcess.spawnSync),
     httpGet: pick(opts.httpGet, httpStatusCode),
     statusWaitMs: pick(opts.statusWaitMs, STATUS_WAIT_MS),
-    nowMs: pick(opts.nowMs, () => Date.now()),
+    nowMs: pick(opts.nowMs, () => {
+      const t = process.hrtime();
+      return t[0] * 1000 + t[1] / 1e6;
+    }),
     delay: pick(opts.delay, delayMs),
     requireConfigerBuild: opts.requireConfigerBuild === true,
     paths: {
