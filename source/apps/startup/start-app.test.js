@@ -1,9 +1,14 @@
 /* eslint-env jest */
 const fs = require("fs");
+const { createRequire } = require("module");
 const os = require("os");
 const path = require("path");
 
 const { readVersions } = require("./bootstrap");
+const {
+  prepareConfigerModules,
+  snapshotNeeded,
+} = require("./configer-modules");
 const { start } = require("./start-app");
 
 const REAL_VERSIONS = path.join(__dirname, "versions.env");
@@ -487,5 +492,464 @@ describe("start scripts", () => {
     expect(configer.scripts.start).toBe(
       "node ../startup/start-app.js configer"
     );
+  });
+});
+
+describe("configer modules", () => {
+  const PROVEN_AT = "2026-09-30T07:00:00.000Z";
+  const PREVIOUS_AT = "2026-09-29T00:00:00.000Z";
+  const MOVED = "moved-export";
+  const NESTED = "steno-like";
+  const SCHEMA = "@babybox/config-schema";
+  const OPTIONAL = "missing-optional";
+  const EXPORT_MARKER = "json-file-old";
+  const NEXT_MARKER = "json-file-new";
+  const SCHEMA_MARKER = "schema-old";
+  const CONFIG_BODY = "{}\n";
+  const HOLD_RELEASE = "6.1.7601";
+
+  function exportSource(marker) {
+    return `exports.JSONFile = ${JSON.stringify(marker)};\n`;
+  }
+
+  function copyFailure(name) {
+    return `Balíčky pro configer nejde zkopírovat. ${name} chybí.\n`;
+  }
+
+  function writeJson(file, value) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+  }
+
+  function writeLast(fx, record) {
+    writeJson(path.join(fx.sourceDir, "logs", "startup.last.json"), record);
+  }
+
+  function provenRecord(at) {
+    return {
+      step: "BUILD_CONFIGER",
+      ok: true,
+      at,
+      message: "",
+      node: "",
+      pnpm: "",
+      bun: "",
+    };
+  }
+
+  function inside(parent, child) {
+    const rel = path.relative(fs.realpathSync(parent), fs.realpathSync(child));
+    if (rel === "" || path.isAbsolute(rel)) {
+      return false;
+    }
+    return rel !== ".." && rel.indexOf(`..${path.sep}`) !== 0;
+  }
+
+  function expectSilent(fn) {
+    const chunks = [];
+    const write = process.stderr.write;
+    process.stderr.write = (chunk, encoding, cb) => {
+      chunks.push(String(chunk));
+      if (typeof encoding === "function") {
+        encoding();
+      } else if (typeof cb === "function") {
+        cb();
+      }
+      return true;
+    };
+    try {
+      fn();
+    } finally {
+      process.stderr.write = write;
+    }
+    expect(chunks).toEqual([]);
+  }
+
+  function isolatedDir(fx) {
+    return path.join(fx.configerDir, "dist", "node_modules");
+  }
+
+  function layout(fx) {
+    const sourceNm = path.join(fx.sourceDir, "node_modules");
+    const store = path.join(
+      sourceNm,
+      ".bun",
+      `${MOVED}@1.0.0`,
+      "node_modules",
+      MOVED
+    );
+    const storeIndex = path.join(store, "index.js");
+    writeJson(path.join(store, "package.json"), {
+      name: MOVED,
+      version: "1.0.0",
+      main: "index.js",
+      dependencies: { [NESTED]: "1.0.0" },
+      optionalDependencies: { [OPTIONAL]: "1.0.0" },
+    });
+    fs.writeFileSync(storeIndex, exportSource(EXPORT_MARKER));
+    const nestedStore = path.join(
+      sourceNm,
+      ".bun",
+      `${MOVED}@1.0.0`,
+      "node_modules",
+      NESTED
+    );
+    writeJson(path.join(nestedStore, "package.json"), {
+      name: NESTED,
+      version: "1.0.0",
+      main: "index.js",
+    });
+    fs.writeFileSync(path.join(nestedStore, "index.js"), "exports.ok = true;\n");
+    fs.symlinkSync(store, path.join(sourceNm, MOVED), "dir");
+
+    const schemaDir = path.join(fx.sourceDir, "packages", "config-schema");
+    const schemaIndex = path.join(schemaDir, "dist", "index.js");
+    writeJson(path.join(schemaDir, "package.json"), {
+      name: SCHEMA,
+      version: "1.0.0",
+      type: "module",
+      main: "./dist/index.js",
+      dependencies: { zod: "3.23.8" },
+    });
+    fs.mkdirSync(path.dirname(schemaIndex), { recursive: true });
+    fs.writeFileSync(
+      schemaIndex,
+      `export const marker = ${JSON.stringify(SCHEMA_MARKER)};\n`
+    );
+    fs.mkdirSync(path.join(sourceNm, "@babybox"), { recursive: true });
+    fs.symlinkSync(
+      schemaDir,
+      path.join(sourceNm, "@babybox", "config-schema"),
+      "dir"
+    );
+    writeJson(path.join(sourceNm, "zod", "package.json"), {
+      name: "zod",
+      version: "3.23.8",
+      main: "index.js",
+    });
+    fs.writeFileSync(path.join(sourceNm, "zod", "index.js"), "exports.z = {};\n");
+
+    writeJson(path.join(fx.configerDir, "package.json"), {
+      name: "babybox-panel-configer",
+      dependencies: {
+        [MOVED]: "1.0.0",
+        [SCHEMA]: "workspace:*",
+      },
+    });
+    const distIndex = path.join(fx.configerDir, "dist", "index.js");
+    fs.mkdirSync(path.dirname(distIndex), { recursive: true });
+    fs.writeFileSync(distIndex, "");
+    const versionJs = path.join(
+      fx.configerDir,
+      "dist",
+      "services",
+      "db",
+      "version.js"
+    );
+    fs.mkdirSync(path.dirname(versionJs), { recursive: true });
+    fs.writeFileSync(versionJs, "");
+    fs.mkdirSync(path.join(fx.configerDir, "configs"), { recursive: true });
+    fs.writeFileSync(path.join(fx.configerDir, "configs", "main.json"), CONFIG_BODY);
+    fs.writeFileSync(
+      path.join(fx.configerDir, "configs", "versions.json"),
+      CONFIG_BODY
+    );
+    writeLast(fx, provenRecord(PROVEN_AT));
+    return { storeIndex, schemaIndex, distIndex, versionJs };
+  }
+
+  function prepare(fx, stdout) {
+    return prepareConfigerModules({
+      sourceDir: fx.sourceDir,
+      configerDir: fx.configerDir,
+      stdout,
+    });
+  }
+
+  it.each([
+    ["a missing record", null, false, "", false],
+    [
+      "a failed step",
+      { step: "BUILD_PANEL", ok: false, at: PROVEN_AT },
+      true,
+      PREVIOUS_AT,
+      false,
+    ],
+    [
+      "a proven build with no tree",
+      { step: "BUILD_CONFIGER", ok: true, at: PROVEN_AT },
+      false,
+      "",
+      true,
+    ],
+    [
+      "a proven build already stamped",
+      { step: "BUILD_CONFIGER", ok: true, at: PROVEN_AT },
+      true,
+      PROVEN_AT,
+      false,
+    ],
+    [
+      "a newer proven build",
+      { step: "BUILD_CONFIGER", ok: true, at: PROVEN_AT },
+      true,
+      PREVIOUS_AT,
+      true,
+    ],
+    [
+      "a proven build with no time",
+      { step: "BUILD_CONFIGER", ok: true },
+      false,
+      "",
+      false,
+    ],
+    [
+      "a string ok flag",
+      { step: "BUILD_CONFIGER", ok: "true", at: PROVEN_AT },
+      false,
+      "",
+      false,
+    ],
+  ])("snapshotNeeded is %s", (label, record, hasTree, stamp, needed) => {
+    expect(snapshotNeeded(record, hasTree, stamp)).toBe(needed);
+  });
+
+  it("keeps the isolated package when the build did not prove configer", () => {
+    withFixture((fx) => {
+      const kept = path.join(isolatedDir(fx), MOVED, "index.js");
+      fs.mkdirSync(path.dirname(kept), { recursive: true });
+      fs.writeFileSync(kept, exportSource(EXPORT_MARKER));
+      fs.mkdirSync(path.join(fx.sourceDir, "node_modules", MOVED), {
+        recursive: true,
+      });
+      fs.writeFileSync(
+        path.join(fx.sourceDir, "node_modules", MOVED, "index.js"),
+        "exports.other = true;\n"
+      );
+      writeLast(fx, { step: "BUILD_PANEL", ok: false, at: PROVEN_AT });
+      const stdout = makeStdout();
+      expectSilent(() => {
+        expect(prepare(fx, stdout)).toBe(0);
+      });
+      expect(fs.readFileSync(kept, "utf8")).toBe(exportSource(EXPORT_MARKER));
+      expect(stdout.text()).toBe("");
+    });
+  });
+
+  it("does not create a tree when the build did not prove configer", () => {
+    withFixture((fx) => {
+      layout(fx);
+      writeLast(fx, { step: "BUILD_PANEL", ok: false, at: PROVEN_AT });
+      const stdout = makeStdout();
+      expect(prepare(fx, stdout)).toBe(0);
+      expect(fs.existsSync(isolatedDir(fx))).toBe(false);
+      expect(stdout.text()).toBe("");
+    });
+  });
+
+  it("does not create a tree when the last record is missing or corrupt", () => {
+    withFixture((fx) => {
+      layout(fx);
+      fs.unlinkSync(path.join(fx.sourceDir, "logs", "startup.last.json"));
+      const stdout = makeStdout();
+      expect(prepare(fx, stdout)).toBe(0);
+      fs.writeFileSync(path.join(fx.sourceDir, "logs", "startup.last.json"), "{");
+      expect(prepare(fx, stdout)).toBe(0);
+      expect(fs.existsSync(isolatedDir(fx))).toBe(false);
+      expect(stdout.text()).toBe("");
+    });
+  });
+
+  it("copies the schema build and nested dependencies into the dist tree", () => {
+    withFixture((fx) => {
+      const placed = layout(fx);
+      const stdout = makeStdout();
+      const isolated = isolatedDir(fx);
+      expectSilent(() => {
+        expect(prepare(fx, stdout)).toBe(0);
+      });
+      expect(stdout.text()).toBe("");
+      expect(
+        fs.existsSync(path.join(fx.configerDir, "dist", "node_modules.proving"))
+      ).toBe(false);
+      expect(fs.readFileSync(path.join(isolated, ".proven"), "utf8").trim()).toBe(
+        PROVEN_AT
+      );
+      expect(fs.lstatSync(path.join(isolated, MOVED)).isSymbolicLink()).toBe(
+        false
+      );
+      expect(
+        fs.lstatSync(path.join(isolated, "@babybox", "config-schema")).isSymbolicLink()
+      ).toBe(false);
+
+      const fromDist = createRequire(placed.distIndex);
+      const moved = fromDist.resolve(MOVED);
+      const schema = fromDist.resolve(SCHEMA);
+      expect(inside(isolated, moved)).toBe(true);
+      expect(inside(isolated, fs.realpathSync(moved))).toBe(true);
+      expect(inside(isolated, schema)).toBe(true);
+      expect(inside(isolated, fs.realpathSync(schema))).toBe(true);
+      expect(fs.readFileSync(moved, "utf8")).toBe(exportSource(EXPORT_MARKER));
+      expect(fs.readFileSync(schema, "utf8")).toContain(SCHEMA_MARKER);
+
+      const fromVersion = createRequire(placed.versionJs);
+      expect(inside(isolated, fromVersion.resolve(MOVED))).toBe(true);
+      const nested = createRequire(moved).resolve(NESTED);
+      expect(
+        inside(path.join(isolated, MOVED, "node_modules"), nested)
+      ).toBe(true);
+      expect(
+        fs.existsSync(path.join(isolated, MOVED, "node_modules", OPTIONAL))
+      ).toBe(false);
+      expect(
+        fs.existsSync(
+          path.join(isolated, "@babybox", "config-schema", "node_modules", "zod")
+        )
+      ).toBe(true);
+
+      fs.writeFileSync(
+        placed.schemaIndex,
+        "export const marker = \"schema-new\";\n"
+      );
+      fs.writeFileSync(placed.storeIndex, "exports.other = true;\n");
+      expect(fs.readFileSync(schema, "utf8")).toContain(SCHEMA_MARKER);
+      expect(fs.readFileSync(moved, "utf8")).toBe(exportSource(EXPORT_MARKER));
+      expect(fs.readFileSync(path.join(fx.configerDir, "configs", "main.json"), "utf8")).toBe(
+        CONFIG_BODY
+      );
+      expect(fs.existsSync(path.join(isolated, "configs", "main.json"))).toBe(
+        false
+      );
+    });
+  });
+
+  it("does not copy again for the same proven record", () => {
+    withFixture((fx) => {
+      const placed = layout(fx);
+      const stdout = makeStdout();
+      expect(prepare(fx, stdout)).toBe(0);
+      fs.writeFileSync(placed.storeIndex, "exports.other = true;\n");
+      expect(prepare(fx, stdout)).toBe(0);
+      const moved = createRequire(placed.distIndex).resolve(MOVED);
+      expect(fs.readFileSync(moved, "utf8")).toBe(exportSource(EXPORT_MARKER));
+      expect(stdout.text()).toBe("");
+    });
+  });
+
+  it("copies again when the proven record time changes", () => {
+    withFixture((fx) => {
+      const placed = layout(fx);
+      const stdout = makeStdout();
+      expect(prepare(fx, stdout)).toBe(0);
+      fs.writeFileSync(placed.storeIndex, exportSource(NEXT_MARKER));
+      writeLast(fx, provenRecord(PREVIOUS_AT));
+      expect(prepare(fx, stdout)).toBe(0);
+      const moved = createRequire(placed.distIndex).resolve(MOVED);
+      expect(fs.readFileSync(moved, "utf8")).toBe(exportSource(NEXT_MARKER));
+      expect(fs.readFileSync(path.join(isolatedDir(fx), ".proven"), "utf8").trim()).toBe(
+        PREVIOUS_AT
+      );
+    });
+  });
+
+  it("leaves the previous tree when a package is missing", () => {
+    withFixture((fx) => {
+      const kept = path.join(isolatedDir(fx), MOVED, "index.js");
+      fs.mkdirSync(path.dirname(kept), { recursive: true });
+      fs.writeFileSync(kept, exportSource(EXPORT_MARKER));
+      fs.writeFileSync(
+        path.join(isolatedDir(fx), ".proven"),
+        `${PREVIOUS_AT}\n`
+      );
+      writeJson(path.join(fx.configerDir, "package.json"), {
+        name: "babybox-panel-configer",
+        dependencies: { [MOVED]: "1.0.0" },
+      });
+      writeLast(fx, provenRecord(PROVEN_AT));
+      const stdout = makeStdout();
+      expectSilent(() => {
+        expect(prepare(fx, stdout)).toBe(1);
+      });
+      expect(stdout.text()).toBe(copyFailure(MOVED));
+      expect(fs.readFileSync(kept, "utf8")).toBe(exportSource(EXPORT_MARKER));
+      expect(
+        fs.existsSync(path.join(fx.configerDir, "dist", "node_modules.proving"))
+      ).toBe(false);
+    });
+  });
+
+  it("starts configer from the isolated tree and does not run bun install", () => {
+    withFixture((fx) => {
+      const placed = layout(fx);
+      const exe = placeBun(fx);
+      expectSilent(() => {
+        expect(runStart(fx, "configer", bunAnswers(PIN))).toBe(0);
+      });
+      expect(fx.calls.map((call) => [call.cmd, call.args[0]])).toEqual([
+        [exe, "-v"],
+        ["pm2", "start"],
+      ]);
+      expect(fx.calls[1].opts.cwd).toBe(fx.configerDir);
+      expect(fx.stdout.text()).toBe(
+        `Spouštím configer na Bun ${PIN} (${exe}).\n`
+      );
+      const resolved = createRequire(placed.distIndex).resolve(MOVED);
+      expect(inside(isolatedDir(fx), resolved)).toBe(true);
+      expect(fs.readFileSync(resolved, "utf8")).toBe(exportSource(EXPORT_MARKER));
+    });
+  });
+
+  it("returns 1 and does not call pm2 when the configer copy fails", () => {
+    withFixture((fx) => {
+      const exe = placeBun(fx);
+      writeJson(path.join(fx.configerDir, "package.json"), {
+        name: "babybox-panel-configer",
+        dependencies: { [MOVED]: "1.0.0" },
+      });
+      writeLast(fx, provenRecord(PROVEN_AT));
+      expectSilent(() => {
+        expect(runStart(fx, "configer", bunAnswers(PIN))).toBe(1);
+      });
+      expect(pm2Calls(fx)).toEqual([]);
+      expect(fx.stdout.text()).toBe(
+        `Spouštím configer na Bun ${PIN} (${exe}).\n` + copyFailure(MOVED)
+      );
+    });
+  });
+
+  it("copies configer packages on Node when the OS is on hold", () => {
+    withFixture((fx) => {
+      const placed = layout(fx);
+      placeBun(fx, "bun.exe");
+      expectSilent(() => {
+        expect(
+          runStart(fx, "configer", bunMustNotRun(), {
+            platform: "win32",
+            release: HOLD_RELEASE,
+          })
+        ).toBe(0);
+      });
+      expect(fx.calls.map((call) => call.cmd)).toEqual([
+        "pm2 \"start\" \"./dist/index.js\" \"-n\" \"configer\"",
+      ]);
+      expect(fx.stdout.text()).toBe(
+        "Spouštím configer na Node, systém je v OS_HOLD.\n"
+      );
+      const resolved = createRequire(placed.distIndex).resolve(SCHEMA);
+      expect(inside(isolatedDir(fx), fs.realpathSync(resolved))).toBe(true);
+    });
+  });
+
+  it("keeps the config paths that read apps/configer/configs", () => {
+    const mainTs = fs.readFileSync(
+      path.join(__dirname, "../configer/src/services/db/main.ts"),
+      "utf8"
+    );
+    const versionTs = fs.readFileSync(
+      path.join(__dirname, "../configer/src/services/db/version.ts"),
+      "utf8"
+    );
+    expect(mainTs).toContain("\"../../../configs\"");
+    expect(versionTs).toContain("\"../../../configs/versions.json\"");
   });
 });
