@@ -1566,3 +1566,58 @@ Context · Decision · Why · Gave up · Where
 - Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
   question on `START_PANEL` and `release.json`. This change does not edit
   that file.
+
+## 2026-09-30 — Backend tests are type-checked on their own tsconfig
+
+- Context: No tsconfig included the backend tests. The plan counted 18 errors
+  under the contract. A recount on 2026-09-30 reports 16. The program extends
+  `source/tsconfig.contract.json` and includes `src/**/*.test.ts`. The codes
+  are TS2345 (8), TS4111 (3), TS2532 (3) and TS2454 (2).
+- Decision: `source/apps/backend/tsconfig.vitest.json` extends the contract,
+  sets `noEmit`, and repeats the backend module, Node 18 types, and schema
+  path. CI runs `tsc -p` on it after the config-schema build. The emit
+  tsconfig still excludes `src/**/*.test.ts`. Tests keep `import type` for
+  `@babybox/config-schema`. `stringToAction` accepts `string | null |
+  undefined` because `actions.test.ts` locks those inputs. The function body
+  stays the same. Door URL builders and the reload path stay as they are.
+- Why: The emit program is the one the box runs. A test file in `dist` that
+  mentions the schema fails the CI grep. Startup installs that `dist` outside
+  the workspace. `noEmit` keeps the typecheck from writing those files.
+- Gave up: an edit to the plan file. The configer and config-schema test
+  tsconfigs are already in the entries above.
+- Where: the backend test typecheck pull request into `feat/toolchain-jump`.
+  The plan text stays in [dependency upgrade plan](plans/dependency-upgrade.md),
+  "Open questions".
+
+## 2026-09-30 — Configer's dist keeps its own node_modules
+
+- Context: the 2026-09-28 entry blocked a configer dependency from moving its
+  import surface. `start-app.js` started configer from `apps/configer` with
+  `install: false`, so the process resolved packages from `source/node_modules`.
+  `INSTALL` runs before the build. A failed build left the old
+  `apps/configer/dist` importing the new packages. lowdb 7 had already shown
+  that: `JSONFile` moved to `lowdb/node`, the kept dist died, and pm2 gave up.
+  The open choice was to give configer's dist its own `node_modules`, the way
+  the backend dist already has, or to keep blocking those majors.
+- Decision: configer resolves runtime packages from
+  `apps/configer/dist/node_modules`. That tree is a copy of the packages from
+  the last `BUILD_CONFIGER` success, stamped with that record's time. A later
+  root `bun install` does not refresh it. A failed build does not refresh it.
+  The next successful `BUILD_CONFIGER` does. `@babybox/config-schema` is copied
+  as files, not linked to `packages/config-schema`, so a schema build that
+  lands before a failed configer build is not what the old dist imports.
+  `apps/configer/configs/main.json` and `versions.json` stay where they are.
+  The backend dist install is unchanged. lowdb stays 3.0.0.
+- Why: the compiled files stay in `apps/configer/dist`. `services/db/main.ts`
+  and `version.ts` read `../../../configs`, which is `apps/configer/configs`.
+  Moving the dist would break that. `bun install` in the workspace cannot
+  install `@babybox/config-schema` as `workspace:*` without pointing at the
+  live package. A copy taken after the configer build is the set that matches
+  that dist, and it survives the next install.
+- Gave up: installing configer with `bun install --no-save` the way the
+  backend dist does. That install would keep a workspace link. Also gave up
+  lowdb 7 in this change. A later change can move a configer import surface.
+  This change does not bump a dependency.
+- Where: `source/apps/startup/start-app.js`,
+  `source/apps/startup/configer-modules.js`, `start-app.test.js`,
+  `tests/legacy-boot1.sh`, `tests/assert-runtime.js`.

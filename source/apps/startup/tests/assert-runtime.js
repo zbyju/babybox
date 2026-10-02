@@ -7,6 +7,7 @@
 
 const childProcess = require("child_process");
 const fs = require("fs");
+const { createRequire } = require("module");
 const os = require("os");
 const path = require("path");
 
@@ -108,9 +109,129 @@ function problemsOf(app, want, bun) {
   return problems;
 }
 
+function moduleSource() {
+  const cwd = process.cwd();
+  if (fs.existsSync(path.join(cwd, "apps", "configer", "package.json"))) {
+    return cwd;
+  }
+  return path.resolve(__dirname, "../../..");
+}
+
+function isInside(parent, child) {
+  let from = parent;
+  let to = child;
+  try {
+    from = fs.realpathSync(parent);
+    to = fs.realpathSync(child);
+  } catch (err) {
+    return false;
+  }
+  if (process.platform === "win32") {
+    from = from.toLowerCase();
+    to = to.toLowerCase();
+  }
+  const rel = path.relative(from, to);
+  if (rel === "" || path.isAbsolute(rel)) {
+    return false;
+  }
+  if (rel === ".." || rel.indexOf(`..${path.sep}`) === 0) {
+    return false;
+  }
+  return true;
+}
+
+function checkResolved(req, name, isolated, problems) {
+  let resolved;
+  try {
+    resolved = req.resolve(name);
+  } catch (err) {
+    problems.push(`${name}: ${err.message}`);
+    return;
+  }
+  let real = resolved;
+  try {
+    real = fs.realpathSync(resolved);
+  } catch (err) {
+    real = resolved;
+  }
+  if (!isInside(isolated, resolved) || !isInside(isolated, real)) {
+    problems.push(`${name} resolves to ${real}`);
+  }
+  if (fs.lstatSync(resolved).isSymbolicLink()) {
+    problems.push(`${name} is a symlink`);
+  }
+}
+
+function checkConfigs(source, problems) {
+  const configs = path.join(source, "apps", "configer", "configs");
+  const files = [
+    ["version.js", "../../../configs/versions.json"],
+    ["main.js", "../../../configs"],
+  ];
+  for (let i = 0; i < files.length; i += 1) {
+    const fileName = files[i][0];
+    const needle = files[i][1];
+    const filePath = path.join(
+      source,
+      "apps",
+      "configer",
+      "dist",
+      "services",
+      "db",
+      fileName
+    );
+    if (!fs.existsSync(filePath)) {
+      problems.push(`${fileName} chybí`);
+      continue;
+    }
+    const text = fs.readFileSync(filePath, "utf8");
+    if (text.indexOf(needle) === -1) {
+      problems.push(`${fileName} does not read ${needle}`);
+    }
+    const resolved = fs.realpathSync(
+      path.resolve(path.dirname(filePath), "../../../configs")
+    );
+    if (resolved !== fs.realpathSync(configs)) {
+      problems.push(`${fileName} configs path is ${resolved}`);
+    }
+  }
+}
+
+function checkModules() {
+  const source = moduleSource();
+  const isolated = path.join(source, "apps", "configer", "dist", "node_modules");
+  const distIndex = path.join(source, "apps", "configer", "dist", "index.js");
+  const problems = [];
+  if (!fs.existsSync(distIndex)) {
+    problems.push("configer dist/index.js chybí");
+  } else if (!fs.existsSync(isolated)) {
+    problems.push("configer dist/node_modules chybí");
+  } else {
+    const req = createRequire(distIndex);
+    checkResolved(req, "lowdb", isolated, problems);
+    checkResolved(req, "@babybox/config-schema", isolated, problems);
+    if (fs.existsSync(path.join(isolated, "configs", "main.json"))) {
+      problems.push("isolated tree contains configs/main.json");
+    }
+    if (fs.existsSync(path.join(isolated, "configs", "versions.json"))) {
+      problems.push("isolated tree contains configs/versions.json");
+    }
+  }
+  checkConfigs(source, problems);
+  if (problems.length > 0) {
+    process.stderr.write(`${problems.join("\n")}\n`);
+    return 1;
+  }
+  process.stdout.write("configer loads packages from dist/node_modules\n");
+  return 0;
+}
+
 function main(want) {
+  if (want === "modules") {
+    return checkModules();
+  }
   if (want !== "bun" && want !== "node") {
-    process.stderr.write("usage: assert-runtime.js bun|node\n");
+    process.stderr.write("usage: assert-runtime.js bun|node|modules\n");
     return 2;
   }
   const bun = bunPath();

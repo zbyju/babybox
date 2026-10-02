@@ -1,8 +1,9 @@
 import axios from "axios";
 import express from "express";
 import * as http from "http";
-import type { AddressInfo } from "net";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+import { tcpPort } from "../../../test/tcpPort.js";
 
 const transformThermalData = vi.fn((data: unknown) => ({ thermal: data }));
 const fetchDataCommon = vi.fn(async () => ({
@@ -32,8 +33,7 @@ describe("GET /engine/data", () => {
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve)
     );
-    const address = server.address() as AddressInfo;
-    url = `http://127.0.0.1:${address.port}/engine/data`;
+    url = `http://127.0.0.1:${tcpPort(server)}/engine/data`;
   });
 
   afterAll(async () => {

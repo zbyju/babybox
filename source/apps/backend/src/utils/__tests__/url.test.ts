@@ -13,6 +13,11 @@ vi.mock("../../index.js", () => ({
 import { Action, Unit } from "../../types/units.types.js";
 import { actionToUnit, actionToUrl } from "../url.js";
 
+function actionOutsideTheEnum(value: unknown): Action {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- the test locks undefined for a value that is not an Action
+  return value as Action;
+}
+
 describe("url.ts", () => {
   describe("actionToUrl", () => {
     it("should return url for every action there is", () => {
@@ -22,13 +27,13 @@ describe("url.ts", () => {
     });
 
     it("should return undefined for non-existent actions", () => {
-      expect(actionToUrl(null)).toBe(undefined);
-      expect(actionToUrl(undefined)).toBe(undefined);
+      expect(actionToUrl(actionOutsideTheEnum(null))).toBe(undefined);
+      expect(actionToUrl(actionOutsideTheEnum(undefined))).toBe(undefined);
     });
 
     it("should return undefined for inherited object keys", () => {
-      expect(actionToUrl("toString" as unknown as Action)).toBe(undefined);
-      expect(actionToUrl("constructor" as unknown as Action)).toBe(undefined);
+      expect(actionToUrl(actionOutsideTheEnum("toString"))).toBe(undefined);
+      expect(actionToUrl(actionOutsideTheEnum("constructor"))).toBe(undefined);
     });
 
     it("should build the url from the unit ip and the action path", () => {
@@ -49,8 +54,8 @@ describe("url.ts", () => {
     });
 
     it("should return undefined for non-existent actions", () => {
-      expect(actionToUnit(null)).toBe(undefined);
-      expect(actionToUnit(undefined)).toBe(undefined);
+      expect(actionToUnit(actionOutsideTheEnum(null))).toBe(undefined);
+      expect(actionToUnit(actionOutsideTheEnum(undefined))).toBe(undefined);
     });
   });
 

@@ -11,6 +11,7 @@ const os = require("os");
 const path = require("path");
 
 const bootstrap = require("./bootstrap");
+const configerModules = require("./configer-modules");
 
 const SOURCE_DIR = path.resolve(__dirname, "../..");
 const PROBE_TIMEOUT_MS = 30000;
@@ -175,7 +176,8 @@ function start(name, options) {
     stdout: pick(opts.stdout, process.stdout),
     env: Object.assign({}, pick(opts.env, process.env)),
   };
-  const spec = appSpec(name, pick(opts.sourceDir, SOURCE_DIR));
+  const sourceDir = pick(opts.sourceDir, SOURCE_DIR);
+  const spec = appSpec(name, sourceDir);
   if (spec === null) {
     run.stdout.write(`Neznámá aplikace ${name}.\n`);
     return 1;
@@ -199,6 +201,17 @@ function start(name, options) {
     run.stdout.write(
       `Spouštím ${spec.pm2Name} na Node, ${REASONS[runtime.reason]}.\n`
     );
+  }
+  // The last successful configer build owns this tree. A failed build does not.
+  if (name === "configer") {
+    const prepared = configerModules.prepareConfigerModules({
+      sourceDir,
+      configerDir: spec.cwd,
+      stdout: run.stdout,
+    });
+    if (prepared !== 0) {
+      return prepared;
+    }
   }
   if (spec.install && !fs.existsSync(path.join(spec.cwd, "node_modules"))) {
     if (runtime.kind !== "BUN") {

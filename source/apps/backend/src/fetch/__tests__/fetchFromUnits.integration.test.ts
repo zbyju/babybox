@@ -1,5 +1,4 @@
 import * as http from "http";
-import type { AddressInfo } from "net";
 import {
   afterAll,
   beforeAll,
@@ -10,6 +9,7 @@ import {
   vi,
 } from "vitest";
 
+import { tcpPort } from "../../../test/tcpPort.js";
 import { Action, Unit } from "../../types/units.types.js";
 
 /*
@@ -42,7 +42,7 @@ describe("fetchFromUnits.ts against a real server", () => {
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve)
     );
-    const { port } = server.address() as AddressInfo;
+    const port = tcpPort(server);
 
     /*
      * Both units point at the same server, so a second connection is visible
@@ -111,7 +111,11 @@ describe("fetchFromUnits.ts against a real server", () => {
 
     const results = await unitApi.updateSettings([setting], 2000, 10, 200);
 
-    expect(results[0].result).toBe(false);
+    const result = results[0];
+    if (result === undefined) {
+      throw new Error("updateSettings returned no result");
+    }
+    expect(result.result).toBe(false);
     expect(requests).toBeLessThan(10);
   });
 
@@ -159,13 +163,15 @@ describe("updateSettings against a unit that is ready", () => {
       if (url.startsWith("/get_sys[141]")) return json("0");
 
       const value = url.match(/sys140=(\d+)/);
-      if (value !== null) {
-        stored = Number(value[1]);
-        return json(value[1]);
+      const written = value?.[1];
+      if (written !== undefined) {
+        stored = Number(written);
+        return json(written);
       }
 
       const index = url.match(/sys141=(\d+)/);
-      if (index !== null) return json(index[1]);
+      const selected = index?.[1];
+      if (selected !== undefined) return json(selected);
 
       // Verification read. Slot 0 is setting index 100.
       if (url.startsWith("/get_sys[100]")) {
@@ -182,7 +188,7 @@ describe("updateSettings against a unit that is ready", () => {
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve)
     );
-    const { port } = server.address() as AddressInfo;
+    const port = tcpPort(server);
 
     vi.resetModules();
     vi.doMock("../../index.js", () => ({
@@ -246,7 +252,11 @@ describe("updateSettings against a unit that is ready", () => {
       1
     );
 
-    expect(results[0].result).toBe(false);
+    const result = results[0];
+    if (result === undefined) {
+      throw new Error("updateSettings returned no result");
+    }
+    expect(result.result).toBe(false);
   });
 
   it("should fail the setting when the verification read is not text", async () => {
@@ -259,6 +269,10 @@ describe("updateSettings against a unit that is ready", () => {
     );
 
     expect(order.some((u) => u.startsWith("/get_sys[100]"))).toBe(true);
-    expect(results[0].result).toBe(false);
+    const result = results[0];
+    if (result === undefined) {
+      throw new Error("updateSettings returned no result");
+    }
+    expect(result.result).toBe(false);
   });
 });

@@ -43,6 +43,14 @@ bun_home() {
   printf '%s\n' "$dir"
 }
 
+bun_exe() {
+  if is_windows; then
+    printf '%s\n' "$(bun_home)/bin/bun.exe"
+  else
+    printf '%s\n' "$(bun_home)/bin/bun"
+  fi
+}
+
 show_logs() {
   echo "---- startup.last.json ----" >&2
   cat "$SOURCE/logs/startup.last.json" >&2 || true
@@ -203,6 +211,64 @@ assert_runtime() {
   fail "the apps do not run on $1"
 }
 
+assert_modules() {
+  if ! node "$HERE/assert-runtime.js" modules; then
+    show_logs
+    fail "configer does not load the isolated packages"
+  fi
+}
+
+# The isolated lowdb copy gets a marker. source/node_modules and the live
+# schema dist then lose the export the old configer needs.
+poison_source_packages() {
+  node <<'EOF'
+const fs = require("fs");
+const path = require("path");
+const { createRequire } = require("module");
+const distReq = createRequire(path.join(process.cwd(), "apps/configer/dist/index.js"));
+const marker = path.join(
+  path.dirname(distReq.resolve("lowdb")),
+  "babybox-isolated-marker.txt"
+);
+fs.writeFileSync(marker, "kept\n");
+const sourceReq = createRequire(
+  path.join(process.cwd(), "apps/configer/package.json")
+);
+fs.writeFileSync(sourceReq.resolve("lowdb"), "module.exports = {};\n");
+fs.writeFileSync(
+  path.join(process.cwd(), "packages/config-schema/dist/index.js"),
+  'throw new Error("half-upgraded schema");\n'
+);
+EOF
+}
+
+assert_isolated_marker() {
+  if ! node <<'EOF'
+const fs = require("fs");
+const path = require("path");
+const { createRequire } = require("module");
+const distReq = createRequire(path.join(process.cwd(), "apps/configer/dist/index.js"));
+const marker = path.join(
+  path.dirname(distReq.resolve("lowdb")),
+  "babybox-isolated-marker.txt"
+);
+const text = fs.readFileSync(marker, "utf8").trim();
+if (text !== "kept") {
+  console.error(marker + " is " + text);
+  process.exit(1);
+}
+const schema = fs.readFileSync(distReq.resolve("@babybox/config-schema"), "utf8");
+if (schema.indexOf("half-upgraded") !== -1) {
+  console.error("isolated schema is the half-upgraded build");
+  process.exit(1);
+}
+EOF
+  then
+    show_logs
+    fail "configer is not on the isolated packages"
+  fi
+}
+
 LEGACY_SHA="$(git rev-parse "legacy-runtime^{commit}")"
 PM2_WANT="$(pm2_version)"
 assert_head "$LEGACY_SHA"
@@ -242,8 +308,33 @@ assert_marker "dist" "none"
 assert_apps
 assert_panel_page
 assert_runtime bun
+assert_modules
 if [ "$(pm2_version)" != "$PM2_WANT" ]; then
   fail "pm2 is $(pm2_version), want ${PM2_WANT}"
 fi
+
+echo "a moved export in source/node_modules still starts the proven configer"
+poison_source_packages
+pm2 delete configer >/dev/null 2>&1 || true
+node apps/startup/start-app.js configer
+assert_apps
+assert_modules
+assert_isolated_marker
+
+echo "bun install does not replace the proven configer packages"
+"$(bun_exe)" install --frozen-lockfile
+assert_isolated_marker
+
+echo "a failed build starts the previous configer packages"
+BROKEN_AGAIN="$(broken_commit)"
+publish_tip "$BROKEN_AGAIN"
+old_startup
+assert_head "$BROKEN_AGAIN"
+assert_clean
+assert_record "BUILD_PANEL" "false"
+assert_isolated_marker
+assert_apps
+assert_runtime bun
+assert_modules
 
 echo "legacy-boot1 passed"
