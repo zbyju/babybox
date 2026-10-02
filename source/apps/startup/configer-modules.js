@@ -239,26 +239,15 @@ function copyDeps(sourceDir, configerDir, staging) {
   return { ok: true };
 }
 
+/*
+ * Deletes the old tree first, then moves the new one in.
+ * Windows blocks a rename of a read-only node_modules.
+ * A crash between the two steps leaves no tree.
+ * The next start sees that and copies again.
+ */
 function commitTree(staging, dest) {
-  const backup = `${dest}.bak`;
-  removeTree(backup);
-  const hadDest = existsAny(dest);
-  if (hadDest) {
-    fs.renameSync(dest, backup);
-  }
-  try {
-    fs.renameSync(staging, dest);
-  } catch (err) {
-    if (hadDest && !existsAny(dest)) {
-      try {
-        fs.renameSync(backup, dest);
-      } catch (restoreErr) {
-        // The caller reports the original rename error.
-      }
-    }
-    throw err;
-  }
-  removeTree(backup);
+  removeTree(dest);
+  fs.renameSync(staging, dest);
 }
 
 function snapshot(sourceDir, configerDir, at) {
