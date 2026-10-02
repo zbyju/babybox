@@ -5,9 +5,12 @@
 // An already-current pull still builds when dist/release.json lacks HEAD.
 // OS_HOLD and CPU_HOLD skip that build while the hold is still true.
 // release.json is written only after START_PANEL succeeds.
+// That success also requires GET /status 200 from configer and the backend.
+// pm2 exit 0 is not enough. Each probe waits at most 30 seconds.
 // Bootstrap runs again before git pull, after the lockfile restore.
 
 const childProcess = require("child_process");
+const http = require("http");
 const os = require("os");
 const path = require("path");
 const util = require("util");
@@ -22,6 +25,23 @@ const strings = require("../../strings");
 const UPDATE_ERROR = "error";
 const UPDATE_CHANGED = "changed";
 const UPDATE_CURRENT = "current";
+
+// Same bound as the Bun probe in start-app.js. Configer is probed before the
+// panel starts, so the backend should not sit in its 5 second config retry.
+// A dead app fails in this boot. A live app returns on the first 200.
+const STATUS_WAIT_MS = 30000;
+const STATUS_POLL_MS = 250;
+const STATUS_REQUEST_MS = 1000;
+const DEFAULT_CONFIGER_PORT = 5001;
+const DEFAULT_BACKEND_PORT = 5000;
+const DEFAULT_PREFIX = "/api/v1";
+const CONFIGER_PORT_FALLBACK = 6000;
+const BACKEND_PORT_FALLBACK = 5000;
+const STATUS_HOST = "127.0.0.1";
+
+// Same check as safeRoutePrefix in configer and the backend.
+// A bad prefix makes the app listen with no prefix, so the probe uses /status.
+const UNSAFE_ROUTE_PREFIX = /[{}()[\]+?!]|[:*](?![A-Za-z_])/;
 
 const REPO_ROOT = path.resolve(__dirname, "../../../../../..");
 const LOG_PATH = path.resolve(__dirname, "../../../../../logs/startup.log");
@@ -68,6 +88,13 @@ function createContext(options) {
       path.join(__dirname, "../../../versions.env")
     ),
     spawnSync: pick(opts.spawnSync, childProcess.spawnSync),
+    httpGet: pick(opts.httpGet, httpStatusCode),
+    statusWaitMs: pick(opts.statusWaitMs, STATUS_WAIT_MS),
+    nowMs: pick(opts.nowMs, () => {
+      const t = process.hrtime();
+      return t[0] * 1000 + t[1] / 1e6;
+    }),
+    delay: pick(opts.delay, delayMs),
     requireConfigerBuild: opts.requireConfigerBuild === true,
     paths: {
       source: path.join(repoRoot, "source"),
@@ -574,6 +601,281 @@ async function swapIn(ctx) {
   return true;
 }
 
+function delayMs(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function isPlainObject(value) {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    Array.isArray(value) === false
+  );
+}
+
+function positivePort(value) {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    if (Math.floor(value) === value) {
+      return value;
+    }
+  }
+  if (typeof value === "string" && /^[0-9]+$/.test(value)) {
+    const parsed = Number(value);
+    if (parsed > 0) {
+      return parsed;
+    }
+  }
+  return 0;
+}
+
+function safeRoutePrefix(prefix) {
+  if (typeof prefix !== "string") {
+    return "";
+  }
+  if (UNSAFE_ROUTE_PREFIX.test(prefix)) {
+    return "";
+  }
+  return prefix;
+}
+
+function rawPrefix(stored, env) {
+  if (typeof stored === "string" && stored !== "") {
+    return stored;
+  }
+  if (env && typeof env.API_PREFIX === "string" && env.API_PREFIX !== "") {
+    return env.API_PREFIX;
+  }
+  return "";
+}
+
+function choosePort(stored, env, fallback) {
+  const fromStored = positivePort(stored);
+  if (fromStored !== 0) {
+    return fromStored;
+  }
+  const fromEnv = positivePort(env && env.PORT);
+  if (fromEnv !== 0) {
+    return fromEnv;
+  }
+  return fallback;
+}
+
+function statusUrl(port, prefix) {
+  const safe = safeRoutePrefix(prefix);
+  let pathName = `${safe}/status`;
+  if (pathName.charAt(0) !== "/") {
+    pathName = `/${pathName}`;
+  }
+  return `http://${STATUS_HOST}:${port}${pathName}`;
+}
+
+function fileExists(fileSystem, filePath) {
+  try {
+    return fileSystem.existsSync(filePath) === true;
+  } catch (err) {
+    return false;
+  }
+}
+
+function readConfigObject(fileSystem, filePath) {
+  if (!fileExists(fileSystem, filePath)) {
+    return null;
+  }
+  try {
+    const value = JSON.parse(fileSystem.readFileSync(filePath, "utf8"));
+    if (!isPlainObject(value)) {
+      return null;
+    }
+    return value;
+  } catch (err) {
+    return null;
+  }
+}
+
+function mergePlain(base, extra) {
+  const out = {};
+  const source = isPlainObject(base) ? base : {};
+  const baseKeys = Object.keys(source);
+  for (let i = 0; i < baseKeys.length; i += 1) {
+    out[baseKeys[i]] = source[baseKeys[i]];
+  }
+  if (!isPlainObject(extra)) {
+    return out;
+  }
+  const extraKeys = Object.keys(extra);
+  for (let i = 0; i < extraKeys.length; i += 1) {
+    const key = extraKeys[i];
+    if (isPlainObject(source[key]) && isPlainObject(extra[key])) {
+      out[key] = mergePlain(source[key], extra[key]);
+    } else {
+      out[key] = extra[key];
+    }
+  }
+  return out;
+}
+
+function loadStoredConfig(fileSystem, dir) {
+  const mainFile = path.join(dir, "main.json");
+  if (!fileExists(fileSystem, mainFile)) {
+    return null;
+  }
+  const main = readConfigObject(fileSystem, mainFile);
+  if (main) {
+    return main;
+  }
+  return readConfigObject(fileSystem, path.join(dir, "main.json.bak"));
+}
+
+function section(merged, key) {
+  if (!isPlainObject(merged[key])) {
+    return {};
+  }
+  return merged[key];
+}
+
+function bindTargets(ctx) {
+  const dir = path.join(ctx.paths.source, "apps", "configer", "configs");
+  const base = readConfigObject(ctx.fs, path.join(dir, "base.json"));
+  const stored = loadStoredConfig(ctx.fs, dir);
+  if (base === null && stored === null) {
+    return {
+      configerUrl: statusUrl(DEFAULT_CONFIGER_PORT, DEFAULT_PREFIX),
+      backendUrl: statusUrl(DEFAULT_BACKEND_PORT, DEFAULT_PREFIX),
+    };
+  }
+  const merged = mergePlain(base || {}, stored);
+  const configer = section(merged, "configer");
+  const backend = section(merged, "backend");
+  return {
+    configerUrl: statusUrl(
+      choosePort(configer.port, ctx.env, CONFIGER_PORT_FALLBACK),
+      rawPrefix(configer.url, ctx.env)
+    ),
+    backendUrl: statusUrl(
+      choosePort(backend.port, ctx.env, BACKEND_PORT_FALLBACK),
+      rawPrefix(backend.url, ctx.env)
+    ),
+  };
+}
+
+function waitBudget(ctx) {
+  const value = ctx.statusWaitMs;
+  if (
+    typeof value !== "number" ||
+    value < 0 ||
+    Number.isFinite(value) === false
+  ) {
+    return STATUS_WAIT_MS;
+  }
+  return value;
+}
+
+function statusMissed(url, budget) {
+  const message = strings.statusUnanswered
+    .replace("{url}", url)
+    .replace("{ms}", String(budget));
+  const err = new Error(message);
+  err.stderr = message;
+  return err;
+}
+
+function limitWait(promise, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      reject(new Error("timeout"));
+    }, timeoutMs);
+    Promise.resolve(promise).then(
+      (value) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
+function httpStatusCode(url, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    function finish(fn) {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      fn();
+    }
+    let req;
+    try {
+      req = http.get(url, { agent: false }, (res) => {
+        res.resume();
+        const code = typeof res.statusCode === "number" ? res.statusCode : 0;
+        finish(() => resolve(code));
+      });
+    } catch (err) {
+      finish(() => reject(err));
+      return;
+    }
+    req.setTimeout(timeoutMs, () => {
+      req.destroy();
+      finish(() => reject(new Error("timeout")));
+    });
+    req.on("error", (err) => {
+      finish(() => reject(err));
+    });
+  });
+}
+
+async function waitForStatus(ctx, url) {
+  const budget = waitBudget(ctx);
+  const deadline = ctx.nowMs() + budget;
+  let pending = true;
+  while (pending) {
+    const remaining = deadline - ctx.nowMs();
+    const timeoutMs =
+      remaining > STATUS_REQUEST_MS ? STATUS_REQUEST_MS : remaining;
+    const attemptMs = timeoutMs > 0 ? timeoutMs : 1;
+    try {
+      const code = await limitWait(ctx.httpGet(url, attemptMs), attemptMs);
+      if (code === 200) {
+        return;
+      }
+    } catch (err) {
+      // Try again until the budget ends.
+    }
+    if (ctx.nowMs() >= deadline) {
+      pending = false;
+    } else {
+      const pause = deadline - ctx.nowMs();
+      const step = pause < STATUS_POLL_MS ? pause : STATUS_POLL_MS;
+      if (step > 0) {
+        await ctx.delay(step);
+      }
+      if (ctx.nowMs() >= deadline) {
+        pending = false;
+      }
+    }
+  }
+  throw statusMissed(url, budget);
+}
+
 function startOne(ctx, script) {
   return new Promise((resolve, reject) => {
     let child;
@@ -645,29 +947,39 @@ async function startLive(ctx) {
 }
 
 async function startNew(ctx) {
+  const targets = bindTargets(ctx);
   try {
     begin(ctx, "START_CONFIGER");
     await startOne(ctx, "start:configer");
+    await waitForStatus(ctx, targets.configerUrl);
     end(ctx, "START_CONFIGER");
   } catch (err) {
     fail(ctx, "START_CONFIGER", err);
     return "START_CONFIGER";
   }
+  let output = "";
   try {
     begin(ctx, "START_PANEL");
-    const output = await startOne(ctx, "start:main");
-    try {
-      writeRelease(ctx, await headSha(ctx));
-    } catch (err) {
-      // The panel is up. A missing sha makes the next boot build again.
-      ctx.logger.error("START_PANEL", strings.releaseWriteFailed, err);
-    }
-    succeed(ctx, "START_PANEL", output);
-    return "";
+    output = await startOne(ctx, "start:main");
+    await waitForStatus(ctx, targets.backendUrl);
   } catch (err) {
     fail(ctx, "START_PANEL", err);
     return "START_PANEL";
   }
+  try {
+    await waitForStatus(ctx, targets.configerUrl);
+  } catch (err) {
+    fail(ctx, "START_CONFIGER", err);
+    return "START_CONFIGER";
+  }
+  try {
+    writeRelease(ctx, await headSha(ctx));
+  } catch (err) {
+    // The panel is up. A missing sha makes the next boot build again.
+    ctx.logger.error("START_PANEL", strings.releaseWriteFailed, err);
+  }
+  succeed(ctx, "START_PANEL", output);
+  return "";
 }
 
 async function swapBack(ctx) {

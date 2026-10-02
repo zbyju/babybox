@@ -27,6 +27,7 @@ module.exports = {
   distNextMissingBuild: "Sestavené soubory pro novou verzi chybí.",
   treeDirty: "Pracovní strom není čistý.",
   releaseWriteFailed: "Soubor release.json se nepodařilo zapsat.",
+  statusUnanswered: "Adresa {url} neodpověděla do {ms} ms.",
   startBegin: "Spouštím panel babyboxu.",
   startSucceeded: "Panel babyboxu byl spuštěn.",
   startFailed: "Panel babyboxu se nepodařilo spustit.",
