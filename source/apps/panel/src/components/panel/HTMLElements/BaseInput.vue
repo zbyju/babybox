@@ -1,10 +1,10 @@
 <template>
   <input
     :type="type"
-    :placeholder="placeholder"
-    :value="props.modelValue"
-    :class="classState"
+    :placeholder="props.placeholder"
     :pattern="props.pattern"
+    :value="props.modelValue ?? ''"
+    :class="classState"
     :disabled="props.disabled"
     @input="inputChange"
   />
@@ -20,7 +20,7 @@
     placeholder?: string;
     modelValue?: string;
     state?: BaseInputState;
-    pattern?: string;
+    pattern?: string | undefined;
     disabled?: boolean;
   }>();
 
@@ -29,7 +29,9 @@
   }>();
 
   function inputChange(event: Event) {
-    emit("update:modelValue", (event.target as HTMLInputElement).value);
+    if (event.target instanceof HTMLInputElement) {
+      emit("update:modelValue", event.target.value);
+    }
   }
 
   const classState = computed(() =>

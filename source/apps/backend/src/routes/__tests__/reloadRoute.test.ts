@@ -1,9 +1,18 @@
 import axios from "axios";
-import * as express from "express";
+import express from "express";
 import * as http from "http";
-import type { AddressInfo } from "net";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
-import type { MainConfig } from "../../types/config.types";
+import { tcpPort } from "../../../test/tcpPort.js";
+import type { MainConfig } from "../../types/config.types.js";
 
 function storedConfig(): MainConfig {
   return {
@@ -31,8 +40,8 @@ function storedConfig(): MainConfig {
   };
 }
 
-const applyConfig = jest.fn();
-const fetchConfig = jest.fn();
+const applyConfig = vi.fn();
+const fetchConfig = vi.fn();
 
 /*
  * The route reads `bound` and calls `applyConfig` on index.ts, which starts the
@@ -40,19 +49,18 @@ const fetchConfig = jest.fn();
  * every case here is about what the route does with the answer.
  */
 async function startRoute(bound: unknown) {
-  jest.resetModules();
-  jest.doMock("../..", () => ({ applyConfig, bound }));
-  jest.doMock("../../fetch/fetchConfig", () => ({ fetchConfig }));
+  vi.resetModules();
+  vi.doMock("../../index.js", () => ({ applyConfig, bound }));
+  vi.doMock("../../fetch/fetchConfig.js", () => ({ fetchConfig }));
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { router } = require("../reloadRoute");
+  const { router } = await import("../reloadRoute.js");
 
   const app = express();
   app.use("/api/v1/reload", router);
   const server = http.createServer(app);
 
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const { port } = server.address() as AddressInfo;
+  const port = tcpPort(server);
   return { server, url: `http://127.0.0.1:${port}/api/v1/reload` };
 }
 
@@ -103,7 +111,7 @@ describe("POST /reload", () => {
 
   it("keeps the old config when the stored one lost a field the backend reads", async () => {
     const config = storedConfig();
-    delete (config.units.engine as Partial<MainConfig["units"]["engine"]>).ip;
+    Reflect.deleteProperty(config.units.engine, "ip");
     fetchConfig.mockResolvedValue({ status: 200, data: config });
 
     const response = await post(url);

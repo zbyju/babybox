@@ -56,6 +56,8 @@ Context · Decision · Why · Gave up · Where
 - Why: configer is ESM (`"type": "module"`); vitest runs TS ESM without extra config.
   Jest would need a transform setup.
 - Gave up: one test runner across the monorepo (the backend stays on jest).
+- Amended on 2026-09-12: the backend moves to vitest too. See "Backend tests move
+  to vitest" below. Configer stays on vitest.
 
 ## 2026-09-11 — Work is done by an agent workflow with review on the PR
 
@@ -225,6 +227,107 @@ Context · Decision · Why · Gave up · Where
   tests are what hold them together. A field of the wrong type still stops the panel,
   and a hand-typed `backend.port: "5000"` is the realistic case.
 - Where: `isInstanceOfConfig` in `apps/panel/src/utils/panel/instanceCheck.ts`.
+
+## 2026-09-12 — Windows boxes are in the field
+
+- Context: about half the fleet is Windows 7, 8, 10, or 11. Those boxes were
+  installed by hand with nvm-windows. The jump has to cover them.
+- Decision: those boxes stay in the field. Windows 8 holds on the current panel
+  and does not switch branch. Windows 10 build 17763 or newer, and Windows 11,
+  take Bun.
+- Why: Bun 1.4.2 does not run on Windows 8. A branch switch would stop that box
+  from pulling `main`.
+- Gave up: one runtime for every Windows box on the first jump.
+- Amended 2026-09-21: the hold is `OS_HOLD`. The tree stays clean. A later OS
+  install plus a restart takes the jump.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+
+## 2026-09-12 — New Ubuntu boxes install Bun
+
+- Context: provisioning was `installAll.sh` (old) and `install-all.sh` (new).
+  Both used `n`, and `/usr/local` was owned by the user.
+- Decision: new boxes install Bun from `versions.env`.
+- Why: the jump runtime is Bun 1.4.2. Node 24 is not the target.
+- Gave up: a Node 24 install path for new boxes.
+- Amended 2026-09-13: `installAll.sh` is gone (#54). Only `install-all.sh`
+  remains.
+- Amended 2026-09-14: new boxes install Bun from `versions.env`, not Node 24.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md).
+
+## 2026-09-12 — The bootstrap stays in HEAD
+
+- Context: a box can be offline for months, sometimes years, then boot and pull.
+- Decision: the bootstrap stays in HEAD. The `legacy-runtime` tag is permanent.
+  There is no `legacy` branch.
+- Why: a box that missed the jump still has to install Bun from the legacy Node
+  and pnpm on the next restart.
+- Gave up: deleting the bootstrap after the fleet has moved.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+
+## 2026-09-12 — The backend becomes ESM
+
+- Context: some target packages are ESM-only. The backend is CommonJS.
+- Decision: convert the backend to ESM. `open@11` is then a plain import.
+- Why: that is how the backend can load the ESM-only packages in P4. P4 grows
+  by about half a day.
+- Gave up: staying on CommonJS and wrapping those packages.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-12 — Backend tests move to vitest
+
+- Context: the backend uses jest. The panel and configer use vitest. The
+  2026-09-11 entry above left the backend on jest.
+- Decision: vitest. Remove jest, ts-jest, and `@types/jest`. Startup tests join
+  in P5. The runner is not `bun test`.
+- Why: one test runner for the apps. This supersedes the "backend stays on
+  jest" line in "Configer tests run with vitest".
+- Gave up: jest on the backend.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and P5.
+
+## 2026-09-12 — Lint is oxlint and oxfmt
+
+- Context: the repo uses the ESLint and Prettier family.
+- Decision: oxlint and oxfmt. Remove that family. Do not upgrade it. Configer
+  goes first. Warnings are errors.
+- Why: that is the lint stack for the jump. Both tools need a runtime newer
+  than Node 18, so they land after Bun is the runner.
+- Gave up: an ESLint 10 upgrade.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5.
+
+## 2026-09-12 — The panel stays on TypeScript 6.0.3
+
+- Context: the question was whether the panel must use Volar on TypeScript 7.
+  The owner said to use the latest tooling that works.
+- Decision: the panel stays on TypeScript 6.0.3 with `vue-tsc` 3.3.11. The
+  backend, configer, and config-schema build with TypeScript 7.0.2.
+- Why: on 2026-09-12, `vue-tsc` 3.3.11 crashed on TypeScript 7.0.2 and worked
+  on 6.0.3. On 2026-09-13, 3.3.11 was still the latest Volar.
+- Gave up: TypeScript 7 on the panel until a later `vue-tsc` can load it.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript 6
+  and 7".
+
+## 2026-09-12 — Vite moves to 8
+
+- Context: the panel is on Vite 2. Holding at Vite 7 with `rolldown-vite` was
+  the other option.
+- Decision: upgrade to Vite 8.3.0. If 8 misbehaves, `vite@7.3.6` with
+  `rolldown-vite` is the documented fallback.
+- Why: the panel config is small, and the panel PCs run a current Chromium.
+- Gave up: holding at Vite 7.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Vite 2 → 8".
+
+## 2026-09-12 — A failed step names itself and starts the last good dist
+
+- Context: a failed `pnpm run build` does not record the step name next to a
+  last good tree.
+- Decision: name the step and the error, then start the last good `dist`. The
+  record is `startup.last.json`. `GET /status` includes it. No `git reset`. No
+  toolchain revert.
+- Why: a person on site is not required. The box has to come back on the
+  previous panel.
+- Gave up: reverting the git checkout when a step fails.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "When an
+  upgrade fails", and P1.
 
 ## 2026-09-13 — No `GET /config/schema`; the form descriptor is a build-time import
 
@@ -761,6 +864,772 @@ Context · Decision · Why · Gave up · Where
 - Gave up: one warning/error pair for every surface.
 - Where: `public/config/styles.json`, `components/panel/elements/HighlightMessage.vue`.
 
+## 2026-09-14 — The runtime is Bun 1.4.2
+
+- Context: the 2026-09-13 target was Node 24 and pnpm 12.
+- Decision: Bun 1.4.2, pinned. One zip, installed under the user profile, with
+  `bun.lock`. Node 18 and pnpm 7 stay as the bootstrap host and the
+  `pnpm run build` hook.
+- Why: one binary is the runtime and the package manager. The boxes do not
+  need a second Node and a second pnpm.
+- Gave up: Node 24 and pnpm 12.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Bun as
+  runtime and package manager".
+
+## 2026-09-14 — Every compile unit uses the TypeScript contract
+
+- Context: the apps do not share one strict flag set. The backend has
+  `noImplicitAny` only.
+- Decision: the TypeScript contract. Extra flags on every compile unit. No
+  `any`. No `!`. No `as` except a tracked suppression. Configer goes first.
+- Why: `strict: true` is the floor. A flag stays on when a phase is red.
+- Gave up: turning a flag off to make a phase green.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
+  contract".
+
+## 2026-09-14 — HTTP, the bundle, and tests stay Express, Vite, and vitest
+
+- Context: Bun can replace Express, Vite, and vitest with `Bun.serve`,
+  `bun build`, and `bun test`.
+- Decision: Express 5, Vite 8, and vitest 5.
+- Why: the jump changes the runtime and the libraries. It does not rewrite the
+  servers or the test runner.
+- Gave up: Elysia, `Bun.serve`, `bun build`, and `bun test`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md).
+
+## 2026-09-14 — Dev servers run under bun --watch
+
+- Context: the backend uses `ts-node` through nodemon. Configer uses
+  `nodemon --esm`.
+- Decision: `bun --watch`. Remove `ts-node`, `tsx`, and nodemon. Do not add
+  `tsx`.
+- Why: Bun is the runtime. `bun --watch` does not need the TypeScript
+  JavaScript API.
+- Gave up: `tsx` as a second dev runner.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Dev runners".
+
+## 2026-09-21 — Topic work lands on feat/toolchain-jump
+
+- Context: the upgrade is many commits. A box must not receive them one phase
+  at a time on `main`.
+- Decision: `feat/toolchain-jump` is the long-lived branch. Topic pull requests
+  merge into that branch. `main` gets one merge after the canary. Do not delete
+  the branch.
+- Why: a box on `main` then receives the whole tip in one `git pull`.
+- Gave up: merging each phase to `main` on its own.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+  #102 is the open pull request into `main`.
+
+## 2026-09-21 — Each topic is one pull request into feat/toolchain-jump
+
+- Context: the long-lived branch needs a reviewable record for each box in the
+  plan.
+- Decision: open one pull request into `feat/toolchain-jump` for every topic.
+  Do not merge it unless the owner asks. #102 stays the open pull request into
+  `main`.
+- Why: the topic pull request is the review. The merge to `main` waits for the
+  canary.
+- Gave up: committing a topic straight onto `feat/toolchain-jump`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+
+## 2026-09-21 — A restart is the release
+
+- Context: a box updates when it restarts. The startup app runs `git pull`,
+  then maybe `pnpm run build`.
+- Decision: a pull, or a checkout, done before the restart still builds, unless
+  the OS is on hold.
+- Why: both arrivals have to end with a panel on screen. Today a checkout that
+  is already up to date skips the build. P1 changes that rule.
+- Gave up: a fleet-wide command at merge time.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Safe release".
+
+## 2026-09-21 — Windows 8 holds in place
+
+- Context: Bun 1.4.2 needs Windows 10 build 17763 or later. Windows 8 cannot
+  run that binary.
+- Decision: `OS_HOLD`. The current panel stays up. The git branch does not
+  change. The tree stays clean.
+- Why: a branch switch stops later pulls of `main`. Exit code 0 would make the
+  old startup swap `dist`.
+- Gave up: parking a Windows 8 box on another branch.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Hold
+  operating systems".
+
+## 2026-09-21 — Windows 10 and 11 jump at build 17763
+
+- Context: Windows 10 and Windows 11 share the `10.0.` release string. The
+  build number is what Bun checks.
+- Decision: jump when the build is 17763 or newer. Older Windows 10 uses the
+  same hold as Windows 8.
+- Why: Bun 1.4.2 requires Windows 10 version 1809, which is build 17763.
+  Windows 11 is build 22000 or newer and takes the jump.
+- Gave up: treating every `10.0.` release as able to run Bun.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Hold
+  operating systems".
+
+## 2026-09-21 — Ubuntu takes the jump
+
+- Context: `install-all.sh` provisions new Ubuntu boxes.
+- Decision: Ubuntu takes the jump.
+- Why: `install-all.sh` already requires Ubuntu 22.04 or newer and installs
+  `unzip`.
+- Gave up: a separate Ubuntu hold.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Hold
+  operating systems".
+
+## 2026-09-21 — Do not download the baseline Bun zip
+
+- Context: Bun publishes a `*-baseline` zip. It looks like a fallback for an
+  older CPU.
+- Decision: do not use it. An illegal instruction is `CPU_HOLD`.
+- Why: the baseline zip is an alias of the same x64 binary. That binary still
+  needs SSE4.2.
+- Gave up: a second download when the first binary traps.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "CPU that
+  cannot run the Bun binary".
+
+## 2026-09-21 — Registry dependencies use exact versions
+
+- Context: `package.json` used ranges. A later install could move a package
+  without a commit.
+- Decision: every registry specifier is an exact version, `1.2.3`. No `^`,
+  `~`, `*`, `latest`, or range. The lockfile matches. P0 pins the packages
+  that are already installed. Later phases write the new exact version.
+  Renovate bumps stay exact.
+- Why: the version in `package.json` is the version that installs.
+- Gave up: caret and tilde ranges.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
+  constraints". The P0 pin is #109.
+
+## 2026-09-23 — Remaining pull requests stay near 5000 lines
+
+- Context: one pull request per checkbox makes the review queue longer than
+  the work. A whole phase in one pull request is a wide review.
+- Decision: the work after #121 lands as the six pull requests in
+  "Pull requests from here". Each one stays near 5000 lines. Each one passes
+  the legacy-image job before the next one starts.
+- Why: agentic coding fills a few thousand lines in one pass. Five hundred
+  lines splits one behavior across several reviews.
+- Gave up: joining P2 and P3. A red legacy-image job has to point at install
+  or at the process. Also gave up splitting `bun.lock` out of P2.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Pull
+  requests from here".
+
+## 2026-09-23 — The Windows login user can write the Bun folder
+
+- Context: Bun lands in `%USERPROFILE%\.bun`. A UAC prompt on that write
+  would stop an unattended boot. The plan left the write as an open question
+  until one Windows box was tested.
+- Decision: the logged-in user can create that folder with no UAC prompt.
+  Tested 2026-09-23. The account was `juricj`. The usual fleet account name
+  is `babybox`. This box uses `juricj`. The command ran at Medium integrity.
+  `mkdir` of `%USERPROFILE%\.bun\bin` and a probe file succeeded. Windows
+  showed no consent dialog.
+- Why: the folder is inside the profile of the user who is logged in. The
+  account name is not part of the path. `sudo-prompt` is not used for this
+  write. No on-site permission change.
+- Gave up: installing Bun with elevation, and a one-time ACL change on the
+  box.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P1 and
+  "Open questions".
+
+## 2026-09-24 — Ubuntu Bun lands in the home directory
+
+- Context: The Bun zip on Ubuntu must land in `$HOME/.bun/bin`. The jump
+  must not need a writable `/usr/local`.
+- Decision: Keep `$HOME/.bun/bin`. `startup.sh`, `bootstrap.js`, and
+  `install-all.sh` already write Bun there. The jump does not write
+  `/usr/local`.
+- Why: `/usr/local` is the Node host. `install-all.sh` may still chown
+  `/usr/local` when it installs Node. That step stays. Bun does not use it.
+- Gave up: a Bun install under `/usr/local`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P1.
+
+## 2026-09-25 — The apps start through a Node helper with the absolute Bun path
+
+- Context: on boot 1 the old startup app runs HEAD's `start:configer` and
+  `start:main` with its old pm2. `~/.bun/bin` is not on `PATH`. The old app
+  never puts `dist2` back after a failed start.
+- Decision: both scripts run `node apps/startup/start-app.js <app>`. The
+  helper is Node 12 CommonJS with no packages. It passes the absolute Bun
+  path to pm2 with `--interpreter`. The pm2 name, the script, and the cwd
+  stay as before.
+- Why: `sh` and `cmd.exe` run the same one-word command. The helper has
+  unit tests. pm2 5.2.0 through 7.0.4 accept an absolute interpreter path.
+- Gave up: `bun` in the script, `$HOME` or `%USERPROFILE%` in the script,
+  and a pm2 ecosystem file (the same logic, harder to test).
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3.
+
+## 2026-09-25 — The pm2 daemon stays on Node
+
+- Context: the plan left open whether the pm2 daemon could run on Bun.
+- Decision: the daemon stays on Node. Only the app interpreter is Bun.
+- Why: every pm2 call starts the daemon on the Node its shim finds,
+  including the old startup's `pm2 delete`. pm2 7.0.4 ran its daemon on Bun
+  once, but that brings nothing. The daemon only talks to its apps.
+- Gave up: a box with no Node process. Node 18 stays on disk anyway.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3 and
+  "Open questions".
+
+## 2026-09-25 — The startup app stays on Node after boot 2
+
+- Context: the Target table said the startup app moves to Bun after boot 2.
+- Decision: the startup app and the update runner stay on Node.
+  `startup.sh` and `startup.bat` still call Node.
+- Why: the same files must run on the oldest Node for boot 1 and on hold
+  boxes. `spawn("pnpm.cmd", { shell: false })` under Bun on Windows is not
+  tested.
+- Gave up: one runtime for everything on a box that can run Bun.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Target
+  after the jump" and P3.
+
+## 2026-09-25 — A Bun that answers runs the apps, whatever its version
+
+- Context: bootstrap keeps the old binary when the download of a new
+  `BUN_VERSION` fails. A CPU hold keeps the binary that traps on disk.
+- Decision: the helper starts the apps on Node for a hold OS, a CPU hold
+  that names the pin, a missing binary, or a `bun -v` that fails, times
+  out, or prints nothing. Otherwise the apps run on that Bun, even when its
+  version is not `BUN_VERSION`. The start line names both versions.
+- Why: that binary ran the last good `dist`. Node would be a runtime the
+  current `dist` has not run on since the jump.
+- Gave up: a Node fallback on a version mismatch.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3.
+  Check this again at each `BUN_VERSION` bump.
+
+## 2026-09-25 — The Bun and Node types move to the type-contract PR
+
+- Context: P3 planned `@types/node` 24.13.4 and `@types/bun`.
+- Decision: both move to the type-contract PR. That PR picks the
+  `@types/node` version.
+- Why: TypeScript 4.7.4 cannot parse `bun-types` 1.4.2 (TS1005, TS1139), and
+  `skipLibCheck` does not cover a syntax error. `@types/node` 24.13.4 needs
+  TypeScript 5.6.
+- Gave up: new types before the TypeScript bump.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3 and P4.
+
+## 2026-09-25 — The ESM backend finds its folder with fileURLToPath
+
+- Context: the plan text said `import.meta.dirname` for `__dirname` in the
+  ESM backend. P3 starts the same `dist` on Node 18 when a box cannot run
+  Bun (hold OS, CPU hold, missing or dead Bun).
+- Decision: `path.dirname(fileURLToPath(import.meta.url))`, once, as
+  `APP_DIR` in `index.ts`.
+- Why: `import.meta.dirname` needs Node 20.11. On Node 18 it is `undefined`,
+  so `PUBLIC_DIR` and the startup record path would break on the fallback.
+- Gave up: the shorter spelling, until no box can start the apps on Node 18.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-25 — Backend tests run on vitest 0.9.4 until P5
+
+- Context: jest had to go with the ESM move. The plan target is vitest 5.
+- Decision: vitest 0.9.4, the version configer and the panel use. No config
+  file. `vitest run` on Node, not `bun --bun`.
+- Why: vitest 5 needs vite 6.4 or newer as a peer. Without that pin Bun
+  links the panel's vite 2.9.14 and vitest crashes. With vite 8.3.0 it fails
+  on Node 18. vitest 0.9.4 on the Bun runtime fails on `node:v8`
+  `takeCoverage`. P5 moves every unit to vitest 5 together.
+- Gave up: vitest 5 in the backend now.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and P5.
+
+## 2026-09-25 — A cast is a tracked suppression on the line above
+
+- Context: the contract allows `as` only as a tracked suppression. oxlint
+  lands in P5.
+- Decision: `// oxlint-disable-next-line typescript/consistent-type-assertions -- <reason>`
+  on the line above the `as`. `as const` is not a cast. Two in this PR:
+  configer's boot merge in `services/db/main.ts`, and the backend's boot
+  config in `index.ts`. Both keep a box running on an odd stored value.
+- Why: oxlint reads the same comment in P5, so each cast is already
+  counted. A `JSON.parse` result goes into `unknown`, and no generic type
+  argument stands in for a cast.
+- Gave up: `// @ts-expect-error` and casts without a reason.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
+  contract".
+
+## 2026-09-25 — Each unit pins its own TypeScript; the backend builds with tsc
+
+- Context: configer and config-schema found `tsc` only through the root
+  `.bin` on `PATH`. The backend built with `tsc --build`.
+- Decision: configer and config-schema list `typescript` 6.0.3 themselves.
+  The backend `build` is plain `tsc`. The dead `win:build` is gone.
+- Why: P6 moves these units to TypeScript 7 while the panel stays on 6.
+  On TypeScript 6 `tsc --build` writes `tsconfig.tsbuildinfo` and skips a
+  project it thinks is up to date.
+- Gave up: one workspace `tsc` for every unit.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and P6.
+
+## 2026-09-25 — Test files stay outside the compile units for now
+
+- Context: the backend compiled its tests into `dist`. Configer already
+  excluded them.
+- Decision: every unit excludes `src/**/*.test.ts`. No tsconfig checks the
+  tests in this PR.
+- Why: under the contract the tests have 18 errors in the backend, 16 in
+  configer and 56 in config-schema, and about 50 `as`. That is its own
+  change. The backend `dist` now holds no test file.
+- Gave up: type-checked tests until P5.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
+  questions".
+
+## 2026-09-25 — @types/node stays 18 in the backend and configer (owner confirms)
+
+- Context: P3 planned `@types/node` 24.13.4 and `@types/bun` for the
+  type-contract PR. The new backend and configer `dist` can start on the
+  box's Node 18 (P3 fallback).
+- Decision: keep `@types/node` 18.x in the backend and configer. Add no
+  `@types/bun` there. Pending owner confirmation.
+- Why: code that can run on Node 18 must type-check against Node 18 types.
+  With 24.13.4, `import.meta.dirname` compiles and throws on Node 18. The
+  apps use no Bun API.
+- Gave up: Bun's Node compat types in the editor. Move to 24.x when no box
+  can start the apps on Node 18.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P3, P4,
+  "Known constraints" and "Open questions".
+
+## 2026-09-25 — Proposal: the panel contract lands before Libraries
+
+- Context: "Pull requests from here" puts Libraries after the type
+  contract. The type-contract PR left the panel out.
+- Decision: proposed, not taken. The owner decides the order.
+- Why: pinia 4.0.3 wants TypeScript 5.6, and the vue 3.5 types use
+  `NoInfer` (TypeScript 5.4), so the Libraries bumps need the panel on a
+  newer TypeScript first. The panel contract does not need the vue bump.
+  Planner's prototype, medium confidence.
+- Gave up: nothing yet.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Pull
+  requests from here".
+
+## 2026-09-25 — The type contract lives in one file that each unit extends
+
+- Context: the 12 contract flags were copied into the backend, configer
+  and config-schema tsconfigs. Only a reviewer who compared the files by
+  hand could see that one unit lost a flag.
+- Decision: the flags live in `source/tsconfig.contract.json`. Each unit's
+  tsconfig extends it and keeps only its own target, module, paths, types
+  and folders. The owner chose this (option 1) in the #129 review.
+- Why: the contract is in one place. A unit can only weaken it by setting
+  a flag in its own tsconfig, which is easy to see in a diff. The emitted
+  `dist` does not change.
+- Gave up: a CI step that checks each copy. The panel still copies the
+  flags: vite 2.9.14 cannot read the `extends` array it would need. It
+  moves with Vite 8, see the next entry.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "TypeScript
+  contract" and "Open questions".
+
+## 2026-09-25 — The panel moves to the shared contract file with Vite 8
+
+- Context: the panel needs `"extends": ["@vue/tsconfig/tsconfig.dom.json",
+  "../../tsconfig.contract.json"]`. vite 2.9.14 throws on an `extends`
+  array, in `vite build` and in vitest 0.9.4.
+- Decision: the panel keeps its copy of the 12 flags until the Vite 8 bump
+  in P5. Then `tsconfig.app.json` extends both files, with the contract
+  last, and the copy goes. The owner chose this (option A).
+- Why: P5 changes vite anyway. On 2026-09-25 vite 8.3.0 with
+  @vitejs/plugin-vue 6.0.9 built the panel with the array. The bundle had
+  the same content hash, and all 12 flags resolved.
+- Gave up: a CI step that compares the panel copy with the shared file.
+  Also gave up dropping `@vue/tsconfig` to allow a one-file `extends`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5 and
+  "Open questions".
+
+## 2026-09-25 — The panel contract is built on vue 3.2.37
+
+- Context: the 2026-09-25 proposal put the panel contract before Libraries,
+  with medium confidence. `@vue/tsconfig` 0.9.1 has an optional vue ^3.4
+  peer.
+- Decision: the panel contract is its own pull request, stacked on the
+  type-contract pull request, on vue 3.2.37. vue, vue-router, pinia, vite
+  and vitest do not move. The owner decides the merge order.
+- Why: `vue-tsc` 3.3.11 and TypeScript 6.0.3 type-check the panel on vue
+  3.2.37. All 149 errors in `src` and the 13 in the tests are fixed there.
+  The vue 3.5 and pinia 4 types need TypeScript 5.4 and 5.6.
+- Gave up: the vue 3.5 attribute types. Eight Vue 3.2 workarounds stay
+  until then.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and
+  "Pull requests from here".
+
+## 2026-09-25 — The panel build checks src; CI checks the rest
+
+- Context: the panel build ran `vue-tsc --noEmit` on the solution
+  `tsconfig.json` and checked no file.
+- Decision: `build` runs `vue-tsc --noEmit -p tsconfig.app.json`, 99 files.
+  `typecheck` also checks `tsconfig.vitest.json` and
+  `tsconfig.vite-config.json`. CI runs it as "Panel typecheck". No
+  `composite` in the panel tsconfigs.
+- Why: a box needs `src` checked, not the tests. With `composite`,
+  `vue-tsc -p` writes `tsconfig.app.tsbuildinfo` on every build and dirties
+  the tree.
+- Gave up: a box that also type-checks the tests. The box now spends about
+  2 s more on each update on a fast CPU, and more on a box.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-25 — The panel tests are type-checked, with @vue/reactivity for chai
+
+- Context: vitest brings chai, whose `should` breaks `UnwrapRef` of a
+  Moment in a store. The tests program then fails on store code. The other
+  units keep their tests out of every tsconfig until P5.
+- Decision: the panel checks its tests. `vitest.env.ts` adds chai's
+  `Assertion` to `RefUnwrapBailTypes`. `@vue/reactivity` 3.2.37 is an exact
+  devDependency, types only. It moves with vue. The owner can drop it; then
+  the tests program leaves the gate.
+- Why: the panel already had `tsconfig.vitest.json`. Bun does not link
+  `@vue/reactivity` into the panel, and vue 3.2.37 does not re-export the
+  interface, so the declaration needs the package.
+- Gave up: one dependency fewer.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and the
+  package table.
+
+## 2026-09-25 — The panel keeps @types/node 18
+
+- Context: the panel had `@types/node` 16.11.46. Only its tests and
+  `vite.config.ts` load it.
+- Decision: 18.11.18, the root and configer pin.
+- Why: the tests run under vitest on Node. One version across the units
+  that still type-check against Node 18.
+- Gave up: Node 24 types for the tests.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), the package
+  table.
+
+## 2026-09-25 — Vue 3.2 DOM attributes with no value are not set at all
+
+- Context: under `exactOptionalPropertyTypes`, the Vue 3.2 DOM types and
+  csstype 2.6 reject `undefined` for an attribute or a style value.
+- Decision: do not set the attribute. `v-bind` of an object that lacks the
+  key for `src`, `placeholder` and `pattern`. A style object without
+  `borderTopWidth`. `value ?? ''` and `disabled === true` on inputs.
+  Never `pattern=""`.
+- Why: Vue already removed an `undefined` attribute. An empty pattern
+  rejects every value that is not empty.
+- Gave up: the shorter templates, until vue 3.5.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
+  questions".
+
+## 2026-09-25 — A read the contract now checks fails as it did before
+
+- Context: `noUncheckedIndexedAccess` flags reads of the unit answer, the
+  settings rows and the table values. `?? ""` would hide a short answer.
+- Decision: a short unit answer still throws. `updateEngineUnit` catches it
+  and counts a failed request, as before. A missing settings value throws
+  in the render, as before. A missing table value shows "Chyba", not an
+  empty cell.
+- Why: the old failure is what the operator and the connection alarm
+  already see. A silent empty value would look like a working unit.
+- Gave up: a render that survives a bug in the settings form.
+- Where: the panel contract pull request.
+
+## 2026-09-25 — The box build keeps the panel type gate
+
+- Context: BUILD_PANEL runs `vue-tsc` 3.3.11 on the box's first `node`.
+  It needs Node 16 and fails on Node 14.21.3. The review of #130 asked
+  whether the gate should run in CI only.
+- Decision: the box build keeps `vue-tsc --noEmit -p tsconfig.app.json`.
+  The owner confirmed on 2026-09-25 that all panel PCs run Node 18. The
+  Node 16 floor of `vue-tsc` 3.3.11 is accepted.
+- Why: every box that builds meets the floor. A box on OS_HOLD or
+  CPU_HOLD (Windows 7/8 among them) stops before BUILD_PANEL.
+- Gave up: `"build": "vite build"` with the gate in CI only.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Known
+  constraints" and "Open questions".
+
+## 2026-09-28 — The vue 3.5 bump does not need Vite 8
+
+- Context: the plan's "Pull requests from here" item 4 assumed the panel
+  library bumps might have to move into or after the Vite 8 pull request,
+  because `@vitejs/plugin-vue` 2.3.3 is four years older than vue 3.5's
+  compiler and pinia 4 is ESM-only.
+- Decision: the vue, vue-router and pinia bumps land on the current
+  toolchain, before Vite 8, as their own pull request.
+- Why: measured. On vite 2.9.14 with `@vitejs/plugin-vue` 2.3.3, a panel on
+  vue 3.5.43, pinia 4.0.3 and vue-router 5.3.1 builds 411 modules with 0
+  bytes of stderr, `vue-tsc` finds 0 errors on all three tsconfigs, and all
+  172 unit tests pass. plugin-vue resolves `@vue/compiler-sfc` from the
+  installed vue, so the plugin's own age does not matter. esbuild 0.14
+  handles pinia 4.
+- Gave up: stacking the library bumps on the Vite 8 pull request. That
+  would have made the Vite 8 change carry two risks at once.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4 and
+  "Pull requests from here".
+
+## 2026-09-28 — Three of the listed Vue 3.2 attribute workarounds were workarounds
+
+- Context: an open question listed five things to drop after vue 3.5: the
+  optional attributes in `BaseInput`, `srcAttr` and `topBorder` in the
+  camera views, and `?? ''` and `=== true` on `value` and `disabled`.
+- Decision: drop `BaseInput`'s `optionalAttrs` `v-bind` and the `=== true` on
+  `disabled`, and the same `=== true` in `BaseSelect`. Keep `?? ''` on
+  `value` in both, keep `srcAttr`, and leave `topBorder` alone.
+  `BaseSelect` is the fourth of the four SFCs the note counted. It was missed
+  on the first pass and found in review.
+- Why: `srcAttr` guards a real browser behaviour, not a type. Its comment
+  says an empty `src` resolves to the page URL and raised a camera Error
+  before the first frame had been asked for. `topBorder` is an ordinary
+  computed style object and never was a workaround. Removing `?? ''` drops
+  the serialised `value=""` attribute; `el.value` is `""` either way, so the
+  change buys nothing on a nurse-facing input. Everything dropped renders
+  identically, checked with the installed vue and jsdom on `el.value` and
+  `el.disabled`: six prop cases for `BaseInput`, five for `BaseSelect`.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Open
+  questions".
+
+## 2026-09-28 — The panel says __VUE_PROD_DEVTOOLS__ is false
+
+- Context: pinia 4 declares `@vue/devtools-api` as a peer with
+  `"optional": false`, so the panel must declare it, and it pulls
+  `@vue/devtools-kit`. Vite resolves pinia's `.` export to `dist/pinia.js`,
+  which imports devtools behind a `typeof __VUE_PROD_DEVTOOLS__` guard. The
+  panel's `vite.config.ts` set no `define`, so the guard was folded by whatever
+  bundler happened to be installed.
+- Decision: `define: { __VUE_PROD_DEVTOOLS__: false }` in
+  `apps/panel/vite.config.ts`. Owner chose this in the review of #131.
+- Why: today Rollup 2 folds the guard and the bundle is clean, but nothing in
+  the repo says it must be. P5 replaces Rollup 2 with Rolldown, and
+  `legacy-image` only checks the exit code, an empty stderr and a clean tree —
+  it never reads bundle content or size. So a regression there would be
+  silent, on the screen a nurse uses. Measured with the define on vite 2.9.14:
+  build exit 0, 0 bytes of stderr, no `devtools` string in the assets,
+  `vue-tsc` clean on all three tsconfigs, 189 tests green, and the bundle is 5
+  bytes smaller (353 180 against 353 185).
+- Gave up: leaving it to the Vite 8 pull request. That one already carries
+  Rolldown, vitest 5 and jsdom 30; a red or fat result there should point at
+  one cause.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P5.
+
+## 2026-09-28 — The startup app stops at pino 9, not pino 10
+
+- Context: the P4 box says `pino 10.3.1`. The plan added "upgrade only after
+  Bun is the runtime", but the startup app never moves to Bun: it runs on Node
+  for boot 1, for hold boxes, and for the pm2 daemon (decided 2026-09-25).
+- Decision: `pino@9.14.0` with `pino-pretty@13.1.3`. Not pino 10.
+- Why: pino 10 does not load on Node 18.12.1. It throws
+  `TypeError: diagChan.tracingChannel is not a function` from
+  `pino/lib/tools.js:32`. `diagnostics_channel.tracingChannel` arrived in Node
+  19.9 and 20. The boxes run Node 18.12.1. pino 9.14.0 loads there, and the
+  #90 Czech one-line log file and its stdout stream are byte-identical across
+  pino 8.21.0, 9.14.0 and 10.3.1, checked with the real `logger.js` and
+  `strings.js` on a fixed clock. So the format was never the risk; the runtime
+  floor was. learnings.md already recorded the same `tracingChannel` failure
+  for `pnpm view` under Node 18.
+- Gave up: pino 10. Revisit only when every box runs Node 20 or newer.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-28 — The SPA fallback route needs a named splat
+
+- Context: `apps/backend/src/index.ts` served the panel's history-mode routes
+  with `app.get("*")`, inside the `NODE_ENV === "production"` block that every
+  box runs. The plan said no route string used `*`, `?`, `+` or a regex.
+- Decision: the route is `app.get("/{*splat}")`.
+- Why: that claim was wrong, and it was the one change in this pull request
+  that could stop a box from starting. Express 5 uses path-to-regexp 8, which
+  rejects a bare `*` when the route is registered:
+  `PathError: Missing parameter name at index 1: *`. The throw happens in
+  `main()`, so the backend would never listen. `/{*splat}` registers and routes
+  the same way: on Node 18.12.1 with express 5.2.1, `/api/v1/status` still
+  answers the API route, `/` still answers the index, and `/config`,
+  `/settings/deep/path` and `/favicon.ico` all fall through to the SPA.
+- Gave up: nothing. There is no reason to keep the old spelling.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-28 — A failed build only rolls back cleanly for the backend
+
+- Context: the safe-release design says a failed build keeps the last good
+  `dist` and starts that. `legacy-boot1` tests exactly this, in the case
+  "boot 1 with a failed build starts the legacy dist on Bun".
+- What we found: the guarantee holds for the backend and not for configer.
+  `start-app.js` starts the backend from `../dist` with `install: true`, so
+  that folder gets its own `node_modules` from the copied lockfile. configer
+  runs `apps/configer/dist/index.js` with `install: false`, so it resolves
+  from the shared `source/node_modules`. `INSTALL` runs before every build
+  step, so by the time a build fails the shared `node_modules` already holds
+  the new versions, and the kept configer `dist` is a stale compile against
+  them.
+- Decision: **no configer runtime dependency may move its import surface until
+  configer's `dist` has its own `node_modules`.** lowdb 7 is reverted; configer
+  stays on lowdb 3.0.0.
+- Why: lowdb 7 moved `JSONFile` from `lowdb` to `lowdb/node`. With lowdb 7
+  installed, the old configer `dist` dies at import with
+  `SyntaxError: Export named 'JSONFile' not found in module
+  '.../lowdb/lib/index.js'`, and pm2 restarts it 16 times before giving up. A
+  box whose build fails would have no configer at all, which is worse than not
+  upgrading. express 5 does not have this problem: the old configer `dist`
+  registers no wildcard route and still loads under express 5.
+- Gave up: lowdb 7. It only reads `versions.json`, so the upgrade buys little.
+- Owner decision still open: give configer's `dist` its own `node_modules`, the
+  way the backend already has, or accept that configer library majors are
+  blocked. See "Open questions".
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), P4.
+
+## 2026-09-28 — A bad API prefix must not stop the backend from listening
+
+- Context: `backend.url` is the free-text "Předpona API" field on the config
+  page, typed `z.string()` with no pattern, tier `backendRestart`. Both apps
+  register routes as `app.get(prefix + "/status")`.
+- Decision: `safeRoutePrefix()` drops a prefix that express 5 cannot parse and
+  falls back to `""`, with a line on stderr. Both apps use it.
+- Why: express 5 uses path-to-regexp 8, which throws at registration for
+  `{ } ( ) [ ] + ? !` and for `:` or `*` with no name after them. Measured on
+  Node 18.12.1 with express 5.2.1: `/api/v1?` gives
+  `Unexpected ? at index 7`, `/api*` gives `Missing parameter name at index 5`.
+  The throw happens inside `main()` before `app.listen`, so a typo in that
+  field would leave a box with nothing serving and no way in but a site visit.
+  Express 4 put `?` and `+` straight into the regexp and still served.
+  A box on the wrong prefix answers 404 to the panel, but the config page is
+  still reachable, so the operator can undo it.
+- Gave up: rejecting the value at save time in the schema. That would not help
+  a box whose `main.json` was edited by hand, and it is a wider change.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-28 — The JSON error middleware sends the status text, not the message
+
+- Context: the new middleware first answered with `err.message` for everything.
+- Decision: it sends `err.message` only when the thrower set `expose: true`,
+  and the standard status text otherwise. It logs the whole error, not the
+  message, so the stack survives.
+- Why: `send()` builds its errors with `expose: false` precisely so an install
+  path stays internal, and express in production answers with the status text
+  and nothing else. Answering with the raw message would put the box's absolute
+  install path on the hospital network: a missing `dist/public/index.html`
+  gives `ENOENT ... open '/home/.../dist/public/index.html'`. Logging the whole
+  error restores what `finalhandler`'s `logerror` used to print, which the
+  middleware now short-circuits.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), "Express 5".
+
+## 2026-09-30 — Configer tests have their own typecheck
+
+- Context: no tsconfig type-checks the configer tests. The plan counted 16
+  errors under the contract. A recount on 2026-09-30 is 16. The compiler is
+  TypeScript 6.0.3. The flags are the contract. The module settings are the
+  emit settings (`node16`). Four errors are TS2835. Those test imports have
+  no `.js` suffix.
+- Decision: `source/apps/configer/tsconfig.test.json` extends
+  `source/tsconfig.contract.json`. It sets `moduleResolution` to `bundler`
+  and `noEmit` to true. It sets none of the contract flags. CI runs
+  `bun --filter babybox-panel-configer typecheck`. The emit tsconfig still
+  excludes `src/**/*.test.ts`.
+- Why: `node16` wants a `.js` suffix on the extensionless test imports. Those
+  imports stay as they are. Production imports keep `.js`. `bundler` accepts
+  both, and this project does not emit. The box build stays on `node16`.
+  The errors are fixed in the tests. PUT, PATCH, the backup, and the boot
+  read do not change.
+- Gave up: one module resolution for the test program and the emit program.
+  Backend tests and config-schema tests stay unchecked.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
+  question on test tsconfigs. This change covers configer only.
+
+## 2026-09-30 — Config-schema tests are type-checked under the contract
+
+- Context: the emit tsconfig excludes `src/**/*.test.ts`, and no other tsconfig
+  included them. The plan counted 56 errors. A fresh count on TypeScript 6.0.3
+  with the contract flags is 56: 35 TS4111, 15 TS7006, and 6 TS2835. The two
+  test files also contain 16 `as` casts. The panel tests are already checked.
+  The configer tests are checked in the entry above. The backend tests are not.
+- Decision: `source/packages/config-schema/tsconfig.tests.json` extends
+  `source/tsconfig.contract.json`, sets `noEmit`, and includes `src/**/*.ts`.
+  CI runs `bun --filter @babybox/config-schema typecheck`. The emit tsconfig
+  still excludes tests. The tests lose the casts. The schema accepts and
+  writes the same values.
+- Why: a test that does not type-check can drift from `MainConfig` and still
+  pass. The emit program must stay free of tests, so `dist` does not contain
+  them.
+- Gave up: a test tsconfig for the backend. That stays for a later change.
+  Also gave up a tracked `as` suppression in this package. None was needed.
+- Where: this file. The plan file stays as it is.
+
+## 2026-09-30 — A start counts only when status answers
+
+- Context: `startNew()` treated exit 0 from `pnpm start:main` as success and
+  then wrote `dist/release.json`. `pm2 start` returns 0 when it accepts the
+  process. A crash after that still wrote the sha. The next boot skipped the
+  build. The upgrade plan leaves open whether `START_PANEL` should wait for
+  `GET /status` before it writes `release.json`.
+- Decision: `START_CONFIGER` and `START_PANEL` succeed only after the existing
+  status route returns HTTP 200. The probe reads configer `main.json` merged
+  over `base.json`, and it uses the prefix and port each app binds. With no
+  config file, configer is `127.0.0.1:5001` and the backend is
+  `127.0.0.1:5000`, both under `/api/v1`. Each probe waits 30000 ms. It polls
+  every 250 ms. One request aborts after 1000 ms. Configer is probed before
+  the panel starts. After the panel starts, the backend is probed and then
+  configer is probed once more, before `release.json` is written. A miss swaps
+  back, starts the previous `dist`, and records `START_CONFIGER` or
+  `START_PANEL`. The probe follows the bind rules of the apps. An empty stored
+  port or prefix falls back to the process env `PORT` or `API_PREFIX`. A
+  `main.json` that is not an object falls back to `main.json.bak`. A config
+  file with no configer port gives 6000, which is what configer binds. The step names stay those two. `startLive` keeps today's
+  start, with no status probe and no `release.json` write.
+- Why: 30000 ms is the same bound as the Bun probe in `start-app.js`. The
+  panel starts only after configer has answered, so the backend should not
+  spend its 5 second config retries. A dead app fails in this boot. A live
+  app returns on the first 200. Exit 0 with stderr still counts as a started
+  process. `start:main` runs `bun install --no-save` in `dist` when
+  `node_modules` is missing, and that command writes to stderr when `.env`
+  is present. Treating that stderr as failure would roll back every new
+  panel. `build()` still fails when the build writes to stderr.
+- Gave up: a new step name. Also gave up reading the app `.env` for `PORT`
+  and `API_PREFIX`. Revisit that only if a box sets those values only in
+  `.env` and the probe then misses a live app. A configer miss is recorded
+  and is not rolled back. Configer runs from `apps/configer/dist`, outside the
+  `dist` swap, so the swap restores only the backend and the panel. Putting
+  configer into the swap is a separate change. The probe also repeats the bind
+  rules of configer and the backend, and no test ties the copies together.
+- Where: [dependency upgrade plan](plans/dependency-upgrade.md), the open
+  question on `START_PANEL` and `release.json`. This change does not edit
+  that file.
+
+## 2026-09-30 — Backend tests are type-checked on their own tsconfig
+
+- Context: No tsconfig included the backend tests. The plan counted 18 errors
+  under the contract. A recount on 2026-09-30 reports 16. The program extends
+  `source/tsconfig.contract.json` and includes `src/**/*.test.ts`. The codes
+  are TS2345 (8), TS4111 (3), TS2532 (3) and TS2454 (2).
+- Decision: `source/apps/backend/tsconfig.vitest.json` extends the contract,
+  sets `noEmit`, and repeats the backend module, Node 18 types, and schema
+  path. CI runs `tsc -p` on it after the config-schema build. The emit
+  tsconfig still excludes `src/**/*.test.ts`. Tests keep `import type` for
+  `@babybox/config-schema`. `stringToAction` accepts `string | null |
+  undefined` because `actions.test.ts` locks those inputs. The function body
+  stays the same. Door URL builders and the reload path stay as they are.
+- Why: The emit program is the one the box runs. A test file in `dist` that
+  mentions the schema fails the CI grep. Startup installs that `dist` outside
+  the workspace. `noEmit` keeps the typecheck from writing those files.
+- Gave up: an edit to the plan file. The configer and config-schema test
+  tsconfigs are already in the entries above.
+- Where: the backend test typecheck pull request into `feat/toolchain-jump`.
+  The plan text stays in [dependency upgrade plan](plans/dependency-upgrade.md),
+  "Open questions".
+
+## 2026-09-30 — Configer's dist keeps its own node_modules
+
+- Context: the 2026-09-28 entry blocked a configer dependency from moving its
+  import surface. `start-app.js` started configer from `apps/configer` with
+  `install: false`, so the process resolved packages from `source/node_modules`.
+  `INSTALL` runs before the build. A failed build left the old
+  `apps/configer/dist` importing the new packages. lowdb 7 had already shown
+  that: `JSONFile` moved to `lowdb/node`, the kept dist died, and pm2 gave up.
+  The open choice was to give configer's dist its own `node_modules`, the way
+  the backend dist already has, or to keep blocking those majors.
+- Decision: configer resolves runtime packages from
+  `apps/configer/dist/node_modules`. That tree is a copy of the packages from
+  the last `BUILD_CONFIGER` success, stamped with that record's time. A later
+  root `bun install` does not refresh it. A failed build does not refresh it.
+  The next successful `BUILD_CONFIGER` does. `@babybox/config-schema` is copied
+  as files, not linked to `packages/config-schema`, so a schema build that
+  lands before a failed configer build is not what the old dist imports.
+  `apps/configer/configs/main.json` and `versions.json` stay where they are.
+  The backend dist install is unchanged. lowdb stays 3.0.0.
+- Why: the compiled files stay in `apps/configer/dist`. `services/db/main.ts`
+  and `version.ts` read `../../../configs`, which is `apps/configer/configs`.
+  Moving the dist would break that. `bun install` in the workspace cannot
+  install `@babybox/config-schema` as `workspace:*` without pointing at the
+  live package. A copy taken after the configer build is the set that matches
+  that dist, and it survives the next install.
+- Gave up: installing configer with `bun install --no-save` the way the
+  backend dist does. That install would keep a workspace link. Also gave up
+  lowdb 7 in this change. A later change can move a configer import surface.
+  This change does not bump a dependency.
+- Where: `source/apps/startup/start-app.js`,
+  `source/apps/startup/configer-modules.js`, `start-app.test.js`,
+  `tests/legacy-boot1.sh`, `tests/assert-runtime.js`.
+
 ## 2026-09-21 — The runtime install skips devDependencies
 
 - Context: startup copies the backend `package.json` into repo-root `dist/` and
@@ -785,3 +1654,7 @@ Context · Decision · Why · Gave up · Where
 - Where: `source/package.json`, `apps/startup/src/logic/start/ubuntu.js`,
   `apps/startup/src/logic/start/windows.js`, the ubuntu and windows install
   scripts, `docs/learnings.md`.
+
+- Note: on `feat/toolchain-jump` the runtime is Bun. `dist/` installs run
+  `bun install --no-save`, not `pnpm install --prod`. See "The runtime is Bun
+  1.4.2" (2026-09-14).

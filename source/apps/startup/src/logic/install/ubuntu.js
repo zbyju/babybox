@@ -4,6 +4,7 @@ const path = require("path");
 const sudo = require("sudo-prompt");
 const logger = require("../../logger");
 const strings = require("../../strings");
+const { pinnedPm2Version } = require("./pm2-version");
 
 async function checkInstalled() {
   try {
@@ -29,11 +30,9 @@ async function checkInstalled() {
 
 async function installDeps() {
   try {
+    const pm2Version = pinnedPm2Version();
     await exec("npm install -g pnpm@7.5.0");
-    await exec("npm install -g pm2@latest");
-    await exec("npm install -g nodemon");
-    await exec("npm install -g typescript@4.7.4");
-    await exec("npm install -g ts-node@10.9.1");
+    await exec(`npm install -g pm2@${pm2Version}`);
   } catch (err) {
     logger.error("install", strings.installDepsFailed, err);
     throw err;

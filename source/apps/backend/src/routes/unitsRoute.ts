@@ -1,16 +1,16 @@
-import * as express from "express";
+import express from "express";
 
 import {
   fetchAction,
   fetchSettings,
   updateSettings,
-} from "../fetch/fetchFromUnits";
-import {
+} from "../fetch/fetchFromUnits.js";
+import type {
   CommonSettingsResponse,
-  isInstanceOfPostUnitSettingsRequestBody,
   SettingResult,
-} from "../types/request.types";
-import { stringToAction } from "../utils/actions";
+} from "../types/request.types.js";
+import { isInstanceOfPostUnitSettingsRequestBody } from "../types/request.types.js";
+import { stringToAction } from "../utils/actions.js";
 
 export const router = express.Router();
 

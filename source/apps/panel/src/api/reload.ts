@@ -2,6 +2,7 @@ import type { UnappliedField } from "@babybox/config-schema";
 
 import { backendApi } from "@/api/base";
 import { requestJson } from "@/api/http";
+import { isObject } from "@/utils/general";
 
 /*
  * The backend reads the config from configer inside this call, and its own fetch
@@ -14,12 +15,6 @@ export type ReloadResult =
   | { ok: true; unapplied: UnappliedField[] }
   | { ok: false };
 
-type Fields = Record<string, unknown>;
-
-function isObject(value: unknown): value is Fields {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function isPlainValue(value: unknown): value is string | number {
   return typeof value === "string" || typeof value === "number";
 }
@@ -27,9 +22,9 @@ function isPlainValue(value: unknown): value is string | number {
 function isUnappliedField(value: unknown): value is UnappliedField {
   return (
     isObject(value) &&
-    typeof value.path === "string" &&
-    isPlainValue(value.running) &&
-    isPlainValue(value.stored)
+    typeof value["path"] === "string" &&
+    isPlainValue(value["running"]) &&
+    isPlainValue(value["stored"])
   );
 }
 
@@ -39,8 +34,8 @@ function isUnappliedField(value: unknown): value is UnappliedField {
  * panel does not understand would wipe a warning it never checked.
  */
 function readUnapplied(body: unknown): UnappliedField[] | null {
-  if (!isObject(body) || !Array.isArray(body.unapplied)) return null;
-  return body.unapplied.filter(isUnappliedField);
+  if (!isObject(body) || !Array.isArray(body["unapplied"])) return null;
+  return body["unapplied"].filter(isUnappliedField);
 }
 
 /**
@@ -60,7 +55,7 @@ export async function reloadBackendConfig(): Promise<ReloadResult> {
   if (!isConfigured) return { ok: false };
 
   try {
-    const { data } = await requestJson<unknown>(`${baseUrl}/reload`, {
+    const { data } = await requestJson(`${baseUrl}/reload`, {
       method: "POST",
       timeout: RELOAD_TIMEOUT,
     });

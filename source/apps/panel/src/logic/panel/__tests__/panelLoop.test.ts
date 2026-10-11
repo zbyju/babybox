@@ -164,7 +164,7 @@ describe("AppManager startup retries", () => {
       [10000, 3],
       [20000, 4],
       [20000, 5],
-    ]) {
+    ] as const) {
       vi.advanceTimersByTime(wait - 1);
       await drain();
       expect(getStatus).toHaveBeenCalledTimes(calls - 1);

@@ -1,6 +1,10 @@
 {
   "name": "@babybox/config-schema",
   "version": "1.0.0",
+  "engines": {
+    "node": "18.12.1",
+    "bun": "1.4.2"
+  },
   "description": "The shape of configer's main.json, written once.",
   "type": "module",
   "main": "./dist/index.js",
@@ -10,6 +14,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc -p tsconfig.tests.json",
     "test": "vitest run"
   },
   "license": "ISC",
@@ -17,6 +22,7 @@
     "zod": "3.23.8"
   },
   "devDependencies": {
-    "vitest": "^0.9.3"
+    "typescript": "6.0.3",
+    "vitest": "0.9.4"
   }
 }

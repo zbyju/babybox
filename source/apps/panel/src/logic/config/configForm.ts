@@ -99,9 +99,8 @@ export function defaultFormValues(loaded: MainConfig): FormValues {
   const current = toFormValues(loaded);
   const values: FormValues = {};
   for (const field of configFormFields) {
-    values[field.path] = field.readOnly
-      ? current[field.path]
-      : defaults[field.path];
+    values[field.path] =
+      (field.readOnly ? current[field.path] : defaults[field.path]) ?? "";
   }
   return values;
 }
@@ -139,7 +138,7 @@ export interface FieldState {
   /** Blocks a save. Every message the schema gave for this path. */
   errors: string[];
   /** Does not block a save. */
-  warning?: string;
+  warning: string | undefined;
 }
 
 export interface FormState {
@@ -203,8 +202,8 @@ export function formState(
     return {
       field,
       value,
-      current: current[field.path],
-      defaultValue: defaults[field.path],
+      current: current[field.path] ?? "",
+      defaultValue: defaults[field.path] ?? "",
       changed: !field.readOnly && value !== current[field.path],
       errors,
       warning,

@@ -20,18 +20,18 @@ export function combineTableData(
   ) {
     return {
       blocks: blocksTemplate.map((b) => {
-        const value = values?.blockValues
-          ? values.blockValues[b.field]
-          : { state: TableBlockState.Error };
+        const value = values.blockValues?.[b.field] ?? {
+          state: TableBlockState.Error,
+        };
         return {
           ...b,
           ...value,
         };
       }),
       rows: rowsTemplate.map((r) => {
-        const value = values?.rowValues
-          ? values.rowValues[r.field]
-          : { state: TableRowState.Error };
+        const value = values.rowValues?.[r.field] ?? {
+          state: TableRowState.Error,
+        };
         return {
           ...r,
           ...value,

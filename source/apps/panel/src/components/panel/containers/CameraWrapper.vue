@@ -1,24 +1,21 @@
 <template>
-  <div
-    id="CameraWrapper"
-    :style="{ maxHeight: props.maxH + 'px', maxWidth: props.maxW + 'px' }"
-  >
-    <div v-if="displayDoors === true" id="DoorBars">
+  <div id="CameraWrapper" :style="maxSize">
+    <div v-if="doors !== undefined" id="DoorBars">
       <HorizontalPositionBar
-        :max-value="maxDoors!"
-        :min-value="minDoors!"
-        :value="leftDoors!"
+        :max-value="doors.max"
+        :min-value="doors.min"
+        :value="doors.left"
         :direction="'row'"
       />
       <HorizontalPositionBar
-        :max-value="maxDoors!"
-        :min-value="minDoors!"
-        :value="rightDoors!"
+        :max-value="doors.max"
+        :min-value="doors.min"
+        :value="doors.right"
         :direction="'row-reverse'"
       />
     </div>
     <CameraView
-      :display-top-border="displayDoors === false"
+      :display-top-border="doors === undefined"
       :max-w="props.maxW ? props.maxW - 6 : undefined"
       :max-h="props.maxH ? props.maxH - 6 : undefined"
     />
@@ -39,30 +36,28 @@
     displayDoors: boolean;
   }>();
 
+  const maxSize = computed(() => ({
+    ...(props.maxH === undefined ? {} : { maxHeight: `${props.maxH}px` }),
+    ...(props.maxW === undefined ? {} : { maxWidth: `${props.maxW}px` }),
+  }));
+
   const unitsStore = useUnitsStore();
   const { engineUnit } = storeToRefs(unitsStore);
-  const minDoors = computed(
-    () => engineUnit.value?.settings.engine.closedThreshold,
-  );
-  const maxDoors = computed(
-    () => engineUnit.value?.settings.engine.openedThreshold,
-  );
-  const leftDoors = computed(() => engineUnit.value?.data.engine.left.position);
-  const rightDoors = computed(
-    () => engineUnit.value?.data.engine.right.position,
-  );
-
-  const displayDoors = computed(() => {
-    if (props.displayDoors === false) return false;
+  const doors = computed(() => {
+    if (props.displayDoors === false) return undefined;
+    const min = engineUnit.value?.settings.engine.closedThreshold;
+    const max = engineUnit.value?.settings.engine.openedThreshold;
+    const left = engineUnit.value?.data.engine.left.position;
+    const right = engineUnit.value?.data.engine.right.position;
     if (
-      minDoors.value === undefined ||
-      maxDoors.value === undefined ||
-      leftDoors.value === undefined ||
-      rightDoors.value === undefined
+      min === undefined ||
+      max === undefined ||
+      left === undefined ||
+      right === undefined
     ) {
-      return false;
+      return undefined;
     }
-    return true;
+    return { min, max, left, right };
   });
 </script>
 

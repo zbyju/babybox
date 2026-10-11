@@ -2,5 +2,8 @@ dist/
 node_modules/
 logs/
 
+# vue-tsc writes this beside a composite tsconfig. An unignored file in source/ blocks the next git pull.
+*.tsbuildinfo
+
 # configer is TypeScript only; any .js in its src is stale compiler output
 apps/configer/src/**/*.js

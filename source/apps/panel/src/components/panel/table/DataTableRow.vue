@@ -10,7 +10,7 @@
     class="table-value"
     colspan="3"
   >
-    {{ props.row.value! }}
+    {{ props.row.value }}
   </td>
   <td
     v-else-if="props.row.state === TableRowState.Error"

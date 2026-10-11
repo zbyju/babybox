@@ -3,6 +3,7 @@ import type {
   EngineUnit,
   RawEngineUnit,
   RawThermalUnit,
+  RawUnitVariable,
   ThermalUnit,
 } from "@/types/panel/units.types";
 import {
@@ -13,68 +14,84 @@ import {
   stringToVoltage,
 } from "@/utils/panel/conversions";
 
+/*
+ * Throws on a short answer, as reading `.value` of a missing entry did.
+ * The panel loop catches it and counts a failed request.
+ */
+const valueAt = (raw: RawUnitVariable[], index: number): string => {
+  const variable = raw[index];
+  if (variable === undefined) {
+    throw new Error(`The unit answer has no value at index ${index}.`);
+  }
+  return variable.value;
+};
+
 export const rawEngineUnitToEngineUnit = (
   rawEngineUnit: RawEngineUnit,
 ): EngineUnit => {
   return {
     data: {
       temperature: {
-        inner: stringToNumberWithDecimals(rawEngineUnit[28].value),
+        inner: stringToNumberWithDecimals(valueAt(rawEngineUnit, 28)),
       },
       engine: {
         left: {
-          load: stringToNumber(rawEngineUnit[35].value),
-          position: stringToNumber(rawEngineUnit[37].value),
+          load: stringToNumber(valueAt(rawEngineUnit, 35)),
+          position: stringToNumber(valueAt(rawEngineUnit, 37)),
         },
         right: {
-          load: stringToNumber(rawEngineUnit[36].value),
-          position: stringToNumber(rawEngineUnit[38].value),
+          load: stringToNumber(valueAt(rawEngineUnit, 36)),
+          position: stringToNumber(valueAt(rawEngineUnit, 38)),
         },
       },
       door: {
-        state: stringToNumber(rawEngineUnit[48].value),
+        state: stringToNumber(valueAt(rawEngineUnit, 48)),
 
-        isBarrierInterrupted: stringBooleanToBoolean(rawEngineUnit[17].value),
-        isServiceDoorOpened: stringBooleanToBoolean(rawEngineUnit[23].value),
+        isBarrierInterrupted: stringBooleanToBoolean(
+          valueAt(rawEngineUnit, 17),
+        ),
+        isServiceDoorOpened: stringBooleanToBoolean(valueAt(rawEngineUnit, 23)),
       },
       timers: {
-        inspectionMessage: stringToNumber(rawEngineUnit[59].value),
-        serviceDoor: stringToNumber(rawEngineUnit[58].value),
+        inspectionMessage: stringToNumber(valueAt(rawEngineUnit, 59)),
+        serviceDoor: stringToNumber(valueAt(rawEngineUnit, 58)),
       },
       misc: {
-        inspectionNotDoneForDays: stringToNumber(rawEngineUnit[33].value),
+        inspectionNotDoneForDays: stringToNumber(valueAt(rawEngineUnit, 33)),
       },
       time: partitionedTimeToMoment(
-        rawEngineUnit[39].value,
-        rawEngineUnit[40].value,
-        rawEngineUnit[41].value,
-        rawEngineUnit[42].value,
-        rawEngineUnit[43].value,
-        rawEngineUnit[44].value,
+        valueAt(rawEngineUnit, 39),
+        valueAt(rawEngineUnit, 40),
+        valueAt(rawEngineUnit, 41),
+        valueAt(rawEngineUnit, 42),
+        valueAt(rawEngineUnit, 43),
+        valueAt(rawEngineUnit, 44),
       ),
-      isBlocked: stringBooleanToBoolean(rawEngineUnit[45].value),
-      blockValue: stringToNumber(rawEngineUnit[45].value),
+      isBlocked: stringBooleanToBoolean(valueAt(rawEngineUnit, 45)),
+      blockValue: stringToNumber(valueAt(rawEngineUnit, 45)),
     },
     settings: {
       temperature: {
-        minimalInner: stringToNumberWithDecimals(rawEngineUnit[6].value),
-        maximalInner: stringToNumberWithDecimals(rawEngineUnit[7].value),
+        minimalInner: stringToNumberWithDecimals(valueAt(rawEngineUnit, 6)),
+        maximalInner: stringToNumberWithDecimals(valueAt(rawEngineUnit, 7)),
       },
       engine: {
-        allowedLoad: stringToNumber(rawEngineUnit[0].value),
-        timeForEngineStart: stringToNumber(rawEngineUnit[1].value),
+        allowedLoad: stringToNumber(valueAt(rawEngineUnit, 0)),
+        timeForEngineStart: stringToNumber(valueAt(rawEngineUnit, 1)),
 
-        closedThreshold: stringToNumber(rawEngineUnit[2].value),
-        openedThreshold: stringToNumber(rawEngineUnit[3].value),
-        timeToBeOpenedInSeconds: stringToNumber(rawEngineUnit[4].value),
+        closedThreshold: stringToNumber(valueAt(rawEngineUnit, 2)),
+        openedThreshold: stringToNumber(valueAt(rawEngineUnit, 3)),
+        timeToBeOpenedInSeconds: stringToNumber(valueAt(rawEngineUnit, 4)),
       },
       misc: {
-        pcTimeoutConnection: stringToNumber(rawEngineUnit[5].value),
+        pcTimeoutConnection: stringToNumber(valueAt(rawEngineUnit, 5)),
 
-        emailPeriodInSeconds: stringToNumber(rawEngineUnit[9].value),
-        criticalEmailPeriodInSeconds: stringToNumber(rawEngineUnit[10].value),
+        emailPeriodInSeconds: stringToNumber(valueAt(rawEngineUnit, 9)),
+        criticalEmailPeriodInSeconds: stringToNumber(
+          valueAt(rawEngineUnit, 10),
+        ),
 
-        inspectionPeriodInSeconds: stringToNumber(rawEngineUnit[11].value),
+        inspectionPeriodInSeconds: stringToNumber(valueAt(rawEngineUnit, 11)),
       },
     },
   };
@@ -87,53 +104,59 @@ export const rawThermalUnitToThermalUnit = (
   return {
     data: {
       temperature: {
-        inner: stringToNumberWithDecimals(rawThermalUnit[29].value),
-        outside: stringToNumberWithDecimals(rawThermalUnit[28].value),
-        casing: stringToNumberWithDecimals(rawThermalUnit[30].value),
-        top: stringToNumberWithDecimals(rawThermalUnit[32].value),
-        bottom: stringToNumberWithDecimals(rawThermalUnit[31].value),
+        inner: stringToNumberWithDecimals(valueAt(rawThermalUnit, 29)),
+        outside: stringToNumberWithDecimals(valueAt(rawThermalUnit, 28)),
+        casing: stringToNumberWithDecimals(valueAt(rawThermalUnit, 30)),
+        top: stringToNumberWithDecimals(valueAt(rawThermalUnit, 32)),
+        bottom: stringToNumberWithDecimals(valueAt(rawThermalUnit, 31)),
 
-        isHeatingCasing: stringBooleanToBoolean(rawThermalUnit[24].value),
-        isHeatingAir: stringBooleanToBoolean(rawThermalUnit[25].value),
-        isCoolingAir: stringBooleanToBoolean(rawThermalUnit[26].value),
+        isHeatingCasing: stringBooleanToBoolean(valueAt(rawThermalUnit, 24)),
+        isHeatingAir: stringBooleanToBoolean(valueAt(rawThermalUnit, 25)),
+        isCoolingAir: stringBooleanToBoolean(valueAt(rawThermalUnit, 26)),
       },
       voltage: {
-        in: stringToVoltage(rawThermalUnit[35].value, voltageConfig),
-        battery: stringToVoltage(rawThermalUnit[36].value, voltageConfig),
-        units: stringToVoltage(rawThermalUnit[37].value, voltageConfig),
-        gsm: stringToVoltage(rawThermalUnit[38].value, voltageConfig),
+        in: stringToVoltage(valueAt(rawThermalUnit, 35), voltageConfig),
+        battery: stringToVoltage(valueAt(rawThermalUnit, 36), voltageConfig),
+        units: stringToVoltage(valueAt(rawThermalUnit, 37), voltageConfig),
+        gsm: stringToVoltage(valueAt(rawThermalUnit, 38), voltageConfig),
       },
       door: {
-        isServiceDoorOpened: stringBooleanToBoolean(rawThermalUnit[23].value),
+        isServiceDoorOpened: stringBooleanToBoolean(
+          valueAt(rawThermalUnit, 23),
+        ),
       },
 
       time: partitionedTimeToMoment(
-        rawThermalUnit[39].value,
-        rawThermalUnit[40].value,
-        rawThermalUnit[41].value,
-        rawThermalUnit[42].value,
-        rawThermalUnit[43].value,
-        rawThermalUnit[44].value,
+        valueAt(rawThermalUnit, 39),
+        valueAt(rawThermalUnit, 40),
+        valueAt(rawThermalUnit, 41),
+        valueAt(rawThermalUnit, 42),
+        valueAt(rawThermalUnit, 43),
+        valueAt(rawThermalUnit, 44),
       ),
 
-      isBlocked: stringBooleanToBoolean(rawThermalUnit[46].value),
-      blockValue: stringToNumber(rawThermalUnit[46].value),
+      isBlocked: stringBooleanToBoolean(valueAt(rawThermalUnit, 46)),
+      blockValue: stringToNumber(valueAt(rawThermalUnit, 46)),
     },
     settings: {
       temperature: {
-        hysteresisHeating: stringToNumberWithDecimals(rawThermalUnit[1].value),
-        hysteresisCooling: stringToNumberWithDecimals(rawThermalUnit[2].value),
-        optimalInner: stringToNumberWithDecimals(rawThermalUnit[0].value),
-        minimalInner: stringToNumberWithDecimals(rawThermalUnit[3].value),
-        maximalInner: stringToNumberWithDecimals(rawThermalUnit[4].value),
-        maximalCasing: stringToNumberWithDecimals(rawThermalUnit[5].value),
-        maximalPeltier: stringToNumberWithDecimals(rawThermalUnit[7].value),
+        hysteresisHeating: stringToNumberWithDecimals(
+          valueAt(rawThermalUnit, 1),
+        ),
+        hysteresisCooling: stringToNumberWithDecimals(
+          valueAt(rawThermalUnit, 2),
+        ),
+        optimalInner: stringToNumberWithDecimals(valueAt(rawThermalUnit, 0)),
+        minimalInner: stringToNumberWithDecimals(valueAt(rawThermalUnit, 3)),
+        maximalInner: stringToNumberWithDecimals(valueAt(rawThermalUnit, 4)),
+        maximalCasing: stringToNumberWithDecimals(valueAt(rawThermalUnit, 5)),
+        maximalPeltier: stringToNumberWithDecimals(valueAt(rawThermalUnit, 7)),
       },
       voltage: {
-        minimal: stringToVoltage(rawThermalUnit[6].value, voltageConfig),
+        minimal: stringToVoltage(valueAt(rawThermalUnit, 6), voltageConfig),
       },
       misc: {
-        emailPeriodInSeconds: stringToNumber(rawThermalUnit[8].value),
+        emailPeriodInSeconds: stringToNumber(valueAt(rawThermalUnit, 8)),
       },
     },
   };

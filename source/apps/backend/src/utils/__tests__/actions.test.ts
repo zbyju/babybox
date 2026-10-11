@@ -1,5 +1,7 @@
-import { Action } from "../../types/units.types";
-import { stringToAction } from "../actions";
+import { describe, expect, it } from "vitest";
+
+import { Action } from "../../types/units.types.js";
+import { stringToAction } from "../actions.js";
 
 describe("actions.ts", () => {
   describe("stringToAction", () => {

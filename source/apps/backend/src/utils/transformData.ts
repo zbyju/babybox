@@ -1,5 +1,3 @@
-import { ThermalData } from "../types/data.types";
-
-export function transformThermalData(data: string): ThermalData {
+export function transformThermalData(data: unknown): unknown {
   return data;
 }

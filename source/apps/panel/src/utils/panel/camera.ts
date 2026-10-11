@@ -17,7 +17,8 @@ const urlPostfixes: Record<MainConfigCameraType, string> = {
  * snapshot url costs one camera; refusing the config costs the whole panel.
  */
 export const getURLPostfix = (type: string): string => {
-  const postfix = (urlPostfixes as Record<string, string>)[type];
+  const postfixes: Readonly<Record<string, string>> = urlPostfixes;
+  const postfix = postfixes[type];
   if (postfix !== undefined) return postfix;
 
   console.warn(`Unknown camera type "${type}", using the dahua url`);

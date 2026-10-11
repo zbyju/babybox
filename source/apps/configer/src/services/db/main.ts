@@ -11,12 +11,8 @@ import {
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-import {
-  ConfigError,
-  MainConfig,
-  parseMainConfig,
-  validateMainConfig,
-} from "@babybox/config-schema";
+import { parseMainConfig, validateMainConfig } from "@babybox/config-schema";
+import type { ConfigError, MainConfig } from "@babybox/config-schema";
 import merge from "lodash.merge";
 
 export type MainDb = ReturnType<typeof mainConfig>;
@@ -64,9 +60,9 @@ type CheckedBody =
 /*
  * Both writers merge the body over something, and lodash.merge spreads a string
  * or an array over the target, so neither may reach the merge.
- * express.json() also leaves req.body as {} when the Content-Type is not JSON:
- * without this a PUT with a forgotten header would reset the whole box to
- * base.json, and a PATCH would rewrite the file for nothing.
+ * express.json() leaves req.body undefined when the Content-Type is not JSON
+ * (Express 4 set it to {}): without this a PUT with a forgotten header would
+ * reset the whole box to base.json, and a PATCH would rewrite it for nothing.
  * It returns the narrowed body, so the merge never takes an unknown.
  */
 function checkBody(body: unknown): CheckedBody {
@@ -85,7 +81,7 @@ type StoredFile =
 // Only a JSON object is a config: lodash.merge would spread a string or an array.
 function parseObject(text: string): Fields | undefined {
   try {
-    const value = JSON.parse(text) as unknown;
+    const value: unknown = JSON.parse(text);
     return isPlainObject(value) ? value : undefined;
   } catch {
     return undefined;
@@ -138,7 +134,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   const tempFile = join(configDir, "main.json.tmp");
 
   const baseText = readFileSync(join(configDir, "base.json"), "utf-8");
-  const freshBase = (): unknown => JSON.parse(baseText) as unknown;
+  const freshBase = (): unknown => JSON.parse(baseText);
 
   function write(config: MainConfig): void {
     /*
@@ -166,6 +162,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
    * Boot never rejects: an odd stored value must not stop the box. It warns, so a
    * value a write would refuse shows in the log before the UI trips on it.
    */
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- boot keeps an odd stored value, see above
   let data = merge(freshBase(), loadStored(mainFile, backupFile)) as MainConfig;
   for (const { path, msg } of validateMainConfig(data)) {
     console.warn(`${mainFile}: ${path} ${msg}`);

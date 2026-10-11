@@ -44,5 +44,5 @@ pnpm build   # build for production
 ```
 
 Use pnpm 7.5.0 on Node 18. A newer pnpm rewrites the lockfile. The box's workspace
-install uses `--frozen-lockfile`. The runtime folder installs production dependencies
-only. See [docs/learnings.md](docs/learnings.md).
+install uses `--frozen-lockfile`. The runtime folder installs with
+`bun install --no-save`. See [docs/learnings.md](docs/learnings.md).
