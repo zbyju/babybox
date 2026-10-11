@@ -479,8 +479,8 @@ if [ "$(pnpm --version 2>/dev/null || echo none)" != "$PNPM_VERSION" ]; then
   npm install -g "pnpm@$PNPM_VERSION"
 fi
 cd "$BABYBOX_DIR/source/apps/startup"
-info "Instaluji zavislosti (pnpm install)..."
-pnpm install
+info "Instaluji zavislosti (pnpm install --frozen-lockfile)..."
+pnpm install --frozen-lockfile
 info "Spoustim instalaci a prvni start panelu..."
 node src/index.js --install --ubuntu
 ok "Panel nainstalovan a spusten"

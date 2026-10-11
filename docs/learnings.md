@@ -6,8 +6,10 @@ lesson: what happened, what to do instead.
 ## Tooling
 
 - **Never run the machine's pnpm here.** It rewrites the lockfile format. Use
-  `npx pnpm@7.5.0`. CI and every babybox install with `--frozen-lockfile` from that
-  version; a lockfile in another format means the box does not start.
+  `npx pnpm@7.5.0`. CI and the box's workspace install use `--frozen-lockfile` from
+  that version; a lockfile in another format means the box does not start. The
+  runtime install in repo-root `dist/` is `bun install --no-save` and does not use
+  this lockfile.
 - **The panel build type-checks `src`, and only `src`.** Its gate is
   `vue-tsc --noEmit -p tsconfig.app.json`, 99 files. Until the panel contract it ran
   `vue-tsc --noEmit` on the solution `tsconfig.json` (`files: []`) and checked none,
@@ -205,9 +207,11 @@ lesson: what happened, what to do instead.
 ## Startup
 
 - **The backend's `dist` is installed standalone.** `startup` copies
-  `apps/backend/dist` and `apps/backend/package.json` to the repo-root `dist/` and runs
-  `pnpm install` there, outside the workspace. A `workspace:*` dependency in the
-  backend's `package.json` breaks that install, so the backend can only share types.
+  `apps/backend/dist` and `apps/backend/package.json` to the repo-root `dist/` and
+  runs `bun install --no-save` there, outside the workspace. A `workspace:*`
+  dependency in the backend's `package.json` breaks that install, so the backend can
+  only share types. This install is not production-only yet, so jest, newman, and
+  the compiler are installed too.
 - **After `git pull` the box runs the root `build` script**, nothing else. A new build
   step belongs there, or the box never runs it.
 - **pm2 treats a Bun interpreter three ways.** 4.5.6 to 5.4.3 spawn

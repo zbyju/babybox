@@ -464,11 +464,11 @@ On every boot the desktop autostart runs `apps/startup/scripts/ubuntu/startup.sh
    Stderr on a pull that exits 0 does not fail the pull.
 2. If the pull changed something, or `dist` is missing: `pnpm run build` in
    `source/`. That runs the
-   `build` script from **HEAD's** root `package.json`: `pnpm install &&
+   `build` script from **HEAD's** root `package.json`: `pnpm install --frozen-lockfile &&
    build:schema && build panel && build backend && build configer`. Any stderr
    fails the build.
 3. On success: rename `dist` to `dist2`, copy the new build into `dist`,
-   `pnpm install` inside `dist`, restart both apps under pm2.
+   `pnpm install --prod` inside `dist`, restart both apps under pm2.
 4. On a failed **build**: leave `dist` in place and start it. On a failed
    **copy**: try to rename `dist2` back. On a failed **start**: retry the
    **new** apps five times and never restore `dist2`. That last case is a
@@ -527,10 +527,8 @@ after P3.
   left behind.
 - **Configer vs panel.** A configer start failure retries only `start()` (the
   panel). Configer stays down.
-- **Rollback install path.** The copy uses `cwd: "../../../dist"`. The
-  rollback `pnpm install` uses `cwd: "../../dist"`. One of those is wrong.
 - **No last-good until swap is proven.** `dist` is renamed to `dist2` before
-  the new copy and `pnpm install` finish. A crash in that window leaves
+  the new copy and `pnpm install --prod` finish. A crash in that window leaves
   neither tree complete.
 
 #### Contract
