@@ -19,6 +19,7 @@ interface Entry {
   content: Buffer;
   attempts: number;
   dueAt: number;
+  stopped: boolean;
 }
 
 export type AttemptResult =
@@ -81,7 +82,10 @@ export class EmailQueue {
     return discarded;
   }
 
-  enqueue(content: Buffer): {
+  enqueue(
+    content: Buffer,
+    receivedAt = this.now()
+  ): {
     id?: number;
     rejected?: "too-large" | "busy";
     discarded: DiscardedEmail[];
@@ -104,15 +108,16 @@ export class EmailQueue {
     ) {
       const index = this.entries.findIndex((entry) => entry !== this.active);
       const [oldest] = this.entries.splice(index, 1);
+      if (!oldest) throw new Error("Missing waiting email");
       discarded.push(this.disposition(oldest, "evicted"));
     }
-    const receivedAt = this.now();
     const entry: Entry = {
       id: ++this.sequence,
       receivedAt,
-      content: Buffer.from(content),
+      content: Buffer.from(Uint8Array.from(content)),
       attempts: 0,
       dueAt: receivedAt,
+      stopped: false,
     };
     this.entries.push(entry);
     return { id: entry.id, discarded };
@@ -130,7 +135,9 @@ export class EmailQueue {
     ) {
       return { discarded };
     }
-    const eligible = this.entries.filter((entry) => entry.dueAt <= this.now());
+    const eligible = this.entries.filter(
+      (entry) => !entry.stopped && entry.dueAt <= this.now()
+    );
     // Unattempted arrivals first. Among retries, newest receipt first as well.
     eligible.sort(
       (a, b) => Number(a.attempts > 0) - Number(b.attempts > 0) || b.id - a.id
@@ -143,7 +150,7 @@ export class EmailQueue {
       message: {
         id: entry.id,
         receivedAt: entry.receivedAt,
-        content: Buffer.from(entry.content),
+        content: Buffer.from(Uint8Array.from(entry.content)),
       },
       discarded,
     };
@@ -153,9 +160,10 @@ export class EmailQueue {
     const entry = this.active;
     if (!entry || entry.id !== id) throw new Error("No matching active email");
     this.active = undefined;
-    if (result === "complete" || result === "permanent") {
+    if (result === "complete") {
       this.entries = this.entries.filter((item) => item !== entry);
     } else {
+      if (result === "permanent") entry.stopped = true;
       entry.dueAt = this.now() + retryDelay(entry.attempts);
       if (result === "connection") this.cooldownUntil = entry.dueAt;
       if (result === "configuration") this.connectionPaused = true;
@@ -170,6 +178,48 @@ export class EmailQueue {
     for (const entry of this.entries) {
       entry.dueAt = this.now();
     }
+  }
+
+  retry(id: number): boolean {
+    const entry = this.entries.find(
+      (item) => item.id === id && item !== this.active
+    );
+    if (!entry || this.now() - entry.receivedAt >= this.limits.ttl)
+      return false;
+    entry.stopped = false;
+    entry.dueAt = this.now();
+    this.connectionPaused = false;
+    this.cooldownUntil = 0;
+    return true;
+  }
+
+  remove(id: number): boolean {
+    const index = this.entries.findIndex(
+      (item) => item.id === id && item !== this.active
+    );
+    if (index < 0) return false;
+    this.entries.splice(index, 1);
+    return true;
+  }
+
+  pending(): {
+    id: number;
+    receivedAt: number;
+    bytes: number;
+    attempts: number;
+    dueAt: number;
+    active: boolean;
+    stopped: boolean;
+  }[] {
+    return this.entries.map((entry) => ({
+      id: entry.id,
+      receivedAt: entry.receivedAt,
+      bytes: entry.content.length,
+      attempts: entry.attempts,
+      dueAt: entry.dueAt,
+      active: entry === this.active,
+      stopped: entry.stopped,
+    }));
   }
 
   private disposition(entry: Entry, reason: DiscardReason): DiscardedEmail {

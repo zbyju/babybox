@@ -33,6 +33,12 @@ checked in the browser and guards against a mis-tap, nothing more. That is a rec
 decision and it assumes the box sits on a trusted hospital network — see
 [docs/decisions.md](docs/decisions.md), "No auth on the configer write endpoint".
 
+Email relay development and release requirements are tracked in
+[docs/email-delivery.md](docs/email-delivery.md). The maintenance page is `/email`.
+The deployed Node 18 runtime keeps monitoring normally but cannot activate email;
+the Bun runtime introduced by the toolchain upgrade enables email.
+The panel never rewrites device SMTP targets automatically.
+
 ## Development
 
 Run workspace commands from `source/` with Bun 1.4.2 and Node 18.12.1 on PATH.

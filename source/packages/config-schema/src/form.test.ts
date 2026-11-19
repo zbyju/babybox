@@ -87,7 +87,19 @@ describe("configForm field metadata", () => {
     const byTier = configFormFields
       .filter((field) => field.tier === "backendReload")
       .map((field) => field.path);
-    expect(byTier).toEqual(["units.engine.ip", "units.thermal.ip", "pc.os"]);
+    expect(byTier).toEqual([
+      "units.engine.ip",
+      "units.thermal.ip",
+      "pc.os",
+      "email.listener",
+      "email.mode",
+      "email.host",
+      "email.user",
+      "email.password",
+      "email.senderOverride",
+      "email.unitRecipients",
+      "email.cameraRecipients",
+    ]);
   });
 
   it("leaves only the two fields bound at listen on the backendRestart tier", () => {
