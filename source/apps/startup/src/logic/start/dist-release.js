@@ -880,7 +880,17 @@ function startOne(ctx, script) {
   return new Promise((resolve, reject) => {
     let child;
     try {
-      child = ctx.spawn(ctx.pnpm, [script], {
+      // Modern Node rejects .cmd files with shell:false on Windows. Run the
+      // same package-script entry point directly, keeping paths as argv entries.
+      const command = ctx.platform === "win32" ? process.execPath : ctx.pnpm;
+      const args =
+        ctx.platform === "win32"
+          ? [
+              path.join(ctx.paths.source, "apps", "startup", "start-app.js"),
+              script === "start:configer" ? "configer" : "main",
+            ]
+          : [script];
+      child = ctx.spawn(command, args, {
         cwd: ctx.paths.source,
         detached: true,
         shell: false,
