@@ -1,9 +1,9 @@
 {
   "extends": "./tsconfig.app.json",
-  "include": ["vite.config.ts"],
+  "include": ["vite.config.mts"],
   "exclude": [],
   "compilerOptions": {
-    // vite.config.ts runs on Node, not in the browser.
+    // vite.config.mts runs on Bun, not in the browser.
     "lib": ["ES2022"],
     "types": ["node"]
   }

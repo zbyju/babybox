@@ -1295,35 +1295,21 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
 
 ### P5 — Test and lint toolchain
 
-- [ ] vite 8.3.0, @vitejs/plugin-vue 6.0.9, vitest 5.0.1, jsdom 30.1.0 in the panel;
-      `vite.config.ts` to `import.meta.dirname`; run through `bun run`
-- [ ] Keep BUILD_PANEL stderr empty on Vite 8. On 2026-09-25 vite 8.3.0
-      printed a `configLoader: 'native'` warning on stderr for
-      `vite.config.ts`: ESM syntax in a file loaded as CommonJS. Any stderr
-      fails the box build. Fix it with `"type": "module"` in the panel
-      `package.json` or a `vite.config.mts`.
-- [ ] Run Vite 8 on a runtime it supports. It needs Node `^20.19` or
-      `>=22.12`. `bun run` starts a bin on the first `node` on PATH, and on
-      a box that is Node 18. So vite must run on the Bun runtime (for
-      example `bun --bun vite build`). `vue-tsc` must stay on Node: on Bun
-      it loads no `.vue` file. Not tested yet.
-- [ ] Panel `tsconfig.app.json`: `"extends": ["@vue/tsconfig/tsconfig.dom.json",
-      "../../tsconfig.contract.json"]`, with the contract last so its flags
-      win. Delete the panel copy of the 12 flags. Decided 2026-09-25.
-      Checked on vite 8.3.0 and @vitejs/plugin-vue 6.0.9: same bundle, all
-      12 flags. Check vitest 5 with the array before this box is ticked.
+- [x] Panel builds with Vite 8.3.0 and @vitejs/plugin-vue 6.0.9.
+      The .mts config loads as ESM and preserves the former browser targets.
+      Vite runs through Bun 1.4.2 with zero stderr. vue-tsc stays on Node 18.
+- [x] Panel tsconfig.app.json extends the Vue DOM config and the shared
+      TypeScript contract, in that order. Build and test typechecks pass.
+- [x] Vitest 5.0.1 in backend, configer, config-schema, and panel. The three
+      server and schema suites run on Bun 1.4.2. jsdom 30.1.0 installs on Bun
+      but fails at EventTarget initialization under Bun, so the panel test
+      command uses Node 24.22.2 in CI. The device build uses Bun and Node 18.
 - [x] `apps/panel/vite.config.ts` sets `define: { __VUE_PROD_DEVTOOLS__: false }`.
       pinia 4 needs `@vue/devtools-api` as a non-optional peer, and only a
       guard on that flag keeps `@vue/devtools-kit` out of the bundle. Added in
       #131 so the Vite 8 swap cannot quietly undo it. `legacy-image` never
       reads bundle content, so a regression would be silent.
-- [ ] Prove `bun install` accepts jsdom 30.1.0 (`engines.node` is `^22.22.2 ||
-      ^24.15.0 || >=26`). If it refuses, pin the newest jsdom that Bun accepts
-      and record the pin here. Do not turn on `engine-strict`.
-- [ ] vitest 5 in the backend (moved in P4), configer, config-schema and startup;
-      `jest`, `ts-jest`, `@types/jest` removed everywhere; note the 2026-09-11
-      decision that accepted two runners as superseded. Put startup tests in CI.
-      Do not switch to `bun test`.
+- [ ] Move the startup suite from Jest to Vitest, including its CommonJS mocks.
 - [ ] oxlint 1.85.0 + oxfmt 0.70.0 (or latest at the time): configer first (its own
       PR, with the TypeScript contract already on, type-aware oxlint rules,
       tracked suppressions), then panel (`vue` plugin), backend, startup,

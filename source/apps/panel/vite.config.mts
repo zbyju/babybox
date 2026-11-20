@@ -1,6 +1,5 @@
 import vue from "@vitejs/plugin-vue";
-import path from "path";
-import { fileURLToPath, URL } from "url";
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
 // https://vitejs.dev/config/
@@ -24,12 +23,16 @@ export default defineConfig({
     preprocessorOptions: {
       stylus: {
         imports: [
-          path.resolve(__dirname, "./src/assets/styles/variables.styl"),
+          fileURLToPath(
+            new URL("./src/assets/styles/variables.styl", import.meta.url),
+          ),
         ],
       },
     },
   },
   build: {
     outDir: "./dist",
+    // Keep the browser targets shipped by the previous Vite build.
+    target: ["es2020", "edge88", "firefox78", "chrome87", "safari14"],
   },
 });
