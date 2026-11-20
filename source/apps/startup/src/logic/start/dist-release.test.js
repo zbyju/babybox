@@ -597,7 +597,7 @@ describe("dist-next release", () => {
     }
   });
 
-  it("uses pnpm.cmd on Windows and skips the build when only configer dist is missing", async () => {
+  it("runs the Node entry point on Windows and skips the build when only configer dist is missing", async () => {
     const root = createRoot();
     const harness = createHarness();
     writeReleaseFile(root);
@@ -608,16 +608,26 @@ describe("dist-next release", () => {
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
-      const opts = baseOptions(root, harness);
+      const opts = baseOptions(root, harness, { platform: "win32" });
       delete opts.pnpm;
       const code = await windowsStart(opts);
       expect(code).toBe(true);
       expect(commands(harness)).not.toContain("pnpm.cmd run build");
       expect(commands(harness)).not.toContain("pnpm run build");
       expect(harness.spawnCalls.map((call) => call.cmd)).toEqual([
-        "pnpm.cmd",
-        "pnpm.cmd",
+        process.execPath,
+        process.execPath,
       ]);
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        [
+          path.join(root, "source", "apps", "startup", "start-app.js"),
+          "configer",
+        ],
+        [path.join(root, "source", "apps", "startup", "start-app.js"), "main"],
+      ]);
+      expect(harness.spawnCalls.every((call) => call.shell === false)).toBe(
+        true
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -920,9 +930,19 @@ describe("dist-next release", () => {
       expect(code).toBe(true);
       expect(commands(harness)).toContain("pnpm.cmd run build");
       expect(harness.spawnCalls.map((call) => call.cmd)).toEqual([
-        "pnpm.cmd",
-        "pnpm.cmd",
+        process.execPath,
+        process.execPath,
       ]);
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        [
+          path.join(root, "source", "apps", "startup", "start-app.js"),
+          "configer",
+        ],
+        [path.join(root, "source", "apps", "startup", "start-app.js"), "main"],
+      ]);
+      expect(harness.spawnCalls.every((call) => call.shell === false)).toBe(
+        true
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

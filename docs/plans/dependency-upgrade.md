@@ -1528,7 +1528,10 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       Should `START_PANEL` wait for `GET /status` before it writes
       `release.json`? A Bun crash after `pm2 start` returns 0 is not rolled
       back.
-- [ ] `dist-release.js` spawns `pnpm.cmd` with `shell: false`. Node 18.20.2+
+- [x] `dist-release.js` now starts `start-app.js` directly with the current Node
+      executable on Windows, avoiding the `.cmd` shim with `shell: false`.
+      Regression coverage checks the executable, both app arguments and shell mode.
+      Previously it spawned `pnpm.cmd` with `shell: false`. Node 18.20.2+
       and 20.12.2+ refuse that (EINVAL). The owner said on 2026-09-25 that
       all panel PCs run Node 18. The minor version is not known.
 - [ ] `GET /status` `node` shows the Node version Bun reports (`v26.3.0`).

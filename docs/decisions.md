@@ -1658,3 +1658,12 @@ Context · Decision · Why · Gave up · Where
 - Note: on `feat/toolchain-jump` the runtime is Bun. `dist/` installs run
   `bun install --no-save`, not `pnpm install --prod`. See "The runtime is Bun
   1.4.2" (2026-09-14).
+
+### Windows release startup without a command shim (2026-11-20)
+
+The release flow invokes `start-app.js configer` and `start-app.js main` with
+the current Node executable on Windows. These are the existing package-script
+entry points. Keep `shell: false` and pass the script path as one argument so
+spaces and shell metacharacters in the checkout path remain literal. This avoids
+Node 18.20.2+ rejecting `pnpm.cmd` with EINVAL without enabling a command shell.
+The Unix launch path and the readiness probes and rollback policy stay as before.
