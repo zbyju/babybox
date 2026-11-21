@@ -237,6 +237,24 @@ without including configuration values or device credentials.
 
 A failed or missing canary result blocks the merge.
 
+### Physical rollout record
+
+Fill in each row from the actual device before making #102 ready. Record the
+full source SHA and exact OS release or build. Service health covers configer,
+backend, and the panel. Compare site configuration before and after the
+upgrade and after rollback.
+
+| Device | Source SHA | Exact OS | First boot | Second boot | Service health | Site configuration | Rollback |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Ubuntu 22.04+ | Pending | Pending | Pending | Pending | Pending | Pending | Pending |
+| Windows 10 build 17763+ | Pending | Pending | Pending | Pending | Pending | Pending | Pending |
+| Windows 11 | Pending | Pending | Pending | Pending | Pending | Pending | Pending |
+| Windows 8 | Pending | Pending | Pending | Pending | Pending | Pending | Pending |
+
+The P4 manual hardware run is pending. Record its source SHA and OS with the
+real engine and thermal unit, camera, alarms, panel settings and config
+checks described below.
+
 ### Rollback of a canary
 
 The merge has not happened. `git status` is clean.
@@ -288,7 +306,8 @@ a box. The fake Windows 8 case does not replace the real Windows 8 canary.
 
 The `legacy-boot1` job runs the real startup app from the `legacy-runtime`
 tag, with pm2 5.2.0 or 6.0.14 and no `~/.bun/bin` on `PATH`. It runs on
-Ubuntu and on Windows. It first builds and starts the tag, as a legacy box
+Ubuntu and Windows. Both OSes also exercise the pre-jump main revision
+`8c5ce842aeae0038874464f2ae7c6af4ee2f77fa` with pm2 6.0.14. It first builds and starts the tag, as a legacy box
 would. Then it pulls a tip with a panel build that exits 1. The legacy
 `dist` must start on Bun. Then it pulls the pull request head. The new
 `dist` must start on Bun. Each case checks the pm2 interpreter and the real

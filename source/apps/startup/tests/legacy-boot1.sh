@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Boot 1 on an old box, run by the real startup app from the legacy-runtime tag.
-# Run from source/ at that tag, with TARGET_SHA set to the commit under test.
+# Boot 1 on an old box, run by the real startup app from a legacy revision.
+# Run from source/ at that revision, with TARGET_SHA set to the commit under test.
 # The old app pulls, runs pnpm run build, and starts the apps through HEAD's
 # root start scripts, with the old pm2 and no ~/.bun/bin on PATH.
 # It never puts dist2 back after a failed start, so a failed start here is a
@@ -269,7 +269,8 @@ EOF
   fi
 }
 
-LEGACY_SHA="$(git rev-parse "legacy-runtime^{commit}")"
+LEGACY_SHA="$(git rev-parse HEAD)"
+printf 'Legacy starting SHA %s\\n' "$LEGACY_SHA"
 PM2_WANT="$(pm2_version)"
 assert_head "$LEGACY_SHA"
 set_up_remote
