@@ -1,8 +1,10 @@
-import type { UnappliedField } from "@babybox/config-schema";
+import {
+  reloadResponseSchema,
+  type UnappliedField,
+} from "@babybox/config-schema";
 
 import { backendApi } from "@/api/base";
 import { requestJson } from "@/api/http";
-import { isObject } from "@/utils/general";
 
 /*
  * The backend reads the config from configer inside this call, and its own fetch
@@ -14,29 +16,6 @@ const RELOAD_TIMEOUT = 15000;
 export type ReloadResult =
   | { ok: true; unapplied: UnappliedField[] }
   | { ok: false };
-
-function isPlainValue(value: unknown): value is string | number {
-  return typeof value === "string" || typeof value === "number";
-}
-
-function isUnappliedField(value: unknown): value is UnappliedField {
-  return (
-    isObject(value) &&
-    typeof value["path"] === "string" &&
-    isPlainValue(value["running"]) &&
-    isPlainValue(value["stored"])
-  );
-}
-
-/*
- * Null, not an empty list, for a body we cannot read. An empty list means "the
- * backend applied everything", which clears the restart banner — so an answer the
- * panel does not understand would wipe a warning it never checked.
- */
-function readUnapplied(body: unknown): UnappliedField[] | null {
-  if (!isObject(body) || !Array.isArray(body["unapplied"])) return null;
-  return body["unapplied"].filter(isUnappliedField);
-}
 
 /**
  * Asks the backend to read the config again, so a saved unit IP or `pc.os` takes
@@ -59,9 +38,9 @@ export async function reloadBackendConfig(): Promise<ReloadResult> {
       method: "POST",
       timeout: RELOAD_TIMEOUT,
     });
-    const unapplied = readUnapplied(data);
-    if (unapplied === null) return { ok: false };
-    return { ok: true, unapplied };
+    const parsed = reloadResponseSchema.safeParse(data);
+    if (!parsed.success) return { ok: false };
+    return { ok: true, unapplied: parsed.data.unapplied };
   } catch {
     return { ok: false };
   }

@@ -1,4 +1,8 @@
-import { type MainConfig, defaultConfig } from "@babybox/config-schema";
+import {
+  type MainConfig,
+  type UnappliedField,
+  defaultConfig,
+} from "@babybox/config-schema";
 import { describe, expect, it, vi } from "vitest";
 
 import type { SaveResult } from "@/api/config";
@@ -110,7 +114,9 @@ describe("runSave", () => {
   });
 
   it("carries the fields the backend could not apply", async () => {
-    const unapplied = [{ path: "backend.port", running: 5000, stored: 5050 }];
+    const unapplied: UnappliedField[] = [
+      { path: "backend.port", running: 5000, stored: 5050 },
+    ];
     const deps = calls({ ok: true }, { ok: true, unapplied });
 
     const result = await runSave(draft(), false, deps);

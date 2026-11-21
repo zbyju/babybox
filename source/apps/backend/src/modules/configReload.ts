@@ -1,3 +1,4 @@
+import type { ConfigAnswer } from "../fetch/fetchConfig.js";
 import type { MainConfig, UnappliedField } from "../types/config.types.js";
 
 /**
@@ -135,10 +136,10 @@ export function unappliedFields(
  * if (result.status === "reloaded") applyConfig(result.config);
  */
 export async function reloadConfig(
-  fetchConfig: () => Promise<{ data?: unknown; msg?: string }>,
+  fetchConfig: () => Promise<ConfigAnswer>,
   bound: BoundAddress
 ): Promise<ReloadResult> {
-  let answer: { data?: unknown; msg?: string };
+  let answer: ConfigAnswer;
   try {
     answer = await fetchConfig();
   } catch (error) {
@@ -148,9 +149,11 @@ export async function reloadConfig(
     };
   }
 
-  if (!isObject(answer) || answer.data === undefined) {
-    const reason = isObject(answer) ? String(answer.msg) : "no answer";
-    return { status: "failed", msg: `configer returned no config: ${reason}` };
+  if (answer.status !== 200) {
+    return {
+      status: "failed",
+      msg: "configer returned no config: " + answer.msg,
+    };
   }
 
   if (!isBackendReadableConfig(answer.data)) {
