@@ -218,6 +218,19 @@ assert_modules() {
   fi
 }
 
+assert_zod() {
+  ZOD_WANT="$1" node <<'EOF'
+const path = require("path");
+const { createRequire } = require("module");
+const configer = createRequire(path.resolve("apps/configer/dist/index.js"));
+const schema = createRequire(configer.resolve("@babybox/config-schema"));
+const zod = schema("zod/package.json");
+if (zod.version !== process.env.ZOD_WANT) {
+  throw new Error("expected isolated Zod " + process.env.ZOD_WANT + ", got " + zod.version);
+}
+EOF
+}
+
 # The isolated lowdb copy gets a marker. source/node_modules and the live
 # schema dist then lose the export the old configer needs.
 poison_source_packages() {
@@ -295,16 +308,7 @@ assert_apps
 assert_runtime bun
 
 assert_modules
-node <<'EOF'
-const path = require("path");
-const { createRequire } = require("module");
-const configer = createRequire(path.resolve("apps/configer/dist/index.js"));
-const schema = createRequire(configer.resolve("@babybox/config-schema"));
-const zod = schema("zod/package.json");
-if (zod.version !== "3.23.8") {
-  throw new Error("first rollback did not preserve the legacy Zod version: " + zod.version);
-}
-EOF
+assert_zod 3.23.8
 
 echo "boot 1 with a good build starts the new dist on Bun"
 pm2 kill >/dev/null 2>&1 || true
@@ -321,6 +325,7 @@ assert_apps
 assert_panel_page
 assert_runtime bun
 assert_modules
+assert_zod "$(node -p 'require("./packages/config-schema/package.json").dependencies.zod')"
 if [ "$(pm2_version)" != "$PM2_WANT" ]; then
   fail "pm2 is $(pm2_version), want ${PM2_WANT}"
 fi

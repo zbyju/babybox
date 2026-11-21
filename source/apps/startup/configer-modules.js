@@ -299,9 +299,13 @@ function preserveConfigerModules(sourceDir) {
   ) {
     return "";
   }
-  const result = snapshot(sourceDir, configerDir, "legacy");
-  // An incomplete install needs a chance to repair the missing packages.
-  return result.error ? failureDetail(result) : "";
+  try {
+    const result = snapshot(sourceDir, configerDir, "legacy");
+    // An incomplete install needs a chance to repair the missing packages.
+    return result.error ? failureDetail(result) : "";
+  } catch (err) {
+    return failureDetail({ error: err });
+  }
 }
 
 function prepareConfigerModules(options) {
