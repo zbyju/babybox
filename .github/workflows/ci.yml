@@ -257,6 +257,22 @@ jobs:
           test -d apps/backend/dist
           ! grep -rl "config-schema" apps/backend/dist
 
+      - name: Decode startup status in standalone backend
+        run: |
+          scratch="$(mktemp -d)"
+          cp -R apps/backend/dist/. "$scratch/"
+          cp apps/backend/package.json "$scratch/package.json"
+          cd "$scratch"
+          bun install --no-save --omit=dev
+          node --input-type=module <<'EOF'
+          import { parseStartupLast } from "./utils/runtimeVersions.js";
+          const record = { step: "SWAP", ok: true, message: "", at: "", node: "", pnpm: "", bun: "" };
+          if (parseStartupLast(JSON.stringify(record))?.step !== "SWAP" ||
+              parseStartupLast(JSON.stringify({ ...record, ok: "true" })) !== null) {
+            throw new Error("standalone startup status decoding failed");
+          }
+          EOF
+
       # The build checks src only. This step checks the tests.
       - name: Config schema typecheck
         run: bun --filter @babybox/config-schema typecheck

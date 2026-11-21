@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 // One startup.last.json record per step end. Node 12 syntax. No packages.
 // message is the step output, collapsed, without a node_modules stack.
 
@@ -108,14 +109,33 @@ function buildRecord(step, ok, message, date, versions) {
   };
 }
 
-function writeRecord(logPath, record) {
+function writeRecord(logPath, record, fileSystem) {
+  const io = fileSystem || fs;
   const filePath = path.join(path.dirname(logPath), "startup.last.json");
+  let tempPath = null;
   try {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, `${JSON.stringify(record)}\n`);
+    io.mkdirSync(path.dirname(filePath), { recursive: true });
+    const suffix = crypto.randomBytes(12).toString("hex");
+    const candidate = filePath + "." + suffix + ".tmp";
+    // Open exclusively so cleanup can only remove a file created by this writer.
+    const fd = io.openSync(candidate, "wx");
+    tempPath = candidate;
+    try {
+      io.writeFileSync(fd, JSON.stringify(record) + "\n");
+      io.fsyncSync(fd);
+    } finally {
+      io.closeSync(fd);
+    }
+    io.renameSync(tempPath, filePath);
     return true;
   } catch (err) {
-    // The caller logs the failure. A throw would stop the panel.
+    if (tempPath !== null) {
+      try {
+        io.unlinkSync(tempPath);
+      } catch {
+        // A write failure must not stop the panel.
+      }
+    }
     return false;
   }
 }

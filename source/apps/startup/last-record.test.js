@@ -18,6 +18,27 @@ function versions() {
 }
 
 describe("startup last record", () => {
+  it("keeps the previous valid record if rename fails", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "babybox-last-"));
+    const logPath = path.join(root, "startup.log");
+    const file = path.join(root, "startup.last.json");
+    const previous = buildRecord("PULL", true, "", WHEN, versions());
+    const next = buildRecord("SWAP", false, "failed", WHEN, versions());
+    const io = Object.create(fs);
+    io.renameSync = () => {
+      throw new Error("rename failed");
+    };
+
+    try {
+      expect(writeRecord(logPath, previous)).toBe(true);
+      expect(writeRecord(logPath, next, io)).toBe(false);
+      expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual(previous);
+      expect(fs.readdirSync(root)).toEqual(["startup.last.json"]);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("collapses output, drops node_modules frames, and keeps the tail", () => {
     const stack = [
       "boom",
