@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { ConfigAnswer } from "../../fetch/fetchConfig.js";
 import type { MainConfig } from "../../types/config.types.js";
 import type { BoundAddress } from "../configReload.js";
 import {
@@ -36,12 +37,12 @@ function storedConfig(): MainConfig {
 
 const bound: BoundAddress = { port: 5000, prefix: "/api/v1" };
 
-function answerWith(config: unknown) {
+function answerWith(config: unknown): () => Promise<ConfigAnswer> {
   return () => Promise.resolve({ status: 200, msg: "ok", data: config });
 }
 
 /* What fetchConfig really returns when configer does not answer: no data key. */
-function answerWithNothing() {
+function answerWithNothing(): () => Promise<ConfigAnswer> {
   return () =>
     Promise.resolve({
       status: 408,
@@ -167,8 +168,17 @@ describe("reloadConfig", () => {
   it("fails without a config when configer does not answer", async () => {
     const result = await reloadConfig(answerWithNothing(), bound);
 
-    expect(result.status).toBe("failed");
-    expect(result).not.toHaveProperty("config");
+    expect(result).toEqual({
+      status: "failed",
+      msg: "configer returned no config: Request timedout. The URL/IP might be wrong, check the config.",
+    });
+  });
+
+  it("validates the payload when configer responds with 200 and no data", async () => {
+    expect(await reloadConfig(answerWith(undefined), bound)).toEqual({
+      status: "failed",
+      msg: "the stored config is missing a field the backend reads",
+    });
   });
 
   it("fails when fetchConfig throws", async () => {

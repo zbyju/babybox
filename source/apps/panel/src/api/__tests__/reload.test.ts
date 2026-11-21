@@ -38,7 +38,10 @@ describe("reloadBackendConfig", () => {
   });
 
   it("hands back the fields the backend could not apply", async () => {
-    const unapplied = [{ path: "backend.port", running: 5000, stored: 5050 }];
+    const unapplied = [
+      { path: "backend.port", running: "5000", stored: 5050 },
+      { path: "backend.url", running: "/api/v1", stored: "/api/v2" },
+    ];
     requestJsonMock.mockResolvedValue({ status: 200, data: { unapplied } });
 
     expect(await reloadBackendConfig()).toEqual({ ok: true, unapplied });
@@ -58,23 +61,22 @@ describe("reloadBackendConfig", () => {
     expect(await reloadBackendConfig()).toEqual({ ok: false });
   });
 
-  it("drops an entry that is not a field the panel can read", async () => {
-    requestJsonMock.mockResolvedValue({
-      status: 200,
-      data: {
-        unapplied: [
-          { path: "backend.port", running: 5000, stored: 5050 },
-          { path: "backend.url", running: {}, stored: "/api/v2" },
-          "nonsense",
-        ],
-      },
-    });
+  it.each(
+    [
+      [{}],
+      [{ path: "backend.port", running: 5000, stored: "5050" }],
+      [{ path: "backend.url", running: 5000, stored: "/api/v2" }],
+      [{ path: "backend.other", running: 5000, stored: 5050 }],
+      [{ path: "backend.port", running: 5000, stored: 5050 }, {}],
+    ].map((unapplied) => ({ unapplied })),
+  )(
+    "rejects the entire report when an entry is malformed: %p",
+    async (data) => {
+      requestJsonMock.mockResolvedValue({ status: 200, data });
 
-    expect(await reloadBackendConfig()).toEqual({
-      ok: true,
-      unapplied: [{ path: "backend.port", running: 5000, stored: 5050 }],
-    });
-  });
+      expect(await reloadBackendConfig()).toEqual({ ok: false });
+    },
+  );
 
   /*
    * An empty list means "the backend applied everything", which clears the restart

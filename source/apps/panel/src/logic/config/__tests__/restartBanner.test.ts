@@ -59,16 +59,6 @@ describe("bannerFor", () => {
     );
   });
 
-  /* A path the form draws no row for still has to read as something. */
-  it("falls back to the path when no field carries that label", () => {
-    const banner = bannerFor({
-      kind: "applied",
-      unapplied: [{ path: "backend.nothing", running: 1, stored: 2 }],
-    });
-
-    expect(banner).toContain("backend.nothing (běží 1, uloženo 2)");
-  });
-
   /* A failed reload leaves every backend-read field on the old value, not just two. */
   it("names all the backend fields when the reload failed", () => {
     const banner = bannerFor({ kind: "reloadFailed" });
