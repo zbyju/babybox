@@ -34,7 +34,12 @@ function clientMessage(err: unknown, status: number): string {
  * and the panel reads every answer as JSON.
  */
 // err: express types it any, and the contract bans any.
-export const jsonErrors: ErrorRequestHandler = (err: unknown, _req, res, next) => {
+export const jsonErrors: ErrorRequestHandler = (
+  err: unknown,
+  _req,
+  res,
+  next
+) => {
   if (res.headersSent) {
     next(err);
     return;

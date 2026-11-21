@@ -90,7 +90,7 @@ export class UnitQueue {
       if (first) this.waiting.unshift(waiter);
       else this.waiting.push(waiter);
 
-      this.drain();
+      void this.drain();
     });
   }
 

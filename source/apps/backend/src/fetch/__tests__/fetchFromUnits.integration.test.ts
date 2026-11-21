@@ -177,7 +177,7 @@ describe("updateSettings against a unit that is ready", () => {
       if (url.startsWith("/get_sys[100]")) {
         if (verifyAsJson) return json(String(stored ?? 0));
         res.setHeader("Content-Type", "text/plain");
-        const slot = reportWrongValue ? (stored ?? 0) + 1 : stored ?? 0;
+        const slot = reportWrongValue ? (stored ?? 0) + 1 : (stored ?? 0);
         return res.end(`${slot}|0|0`);
       }
 

@@ -9,7 +9,7 @@ async function loadRepo() {
     default: {
       createLogger: () => ({ info: () => undefined }),
       format: { json: () => ({}) },
-        transports: { File: vi.fn() },
+      transports: { File: vi.fn() },
     },
   }));
   vi.doMock("../../index.js", () => ({

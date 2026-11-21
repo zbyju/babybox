@@ -10,6 +10,7 @@ export const router = express.Router();
 router.get("/data", async (req: Request, res: Response) => {
   const response = await fetchDataCommon(Unit.Thermal, req.query);
 
+  // oxlint-disable-next-line typescript/no-base-to-string -- repeated raw query values keep the existing array coercion
   const raw = req.query["raw"] ? parseInt(String(req.query["raw"])) > 0 : false;
 
   const data = raw ? response.data : transformThermalData(response.data);
