@@ -11,9 +11,10 @@
     "preview": "bun --bun vite preview --port 5050",
     "test:unit": "node ./node_modules/vitest/vitest.mjs --environment jsdom",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.vitest.json && vue-tsc --noEmit -p tsconfig.vite-config.json",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "format": "prettier . --write",
-    "echo": "echo 'Hello from panel'"
+    "lint": "bun --bun oxlint --deny-warnings src vite.config.mts env.d.ts",
+    "format": "bun --bun oxfmt --write src index.html vite.config.mts env.d.ts",
+    "echo": "echo 'Hello from panel'",
+    "format:check": "bun --bun oxfmt --check src index.html vite.config.mts env.d.ts"
   },
   "dependencies": {
     "@babybox/config-schema": "workspace:*",
@@ -26,24 +27,13 @@
     "vue-router": "5.3.1"
   },
   "devDependencies": {
-    "@rushstack/eslint-patch": "1.1.4",
     "@types/howler": "2.2.13",
     "@types/lodash": "4.17.25",
     "@types/node": "18.11.18",
-    "@typescript-eslint/eslint-plugin": "5.31.0",
-    "@typescript-eslint/parser": "5.31.0",
     "@vitejs/plugin-vue": "6.0.9",
-    "@vue/eslint-config-prettier": "7.0.0",
-    "@vue/eslint-config-typescript": "11.0.0",
     "@vue/reactivity": "3.5.43",
     "@vue/tsconfig": "0.9.1",
-    "eslint": "8.20.0",
-    "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-simple-import-sort": "7.0.0",
-    "eslint-plugin-unused-imports": "2.0.0",
-    "eslint-plugin-vue": "9.3.0",
     "jsdom": "30.1.0",
-    "prettier": "2.7.1",
     "stylus": "0.64.0",
     "typescript": "6.0.3",
     "vite": "8.3.0",

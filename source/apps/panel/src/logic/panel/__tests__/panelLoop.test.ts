@@ -189,6 +189,7 @@ describe("AppManager startup retries", () => {
     await drain();
     expect(getStatus).toHaveBeenCalledTimes(2);
 
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- the generic request mock serves config for this call
     vi.mocked(requestJson).mockResolvedValue({
       data: defaultConfig(),
     } as never);

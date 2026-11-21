@@ -58,7 +58,6 @@
 </script>
 
 <style lang="stylus">
-
   #SettingsTable
     table
       border-radius 10px

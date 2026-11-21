@@ -218,10 +218,8 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      # Skripty "lint" maji --fix, coz by tady prepisovalo soubory
-      - name: Lint
-        run: |
-          (cd apps/panel && bun ./node_modules/.bin/eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore)
+      - name: Panel lint and format
+        run: bun --filter babybox-panel lint && bun --filter babybox-panel format:check
 
       - name: Build config schema
         run: bun --filter @babybox/config-schema build

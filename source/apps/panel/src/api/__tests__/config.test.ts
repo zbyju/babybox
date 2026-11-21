@@ -8,16 +8,8 @@ import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 const fetchMock = vi.mocked(fetchWithTimeout);
 
-/* Only the three members saveConfig touches; jsdom's Response is not needed. */
 function answer(status: number, body?: unknown): Response {
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    json: () =>
-      body === undefined
-        ? Promise.reject(new SyntaxError("Unexpected token"))
-        : Promise.resolve(body),
-  } as unknown as Response;
+  return new Response(JSON.stringify(body) ?? "", { status });
 }
 
 describe("saveConfig", () => {
