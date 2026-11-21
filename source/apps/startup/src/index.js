@@ -4,34 +4,45 @@ const winStart = require("./logic/start/windows");
 const ubuntuStart = require("./logic/start/ubuntu");
 const winInstall = require("./logic/install/windows");
 const ubuntuInstall = require("./logic/install/ubuntu");
+const registerWindowsAutostart = require("./logic/install/windows-autostart");
 
 async function main() {
-  let canStartup = true;
-  const args = process.argv.slice(2);
-  const shouldInstall = args.find((a) => a.toLowerCase() === "--install");
-  const isUbuntu = args.find((a) => a.toLowerCase() === "--ubuntu");
+  const args = process.argv.slice(2).map((arg) => arg.toLowerCase());
+  const shouldInstall = args.includes("--install");
+  const isUbuntu = args.includes("--ubuntu");
 
-  if (shouldInstall !== undefined) {
+  if (shouldInstall) {
     logger.info("install", strings.installStarted);
-    const res =
-      isUbuntu !== undefined ? await ubuntuInstall() : await winInstall();
-    if (res === true) {
-      logger.info("install", strings.installSucceeded);
-      canStartup = true;
-    } else {
+    const installed = await (isUbuntu ? ubuntuInstall() : winInstall());
+    if (!installed) {
       logger.error("install", strings.installFailed);
-      canStartup = false;
+      return 1;
     }
   }
-  if (canStartup) {
-    logger.info("start", strings.startBegin);
-    const res = isUbuntu !== undefined ? await ubuntuStart() : await winStart();
-    if (res === true) {
-      logger.info("start", strings.startSucceeded);
-    } else {
-      logger.error("start", strings.startFailed);
-    }
+
+  logger.info("start", strings.startBegin);
+  const started = await (isUbuntu ? ubuntuStart() : winStart());
+  if (!started) {
+    logger.error("start", strings.startFailed);
+    return 1;
   }
+  logger.info("start", strings.startSucceeded);
+
+  if (shouldInstall) {
+    if (!isUbuntu) {
+      registerWindowsAutostart();
+    }
+    logger.info("install", strings.installSucceeded);
+  }
+  return 0;
 }
 
-main();
+main().then(
+  (code) => {
+    process.exitCode = code;
+  },
+  (error) => {
+    logger.error("start", strings.startFailed, error);
+    process.exitCode = 1;
+  }
+);

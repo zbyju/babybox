@@ -396,9 +396,10 @@ reset_case
 run_case
 expect_not_called "git "
 
-echo "install-all.sh vola ensure_bun a neinstaluje pnpm 12"
-if grep -q 'ensure_bun' "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
-  && grep -q 'startup.sh' "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
+echo "install-all.sh pouziva instalacni skript se zamknutymi zavislostmi"
+if grep -q 'install.sh' "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
+  && grep -q 'fresh-install.js' "$SRC_STARTUP/scripts/ubuntu/install.sh" \
+  && grep -q -- '--frozen-lockfile' "$SRC_STARTUP/fresh-install.js" \
   && ! grep -q 'pnpm@12' "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
   && ! grep -q 'x64-baseline' "$SRC_STARTUP/scripts/ubuntu/install-all.sh"
 then
@@ -418,7 +419,8 @@ fi
 
 echo "oba skripty jsou platny bash"
 if bash -n "$SRC_STARTUP/scripts/ubuntu/startup.sh" \
-  && bash -n "$SRC_STARTUP/scripts/ubuntu/install-all.sh"
+  && bash -n "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
+  && bash -n "$SRC_STARTUP/scripts/ubuntu/install.sh"
 then
   pass
 else
