@@ -229,6 +229,32 @@ describe("run-update", () => {
     }
   });
 
+  it("retries Windows install once when Bun cannot link busy binaries", async () => {
+    const fx = createFixture();
+    const calls = [];
+    const busy = "EBUSY: failed to link binaries for package: eslint-utils@3.0.0";
+    try {
+      const code = await run(
+        baseOptions(fx, {
+          platform: "win32",
+          bootstrapRun: async () => 0,
+          spawnSync: (cmd, args) => {
+            calls.push(args);
+            return calls.length === 1
+              ? { status: 1, stdout: "", stderr: busy }
+              : { status: 0, stdout: "", stderr: "" };
+          },
+        })
+      );
+      expect(code).toBe(0);
+      expect(calls).toEqual([STEP_ARGS[0], ...STEP_ARGS]);
+      expect(fx.stderr.text()).toBe("");
+      expect(fx.logText()).toContain(busy);
+    } finally {
+      fx.cleanup();
+    }
+  });
+
   it("still names a bootstrap failure when an old OS_HOLD record is on disk", async () => {
     const fx = createFixture();
     fs.writeFileSync(
