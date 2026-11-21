@@ -11,6 +11,9 @@
     "dev": "bun --watch src/index.ts",
     "start": "node ../startup/start-app.js configer",
     "build": "tsc",
+    "lint": "bun --bun oxlint --type-aware --deny-warnings src",
+    "format": "bun --bun oxfmt --write src",
+    "format:check": "bun --bun oxfmt --check src",
     "test": "bun --bun vitest run src",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
