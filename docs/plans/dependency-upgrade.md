@@ -1319,7 +1319,9 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
       CI checks the configer after building the shared schema.
 - [x] Backend uses type-aware Oxlint and Oxfmt. The workspace supplies both
       tools without adding them to the manifest copied on boot 1.
-- [ ] Migrate panel (`vue` plugin), startup and config-schema to Oxlint and Oxfmt.
+- [x] Startup and config-schema use Oxlint and Oxfmt. Startup remains on
+      the Node 12 syntax check.
+- [ ] Migrate panel (`vue` plugin) to Oxlint and Oxfmt.
 - [ ] Remove the ESLint and Prettier family from every `package.json`; delete the three
       `.eslintrc*` files and `.prettierrc.json`
 - [ ] CI: `oxlint --deny-warnings` and `oxfmt --check` replace the three eslint lines

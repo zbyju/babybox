@@ -1,4 +1,3 @@
-/* global describe, it, expect */
 const fs = require("fs");
 const { createRequire } = require("module");
 const os = require("os");
@@ -271,7 +270,7 @@ describe("start on Node", () => {
         ).toBe(0);
         expect(fx.calls).toHaveLength(1);
         expect(fx.calls[0].cmd).toBe(
-          "pm2 \"start\" \"./dist/index.js\" \"-n\" \"configer\""
+          'pm2 "start" "./dist/index.js" "-n" "configer"'
         );
         expect(fx.calls[0].args).toEqual([]);
         expect(fx.calls[0].opts.shell).toBe(true);
@@ -442,7 +441,7 @@ describe("real processes", () => {
         exe,
         [
           "#!/bin/sh",
-          "printf \"bun %s\\n\" \"$*\" >>\"$CALL_LOG\"",
+          'printf "bun %s\\n" "$*" >>"$CALL_LOG"',
           `if [ "$1" = "-v" ]; then echo ${PIN}; fi`,
           "",
         ].join("\n")
@@ -451,8 +450,8 @@ describe("real processes", () => {
         path.join(fakeBin, "pm2"),
         [
           "#!/bin/sh",
-          "printf \"pm2 %s\\n\" \"$*\" >>\"$CALL_LOG\"",
-          "printf \"path %s\\n\" \"${PATH%%:*}\" >>\"$CALL_LOG\"",
+          'printf "pm2 %s\\n" "$*" >>"$CALL_LOG"',
+          'printf "path %s\\n" "${PATH%%:*}" >>"$CALL_LOG"',
           "",
         ].join("\n")
       );
@@ -599,7 +598,10 @@ describe("configer modules", () => {
       version: "1.0.0",
       main: "index.js",
     });
-    fs.writeFileSync(path.join(nestedStore, "index.js"), "exports.ok = true;\n");
+    fs.writeFileSync(
+      path.join(nestedStore, "index.js"),
+      "exports.ok = true;\n"
+    );
     fs.symlinkSync(store, path.join(sourceNm, MOVED), "dir");
 
     const schemaDir = path.join(fx.sourceDir, "packages", "config-schema");
@@ -627,7 +629,10 @@ describe("configer modules", () => {
       version: "3.23.8",
       main: "index.js",
     });
-    fs.writeFileSync(path.join(sourceNm, "zod", "index.js"), "exports.z = {};\n");
+    fs.writeFileSync(
+      path.join(sourceNm, "zod", "index.js"),
+      "exports.z = {};\n"
+    );
 
     writeJson(path.join(fx.configerDir, "package.json"), {
       name: "babybox-panel-configer",
@@ -649,7 +654,10 @@ describe("configer modules", () => {
     fs.mkdirSync(path.dirname(versionJs), { recursive: true });
     fs.writeFileSync(versionJs, "");
     fs.mkdirSync(path.join(fx.configerDir, "configs"), { recursive: true });
-    fs.writeFileSync(path.join(fx.configerDir, "configs", "main.json"), CONFIG_BODY);
+    fs.writeFileSync(
+      path.join(fx.configerDir, "configs", "main.json"),
+      CONFIG_BODY
+    );
     fs.writeFileSync(
       path.join(fx.configerDir, "configs", "versions.json"),
       CONFIG_BODY
@@ -753,7 +761,10 @@ describe("configer modules", () => {
       fs.unlinkSync(path.join(fx.sourceDir, "logs", "startup.last.json"));
       const stdout = makeStdout();
       expect(prepare(fx, stdout)).toBe(0);
-      fs.writeFileSync(path.join(fx.sourceDir, "logs", "startup.last.json"), "{");
+      fs.writeFileSync(
+        path.join(fx.sourceDir, "logs", "startup.last.json"),
+        "{"
+      );
       expect(prepare(fx, stdout)).toBe(0);
       expect(fs.existsSync(isolatedDir(fx))).toBe(false);
       expect(stdout.text()).toBe("");
@@ -772,14 +783,16 @@ describe("configer modules", () => {
       expect(
         fs.existsSync(path.join(fx.configerDir, "dist", "node_modules.proving"))
       ).toBe(false);
-      expect(fs.readFileSync(path.join(isolated, ".proven"), "utf8").trim()).toBe(
-        PROVEN_AT
-      );
+      expect(
+        fs.readFileSync(path.join(isolated, ".proven"), "utf8").trim()
+      ).toBe(PROVEN_AT);
       expect(fs.lstatSync(path.join(isolated, MOVED)).isSymbolicLink()).toBe(
         false
       );
       expect(
-        fs.lstatSync(path.join(isolated, "@babybox", "config-schema")).isSymbolicLink()
+        fs
+          .lstatSync(path.join(isolated, "@babybox", "config-schema"))
+          .isSymbolicLink()
       ).toBe(false);
 
       const fromDist = createRequire(placed.distIndex);
@@ -795,28 +808,37 @@ describe("configer modules", () => {
       const fromVersion = createRequire(placed.versionJs);
       expect(inside(isolated, fromVersion.resolve(MOVED))).toBe(true);
       const nested = createRequire(moved).resolve(NESTED);
-      expect(
-        inside(path.join(isolated, MOVED, "node_modules"), nested)
-      ).toBe(true);
+      expect(inside(path.join(isolated, MOVED, "node_modules"), nested)).toBe(
+        true
+      );
       expect(
         fs.existsSync(path.join(isolated, MOVED, "node_modules", OPTIONAL))
       ).toBe(false);
       expect(
         fs.existsSync(
-          path.join(isolated, "@babybox", "config-schema", "node_modules", "zod")
+          path.join(
+            isolated,
+            "@babybox",
+            "config-schema",
+            "node_modules",
+            "zod"
+          )
         )
       ).toBe(true);
 
       fs.writeFileSync(
         placed.schemaIndex,
-        "export const marker = \"schema-new\";\n"
+        'export const marker = "schema-new";\n'
       );
       fs.writeFileSync(placed.storeIndex, "exports.other = true;\n");
       expect(fs.readFileSync(schema, "utf8")).toContain(SCHEMA_MARKER);
       expect(fs.readFileSync(moved, "utf8")).toBe(exportSource(EXPORT_MARKER));
-      expect(fs.readFileSync(path.join(fx.configerDir, "configs", "main.json"), "utf8")).toBe(
-        CONFIG_BODY
-      );
+      expect(
+        fs.readFileSync(
+          path.join(fx.configerDir, "configs", "main.json"),
+          "utf8"
+        )
+      ).toBe(CONFIG_BODY);
       expect(fs.existsSync(path.join(isolated, "configs", "main.json"))).toBe(
         false
       );
@@ -846,9 +868,9 @@ describe("configer modules", () => {
       expect(prepare(fx, stdout)).toBe(0);
       const moved = createRequire(placed.distIndex).resolve(MOVED);
       expect(fs.readFileSync(moved, "utf8")).toBe(exportSource(NEXT_MARKER));
-      expect(fs.readFileSync(path.join(isolatedDir(fx), ".proven"), "utf8").trim()).toBe(
-        PREVIOUS_AT
-      );
+      expect(
+        fs.readFileSync(path.join(isolatedDir(fx), ".proven"), "utf8").trim()
+      ).toBe(PREVIOUS_AT);
     });
   });
 
@@ -895,7 +917,9 @@ describe("configer modules", () => {
       );
       const resolved = createRequire(placed.distIndex).resolve(MOVED);
       expect(inside(isolatedDir(fx), resolved)).toBe(true);
-      expect(fs.readFileSync(resolved, "utf8")).toBe(exportSource(EXPORT_MARKER));
+      expect(fs.readFileSync(resolved, "utf8")).toBe(
+        exportSource(EXPORT_MARKER)
+      );
     });
   });
 
@@ -930,7 +954,7 @@ describe("configer modules", () => {
         ).toBe(0);
       });
       expect(fx.calls.map((call) => call.cmd)).toEqual([
-        "pm2 \"start\" \"./dist/index.js\" \"-n\" \"configer\"",
+        'pm2 "start" "./dist/index.js" "-n" "configer"',
       ]);
       expect(fx.stdout.text()).toBe(
         "Spouštím configer na Node, systém je v OS_HOLD.\n"
@@ -949,7 +973,7 @@ describe("configer modules", () => {
       path.join(__dirname, "../configer/src/services/db/version.ts"),
       "utf8"
     );
-    expect(mainTs).toContain("\"../../../configs\"");
-    expect(versionTs).toContain("\"../../../configs/versions.json\"");
+    expect(mainTs).toContain('"../../../configs"');
+    expect(versionTs).toContain('"../../../configs/versions.json"');
   });
 });

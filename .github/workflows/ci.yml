@@ -222,10 +222,16 @@ jobs:
       - name: Lint
         run: |
           (cd apps/panel && bun ./node_modules/.bin/eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore)
-          (cd apps/startup && bun ./node_modules/.bin/eslint src/ bootstrap.js bootstrap.test.js configer-modules.js last-record.js last-record.test.js run-update.js run-update.test.js start-app.js start-app.test.js tests/assert-runtime.js)
 
       - name: Build config schema
         run: bun --filter @babybox/config-schema build
+
+      - name: Startup and schema lint and format
+        run: |
+          bun --filter startup lint
+          bun --filter startup format:check
+          bun --filter @babybox/config-schema lint
+          bun --filter @babybox/config-schema format:check
 
       - name: Backend lint and format
         run: bun --filter babybox-panel-backend lint && bun --filter babybox-panel-backend format:check

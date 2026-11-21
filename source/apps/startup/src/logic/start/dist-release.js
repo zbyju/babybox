@@ -305,7 +305,9 @@ function releaseHasSha(ctx, sha) {
     if (!ctx.fs.existsSync(releasePath(ctx))) {
       return false;
     }
-    return String(ctx.fs.readFileSync(releasePath(ctx), "utf8")).indexOf(sha) !== -1;
+    return (
+      String(ctx.fs.readFileSync(releasePath(ctx), "utf8")).indexOf(sha) !== -1
+    );
   } catch (err) {
     return false;
   }
@@ -452,7 +454,9 @@ async function bootstrapBeforePull(ctx) {
       }
       return { code, hold: true };
     }
-    const err = new Error(strings.stepFailed.replace("{step}", "BOOTSTRAP_BUN"));
+    const err = new Error(
+      strings.stepFailed.replace("{step}", "BOOTSTRAP_BUN")
+    );
     err.stderr = text;
     fail(ctx, "BOOTSTRAP_BUN", err);
     return { code, hold: false };

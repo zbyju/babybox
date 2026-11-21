@@ -1,4 +1,3 @@
-/* global describe, it, expect */
 const childProcess = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -223,7 +222,9 @@ function installSpawn() {
     if (cmd === "unzip" || isTarCommand(cmd)) {
       const destFlag = cmd === "unzip" ? "-d" : "-C";
       const dest = args[args.indexOf(destFlag) + 1];
-      const folderName = isTarCommand(cmd) ? "bun-windows-x64" : "bun-linux-x64";
+      const folderName = isTarCommand(cmd)
+        ? "bun-windows-x64"
+        : "bun-linux-x64";
       const exeName = isTarCommand(cmd) ? "bun.exe" : "bun";
       const folder = path.join(dest, folderName);
       fs.mkdirSync(folder, { recursive: true });
@@ -382,37 +383,40 @@ describe("OS hold", () => {
   );
 
   it("does not change the lockfile or the git branch on a Windows hold", async () => {
-    await withFixture({ platform: "win32", release: "6.2.9200" }, async (fx) => {
-      const root = path.dirname(fx.logPath);
-      const lockPath = path.join(root, "pnpm-lock.yaml");
-      const lockBytes = Buffer.from("lockfile\n");
-      const gitEnv = Object.assign({}, process.env, {
-        GIT_AUTHOR_NAME: "Babybox Test",
-        GIT_AUTHOR_EMAIL: "test@example.com",
-        GIT_COMMITTER_NAME: "Babybox Test",
-        GIT_COMMITTER_EMAIL: "test@example.com",
-      });
-      const git = (args) =>
-        childProcess.execFileSync(
-          "git",
-          ["-c", "core.autocrlf=false", ...args],
-          { cwd: root, env: gitEnv, encoding: "utf8" }
+    await withFixture(
+      { platform: "win32", release: "6.2.9200" },
+      async (fx) => {
+        const root = path.dirname(fx.logPath);
+        const lockPath = path.join(root, "pnpm-lock.yaml");
+        const lockBytes = Buffer.from("lockfile\n");
+        const gitEnv = Object.assign({}, process.env, {
+          GIT_AUTHOR_NAME: "Babybox Test",
+          GIT_AUTHOR_EMAIL: "test@example.com",
+          GIT_COMMITTER_NAME: "Babybox Test",
+          GIT_COMMITTER_EMAIL: "test@example.com",
+        });
+        const git = (args) =>
+          childProcess.execFileSync(
+            "git",
+            ["-c", "core.autocrlf=false", ...args],
+            { cwd: root, env: gitEnv, encoding: "utf8" }
+          );
+        fs.writeFileSync(
+          path.join(root, ".gitignore"),
+          "startup.log\nstartup.last.json\ntmp/\n"
         );
-      fs.writeFileSync(
-        path.join(root, ".gitignore"),
-        "startup.log\nstartup.last.json\ntmp/\n"
-      );
-      fs.writeFileSync(lockPath, lockBytes);
-      git(["init", "-b", "main"]);
-      git(["add", ".gitignore", "pnpm-lock.yaml"]);
-      git(["commit", "-m", "seed"]);
-      expect(await fx.run()).toBe(1);
-      expect(fs.readFileSync(lockPath)).toEqual(lockBytes);
-      expect(git(["status", "--porcelain"])).toBe("");
-      expect(git(["branch", "--show-current"]).trim()).toBe("main");
-      expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
-      expect(fx.urls).toEqual([]);
-    });
+        fs.writeFileSync(lockPath, lockBytes);
+        git(["init", "-b", "main"]);
+        git(["add", ".gitignore", "pnpm-lock.yaml"]);
+        git(["commit", "-m", "seed"]);
+        expect(await fx.run()).toBe(1);
+        expect(fs.readFileSync(lockPath)).toEqual(lockBytes);
+        expect(git(["status", "--porcelain"])).toBe("");
+        expect(git(["branch", "--show-current"]).trim()).toBe("main");
+        expect(fx.calls.map((call) => call.cmd)).not.toContain("git");
+        expect(fx.urls).toEqual([]);
+      }
+    );
   });
 });
 
@@ -865,9 +869,7 @@ describe("already installed", () => {
       async (fx) => {
         placeExe(fx.home, "bun", "present");
         expect(await fx.run()).toBe(0);
-        expect(fx.stdout.text()).toContain(
-          "pm2 nevrátil verzi, chceme 7.0.4."
-        );
+        expect(fx.stdout.text()).toContain("pm2 nevrátil verzi, chceme 7.0.4.");
         expect(fx.stdout.text()).not.toContain("pm2 je [PM2]");
       }
     );
@@ -894,9 +896,7 @@ describe("already installed", () => {
       async (fx) => {
         placeExe(fx.home, "bun", "present");
         expect(await fx.run()).toBe(0);
-        expect(fx.stdout.text()).toContain(
-          "pm2 nevrátil verzi, chceme 7.0.4."
-        );
+        expect(fx.stdout.text()).toContain("pm2 nevrátil verzi, chceme 7.0.4.");
         expect(fx.stdout.text()).toContain("pm2 failed");
         expect(fx.stdout.text()).not.toContain("pm2 chybí");
       }
