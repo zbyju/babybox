@@ -1274,6 +1274,9 @@ TypeScript contract. Do not add `tsx`.
       and the startup app always runs on Node. pino 9.14.0 loads there and the
       #90 Czech one-line file is byte-identical to pino 8. See the decision of
       2026-09-28. nodemon is already gone (type-contract PR).
+- [x] Server refresh: axios 1.21.1, dotenv 18.0.10, Express 5.3.0 and
+      Newman 6.2.3. The old Node 18/pnpm 7 standalone install and the
+      Bun application tests pass.
 - [x] `open@11.0.4` as a plain ESM import. `engines.node` is `>=20`, but it
       loads and runs on Node 18.12.1, so the Node fallback still opens the
       panel. Not checked on the Windows `powershell-utils` path.
