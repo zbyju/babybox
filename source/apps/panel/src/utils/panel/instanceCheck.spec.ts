@@ -5,14 +5,12 @@ import { isInstanceOfConfig, isInstanceOfVersions } from "./instanceCheck";
 
 type Fields = Record<string, unknown>;
 
-function config(): Fields {
-  return defaultConfig() as unknown as Fields;
-}
-
-function withSection(name: string, changes: Fields): Fields {
-  const value = config();
-  value[name] = { ...(value[name] as Fields), ...changes };
-  return value;
+function withSection(
+  name: keyof ReturnType<typeof defaultConfig>,
+  changes: Fields,
+): Fields {
+  const value = defaultConfig();
+  return { ...value, [name]: { ...value[name], ...changes } };
 }
 
 describe("isInstanceOfConfig", () => {
@@ -30,7 +28,7 @@ describe("isInstanceOfConfig", () => {
 
   /* A box whose main.json grew a key we do not know still has to show its panel. */
   it("accepts a config with an unknown key", () => {
-    expect(isInstanceOfConfig({ ...config(), junk: "x" })).toBe(true);
+    expect(isInstanceOfConfig({ ...defaultConfig(), junk: "x" })).toBe(true);
   });
 
   /*
@@ -49,12 +47,11 @@ describe("isInstanceOfConfig", () => {
       isInstanceOfConfig(withSection("app", { refreshRequestLimit: null })),
     ).toBe(true);
 
-    const value = config();
-    const app = { ...(value["app"] as Fields) };
+    const value = defaultConfig();
+    const app: Fields = { ...value.app };
     delete app["refreshRequestLimit"];
-    value["app"] = app;
 
-    expect(isInstanceOfConfig(value)).toBe(true);
+    expect(isInstanceOfConfig({ ...value, app })).toBe(true);
   });
 
   it("accepts a delay of 0", () => {
@@ -74,7 +71,7 @@ describe("isInstanceOfConfig", () => {
   });
 
   it("rejects a missing section", () => {
-    const value = config();
+    const value: Fields = { ...defaultConfig() };
     delete value["units"];
 
     expect(isInstanceOfConfig(value)).toBe(false);

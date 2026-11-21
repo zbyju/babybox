@@ -26,12 +26,10 @@
 
   const panelStateStore = usePanelStateStore();
   const { message, active } = storeToRefs(panelStateStore);
-  const panelState = computed(
-    (): PanelState => ({
-      message: message.value,
-      active: active.value,
-    }),
-  );
+  const panelState = computed((): PanelState => ({
+    message: message.value,
+    active: active.value,
+  }));
   // Sounds
   const soundPlayer = useSounds();
   watch(panelState, (newValue, prevValue) =>

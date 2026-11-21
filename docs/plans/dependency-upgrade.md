@@ -1321,10 +1321,10 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
       tools without adding them to the manifest copied on boot 1.
 - [x] Startup and config-schema use Oxlint and Oxfmt. Startup remains on
       the Node 12 syntax check.
-- [ ] Migrate panel (`vue` plugin) to Oxlint and Oxfmt.
-- [ ] Remove the ESLint and Prettier family from every `package.json`; delete the three
-      `.eslintrc*` files and `.prettierrc.json`
-- [ ] CI: `oxlint --deny-warnings` and `oxfmt --check` replace the three eslint lines
+- [x] Panel uses Oxlint with the Vue script rules and Oxfmt. Panel template
+      checking remains in vue-tsc and the Vite build.
+- [x] ESLint and Prettier packages and configs are removed. CI uses
+      `oxlint --deny-warnings` and `oxfmt --check` for all workspaces.
 
 Size: ~1.5 days.
 

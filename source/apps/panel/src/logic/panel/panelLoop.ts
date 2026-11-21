@@ -45,7 +45,7 @@ const MAX_INIT_DELAY = 20000;
 const LOOP_TICK = 250;
 
 const LOOP_UNITS = ["engine", "thermal"] as const;
-type LoopUnit = typeof LOOP_UNITS[number];
+type LoopUnit = (typeof LOOP_UNITS)[number];
 
 export class AppManager {
   private loopTimers: Record<LoopUnit, Maybe<ReturnType<typeof setInterval>>> =

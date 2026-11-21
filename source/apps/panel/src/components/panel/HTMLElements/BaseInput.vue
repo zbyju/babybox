@@ -38,12 +38,12 @@
     props.state === BaseInputState.Accent
       ? "border-accent"
       : props.state === BaseInputState.Success
-      ? "border-success"
-      : props.state === BaseInputState.Warning
-      ? "border-warning"
-      : props.state === BaseInputState.Error
-      ? "border-error"
-      : "",
+        ? "border-success"
+        : props.state === BaseInputState.Warning
+          ? "border-warning"
+          : props.state === BaseInputState.Error
+            ? "border-error"
+            : "",
   );
 </script>
 

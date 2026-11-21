@@ -99,12 +99,12 @@
     return props.state === SettingsTableRowState.Changed
       ? BaseInputState.Accent
       : props.state === SettingsTableRowState.Success
-      ? BaseInputState.Success
-      : props.state === SettingsTableRowState.Warning
-      ? BaseInputState.Warning
-      : props.state === SettingsTableRowState.Error
-      ? BaseInputState.Error
-      : BaseInputState.Neutral;
+        ? BaseInputState.Success
+        : props.state === SettingsTableRowState.Warning
+          ? BaseInputState.Warning
+          : props.state === SettingsTableRowState.Error
+            ? BaseInputState.Error
+            : BaseInputState.Neutral;
   });
 
   const emit = defineEmits<{

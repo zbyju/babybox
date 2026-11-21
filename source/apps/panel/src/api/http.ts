@@ -9,7 +9,10 @@ import {
  * underlying fetch error instead, so callers can tell the two cases apart.
  */
 export class HttpError extends Error {
-  constructor(readonly status: number, statusText: string) {
+  constructor(
+    readonly status: number,
+    statusText: string,
+  ) {
     super(`Request failed with status ${status} ${statusText}`);
     this.name = "HttpError";
   }
