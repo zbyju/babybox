@@ -4,7 +4,7 @@ Hospital monitoring system for babybox devices. Runs 24/7 autonomously without u
 
 ## Architecture
 
-pnpm monorepo with 4 apps in `source/apps/`:
+Bun workspace with four apps in `source/apps/`.
 
 | App | Port | Purpose |
 |-----|------|---------|
@@ -16,9 +16,15 @@ pnpm monorepo with 4 apps in `source/apps/`:
 ## Key Commands
 
 ```bash
-pnpm dev           # Start all services
-pnpm build         # Build for production
+cd source
+bun install --frozen-lockfile
+bun run dev
+pnpm run build     # Exercise the legacy device build hook
 ```
+
+The serving apps and Vite use Bun 1.4.2. Device startup and vue-tsc use
+Node 18.12.1. The legacy build hook uses pnpm 7.5.0. Panel jsdom tests use
+Node 24.22.2.
 
 ## Hardware Units
 

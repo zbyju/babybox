@@ -281,6 +281,17 @@ jobs:
       - name: Startup tests
         run: bun --filter startup test:unit
 
+      - name: Dependency summary
+        if: always()
+        run: |
+          {
+            printf '## Outdated workspace dependencies\n\n````text\n'
+            NO_COLOR=1 bun outdated --recursive || printf "\nCommand exited %s\n" "$?"
+            printf '````\n\n## Bun audit\n\n````text\n'
+            NO_COLOR=1 bun audit || printf "\nCommand exited %s\n" "$?"
+            printf '````\n'
+          } >>"$GITHUB_STEP_SUMMARY" 2>&1
+
   # Kazdy soubor startupu musi projit Node 12. Sken textu na Node 18 tu chybu
   # nechyti. Jmeno jobu zustava, muze to byt povinny check.
   bootstrap-syntax:

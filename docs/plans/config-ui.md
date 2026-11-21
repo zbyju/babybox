@@ -386,13 +386,11 @@ need is "see what this box is set to" more often than "change it".
 
 ## Known constraints
 
-- `pnpm typecheck` on the panel is already red with 20 pre-existing errors, and the
-  build's type gate checks zero files. Do not treat a green build as proof. The count
-  said 17 until P3 measured it on `origin/main` (1927135); measure it yourself before
-  and after, the requirement is no new errors.
-- Pin `pnpm@7.5.0`. A newer pnpm rewrites the lockfile format wholesale.
-- The panel is on Vue 3.2, Vite 2 and TypeScript 4.7. Pick a select/form approach that
-  does not need anything newer.
+- The panel uses Vue 3.5, Vite 8 and TypeScript 6.0.3. CI type-checks the
+  application, tests and Vite config. The device build checks the application
+  with vue-tsc before bundling it.
+- Bun 1.4.2 installs the workspace from `bun.lock`. The device build hook
+  uses Node 18.12.1 and pnpm 7.5.0.
 - All UI text is Czech.
 
 ## Open questions
