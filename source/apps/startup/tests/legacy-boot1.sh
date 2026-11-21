@@ -326,7 +326,7 @@ curl -fsS "http://127.0.0.1:5001/api/v1/config/main" | node -e '
 let body = "";
 process.stdin.on("data", chunk => { body += chunk; });
 process.stdin.on("end", () => {
-  const config = JSON.parse(body).data;
+  const config = JSON.parse(body);
   if (config.babybox.name !== "Legacy boot fixture" ||
       config.email.listener !== "enabled" || config.email.mode !== "device" ||
       config.email.host !== "") process.exit(1);
