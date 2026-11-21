@@ -116,8 +116,8 @@
             item.active
               ? "odesílání"
               : item.stopped
-              ? "definitivní chyba; čeká na obsluhu"
-              : "čeká"
+                ? "definitivní chyba; čeká na obsluhu"
+                : "čeká"
           }}
           · pokusů {{ item.attempts }}
         </label>
@@ -349,7 +349,9 @@
     try {
       const parsed = parseMainConfig(await getConfig());
       if (!parsed.ok) throw new Error();
-      settings.value = { ...defaultConfig().email!, ...parsed.config.email };
+      const defaults = defaultConfig().email;
+      if (!defaults) throw new Error();
+      settings.value = { ...defaults, ...parsed.config.email };
     } catch {
       message.value = "Nastavení nelze načíst.";
     }

@@ -70,11 +70,11 @@ describe("email maintenance page", () => {
     });
     vi.mocked(fetchWithTimeout).mockImplementation(
       async (_url, options) =>
-        ({
-          ok: true,
-          json: async () =>
+        new Response(
+          JSON.stringify(
             options?.method === "POST" ? { changed: 1, msg: "Hotovo" } : state,
-        } as Response),
+          ),
+        ),
     );
     element = document.createElement("div");
     document.body.appendChild(element);
@@ -98,13 +98,13 @@ describe("email maintenance page", () => {
 
   it("saves only email settings so unrelated device configuration is not overwritten", async () => {
     element
-      .querySelector("form")!
-      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      .querySelector("form")
+      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await flush();
     const call = vi
       .mocked(fetchWithTimeout)
-      .mock.calls.find(([, options]) => options?.method === "PATCH")!;
-    expect(JSON.parse(String(call[1]?.body))).toEqual({
+      .mock.calls.find(([, options]) => options?.method === "PATCH");
+    expect(JSON.parse(String(call?.[1]?.body))).toEqual({
       email: defaultConfig().email,
     });
     expect(reloadBackendConfig).toHaveBeenCalledOnce();
@@ -114,8 +114,9 @@ describe("email maintenance page", () => {
     const confirm = vi.spyOn(window, "confirm");
     const button = Array.from(element.querySelectorAll("button")).find(
       (button) => button.textContent?.includes("Vyprázdnit frontu"),
-    )!;
-    button.click();
+    );
+    expect(button).toBeDefined();
+    button?.click();
     await flush();
     expect(
       vi
@@ -124,13 +125,14 @@ describe("email maintenance page", () => {
     ).toBe(false);
     const confirmButton = Array.from(element.querySelectorAll("button")).find(
       (button) => button.textContent?.includes("Potvrdit odstranění"),
-    )!;
-    confirmButton.click();
+    );
+    expect(confirmButton).toBeDefined();
+    confirmButton?.click();
     await flush();
     const call = vi
       .mocked(fetchWithTimeout)
-      .mock.calls.find(([url]) => String(url).endsWith("/email/clear"))!;
-    expect(JSON.parse(String(call[1]?.body)).confirmed).toBe(true);
+      .mock.calls.find(([url]) => String(url).endsWith("/email/clear"));
+    expect(JSON.parse(String(call?.[1]?.body)).confirmed).toBe(true);
     expect(confirm).not.toHaveBeenCalled();
     confirm.mockRestore();
   });
