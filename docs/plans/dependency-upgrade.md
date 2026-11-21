@@ -152,6 +152,20 @@ If the binary exits with an illegal instruction, record step `CPU_HOLD`. Keep
 the last good `dist`. Do not try again until `BUN_VERSION` changes. Use the
 same non-zero exit and clean tree as `OS_HOLD`.
 
+### Interrupted release recovery
+
+Startup records a pending transaction before rebuilding configer, and snapshots
+its compiled files and private dependencies. It leaves site configuration in
+place. The backend swap keeps the previous dependency tree. Windows can use a
+local dependency copy if it cannot rename a directory with modules inside.
+
+Both status endpoints must answer before the transaction is committed. An
+interrupted transaction is rolled back before Git or dependency updates run.
+An offline rollback uses the retained files. CI stops startup after each
+release rename and checks the restored services and site configuration. It also
+forces the candidate health check to fail with the registry unavailable after
+staging.
+
 ### Where files land
 
 Download the zip to the OS temp directory or to `~/.bun`. Do not write it
