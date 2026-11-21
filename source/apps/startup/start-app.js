@@ -153,9 +153,9 @@ function runPm2(run, args, cwd) {
 }
 
 function installDist(run, runtime, cwd) {
-  // --no-save keeps the copied lock and writes nothing on stderr.
+  // Keep the copied lock and install only the backend runtime dependencies.
   return spawnNamed(run, "bun install", () =>
-    run.spawnSync(runtime.exe, ["install", "--no-save"], {
+    run.spawnSync(runtime.exe, ["install", "--no-save", "--omit=dev"], {
       cwd,
       env: run.env,
       stdio: "inherit",

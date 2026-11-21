@@ -337,6 +337,8 @@ LOG="$SOURCE/logs/startup.log" RELEASE="$ROOT/dist/release.json" HEAD="$HEAD_SHA
 assert_apps
 assert_runtime bun
 assert_panel_page
+test -f "$ROOT/dist/node_modules/express/package.json" || fail "backend runtime dependency is missing"
+test ! -e "$ROOT/dist/node_modules/newman" || fail "backend dev dependencies were installed"
 stop_apps
 
 echo "forced BUILD_PANEL keeps the previous dist"

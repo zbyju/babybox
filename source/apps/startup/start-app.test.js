@@ -167,7 +167,7 @@ describe("start on Bun", () => {
     });
   });
 
-  it("runs bun install --no-save before pm2 when dist has no node_modules", () => {
+  it("runs bun install --no-save --omit=dev before pm2 when dist has no node_modules", () => {
     withFixture((fx) => {
       const exe = placeBun(fx);
       expect(runStart(fx, "main", bunAnswers(PIN))).toBe(0);
@@ -177,7 +177,7 @@ describe("start on Bun", () => {
         ["pm2", "start"],
       ]);
       const install = fx.calls[1];
-      expect(install.args).toEqual(["install", "--no-save"]);
+      expect(install.args).toEqual(["install", "--no-save", "--omit=dev"]);
       expect(install.opts.cwd).toBe(fx.distDir);
       expect(install.opts.shell).toBe(false);
       expect(install.opts.env.PATH.split(path.delimiter)[0]).toBe(fx.binDir);
@@ -469,7 +469,7 @@ describe("real processes", () => {
       expect(code).toBe(0);
       expect(fs.readFileSync(callLog, "utf8").split("\n")).toEqual([
         "bun -v",
-        "bun install --no-save",
+        "bun install --no-save --omit=dev",
         `pm2 start ../dist/index.js -n babybox --interpreter ${exe}`,
         `path ${fx.binDir}`,
         "",
