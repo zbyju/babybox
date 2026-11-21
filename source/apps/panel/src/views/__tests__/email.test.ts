@@ -16,8 +16,6 @@ vi.mock("@/api/base", () => ({
 vi.mock("@/api/config", () => ({ getConfig: vi.fn() }));
 vi.mock("@/api/reload", () => ({ reloadBackendConfig: vi.fn() }));
 vi.mock("@/utils/fetchWithTimeout", () => ({ fetchWithTimeout: vi.fn() }));
-vi.mock("@/components/TheNav.vue", () => ({ default: { render: () => null } }));
-vi.mock("@/router", () => ({ default: { push: vi.fn() } }));
 
 describe("email maintenance page", () => {
   let element: HTMLDivElement;
@@ -108,6 +106,47 @@ describe("email maintenance page", () => {
       email: defaultConfig().email,
     });
     expect(reloadBackendConfig).toHaveBeenCalledOnce();
+  });
+
+  it("shows a single log row with its result and keeps diagnostics in its details", () => {
+    const rows = element.querySelectorAll(".history-row");
+    expect(rows).toHaveLength(1);
+    const row = rows[0];
+    expect(row?.querySelector("summary")?.textContent).toContain(
+      "Rozpracováno",
+    );
+    expect(row?.querySelector("summary")?.textContent).not.toContain(
+      "unit@example.com",
+    );
+    expect(row?.querySelector(".record-details")?.textContent).toContain(
+      "unit@example.com",
+    );
+    expect(row?.querySelector(".record-details")?.textContent).toContain(
+      "Události zprávy",
+    );
+  });
+
+  it("keeps history and queued messages available when reception is disabled", async () => {
+    const toggle = element.querySelector<HTMLInputElement>('[role="switch"]');
+    expect(toggle?.checked).toBe(true);
+    toggle?.click();
+    await flush();
+    expect(element.querySelector('input[type="password"]')).toBeNull();
+    expect(element.querySelector('input[type="email"]')).not.toBeNull();
+
+    element
+      .querySelector("form")
+      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+    const call = vi
+      .mocked(fetchWithTimeout)
+      .mock.calls.find(([, options]) => options?.method === "PATCH");
+    expect(JSON.parse(String(call?.[1]?.body))).toEqual({
+      email: { ...defaultConfig().email, listener: "disabled" },
+    });
+    expect(element.querySelector('input[type="email"]')).toBeNull();
+    expect(element.querySelector(".history-row")).not.toBeNull();
+    expect(element.querySelector(".queue-row")).not.toBeNull();
   });
 
   it("requires an inline confirmation before deleting and never opens a blocking dialog", async () => {

@@ -94,7 +94,7 @@
 
   .base-button.variant-error
     background-color color-error
-    background-image linear-gradient(120deg, color-error 0%, #D8003D 40%, color-error-hover 70%, color-error 100%)
+    background-image linear-gradient(120deg, #992030 0%, #a82241 40%, #8d2530 70%, #992030 100%)
 
   .base-button.variant-warning
     background-color color-warning
@@ -121,6 +121,10 @@
 
   .base-button.variant-accent:hover:not(:disabled)
     box-shadow 0 0 18px rgba(83, 35, 196, 0.55)
+
+  .base-button:focus-visible
+    outline 2px solid #c3b6ff
+    outline-offset 2px
 
   .base-button:disabled
     animation none

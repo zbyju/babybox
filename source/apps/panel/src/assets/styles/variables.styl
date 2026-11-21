@@ -50,5 +50,24 @@ json('../../../public/config/styles.json')
 padding-x = 15px
 padding-y = 10px
 
+panel-field()
+    box-sizing border-box
+    color-scheme dark
+    background-color #191735
+    border 1px solid #666086
+    border-radius 8px
+    padding 7px 12px
+    color color-text-white
+    flex-grow 1
+    font-size 1.1em
 
+    &:hover:not(:disabled)
+        background-color #211d43
 
+    &:focus-visible
+        outline 2px solid #c3b6ff
+        outline-offset 2px
+
+    &:disabled
+        color color-text-secondary
+        cursor not-allowed

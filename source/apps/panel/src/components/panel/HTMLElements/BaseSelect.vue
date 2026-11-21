@@ -7,7 +7,7 @@
     @change="selectChange"
   >
     <option v-for="option in props.options" :key="option" :value="option">
-      {{ option }}
+      {{ props.optionLabels?.[option] ?? option }}
     </option>
   </select>
 </template>
@@ -19,6 +19,7 @@
 
   const props = defineProps<{
     options: readonly string[];
+    optionLabels?: Readonly<Record<string, string>>;
     modelValue?: string;
     state?: BaseInputState;
     disabled?: boolean;
@@ -53,13 +54,17 @@
 -->
 <style lang="stylus">
   select.base-select
-    background-color color-bg-black
-    border 1px solid color-border-secondary
-    border-radius 5px
-    padding 5px 4px
-    color color-text-white
-    flex-grow 1
-    font-size 1.1em
+    panel-field()
+    appearance none
+    padding-inline-end 36px
+    background-image url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%23ded9ff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    background-repeat no-repeat
+    background-position right 12px center
+    background-size 16px
+
+    @media (forced-colors: active)
+      appearance auto
+      background-image none
 
   select.base-select.border-accent
     border 1px solid color-border-accent
@@ -69,8 +74,4 @@
     border 1px solid color-border-warning
   select.base-select.border-error
     border 1px solid color-border-error
-
-  select.base-select:disabled
-    color color-text-secondary
-    cursor not-allowed
 </style>

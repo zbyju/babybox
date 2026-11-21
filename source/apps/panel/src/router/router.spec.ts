@@ -11,11 +11,19 @@ import router from "./index";
 const screens = [
   { path: "/", name: "Main" },
   { path: "/settings", name: "Settings" },
-  { path: "/config", name: "Config" },
   { path: "/data", name: "Data" },
 ];
 
 describe("panel routes", () => {
+  it.each([
+    ["/config", "panel"],
+    ["/email", "email"],
+  ])("redirects %s to the matching settings tab", async (path, tab) => {
+    await router.push(path);
+    expect(router.currentRoute.value.name).toBe("Settings");
+    expect(router.currentRoute.value.query["tab"]).toBe(tab);
+  });
+
   for (const screen of screens) {
     it(`resolves ${screen.path} to ${screen.name}`, async () => {
       await router.push(screen.path);

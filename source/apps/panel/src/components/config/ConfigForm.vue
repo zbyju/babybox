@@ -138,12 +138,14 @@
   const sections = computed(() => {
     const current = state.value;
     if (current === null) return [];
-    return configForm.map((section) => ({
-      section,
-      states: current.fields.filter((field) =>
-        field.field.path.startsWith(`${section.key}.`),
-      ),
-    }));
+    return configForm
+      .filter((section) => section.key !== "email")
+      .map((section) => ({
+        section,
+        states: current.fields.filter((field) =>
+          field.field.path.startsWith(`${section.key}.`),
+        ),
+      }));
   });
 
   const logEntries: Ref<LogEntry[]> = ref([]);
@@ -189,7 +191,11 @@
 
   function onResetToDefaults() {
     if (loaded.value === null) return;
-    values.value = defaultFormValues(loaded.value);
+    const defaults = defaultFormValues(loaded.value);
+    for (const [path, value] of Object.entries(toFormValues(loaded.value))) {
+      if (path.startsWith("email.")) defaults[path] = value;
+    }
+    values.value = defaults;
     serverErrors.value = [];
     pendingQuestion.value = null;
     addLogMessage(
@@ -231,7 +237,12 @@
     let flow: SaveFlowResult;
     try {
       flow = await runSave(draft, current.hasErrors, {
-        saveConfig,
+        saveConfig: (config) => {
+          // E-mail has its own form. A Panel save must preserve even a newer e-mail configuration.
+          const panelConfig = { ...config };
+          delete panelConfig.email;
+          return saveConfig(panelConfig);
+        },
         reloadBackendConfig,
       });
     } finally {
