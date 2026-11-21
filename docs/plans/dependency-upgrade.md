@@ -295,6 +295,21 @@ would. Then it pulls a tip with a panel build that exits 1. The legacy
 process executable. The old startup never puts `dist2` back after a failed
 start, so this job is the only proof that boot 1 starts.
 
+### Fresh installs
+
+The Ubuntu provisioning script calls its adjacent install script for the
+dependency and first-launch steps. Both that script and Windows install.bat
+use the Node bootstrap to install the pinned Bun, then run the workspace's
+frozen Bun install before starting the Node CLI. The CLI reports an install
+or startup failure as a nonzero exit status. A successful Windows install
+registers one launcher in the current user's Startup folder.
+
+The fresh-install CI job uses clean checkouts on Ubuntu and Windows. It
+checks both services and the panel after installation and after invoking the
+login entry point with PM2 stopped. The Windows runner invokes the registered
+launcher from a clean Startup folder. A real Windows login is still part of
+the physical canary.
+
 ## Review 2026-09-21
 
 Checked against `origin/main` at `6eb4fbf` (#98). Commits after the

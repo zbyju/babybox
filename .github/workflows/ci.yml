@@ -180,6 +180,25 @@ jobs:
           TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: bash "${RUNNER_TEMP}/legacy-boot1.sh"
 
+  fresh-install:
+    name: fresh-install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.12.1
+
+      - name: Install, launch, and run the login entry point
+        shell: bash
+        run: bash source/apps/startup/tests/fresh-install.sh
+
   # Bun 1.4.2 je jedina brana pro install, build a testy.
   # Node 18 zustava jen v jobu legacy-image.
   bun:

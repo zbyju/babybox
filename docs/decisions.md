@@ -1667,3 +1667,12 @@ entry points. Keep `shell: false` and pass the script path as one argument so
 spaces and shell metacharacters in the checkout path remain literal. This avoids
 Node 18.20.2+ rejecting `pnpm.cmd` with EINVAL without enabling a command shell.
 The Unix launch path and the readiness probes and rollback policy stay as before.
+
+### Fresh installs use the Bun workspace lock (2026-11-21)
+
+The legacy pnpm lock no longer matches the workspace manifests. Ubuntu and
+Windows provisioning call a Node entry point that can run before dependencies
+exist, install the pinned Bun, and run its frozen workspace install. The
+Windows installer creates one launcher in the current user's Startup folder
+after a successful start. The per-user entry needs no elevated symlink.
+Existing devices still enter the migration through the legacy build hook.
