@@ -1,8 +1,13 @@
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import * as path from "path";
+import type { SMTPServer } from "smtp-server";
 
-import { type EmailRecord,effectiveRecipients, EmailHistory } from "./history.js";
+import {
+  type EmailRecord,
+  effectiveRecipients,
+  EmailHistory,
+} from "./history.js";
 import { metadata } from "./metadata.js";
 import { type DiscardedEmail, EmailQueue } from "./queue.js";
 import {
@@ -10,6 +15,8 @@ import {
   diagnostic,
   emailSettings,
   mailbox,
+  object,
+  type RelayConfig,
   sourceFor,
   supportedRuntime,
 } from "./settings.js";
@@ -26,7 +33,7 @@ function smtpError(message: string, responseCode = 451): Error {
 export class EmailRelay {
   private queue = new EmailQueue(() => Date.now());
   private records = new Map<number, EmailRecord>();
-  private server: any;
+  private server: SMTPServer | undefined;
   private timer: ReturnType<typeof setInterval> | undefined;
   private busy = false;
   private receivingBytes = 0;
@@ -42,7 +49,7 @@ export class EmailRelay {
   readonly history: EmailHistory;
 
   constructor(
-    private readonly getConfig: () => unknown,
+    private readonly getConfig: () => RelayConfig | null,
     directory = process.env["EMAIL_DATA_DIR"] ||
       path.resolve(
         __dirname,
@@ -81,8 +88,9 @@ export class EmailRelay {
   private async updateListener(enabled: boolean): Promise<void> {
     if (!this.started || !supportedRuntime(this.runtime)) return;
     if (!enabled) {
-      if (this.server?.server.listening)
-        await new Promise<void>((resolve) => this.server.close(resolve));
+      const server = this.server;
+      if (server?.server.listening)
+        await new Promise<void>((resolve) => server.close(resolve));
       this.listener = "Příjem SMTP je vypnut?.";
       return;
     }
@@ -91,14 +99,14 @@ export class EmailRelay {
     try {
       await this.listen(this.listenPort, this.listenHost);
     } catch {
-      this.listener = "Příjem SMTP nelze spustit. Zkontrolujte port a oprávnění.";
+      this.listener =
+        "Příjem SMTP nelze spustit. Zkontrolujte port a oprávnění.";
     }
   }
 
   private listen(port: number, host: string): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires -- runtime guard must precede loading this Node 20+ library
-    const { SMTPServer } = require("smtp-server");
-    this.server = new SMTPServer({
+    const smtp: typeof import("smtp-server") = require("smtp-server");
+    const server = new smtp.SMTPServer({
       name: "babybox-panel",
       banner: "Babybox SMTP",
       secure: false,
@@ -112,49 +120,33 @@ export class EmailRelay {
       maxClients: 10,
       socketTimeout: 30_000,
       closeTimeout: 1000,
-      onConnect: (session: any, done: (error?: Error) => void) =>
+      onConnect: (session, done) =>
         done(
           this.allowed(session.remoteAddress)
             ? undefined
             : smtpError("Zdroj není povolen.", 554)
         ),
       // Source credentials establish no upstream identity and are never logged/stored.
-      onAuth: (
-        _auth: unknown,
-        session: any,
-        done: (error: Error | null, user?: { user: string }) => void
-      ) =>
+      onAuth: (_auth, session, done) =>
         done(
           this.allowed(session.remoteAddress)
             ? null
             : smtpError("Zdroj není povolen.", 535),
           { user: "device" }
         ),
-      onMailFrom: (
-        _address: unknown,
-        session: any,
-        done: (error?: Error) => void
-      ) =>
+      onMailFrom: (_address, session, done) =>
         done(
           this.allowed(session.remoteAddress)
             ? undefined
             : smtpError("Zdroj není povolen.", 554)
         ),
-      onRcptTo: (
-        _address: unknown,
-        session: any,
-        done: (error?: Error) => void
-      ) =>
+      onRcptTo: (_address, session, done) =>
         done(
           session.envelope.rcptTo.length >= 100
             ? smtpError("Příliš mnoho adresátů.", 452)
             : undefined
         ),
-      onData: (
-        stream: any,
-        session: any,
-        done: (error?: Error | null) => void
-      ) => {
+      onData: (stream, session, done) => {
         let size = 0;
         let chunks: Buffer[] = [];
         let rejected = false;
@@ -186,13 +178,15 @@ export class EmailRelay {
             finish(smtpError("Zpráva překračuje dostupnou kapacitu.", 452));
             return;
           }
-          const raw = Buffer.concat(chunks.map(chunk => Uint8Array.from(chunk)));
+          const raw = Buffer.concat(
+            chunks.map((chunk) => Uint8Array.from(chunk))
+          );
           chunks = [];
           const envelope = session.envelope;
           void this.receive(
             session.remoteAddress,
             envelope.mailFrom ? envelope.mailFrom.address : "",
-            envelope.rcptTo.map((r: any) => r.address),
+            envelope.rcptTo.map((r) => r.address),
             raw
           ).then(
             () => finish(),
@@ -206,16 +200,18 @@ export class EmailRelay {
         });
       },
     });
-    this.server.on("error", () => {
+    this.server = server;
+    server.on("error", () => {
       this.listener = "Chyba příjmu SMTP. Zkontrolujte port a oprávnění.";
     });
     return new Promise((resolve, reject) => {
       const failed = () => reject(new Error("SMTP bind failed"));
-      this.server.once("error", failed);
-      this.server.listen(port, host, () => {
-        this.server.removeListener("error", failed);
+      server.once("error", failed);
+      server.listen(port, host, () => {
+        server.removeListener("error", failed);
+        const address = server.server.address();
         this.listener = `SMTP naslouchá na portu ${
-          this.server.server.address().port
+          address && typeof address === "object" ? address.port : port
         }.`;
         resolve();
       });
@@ -292,7 +288,8 @@ export class EmailRelay {
       try {
         settings = emailSettings(this.getConfig());
       } catch {
-        this.configurationError = "Neplatné nastavení e-mailu. Sledování babyboxu pokračuje.";
+        this.configurationError =
+          "Neplatné nastavení e-mailu. Sledování babyboxu pokračuje.";
         this.settingKey = "";
         await this.updateListener(false);
         return;
@@ -386,7 +383,7 @@ export class EmailRelay {
         }
       } catch (error) {
         result =
-          Number((error as any)?.responseCode) >= 500
+          object(error) && Number(error["responseCode"]) >= 500
             ? "permanent"
             : "configuration";
         if (result === "permanent") record.status = "failed";
@@ -503,20 +500,19 @@ export class EmailRelay {
     const sender = settings.senderOverride || settings.user;
     if (!mailbox(sender))
       throw new Error("Pro test vyplňte platného náhradního odesílatele.");
-    const config: any = this.getConfig();
-    const ip = config?.units?.engine?.ip;
     const raw = Buffer.from(
       `From: ${sender}\r\nTo: ${recipient}\r\nSubject: Babybox - test e-mailu\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nTest odeslani e-mailu z panelu Babybox.\r\n`
     );
-    return this.receive(ip, sender, [recipient], raw, true);
+    return this.receive("", sender, [recipient], raw, true);
   }
 
   async close(): Promise<void> {
     this.started = false;
     await this.ready;
     if (this.timer) clearInterval(this.timer);
-    if (this.server?.server.listening)
-      await new Promise<void>((resolve) => this.server.close(resolve));
+    const server = this.server;
+    if (server?.server.listening)
+      await new Promise<void>((resolve) => server.close(resolve));
     await this.history.save();
   }
 }

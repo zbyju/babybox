@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 
-import { type EmailSettings, diagnostic, mailbox } from "./settings.js";
+import { type EmailSettings, diagnostic, mailbox, object } from "./settings.js";
 
 const require = createRequire(import.meta.url);
 
@@ -10,17 +10,18 @@ export type FailureCategory =
   | "configuration"
   | "permanent";
 
-export function classifyFailure(error: any): FailureCategory {
-  const code = String(error?.code || "");
-  const response = Number(error?.responseCode);
+export function classifyFailure(error: unknown): FailureCategory {
+  const failure = object(error) ? error : {};
+  const code = typeof failure["code"] === "string" ? failure["code"] : "";
+  const originalCode =
+    typeof failure["originalCode"] === "string" ? failure["originalCode"] : "";
+  const response = Number(failure["responseCode"]);
   if (code === "EAUTH" && response >= 400 && response < 500)
     return "connection";
   if (
     code === "EAUTH" ||
     code === "ETLS" ||
-    /CERT|TLS|SSL|SELF_SIGNED|UNABLE_TO_VERIFY/.test(
-      code + " " + String(error?.originalCode || "")
-    )
+    /CERT|TLS|SSL|SELF_SIGNED|UNABLE_TO_VERIFY/.test(code + " " + originalCode)
   )
     return "configuration";
   if (
@@ -37,8 +38,7 @@ export function classifyFailure(error: any): FailureCategory {
     ].includes(code)
   )
     return "connection";
-  if (response >= 500 && response !== 503)
-    return "permanent";
+  if (response >= 500 && response !== 503) return "permanent";
   return "temporary";
 }
 
@@ -73,12 +73,20 @@ export function routedContent(
   ]);
 }
 
+type CreateTransport = (options: Record<string, unknown>) => {
+  sendMail(message: {
+    envelope: { from: string; to: string[] };
+    raw: Buffer;
+  }): Promise<{ response: string }>;
+  close(): void;
+};
+
 export async function submit(
   settings: EmailSettings,
   sender: string,
   recipient: string,
   raw: Buffer,
-  createTransport?: (options: any) => any,
+  createTransport?: CreateTransport
 ): Promise<string> {
   if (
     !settings.host.trim() ||
@@ -97,8 +105,8 @@ export async function submit(
     });
   }
   // Lazy load: deployed Node 18 panels must still boot and monitor normally.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires -- load only after the relay runtime guard
-  const connect = createTransport ?? require("nodemailer").createTransport;
+  const connect: CreateTransport =
+    createTransport ?? require("nodemailer").createTransport;
   const transport = connect({
     host: settings.host.trim(),
     port: 465,

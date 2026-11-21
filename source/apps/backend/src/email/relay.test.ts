@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { promises as fs } from "fs";
 import * as net from "net";
 import * as os from "os";
@@ -9,6 +10,8 @@ import { EmailQueue } from "./queue.js";
 import { EmailRelay } from "./relay.js";
 import {
   defaultEmailSettings,
+  type RelayConfig,
+  type EmailSettings,
   diagnostic,
   sourceFor,
   supportedRuntime,
@@ -27,22 +30,28 @@ const parsed = {
 
 describe("email relay isolation and recipient tracking", () => {
   let dir: string;
-  let config: any;
+  let config: RelayConfig;
+  let settings: EmailSettings;
   let send: ReturnType<typeof vi.fn<typeof import("./transport.js").submit>>;
   let relay: EmailRelay;
   beforeEach(async () => {
     dir = await fs.mkdtemp(path.join(os.tmpdir(), "babybox-relay-"));
+    settings = {
+      ...defaultEmailSettings,
+      host: "smtp.example.com",
+      user: "sender@example.com",
+      password: "secret",
+    };
     config = {
+      backend: { url: "/api/v1", port: 5000 },
+      pc: { os: "windows" },
       units: { engine: { ip: "127.0.0.1" }, thermal: { ip: "127.0.0.2" } },
       camera: { ip: "127.0.0.3" },
-      email: {
-        ...defaultEmailSettings,
-        host: "smtp.example.com",
-        user: "sender@example.com",
-        password: "secret",
-      },
+      email: settings,
     };
-    send = vi.fn<typeof import("./transport.js").submit>().mockResolvedValue("250 accepted");
+    send = vi
+      .fn<typeof import("./transport.js").submit>()
+      .mockResolvedValue("250 accepted");
     relay = new EmailRelay(
       () => config,
       dir,
@@ -96,12 +105,12 @@ describe("email relay isolation and recipient tracking", () => {
       raw
     );
     await relay.tick();
-    expect(send.mock.calls[0]!.slice(1)).toEqual([
+    expect(send.mock.calls[0]?.slice(1)).toEqual([
       "unit@example.com",
       "a@example.com",
       raw,
     ]);
-    expect(relay.status().history[0]!.status).toBe("accepted");
+    expect(relay.status().history[0]?.status).toBe("accepted");
     expect(relay.status().queue).toHaveLength(0);
   });
 
@@ -118,21 +127,21 @@ describe("email relay isolation and recipient tracking", () => {
       raw
     );
     await relay.tick();
-    expect(relay.status().history[0]!.status).toBe("failed");
-    expect(relay.status().queue[0]!.stopped).toBe(true);
+    expect(relay.status().history[0]?.status).toBe("failed");
+    expect(relay.status().queue[0]?.stopped).toBe(true);
     await relay.tick();
     expect(send).toHaveBeenCalledTimes(2);
     send.mockResolvedValue("250 accepted");
     await relay.action("retry", [id]);
     await relay.tick();
     expect(send).toHaveBeenCalledTimes(3);
-    expect(send.mock.calls[2]![2]).toBe("b@example.com");
-    expect(relay.status().history[0]!.status).toBe("accepted");
+    expect(send.mock.calls[2]?.[2]).toBe("b@example.com");
+    expect(relay.status().history[0]?.status).toBe("accepted");
   });
 
   it("uses current routing while retaining completed recipients and original facts", async () => {
-    config.email.mode = "panel";
-    config.email.unitRecipients = "a@example.com,b@example.com";
+    settings.mode = "panel";
+    settings.unitRecipients = "a@example.com,b@example.com";
     send
       .mockImplementationOnce(async () => "250 accepted")
       .mockRejectedValueOnce(
@@ -145,7 +154,7 @@ describe("email relay isolation and recipient tracking", () => {
       raw
     );
     await relay.tick();
-    config.email.unitRecipients = "a@example.com,c@example.com";
+    settings.unitRecipients = "a@example.com,c@example.com";
     send.mockResolvedValue("250 accepted");
     await relay.tick();
     expect(send.mock.calls.map((call) => call[2])).toEqual([
@@ -153,7 +162,7 @@ describe("email relay isolation and recipient tracking", () => {
       "b@example.com",
       "c@example.com",
     ]);
-    expect(relay.status().history[0]!.requestedRecipients).toEqual([
+    expect(relay.status().history[0]?.requestedRecipients).toEqual([
       "original@example.com",
     ]);
   });
@@ -171,7 +180,7 @@ describe("email relay isolation and recipient tracking", () => {
     await relay.tick();
     await relay.tick();
     expect(send).toHaveBeenCalledTimes(1);
-    config.email.password = "new-secret";
+    settings.password = "new-secret";
     await relay.tick();
     expect(send).toHaveBeenCalledTimes(2);
   });
@@ -179,7 +188,12 @@ describe("email relay isolation and recipient tracking", () => {
   it("expires queued content while stored email settings are invalid", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     try {
-      await relay.receive("127.0.0.1", "unit@example.com", ["a@example.com"], raw);
+      await relay.receive(
+        "127.0.0.1",
+        "unit@example.com",
+        ["a@example.com"],
+        raw
+      );
       config.email = [];
       vi.setSystemTime(Date.now() + 24 * 60 * 60 * 1000);
       await relay.tick();
@@ -195,7 +209,12 @@ describe("email relay isolation and recipient tracking", () => {
 
   it("continues delivery when history cannot be written", async () => {
     await fs.mkdir(path.join(dir, "history.json.tmp"));
-    await relay.receive("127.0.0.1", "unit@example.com", ["a@example.com"], raw);
+    await relay.receive(
+      "127.0.0.1",
+      "unit@example.com",
+      ["a@example.com"],
+      raw
+    );
     await relay.tick();
     expect(send).toHaveBeenCalledTimes(1);
     expect(relay.status().historyError).toBeTruthy();
@@ -211,30 +230,31 @@ describe("email relay isolation and recipient tracking", () => {
     );
     expect(await relay.action("delete", [id])).toBe(1);
     expect(await relay.action("retry", [id])).toBe(0);
-    expect(relay.status().history[0]!.status).toBe("deleted");
-    expect(relay.status().history[0]!.contentAvailable).toBe(false);
+    expect(relay.status().history[0]?.status).toBe("deleted");
+    expect(relay.status().history[0]?.contentAvailable).toBe(false);
   });
 
   it("retains content for manual retry of a definitive failure and preserves original TTL", () => {
     let now = 0;
     const queue = new EmailQueue(() => now, { count: 2, bytes: 10, ttl: 100 });
-    const id = queue.enqueue(Buffer.from("x")).id!;
+    const id = queue.enqueue(Buffer.from("x")).id;
+    assert(id !== undefined);
     queue.take();
     queue.settle(id, "permanent");
     queue.resume();
     expect(queue.take().message).toBeUndefined();
     expect(queue.retry(id)).toBe(true);
-    expect(queue.take().message!.id).toBe(id);
+    expect(queue.take().message?.id).toBe(id);
     queue.settle(id, "permanent");
     now = 100;
     expect(queue.retry(id)).toBe(false);
-    expect(queue.expire()[0]!.reason).toBe("expired");
+    expect(queue.expire()[0]?.reason).toBe("expired");
   });
 
   it("keeps explicit test recipients separate from panel routing", async () => {
-    config.email.mode = "panel";
-    config.email.unitRecipients = "fleet@example.com";
-    config.email.listener = "disabled";
+    settings.mode = "panel";
+    settings.unitRecipients = "fleet@example.com";
+    settings.listener = "disabled";
     await relay.test("test@example.com");
     await relay.tick();
     expect(send.mock.calls.map((call) => call[2])).toEqual([
@@ -255,13 +275,15 @@ describe("email relay isolation and recipient tracking", () => {
 
   it("classifies security and recipient failures and redacts SMTP secrets", () => {
     expect(classifyFailure({ code: "EAUTH" })).toBe("configuration");
-    expect(classifyFailure({ code: "EAUTH", responseCode: 454 })).toBe("connection");
+    expect(classifyFailure({ code: "EAUTH", responseCode: 454 })).toBe(
+      "connection"
+    );
     expect(classifyFailure({ code: "CERT_HAS_EXPIRED" })).toBe("configuration");
     expect(classifyFailure({ code: "ETIMEDOUT" })).toBe("connection");
     expect(classifyFailure({ responseCode: 550 })).toBe("permanent");
     expect(classifyFailure({ responseCode: 450 })).toBe("temporary");
     expect(
-      diagnostic({ message: "secret AUTH LOGIN c2VjcmV0" }, config.email)
+      diagnostic({ message: "secret AUTH LOGIN c2VjcmV0" }, settings)
     ).not.toMatch(/secret|c2VjcmV0/);
   });
 
@@ -276,7 +298,7 @@ describe("email relay isolation and recipient tracking", () => {
     }
   );
 
-  onCurrentRuntime.each(["none", "PLAIN", "LOGIN"])(
+  onCurrentRuntime.each<"none" | "PLAIN" | "LOGIN">(["none", "PLAIN", "LOGIN"])(
     "accepts real SMTP (device AUTH: %s) and survives an occupied port",
     async (auth) => {
       await relay.start(0, "127.0.0.1");
@@ -290,7 +312,9 @@ describe("email relay isolation and recipient tracking", () => {
         const password = Buffer.from("device-password").toString("base64");
         const authCommands = {
           none: [],
-          PLAIN: [`AUTH PLAIN ${Buffer.from("\0device\0device-password").toString("base64")}\r\n`],
+          PLAIN: [
+            `AUTH PLAIN ${Buffer.from("\0device\0device-password").toString("base64")}\r\n`,
+          ],
           LOGIN: [
             "AUTH LOGIN\r\n",
             Buffer.from("device").toString("base64") + "\r\n",
@@ -299,7 +323,7 @@ describe("email relay isolation and recipient tracking", () => {
         };
         const commands = [
           "EHLO test\r\n",
-          ...authCommands[auth as keyof typeof authCommands],
+          ...authCommands[auth],
           "MAIL FROM:<unit@example.com>\r\n",
           "RCPT TO:<a@example.com>\r\n",
           "DATA\r\n",
@@ -316,14 +340,21 @@ describe("email relay isolation and recipient tracking", () => {
             resolve();
             return;
           }
-          socket.write(commands[stage++]!);
+          const command = commands[stage++];
+          if (command === undefined) {
+            reject(new Error("Unexpected SMTP reply"));
+            return;
+          }
+          socket.write(command);
           buffer = "";
         });
       });
       if (auth === "PLAIN") expect(responses[2]).toMatch(/^235 /);
       if (auth === "LOGIN") {
         expect(responses.slice(2, 5).map((line) => line.slice(0, 3))).toEqual([
-          "334", "334", "235",
+          "334",
+          "334",
+          "235",
         ]);
       }
       expect(responses[responses.length - 3]).toMatch(/^354 /);

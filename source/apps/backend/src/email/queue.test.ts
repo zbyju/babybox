@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { EMAIL_QUEUE_LIMITS, EmailQueue, retryDelay } from "./queue.js";
@@ -30,7 +31,7 @@ describe("email content scheduling", () => {
       discarded: [],
     });
     expect(queue.bytes).toBe(6);
-    expect(queue.enqueue(content(5)).discarded[0]!.reason).toBe("evicted");
+    expect(queue.enqueue(content(5)).discarded[0]?.reason).toBe("evicted");
     expect(queue.bytes).toBe(5);
   });
 
@@ -52,14 +53,16 @@ describe("email content scheduling", () => {
 
   it("prioritizes new arrivals over due retries", () => {
     const queue = new EmailQueue(() => now);
-    const old = queue.enqueue(content()).id!;
+    const old = queue.enqueue(content()).id;
+    assert(old !== undefined);
     queue.take();
     queue.settle(old, "temporary");
     now = 60_000;
-    const fresh = queue.enqueue(content()).id!;
-    expect(queue.take().message!.id).toBe(fresh);
+    const fresh = queue.enqueue(content()).id;
+    assert(fresh !== undefined);
+    expect(queue.take().message?.id).toBe(fresh);
     queue.settle(fresh, "complete");
-    expect(queue.take().message!.id).toBe(old);
+    expect(queue.take().message?.id).toBe(old);
   });
 
   it("uses 1, 5, 10 and then repeated 30 minute retry delays", () => {
@@ -67,9 +70,10 @@ describe("email content scheduling", () => {
       60_000, 300_000, 600_000, 1_800_000, 1_800_000,
     ]);
     const queue = new EmailQueue(() => now);
-    const id = queue.enqueue(content()).id!;
+    const id = queue.enqueue(content()).id;
+    assert(id !== undefined);
     for (const delay of [60_000, 300_000, 600_000, 1_800_000]) {
-      expect(queue.take().message!.id).toBe(id);
+      expect(queue.take().message?.id).toBe(id);
       queue.settle(id, "temporary");
       now += delay - 1;
       expect(queue.take().message).toBeUndefined();
@@ -79,18 +83,21 @@ describe("email content scheduling", () => {
 
   it("does not let new arrivals bypass a connection cooldown", () => {
     const queue = new EmailQueue(() => now);
-    const id = queue.enqueue(content()).id!;
+    const id = queue.enqueue(content()).id;
+    assert(id !== undefined);
     queue.take();
     queue.settle(id, "connection");
-    const fresh = queue.enqueue(content()).id!;
+    const fresh = queue.enqueue(content()).id;
+    assert(fresh !== undefined);
     expect(queue.take().message).toBeUndefined();
     now = 60_000;
-    expect(queue.take().message!.id).toBe(fresh);
+    expect(queue.take().message?.id).toBe(fresh);
   });
 
   it("pauses the connection for configuration/security failures until resumed", () => {
     const queue = new EmailQueue(() => now);
-    const id = queue.enqueue(content()).id!;
+    const id = queue.enqueue(content()).id;
+    assert(id !== undefined);
     queue.take();
     queue.settle(id, "configuration");
     queue.enqueue(content());
@@ -102,7 +109,8 @@ describe("email content scheduling", () => {
 
   it("expires from original receipt even after retries and configuration changes", () => {
     const queue = new EmailQueue(() => now);
-    const id = queue.enqueue(content()).id!;
+    const id = queue.enqueue(content()).id;
+    assert(id !== undefined);
     queue.take();
     now = EMAIL_QUEUE_LIMITS.ttl - 1;
     queue.settle(id, "temporary");
@@ -116,7 +124,8 @@ describe("email content scheduling", () => {
 
   it("finishes a send crossing TTL but cannot retry expired content", () => {
     const queue = new EmailQueue(() => now);
-    const id = queue.enqueue(content()).id!;
+    const id = queue.enqueue(content()).id;
+    assert(id !== undefined);
     queue.take();
     now = EMAIL_QUEUE_LIMITS.ttl;
     expect(queue.expire()).toEqual([]);
@@ -130,7 +139,8 @@ describe("email content scheduling", () => {
     "releases content on %s and never retries it",
     (result) => {
       const queue = new EmailQueue(() => now);
-      const id = queue.enqueue(content()).id!;
+      const id = queue.enqueue(content()).id;
+      assert(id !== undefined);
       queue.take();
       queue.settle(id, result);
       queue.resume();
@@ -147,12 +157,13 @@ describe("email content scheduling", () => {
     const raw = content();
     queue.enqueue(raw);
     raw[0] = 0;
-    const message = queue.take().message!;
+    const message = queue.take().message;
+    assert(message);
     expect(message.content.toString()).toBe("x");
     message.content[0] = 0;
     queue.settle(message.id, "temporary");
     queue.resume();
-    expect(queue.take().message!.content.toString()).toBe("x");
+    expect(queue.take().message?.content.toString()).toBe("x");
   });
 
   it("rejects invalid capacity policies", () => {

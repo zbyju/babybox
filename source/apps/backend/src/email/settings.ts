@@ -1,3 +1,13 @@
+import type { BackendReadableConfig } from "../modules/configReload.js";
+
+export type RelayConfig = Omit<BackendReadableConfig, "email"> & {
+  email?: unknown;
+};
+
+export function object(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export interface EmailSettings {
   listener: "enabled" | "disabled";
   mode: "device" | "panel";
@@ -20,18 +30,20 @@ export const defaultEmailSettings: EmailSettings = {
   cameraRecipients: "",
 };
 
-export function emailSettings(config: any): EmailSettings {
+export function emailSettings(config: RelayConfig | null): EmailSettings {
   const value = config?.email;
   if (value === undefined) return { ...defaultEmailSettings };
-  if (value === null || typeof value !== "object" || Array.isArray(value))
+  if (!object(value)) throw new Error("Neplatné nastavení e-mailu.");
+  const result: EmailSettings & Record<string, unknown> = {
+    ...defaultEmailSettings,
+    ...value,
+  };
+  if (
+    Object.keys(defaultEmailSettings).some(
+      (key) => typeof result[key] !== "string"
+    )
+  )
     throw new Error("Neplatné nastavení e-mailu.");
-  const result = { ...defaultEmailSettings, ...value };
-  for (const key of Object.keys(
-    defaultEmailSettings
-  ) as (keyof EmailSettings)[]) {
-    if (typeof result[key] !== "string")
-      throw new Error("Neplatné nastavení e-mailu.");
-  }
   if (
     !["enabled", "disabled"].includes(result.listener) ||
     !["device", "panel"].includes(result.mode)
@@ -66,7 +78,7 @@ export function normalizedIp(value: string): string {
 }
 
 export function sourceFor(
-  config: any,
+  config: Pick<RelayConfig, "units" | "camera"> | null,
   ip: string
 ): "engine" | "thermal" | "camera" | undefined {
   const normalized = normalizedIp(ip);
@@ -78,11 +90,22 @@ export function sourceFor(
 }
 
 export function supportedRuntime(version = process.versions.node): boolean {
-  return Boolean(process.versions["bun"]) && version === process.versions.node || Number(version.split(".")[0]) >= 20;
+  return (
+    (Boolean(process.versions["bun"]) && version === process.versions.node) ||
+    Number(version.split(".")[0]) >= 20
+  );
 }
 
-export function diagnostic(error: any, settings: EmailSettings): string {
-  let message = String(error?.response || error?.message || "Chyba SMTP");
+export function diagnostic(error: unknown, settings: EmailSettings): string {
+  const failure = object(error) ? error : {};
+  const response = failure["response"];
+  const detail = failure["message"];
+  let message =
+    typeof response === "string" && response
+      ? response
+      : typeof detail === "string" && detail
+        ? detail
+        : "Chyba SMTP";
   // Provider text is evidence, but must not contain configured authentication secrets.
   for (const secret of [
     settings.password,

@@ -1,9 +1,10 @@
+import assert from "node:assert/strict";
 import { promises as fs } from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { type EmailRecord,effectiveRecipients, EmailHistory } from "./history.js";
+import { effectiveRecipients, EmailHistory } from "./history.js";
 
 describe("persistent email lifecycle", () => {
   let dir: string;
@@ -38,9 +39,9 @@ describe("persistent email lifecycle", () => {
     }
     await history.save();
     expect(history.list()).toHaveLength(100);
-    expect(history.list()[0]!.subject).toBe("100");
-    expect(history.list()[99]!.subject).toBe("1");
-    expect(history.list()[99]!.events).toHaveLength(111);
+    expect(history.list()[0]?.subject).toBe("100");
+    expect(history.list()[99]?.subject).toBe("1");
+    expect(history.list()[99]?.events).toHaveLength(111);
   });
 
   it("marks volatile content lost on restart without losing accepted recipients", async () => {
@@ -51,7 +52,8 @@ describe("persistent email lifecycle", () => {
     await history.save();
     const restarted = new EmailHistory(file, () => 30);
     await restarted.open();
-    const saved = restarted.list()[0]!;
+    const saved = restarted.list()[0];
+    assert(saved);
     expect(saved.id).toBe(record.id);
     expect(saved.status).toBe("interrupted");
     expect(saved.contentAvailable).toBe(false);
@@ -65,9 +67,8 @@ describe("persistent email lifecycle", () => {
   });
 
   it("never automatically resends completed or permanently rejected recipients after routing changes", () => {
-    const record = {
-      recipients: { a: "accepted", b: "permanent", c: "temporary" },
-    } as unknown as EmailRecord;
+    const record = new EmailHistory(file).create(input);
+    record.recipients = { a: "accepted", b: "permanent", c: "temporary" };
     expect(effectiveRecipients(record, ["a", "b", "c", "d", "d"])).toEqual([
       "c",
       "d",

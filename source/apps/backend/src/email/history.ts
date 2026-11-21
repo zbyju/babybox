@@ -2,6 +2,8 @@ import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import * as path from "path";
 
+import { object } from "./settings.js";
+
 export type RecipientStatus =
   | "pending"
   | "accepted"
@@ -51,7 +53,10 @@ export class EmailHistory {
   private writable = true;
   error: string | null = null;
 
-  constructor(private readonly file: string, private readonly now = Date.now) {}
+  constructor(
+    private readonly file: string,
+    private readonly now = Date.now
+  ) {}
 
   async open(): Promise<void> {
     try {
@@ -77,7 +82,7 @@ export class EmailHistory {
       }
       await this.save();
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      if (!object(error) || error["code"] !== "ENOENT") {
         // Preserve corrupt/unreadable evidence rather than replacing it with [].
         this.writable = false;
         this.error = "Historii nelze načíst; původní soubor zůstal zachován.";
@@ -150,34 +155,32 @@ export class EmailHistory {
   }
 }
 
-function validRecord(value: any): value is EmailRecord {
+function validRecord(value: unknown): value is EmailRecord {
   return (
-    value &&
-    typeof value.id === "string" &&
-    Number.isFinite(value.receivedAt) &&
-    typeof value.source === "string" &&
-    typeof value.sender === "string" &&
-    Array.isArray(value.requestedRecipients) &&
-    value.requestedRecipients.every((v: unknown) => typeof v === "string") &&
-    value.recipients &&
-    typeof value.recipients === "object" &&
-    !Array.isArray(value.recipients) &&
-    Object.values(value.recipients).every((v) =>
+    object(value) &&
+    typeof value["id"] === "string" &&
+    Number.isFinite(value["receivedAt"]) &&
+    typeof value["source"] === "string" &&
+    typeof value["sender"] === "string" &&
+    Array.isArray(value["requestedRecipients"]) &&
+    value["requestedRecipients"].every((v: unknown) => typeof v === "string") &&
+    object(value["recipients"]) &&
+    Object.values(value["recipients"]).every((v) =>
       ["pending", "accepted", "temporary", "permanent"].includes(String(v))
     ) &&
-    typeof value.subject === "string" &&
-    typeof value.text === "string" &&
-    typeof value.headers === "string" &&
-    Array.isArray(value.attachments) &&
-    value.attachments.every(
-      (a: any) =>
-        a &&
-        typeof a.filename === "string" &&
-        typeof a.contentType === "string" &&
-        Number.isFinite(a.size)
+    typeof value["subject"] === "string" &&
+    typeof value["text"] === "string" &&
+    typeof value["headers"] === "string" &&
+    Array.isArray(value["attachments"]) &&
+    value["attachments"].every(
+      (a: unknown) =>
+        object(a) &&
+        typeof a["filename"] === "string" &&
+        typeof a["contentType"] === "string" &&
+        Number.isFinite(a["size"])
     ) &&
-    Number.isFinite(value.bytes) &&
-    typeof value.contentAvailable === "boolean" &&
+    Number.isFinite(value["bytes"]) &&
+    typeof value["contentAvailable"] === "boolean" &&
     [
       "pending",
       "accepted",
@@ -186,14 +189,14 @@ function validRecord(value: any): value is EmailRecord {
       "evicted",
       "deleted",
       "interrupted",
-    ].includes(value.status) &&
-    Array.isArray(value.events) &&
-    value.events.every(
-      (e: any) =>
-        e &&
-        Number.isFinite(e.at) &&
-        typeof e.kind === "string" &&
-        typeof e.detail === "string"
+    ].some((status) => status === value["status"]) &&
+    Array.isArray(value["events"]) &&
+    value["events"].every(
+      (e: unknown) =>
+        object(e) &&
+        Number.isFinite(e["at"]) &&
+        typeof e["kind"] === "string" &&
+        typeof e["detail"] === "string"
     )
   );
 }

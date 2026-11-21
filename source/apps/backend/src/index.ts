@@ -158,7 +158,10 @@ async function main() {
   app.post(prefix + "/email/:action", async (req, res) => {
     try {
       const action = req.params["action"];
-      if (typeof action !== "string") { res.sendStatus(404); return; }
+      if (typeof action !== "string") {
+        res.sendStatus(404);
+        return;
+      }
       if (action === "test") {
         const id = await email.test(String(req.body?.recipient || ""));
         res.send({
@@ -167,7 +170,7 @@ async function main() {
         });
         return;
       }
-      if (!["retry", "delete", "clear"].includes(action)) {
+      if (action !== "retry" && action !== "delete" && action !== "clear") {
         res.status(404).send({ msg: "Neznámá akce." });
         return;
       }
@@ -185,10 +188,7 @@ async function main() {
         res.status(400).send({ msg: "Neplatný výběr zpráv." });
         return;
       }
-      const changed = await email.action(
-        action as "retry" | "delete" | "clear",
-        ids
-      );
+      const changed = await email.action(action, ids);
       res.send({
         changed,
         msg: `Změněno zpráv: ${changed}. Aktivní odesílání se dokončí.`,

@@ -3,8 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultEmailSettings } from "./settings.js";
 import { classifyFailure, submit } from "./transport.js";
 
-
-
 describe("outbound SMTP boundary", () => {
   const settings = {
     ...defaultEmailSettings,
@@ -24,7 +22,13 @@ describe("outbound SMTP boundary", () => {
   it("uses implicit TLS on 465 with certificate verification and bounded connection timeouts", async () => {
     const raw = Buffer.from("Subject: Alarm\r\n\r\nBody");
     expect(
-      await submit(settings, "unit@example.com", "to@example.com", raw, nodemailer.createTransport)
+      await submit(
+        settings,
+        "unit@example.com",
+        "to@example.com",
+        raw,
+        nodemailer.createTransport
+      )
     ).toBe("250 accepted");
     expect(nodemailer.createTransport).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -54,7 +58,13 @@ describe("outbound SMTP boundary", () => {
     });
     sendMail.mockRejectedValue(failure);
     await expect(
-      submit(settings, "unit@example.com", "to@example.com", Buffer.from("x"), nodemailer.createTransport)
+      submit(
+        settings,
+        "unit@example.com",
+        "to@example.com",
+        Buffer.from("x"),
+        nodemailer.createTransport
+      )
     ).rejects.toBe(failure);
     expect(classifyFailure(failure)).toBe("configuration");
     expect(sendMail).toHaveBeenCalledTimes(1);
