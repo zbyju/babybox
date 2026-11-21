@@ -116,7 +116,7 @@ jobs:
   # stare pm2 a PATH bez ~/.bun/bin. Stary startup po chybe startu dist2
   # neobnovi, takze chybny start je krabice, ktera nenabehne.
   legacy-boot1:
-    name: legacy-boot1 (${{ matrix.os }}, pm2 ${{ matrix.pm2 }})
+    name: legacy-boot1 (${{ matrix.os }}, pm2 ${{ matrix.pm2 }}, ${{ matrix.start }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -124,11 +124,22 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         pm2: ["5.2.0", "6.0.14"]
+        start: [legacy-runtime]
+        ref: [legacy-runtime]
+        include:
+          - os: ubuntu-latest
+            pm2: "6.0.14"
+            start: pre-jump-main
+            ref: 8c5ce842aeae0038874464f2ae7c6af4ee2f77fa
+          - os: windows-latest
+            pm2: "6.0.14"
+            start: pre-jump-main
+            ref: 8c5ce842aeae0038874464f2ae7c6af4ee2f77fa
     steps:
-      - name: Checkout legacy-runtime
+      - name: Checkout legacy starting revision
         uses: actions/checkout@v4
         with:
-          ref: legacy-runtime
+          ref: ${{ matrix.ref }}
           fetch-depth: 0
 
       # Skripty testu jsou jen v hlave PR, tag je nema.
