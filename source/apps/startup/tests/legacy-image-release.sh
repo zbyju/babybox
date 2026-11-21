@@ -280,7 +280,9 @@ break_new_dist_entry() {
 const fs = require("fs");
 fs.rmSync("dist/index.js");
 EOF
-  patch_script apps/backend/package.json build "tsc && node omit-dist-entry.cjs"
+  local build
+  build=$(node -p "require('./apps/backend/package.json').scripts.build")
+  patch_script apps/backend/package.json build "$build && node omit-dist-entry.cjs"
 }
 
 break_bun_sha() {
