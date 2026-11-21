@@ -15,7 +15,7 @@
   "scripts": {
     "build": "bun --bun tsc",
     "typecheck": "bun --bun tsc -p tsconfig.tests.json",
-    "test": "bun --bun vitest run src",
+    "test": "bun --bun vitest run --pool threads src",
     "lint": "bun --bun oxlint --type-aware --deny-warnings src",
     "format": "bun --bun oxfmt --write \"src\"",
     "format:check": "bun --bun oxfmt --check \"src\""
@@ -26,6 +26,6 @@
   },
   "devDependencies": {
     "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "vitest": "5.1.1"
   }
 }

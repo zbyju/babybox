@@ -14,7 +14,7 @@
     "dev": "bun --watch src/index.ts",
     "lint": "bun --bun oxlint --type-aware --deny-warnings src",
     "format": "bun --bun oxfmt --write \"src/**/*.ts\"",
-    "test": "bun --bun vitest run src",
+    "test": "bun --bun vitest run --pool threads src",
     "typecheck": "bun --bun tsc -p tsconfig.vitest.json",
     "test:postman": "newman run ./src/routes/__postman__/babybox-panel.postman_collection.json -e ./src/routes/__postman__/BabyboxPanel.postman_environment.json",
     "build": "bun --bun tsc",

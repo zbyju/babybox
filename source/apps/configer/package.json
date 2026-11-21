@@ -14,7 +14,7 @@
     "lint": "bun --bun oxlint --type-aware --deny-warnings src",
     "format": "bun --bun oxfmt --write src",
     "format:check": "bun --bun oxfmt --check src",
-    "test": "bun --bun vitest run src",
+    "test": "bun --bun vitest run --pool threads src",
     "typecheck": "bun --bun tsc --noEmit -p tsconfig.test.json"
   },
   "keywords": [],
@@ -34,6 +34,6 @@
     "@types/lodash.merge": "4.6.9",
     "@types/node": "18.11.18",
     "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "vitest": "5.1.1"
   }
 }
