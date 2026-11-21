@@ -1,8 +1,8 @@
 # Dependency upgrade
 
-Status: **P3 done, P4 open** on `feat/toolchain-jump`. `main` has no upgrade code.
+Status: **Topic validation in progress. Four-device canary results pending.**
 Owner: —
-Last updated: 2026-09-25
+Last updated: 2026-11-21
 
 ## Goal
 
@@ -219,7 +219,23 @@ Pass for Windows 8:
 - `git branch --show-current` is still `feat/toolchain-jump`.
 - A second restart shows the same panel.
 
-A failed canary blocks the merge.
+Record the exact `feat/toolchain-jump` commit and the CI run for that tip.
+Record the results below after each restart. For Ubuntu and Windows 10/11,
+include the Bun version from `GET /status` and the final startup step. For
+Windows 8, record `OS_HOLD`, the branch and the panel after both restarts.
+
+| Canary | OS release | Commit | Result |
+|---|---|---|---|
+| Ubuntu 22.04+ | Pending | Pending | Pending |
+| Windows 10 build 17763+ | Pending | Pending | Pending |
+| Windows 11 | Pending | Pending | Pending |
+| Windows 8 | Pending | Pending | Pending |
+
+The on-site manual run also covers the engine and thermal unit, camera,
+alarm sounds, settings, restart route and config saves. Record results
+without including configuration values or device credentials.
+
+A failed or missing canary result blocks the merge.
 
 ### Rollback of a canary
 
@@ -1280,15 +1296,11 @@ TypeScript contract. Do not add `tsx`.
 - [x] `open@11.0.4` as a plain ESM import. `engines.node` is `>=20`, but it
       loads and runs on Node 18.12.1, so the Node fallback still opens the
       panel. Not checked on the Windows `powershell-utils` path.
-- [ ] lowdb 7 in configer (`versions.json` only). **Tried and reverted on
-      2026-09-28. Do not retry until configer's `dist` has its own
-      `node_modules`.** lowdb 7 moves `JSONFile` to `lowdb/node`, so a configer
-      `dist` compiled against lowdb 3 cannot start once lowdb 7 is installed.
-      `legacy-boot1` caught it: in the "boot 1 with a failed build starts the
-      legacy dist" case, `bun install` has already replaced `node_modules`, and
-      the kept `dist` then dies with
-      `SyntaxError: Export named 'JSONFile' not found`. See the decision of
-      2026-09-28 on the rollback hazard.
+- [ ] Keep lowdb 3 through the first jump. PR #142 isolates newly proven
+      configer builds, but the first failed upgrade can still start the
+      configer from `legacy-runtime`, whose compiled code imports `JSONFile`
+      from lowdb 3 and has no private dependencies. An in-place bump to
+      lowdb 7 removes that export from the old app.
 - [ ] Full manual run: panel against a real engine and thermal unit, camera feed,
       sound alerts, settings page, restart route, config page save (PUT and PATCH
       from #85/#88/#91)
@@ -1348,7 +1360,7 @@ Size: ~1.5 days.
       JavaScript compiler entry point. `vue-tsc` also needs a Node runtime. On
       Bun it loads no `.vue` file (TS2307).
 - [x] No `ignoreDeprecations` entries remain in the workspace.
-- [ ] TS 7 pulls a platform binary (`@typescript/typescript-linux-x64`,
+- [x] TS 7 pulls a platform binary (`@typescript/typescript-linux-x64`,
       `-win32-x64`); the legacy-image job on Linux and the Windows runner both
       confirm one resolves from the lockfile with `bun install --frozen-lockfile`
 
@@ -1356,17 +1368,18 @@ Size: ~0.5 day.
 
 ### P7 — Keep it that way
 
-- [ ] Add Renovate or Dependabot with grouped, weekly PRs. Each bump is an
-      exact version. CI on Bun 1.4.2 and the legacy-image job are the gate.
-- [ ] `bun outdated` and `bun audit` in the CI summary
+- [x] Dependabot groups weekly Bun patch and minor updates after the umbrella
+      merge. CI checks exact version pins and the deployment matrix.
+- [x] CI summarizes `bun outdated --recursive` and `bun audit`. The refresh
+      resolves the fixable lock entries in the serving dependency graph.
+      The production audit still reports the Zod 3 advisory. Moving to
+      Zod 4 requires the separate schema migration described above.
 - [ ] Delete `pnpm-lock.yaml` only when `GET /status` from every known box
       shows Bun, or a box is written off
 - [ ] Decide when the legacy bootstrap may go: only when `GET /status` from every
       known box shows Bun, or a box is written off. Until then the
       `legacy-runtime` tag and the job stay. Record the date in decisions.md.
-- [ ] Update `CLAUDE.md`, `README.md`, and the "Known constraints" section of
-      [config-ui.md](config-ui.md) (it still says TypeScript 4.7, Vite 2, Node 18,
-      and 20 panel typecheck errors)
+- [x] Updated the developer commands and the config UI constraints.
 
 Size: ~0.5 day.
 

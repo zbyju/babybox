@@ -35,14 +35,18 @@ decision and it assumes the box sits on a trusted hospital network — see
 
 ## Development
 
-Both commands run from `source/`, which is where the only `package.json` lives.
+Run workspace commands from `source/` with Bun 1.4.2 and Node 18.12.1 on PATH.
 
 ```bash
 cd source
-pnpm dev     # start all services
-pnpm build   # build for production
+bun install --frozen-lockfile
+bun run dev
 ```
 
-Use pnpm 7.5.0 on Node 18. A newer pnpm rewrites the lockfile. The box's workspace
-install uses `--frozen-lockfile`. The runtime folder installs with
-`bun install --no-save`. See [docs/learnings.md](docs/learnings.md).
+Run `pnpm run build` with the deployed Node 18.12.1 and pnpm 7.5.0 to exercise
+the device build hook. The hook checks or installs pinned Bun and builds the
+schema, panel and serving apps. The panel build runs vue-tsc on Node 18 and
+Vite on Bun. Use Node 24.22.2 for the panel?s jsdom tests.
+
+The [dependency upgrade plan](docs/plans/dependency-upgrade.md#safe-release)
+records the four-device canary, OS holds and rollback checks.

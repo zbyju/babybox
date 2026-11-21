@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /source
+    schedule:
+      interval: weekly
+    groups:
+      workspace:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
