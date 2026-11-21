@@ -319,7 +319,7 @@ describe("dist-next release", () => {
         fs.readFileSync(path.join(root, "dist2", "index.js"), "utf8")
       ).toBe("old");
       expect(fs.existsSync(path.join(root, "dist2", "node_modules"))).toBe(
-        false
+        true
       );
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
       expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
@@ -364,37 +364,22 @@ describe("dist-next release", () => {
   it("restores dist and starts both apps when configer fails to start", async () => {
     const root = createRoot();
     const harness = createHarness();
-    let restoredIndex = "";
     harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
-    harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
-    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("bun install --no-save", (cwd) => {
-      if (cwd === path.join(root, "dist")) {
-        restoredIndex = fs.readFileSync(
-          path.join(root, "dist", "index.js"),
-          "utf8"
-        );
-      }
-      return { stdout: "", stderr: "" };
-    });
+    prepareRelease(harness);
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
-      expect(restoredIndex).toBe("old");
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
         "old"
       );
       expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
-      expect(installCwds(harness)).toEqual([
-        path.join(root, "dist-next"),
-        path.join(root, "dist"),
-      ]);
-      expect(installCwds(harness)).not.toContain(
-        path.join(root, "source", "dist")
-      );
+      expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
+      expect(
+        fs.existsSync(path.join(root, "dist", "node_modules", "keep.txt"))
+      ).toBe(true);
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
         ["start:configer"],
         ["start:configer"],
@@ -439,7 +424,7 @@ describe("dist-next release", () => {
       expect(readRecord(root).step).toBe("START_PANEL");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe("panel broke");
-      expect(installCwds(harness)[1]).toBe(path.join(root, "dist"));
+      expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
       expect(
         JSON.parse(
           fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
@@ -536,9 +521,7 @@ describe("dist-next release", () => {
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(false);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
-        "new"
-      );
+      expect(fs.existsSync(path.join(root, "dist"))).toBe(false);
       expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
       expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
@@ -710,34 +693,62 @@ describe("dist-next release", () => {
     }
   });
 
-  it("starts both apps when install of the restored dist throws", async () => {
+  it.each([
+    "before promotion",
+    "after promotion",
+    "during rollback",
+    "after rollback",
+  ])("restores the offline release after interruption %s", async (boundary) => {
     const root = createRoot();
     const harness = createHarness();
-    let spawnsAtRestoreInstall = -1;
-    harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
-    harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
-    harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("bun install --no-save", (cwd) => {
-      if (cwd === path.join(root, "dist")) {
-        spawnsAtRestoreInstall = harness.spawnCalls.length;
-        throw new Error("restore install failed");
-      }
-      return { stdout: "", stderr: "" };
+    const dist = path.join(root, "dist");
+    const backup = path.join(root, "dist2");
+    const stage = path.join(root, "dist-next");
+    const transaction = path.join(root, "dist-transaction");
+    const configer = path.join(root, "source", "apps", "configer", "dist");
+    writeConfig(root, "main.json", { babybox: { name: "site" } });
+    const main = path.join(configDir(root), "main.json");
+    const stored = fs.readFileSync(main, "utf8");
+    fs.mkdirSync(path.join(transaction, "configer"), { recursive: true });
+    fs.writeFileSync(
+      path.join(transaction, "configer", "index.js"),
+      "previous configer"
+    );
+    fs.writeFileSync(path.join(transaction, "configer-ready"), "");
+    fs.mkdirSync(configer, { recursive: true });
+    fs.writeFileSync(path.join(configer, "index.js"), "unproven configer");
+    fs.renameSync(dist, backup);
+    fs.mkdirSync(stage);
+    fs.writeFileSync(path.join(stage, "index.js"), "unproven backend");
+    if (boundary !== "before promotion") {
+      fs.renameSync(stage, dist);
+    }
+    if (boundary === "during rollback" || boundary === "after rollback") {
+      fs.rmSync(dist, { recursive: true });
+    }
+    if (boundary === "after rollback") {
+      fs.renameSync(backup, dist);
+    }
+
+    harness.on("git pull", () => {
+      throw new Error("network unavailable");
     });
-    harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
-    harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
+    allowPm2(harness);
     try {
-      const code = await onStartup(baseOptions(root, harness));
-      expect(code).toBe(true);
-      expect(spawnsAtRestoreInstall).toBe(1);
+      expect(await onStartup(baseOptions(root, harness))).toBe(true);
+      expect(installCwds(harness)).toEqual([]);
+      expect(
+        fs.readFileSync(path.join(dist, "node_modules", "keep.txt"), "utf8")
+      ).toBe("keep");
+      expect(fs.readFileSync(path.join(dist, "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(configer, "index.js"), "utf8")).toBe(
+        "previous configer"
+      );
+      expect(fs.readFileSync(main, "utf8")).toBe(stored);
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
-        ["start:configer"],
         ["start:configer"],
         ["start:main"],
       ]);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
-        "old"
-      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -822,6 +833,8 @@ describe("dist-next release", () => {
       },
       copySync() {},
       copyFileSync() {},
+      mkdirSync() {},
+      writeFileSync() {},
       rmSync() {},
       renameSync() {},
     };
@@ -888,12 +901,21 @@ describe("dist-next release", () => {
       const code = await onStartup(
         baseOptions(root, harness, {
           fs: trackingFs,
+          platform: "win32",
         })
       );
       expect(code).toBe(true);
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
         "new"
       );
+      for (const dir of ["dist", "dist2"]) {
+        expect(
+          fs.readFileSync(
+            path.join(root, dir, "node_modules", "keep.txt"),
+            "utf8"
+          )
+        ).toBe("keep");
+      }
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

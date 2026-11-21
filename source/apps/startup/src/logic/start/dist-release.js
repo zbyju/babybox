@@ -1,7 +1,6 @@
 // Assemble dist-next, then swap it into the live dist.
 // The live dist stays in place until that new tree is complete.
 // A failed start puts the previous dist back and starts both apps from it.
-// Rollback install uses the repo dist directory, not source/dist.
 // An already-current pull still builds when dist/release.json lacks HEAD.
 // OS_HOLD and CPU_HOLD skip that build while the hold is still true.
 // release.json is written only after START_PANEL succeeds.
@@ -101,6 +100,8 @@ function createContext(options) {
       dist: path.join(repoRoot, "dist"),
       dist2: path.join(repoRoot, "dist2"),
       distNext: path.join(repoRoot, "dist-next"),
+      transaction: path.join(repoRoot, "dist-transaction"),
+      committed: path.join(repoRoot, "dist-committed"),
       backendDist: path.join(repoRoot, "source", "apps", "backend", "dist"),
       panelDist: path.join(repoRoot, "source", "apps", "panel", "dist"),
       configerDist: path.join(repoRoot, "source", "apps", "configer", "dist"),
@@ -550,14 +551,6 @@ async function assembleDistNext(ctx) {
   return true;
 }
 
-function dropNodeModules(fileSystem, dir) {
-  const modules = path.join(dir, "node_modules");
-  if (fileSystem.existsSync(modules)) {
-    // node_modules is read-only on Windows and blocks rename.
-    fileSystem.rmSync(modules, { maxRetries: 3, recursive: true });
-  }
-}
-
 async function stopPm2(ctx) {
   try {
     await ctx.exec("pm2 delete configer");
@@ -571,38 +564,117 @@ async function stopPm2(ctx) {
   }
 }
 
+function transactionPath(ctx, name) {
+  return path.join(ctx.paths.transaction, name);
+}
+
+function removeTree(ctx, dir) {
+  ctx.fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
+}
+
+function beginRelease(ctx) {
+  const { fs: fileSystem, paths } = ctx;
+  // Recovery has already restored a missing live release from dist2.
+  removeTree(ctx, paths.dist2);
+  removeTree(ctx, paths.transaction);
+  removeTree(ctx, paths.committed);
+  fileSystem.mkdirSync(paths.transaction);
+  if (!fileSystem.existsSync(paths.dist)) {
+    fileSystem.writeFileSync(transactionPath(ctx, "first-install"), "");
+  }
+
+  if (fileSystem.existsSync(paths.configerDist)) {
+    fileSystem.copySync(paths.configerDist, transactionPath(ctx, "configer"));
+    // Publish only complete snapshots. The build has not started yet.
+    fileSystem.writeFileSync(transactionPath(ctx, "configer-ready"), "");
+  }
+}
+
+function moveRelease(ctx, from, to, modulesName) {
+  const { fs: fileSystem } = ctx;
+  try {
+    fileSystem.renameSync(from, to);
+    return;
+  } catch (err) {
+    const modules = path.join(from, "node_modules");
+    if (ctx.platform !== "win32" || !fileSystem.existsSync(modules)) {
+      throw err;
+    }
+    // Windows can block a directory rename with node_modules inside.
+    // Keep a complete copy before removing anything from the live tree.
+    const ready = transactionPath(ctx, modulesName + "-ready");
+    if (!fileSystem.existsSync(ready)) {
+      fileSystem.copySync(modules, transactionPath(ctx, modulesName));
+      fileSystem.writeFileSync(ready, "");
+    }
+    removeTree(ctx, modules);
+    fileSystem.renameSync(from, to);
+  }
+}
+
+function restoreModules(ctx, dir, modulesName) {
+  if (ctx.fs.existsSync(transactionPath(ctx, modulesName + "-ready"))) {
+    ctx.fs.copySync(
+      transactionPath(ctx, modulesName),
+      path.join(dir, "node_modules")
+    );
+  }
+}
+
 async function swapIn(ctx) {
-  const fileSystem = ctx.fs;
-  const hadLive = fileSystem.existsSync(ctx.paths.dist);
+  const { fs: fileSystem, paths } = ctx;
   begin(ctx, "SWAP");
   try {
     await stopPm2(ctx);
-    if (fileSystem.existsSync(ctx.paths.dist2)) {
-      fileSystem.rmSync(ctx.paths.dist2, { recursive: true, force: true });
+    if (fileSystem.existsSync(paths.dist)) {
+      moveRelease(ctx, paths.dist, paths.dist2, "previous-modules");
+      restoreModules(ctx, paths.dist2, "previous-modules");
     }
-    if (hadLive) {
-      dropNodeModules(fileSystem, ctx.paths.dist);
-      fileSystem.renameSync(ctx.paths.dist, ctx.paths.dist2);
-    }
-    dropNodeModules(fileSystem, ctx.paths.distNext);
-    fileSystem.renameSync(ctx.paths.distNext, ctx.paths.dist);
+    moveRelease(ctx, paths.distNext, paths.dist, "candidate-modules");
+    restoreModules(ctx, paths.dist, "candidate-modules");
   } catch (err) {
-    if (
-      hadLive &&
-      !fileSystem.existsSync(ctx.paths.dist) &&
-      fileSystem.existsSync(ctx.paths.dist2)
-    ) {
-      try {
-        fileSystem.renameSync(ctx.paths.dist2, ctx.paths.dist);
-      } catch (restoreErr) {
-        ctx.logger.error("SWAP", strings.overrideRollbackFailed, restoreErr);
-      }
-    }
     fail(ctx, "SWAP", err);
     return false;
   }
   end(ctx, "SWAP");
   return true;
+}
+
+function recoverRelease(ctx) {
+  const { fs: fileSystem, paths } = ctx;
+  if (fileSystem.existsSync(paths.committed)) {
+    return;
+  }
+  if (!fileSystem.existsSync(paths.transaction)) {
+    // Older builds did not have a transaction record.
+    if (
+      !fileSystem.existsSync(paths.dist) &&
+      fileSystem.existsSync(paths.dist2)
+    ) {
+      fileSystem.renameSync(paths.dist2, paths.dist);
+    }
+    return;
+  }
+
+  if (
+    fileSystem.existsSync(paths.dist2) ||
+    fileSystem.existsSync(transactionPath(ctx, "first-install"))
+  ) {
+    // Either this is the unproven release, or promotion was interrupted
+    // before it appeared. Previous modules are kept independently.
+    removeTree(ctx, paths.dist);
+    if (fileSystem.existsSync(paths.dist2)) {
+      moveRelease(ctx, paths.dist2, paths.dist, "rollback-modules");
+    }
+  }
+  restoreModules(ctx, paths.dist, "previous-modules");
+  restoreModules(ctx, paths.dist, "rollback-modules");
+  if (fileSystem.existsSync(transactionPath(ctx, "configer-ready"))) {
+    removeTree(ctx, paths.configerDist);
+    fileSystem.copySync(transactionPath(ctx, "configer"), paths.configerDist);
+  }
+  removeTree(ctx, paths.distNext);
+  fileSystem.writeFileSync(paths.committed, "");
 }
 
 function delayMs(ms) {
@@ -996,82 +1068,58 @@ async function startNew(ctx) {
   return "";
 }
 
-async function swapBack(ctx) {
-  const fileSystem = ctx.fs;
-  if (!fileSystem.existsSync(ctx.paths.dist2)) {
-    return false;
-  }
+async function recoverAndStart(ctx) {
   try {
-    fileSystem.rmSync(ctx.paths.distNext, { recursive: true, force: true });
-    if (fileSystem.existsSync(ctx.paths.dist)) {
-      dropNodeModules(fileSystem, ctx.paths.dist);
-      fileSystem.renameSync(ctx.paths.dist, ctx.paths.distNext);
-    }
-    fileSystem.renameSync(ctx.paths.dist2, ctx.paths.dist);
+    await stopPm2(ctx);
+    recoverRelease(ctx);
   } catch (err) {
-    if (
-      !fileSystem.existsSync(ctx.paths.dist) &&
-      fileSystem.existsSync(ctx.paths.distNext)
-    ) {
-      try {
-        fileSystem.renameSync(ctx.paths.distNext, ctx.paths.dist);
-      } catch (restoreErr) {
-        ctx.logger.error("SWAP", strings.overrideRollbackFailed, restoreErr);
-      }
-    }
     ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
     return false;
   }
-  try {
-    fileSystem.rmSync(ctx.paths.distNext, { recursive: true, force: true });
-  } catch (err) {
-    ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
+  return startPrevious(ctx);
+}
+
+async function runRelease(ctx) {
+  if (!(await assembleDistNext(ctx)) || !(await swapIn(ctx))) {
+    return recoverAndStart(ctx);
+  }
+
+  const failedStep = await startNew(ctx);
+  if (failedStep !== "") {
+    return recoverAndStart(ctx);
   }
   try {
-    // --no-save keeps the copied lock and writes nothing on stderr.
-    await ctx.exec(`${ctx.bun} install --no-save`, {
-      cwd: ctx.paths.dist,
-      maxBuffer: 32 * 1024 * 1024,
-    });
+    ctx.fs.writeFileSync(ctx.paths.committed, "");
   } catch (err) {
-    ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
+    fail(ctx, "SWAP", err);
+    return recoverAndStart(ctx);
   }
   return true;
 }
 
-async function runRelease(ctx) {
-  const prepared = await assembleDistNext(ctx);
-  if (!prepared) {
-    if (ctx.fs.existsSync(ctx.paths.dist)) {
-      return startLive(ctx);
-    }
-    return false;
-  }
-  const swapped = await swapIn(ctx);
-  if (!swapped) {
-    if (ctx.fs.existsSync(ctx.paths.dist)) {
-      return startLive(ctx);
-    }
-    return false;
-  }
-  const failedStep = await startNew(ctx);
-  if (failedStep === "") {
-    return true;
-  }
-  await stopPm2(ctx);
-  if (!ctx.fs.existsSync(ctx.paths.dist2)) {
-    return false;
-  }
-  const restored = await swapBack(ctx);
-  if (!restored) {
-    return false;
-  }
-  return startLive(ctx);
-}
-
 async function onStartup(options) {
   const ctx = createContext(options);
-  const previous = readLast(ctx);
+  let previous = readLast(ctx);
+  try {
+    const interrupted =
+      ctx.fs.existsSync(ctx.paths.transaction) &&
+      !ctx.fs.existsSync(ctx.paths.committed);
+    if (interrupted) {
+      await stopPm2(ctx);
+    }
+    recoverRelease(ctx);
+    if (interrupted) {
+      fail(
+        ctx,
+        "SWAP",
+        new Error("Obnoveno po p\u0159eru\u0161en\u00e9 aktualizaci.")
+      );
+      previous = readLast(ctx);
+    }
+  } catch (err) {
+    fail(ctx, "SWAP", err);
+    return false;
+  }
   const ready = await prepareTree(ctx);
   if (!ready) {
     return startPrevious(ctx);
@@ -1091,9 +1139,14 @@ async function onStartup(options) {
     sha = "";
   }
   if (needsBuild(ctx, previous, updateRes, boot, sha)) {
-    const built = await build(ctx);
-    if (!built) {
+    try {
+      beginRelease(ctx);
+    } catch (err) {
+      fail(ctx, "SWAP", err);
       return startPrevious(ctx);
+    }
+    if (!(await build(ctx))) {
+      return recoverAndStart(ctx);
     }
     return runRelease(ctx);
   }

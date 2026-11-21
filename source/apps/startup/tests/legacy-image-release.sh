@@ -28,6 +28,7 @@ show_logs() {
   pm2 status >&2 || true
 }
 
+site_fixture=""
 on_exit() {
   git update-index --no-skip-worktree apps/panel/package.json >/dev/null 2>&1 || true
   git update-index --no-skip-worktree apps/backend/package.json >/dev/null 2>&1 || true
@@ -35,6 +36,7 @@ on_exit() {
   git update-index --no-skip-worktree apps/startup/versions.env >/dev/null 2>&1 || true
   git checkout -- apps/panel/package.json apps/backend/package.json package.json apps/startup/versions.env >/dev/null 2>&1 || true
   rm -f apps/panel/fail-panel-build.js apps/backend/omit-dist-entry.cjs
+  if [ -n "$site_fixture" ]; then rm -f "$site_fixture"; fi
   pm2 delete configer >/dev/null 2>&1 || true
   pm2 delete babybox >/dev/null 2>&1 || true
 }
@@ -367,6 +369,35 @@ assert_runtime bun
 restore_tracked apps/backend/package.json
 rm -f apps/backend/omit-dist-entry.cjs
 cp "$RUNNER_TEMP/backend-index.js" apps/backend/dist/index.js
+stop_apps
+
+echo "interrupted rename boundaries restore a live release with the network unavailable"
+test ! -e apps/configer/configs/main.json || fail "existing site configuration"
+site_fixture=apps/configer/configs/main.json
+printf '%s\n' '{"babybox":{"name":"Offline site fixture"}}' >"$site_fixture"
+cp apps/configer/configs/main.json "$RUNNER_TEMP/site-config.json"
+for boundary in 'dist>dist2' 'dist-next>dist' 'dist2>dist' health-offline; do
+  seed_previous_production
+  printf '%s\n' retained >"$ROOT/dist/node_modules/.rollback-marker"
+  printf '%s\n' retained >apps/configer/dist/.rollback-marker
+  rc=0
+  node apps/startup/tests/release-recovery.js "$boundary" || rc="$?"
+  if [ "$boundary" = health-offline ]; then
+    test "$rc" = 0 || fail "offline health rollback failed ($rc)"
+    assert_record START_PANEL "5000"
+  else
+    test "$rc" = 45 || fail "release never reached rename boundary $boundary ($rc)"
+    node apps/startup/tests/release-recovery.js offline
+  fi
+  assert_marker
+  assert_apps
+  assert_panel_page
+  test -f "$ROOT/dist/node_modules/.rollback-marker"
+  test -f apps/configer/dist/.rollback-marker
+  cmp "$RUNNER_TEMP/site-config.json" apps/configer/configs/main.json
+done
+rm -f "$site_fixture"
+site_fixture=""
 stop_apps
 
 echo "forced BOOTSTRAP_BUN keeps the previous dist"
