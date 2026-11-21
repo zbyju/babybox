@@ -15,9 +15,9 @@
     "lint": "bun --bun oxlint --type-aware --deny-warnings src",
     "format": "bun --bun oxfmt --write \"src/**/*.ts\"",
     "test": "bun --bun vitest run src",
-    "typecheck": "tsc -p tsconfig.vitest.json",
+    "typecheck": "bun --bun tsc -p tsconfig.vitest.json",
     "test:postman": "newman run ./src/routes/__postman__/babybox-panel.postman_collection.json -e ./src/routes/__postman__/BabyboxPanel.postman_environment.json",
-    "build": "tsc",
+    "build": "bun --bun tsc",
     "echo": "echo 'Hello from babybox panel backend'",
     "format:check": "bun --bun oxfmt --check \"src/**/*.ts\""
   },
@@ -27,7 +27,7 @@
     "@types/morgan": "1.9.10",
     "@types/node": "18.6.2",
     "newman": "6.2.2",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "dependencies": {
     "axios": "1.20.0",
