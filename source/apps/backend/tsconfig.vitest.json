@@ -14,7 +14,7 @@
      */
     "noEmit": true,
     /*
-     * Same path as tsconfig.json. This file extends the contract, which has
+     * Same path as tsconfig.build.json. This file extends the contract, which has
      * no paths. Keep the two entries equal. The import stays type-only.
      */
     "paths": {

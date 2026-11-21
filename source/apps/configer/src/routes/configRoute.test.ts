@@ -161,7 +161,7 @@ describe("PATCH /config/main", () => {
   });
 
   it("answers 400 for an empty body and writes nothing", async () => {
-    const before = await (await fetch(url)).json();
+    const before: unknown = await (await fetch(url)).json();
 
     const res = await patch({});
 

@@ -218,24 +218,13 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Panel lint and format
-        run: bun --filter babybox-panel lint && bun --filter babybox-panel format:check
-
-      - name: Build config schema
-        run: bun --filter @babybox/config-schema build
-
-      - name: Startup and schema lint and format
+      - name: Workspace lint policy
         run: |
-          bun --filter startup lint
-          bun --filter startup format:check
-          bun --filter @babybox/config-schema lint
-          bun --filter @babybox/config-schema format:check
+          bun run lint
+          bun scripts/check-lint-policy.js
 
-      - name: Backend lint and format
-        run: bun --filter babybox-panel-backend lint && bun --filter babybox-panel-backend format:check
-
-      - name: Configer lint and format
-        run: bun --filter babybox-panel-configer lint && bun --filter babybox-panel-configer format:check
+      - name: Format checks
+        run: bun --filter '*' format:check
 
       - name: Build
         run: bun --filter babybox-panel build && bun --filter babybox-panel-backend build && bun --filter babybox-panel-configer build

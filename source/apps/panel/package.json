@@ -11,7 +11,7 @@
     "preview": "bun --bun vite preview --port 5050",
     "test:unit": "node ./node_modules/vitest/vitest.mjs --environment jsdom",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.vitest.json && vue-tsc --noEmit -p tsconfig.vite-config.json",
-    "lint": "bun --bun oxlint --deny-warnings src vite.config.mts env.d.ts",
+    "lint": "bun --bun oxlint --type-aware --deny-warnings src vite.config.mts env.d.ts",
     "format": "bun --bun oxfmt --write src index.html vite.config.mts env.d.ts",
     "echo": "echo 'Hello from panel'",
     "format:check": "bun --bun oxfmt --check src index.html vite.config.mts env.d.ts"
