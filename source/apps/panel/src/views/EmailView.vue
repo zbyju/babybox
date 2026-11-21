@@ -8,6 +8,9 @@
         nepřesměruje e-maily z jednotek ani kamery.
       </p>
       <p role="status">{{ message }}</p>
+      <p v-if="statusUnavailable" role="status" class="failure">
+        Stav e-mailové služby nelze načíst. Čeká se na obnovení spojení.
+      </p>
       <section v-if="status">
         <h2>Stav služby</h2>
         <p>{{ status.listener }}</p>
@@ -104,6 +107,7 @@
       </section>
       <section v-if="status">
         <h2>Fronta</h2>
+        <p v-if="!status.queue.length">Ve frontě nejsou žádné zprávy.</p>
         <label v-for="item in status.queue" :key="item.id" class="queue-row">
           <input
             v-model="selected"
@@ -117,7 +121,9 @@
               ? "odesílání"
               : item.stopped
                 ? "definitivní chyba; čeká na obsluhu"
-                : "čeká"
+                : item.paused
+                  ? "odesílání pozastaveno"
+                  : "čeká"
           }}
           · pokusů {{ item.attempts }}
         </label>
@@ -134,7 +140,7 @@
           Odstranit vybrané
         </button>
         <button
-          :disabled="busy || !status.queue.length"
+          :disabled="busy || !status.queue.some((item) => !item.active)"
           @click="confirmation = 'clear'"
         >
           Vyprázdnit frontu
@@ -238,11 +244,13 @@
       attempts: number;
       active: boolean;
       stopped: boolean;
+      paused: boolean;
     }[];
     history: RecordView[];
   }
   const settings = ref<Settings>();
   const status = ref<Status>();
+  const statusUnavailable = ref(false);
   const message = ref("");
   const busy = ref(false);
   const testRecipient = ref("");
@@ -251,6 +259,7 @@
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let returnTimer: ReturnType<typeof setTimeout> | undefined;
   let disposed = false;
+  let statusRequest = 0;
   const time = (value: number) => new Date(value).toLocaleString("cs-CZ");
   const labels: Record<string, string> = {
     pending: "čeká",
@@ -273,21 +282,29 @@
   };
   const label = (value: string) => labels[value] || value;
   async function readStatus() {
-    const response = await fetchWithTimeout(`${backendApi().baseUrl}/email`, {
-      timeout: 10000,
-    });
-    if (!response.ok) throw new Error();
-    status.value = await response.json();
-    selected.value = selected.value.filter((id) =>
-      status.value?.queue.some((item) => item.id === id),
-    );
+    const request = ++statusRequest;
+    try {
+      const response = await fetchWithTimeout(`${backendApi().baseUrl}/email`, {
+        timeout: 10000,
+      });
+      if (!response.ok) throw new Error();
+      const next: Status = await response.json();
+      if (request !== statusRequest || disposed) return;
+      status.value = next;
+      statusUnavailable.value = false;
+      selected.value = selected.value.filter((id) =>
+        next.queue.some((item) => item.id === id && !item.active),
+      );
+    } catch {
+      if (request !== statusRequest || disposed) return;
+      status.value = undefined;
+      statusUnavailable.value = true;
+      confirmation.value = null;
+      selected.value = [];
+    }
   }
   async function refresh() {
-    try {
-      await readStatus();
-    } catch {
-      message.value = "Stav e-mailové služby nelze načíst.";
-    }
+    await readStatus();
     if (!disposed) refreshTimer = setTimeout(refresh, 5000);
   }
   async function save() {

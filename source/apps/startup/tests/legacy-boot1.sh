@@ -187,6 +187,8 @@ assert_apps() {
     show_logs
     fail "panel did not answer /status"
   fi
+  cmp "$RUNNER_TEMP/pre-email-main.json" "$MAIN_CONFIG" ||
+    fail "startup changed the existing main.json"
 }
 
 assert_panel_page() {
@@ -273,6 +275,15 @@ LEGACY_SHA="$(git rev-parse "legacy-runtime^{commit}")"
 PM2_WANT="$(pm2_version)"
 assert_head "$LEGACY_SHA"
 set_up_remote
+MAIN_CONFIG="$SOURCE/apps/configer/configs/main.json"
+cat >"$RUNNER_TEMP/pre-email-main.json" <<'EOF'
+{
+  "babybox": {"name": "Legacy boot fixture"},
+  "units": {"engine": {"ip": "127.0.0.2"}, "thermal": {"ip": "127.0.0.3"}},
+  "camera": {"ip": "127.0.0.4"}
+}
+EOF
+cp "$RUNNER_TEMP/pre-email-main.json" "$MAIN_CONFIG"
 
 echo "a legacy box starts the legacy tree on Node"
 remove_bun
@@ -309,6 +320,17 @@ assert_apps
 assert_panel_page
 assert_runtime bun
 assert_modules
+wait_http "http://127.0.0.1:5000/api/v1/email" ||
+  fail "upgraded backend did not expose email status"
+curl -fsS "http://127.0.0.1:5001/api/v1/config/main" | node -e '
+let body = "";
+process.stdin.on("data", chunk => { body += chunk; });
+process.stdin.on("end", () => {
+  const config = JSON.parse(body).data;
+  if (config.babybox.name !== "Legacy boot fixture" ||
+      config.email.listener !== "enabled" || config.email.mode !== "device" ||
+      config.email.host !== "") process.exit(1);
+});'
 if [ "$(pm2_version)" != "$PM2_WANT" ]; then
   fail "pm2 is $(pm2_version), want ${PM2_WANT}"
 fi

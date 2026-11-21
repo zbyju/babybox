@@ -185,6 +185,66 @@ describe("email relay isolation and recipient tracking", () => {
     expect(send).toHaveBeenCalledTimes(2);
   });
 
+  it("pauses a camera with no panel recipients while units keep delivering", async () => {
+    settings.mode = "panel";
+    settings.unitRecipients = "units@example.com";
+    const unit = await relay.receive(
+      "127.0.0.1",
+      "unit@example.com",
+      ["a@example.com"],
+      raw
+    );
+    const camera = await relay.receive(
+      "127.0.0.3",
+      "camera@example.com",
+      ["a@example.com"],
+      raw
+    );
+    await relay.tick();
+    expect(
+      relay.status().queue.find((item) => item.id === camera)?.paused
+    ).toBe(true);
+    await relay.tick();
+    expect(
+      relay.status().history.find((item) => item.id === unit)?.status
+    ).toBe("accepted");
+    expect(send.mock.calls.map((call) => call[2])).toEqual([
+      "units@example.com",
+    ]);
+    settings.cameraRecipients = "camera-inbox@example.com";
+    await relay.tick();
+    expect(send.mock.calls.map((call) => call[2])).toEqual([
+      "units@example.com",
+      "camera-inbox@example.com",
+    ]);
+  });
+
+  it("applies a shared cooldown after an SMTP 421 response", async () => {
+    send.mockRejectedValueOnce(
+      Object.assign(new Error("421 shutting down"), { responseCode: 421 })
+    );
+    await relay.receive(
+      "127.0.0.1",
+      "unit@example.com",
+      ["a@example.com"],
+      raw
+    );
+    await relay.tick();
+    await relay.receive(
+      "127.0.0.3",
+      "camera@example.com",
+      ["b@example.com"],
+      raw
+    );
+    await relay.tick();
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(
+      relay
+        .status()
+        .history[1]?.events.some((event) => event.kind === "connection")
+    ).toBe(true);
+  });
+
   it("expires queued content while stored email settings are invalid", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     try {

@@ -20,6 +20,7 @@ interface Entry {
   attempts: number;
   dueAt: number;
   stopped: boolean;
+  routePaused: boolean;
 }
 
 export type AttemptResult =
@@ -27,6 +28,7 @@ export type AttemptResult =
   | "permanent"
   | "temporary"
   | "connection"
+  | "routing"
   | "configuration";
 
 export function retryDelay(attempts: number): number {
@@ -118,6 +120,7 @@ export class EmailQueue {
       attempts: 0,
       dueAt: receivedAt,
       stopped: false,
+      routePaused: false,
     };
     this.entries.push(entry);
     return { id: entry.id, discarded };
@@ -136,7 +139,8 @@ export class EmailQueue {
       return { discarded };
     }
     const eligible = this.entries.filter(
-      (entry) => !entry.stopped && entry.dueAt <= this.now()
+      (entry) =>
+        !entry.stopped && !entry.routePaused && entry.dueAt <= this.now()
     );
     // Unattempted arrivals first. Among retries, newest receipt first as well.
     eligible.sort(
@@ -164,6 +168,7 @@ export class EmailQueue {
       this.entries = this.entries.filter((item) => item !== entry);
     } else {
       if (result === "permanent") entry.stopped = true;
+      if (result === "routing") entry.routePaused = true;
       entry.dueAt = this.now() + retryDelay(entry.attempts);
       if (result === "connection") this.cooldownUntil = entry.dueAt;
       if (result === "configuration") this.connectionPaused = true;
@@ -176,6 +181,7 @@ export class EmailQueue {
     this.connectionPaused = false;
     this.cooldownUntil = 0;
     for (const entry of this.entries) {
+      entry.routePaused = false;
       entry.dueAt = this.now();
     }
   }
@@ -187,6 +193,7 @@ export class EmailQueue {
     if (!entry || this.now() - entry.receivedAt >= this.limits.ttl)
       return false;
     entry.stopped = false;
+    entry.routePaused = false;
     entry.dueAt = this.now();
     this.connectionPaused = false;
     this.cooldownUntil = 0;
@@ -210,6 +217,7 @@ export class EmailQueue {
     dueAt: number;
     active: boolean;
     stopped: boolean;
+    paused: boolean;
   }[] {
     return this.entries.map((entry) => ({
       id: entry.id,
@@ -219,6 +227,7 @@ export class EmailQueue {
       dueAt: entry.dueAt,
       active: entry === this.active,
       stopped: entry.stopped,
+      paused: entry.routePaused || this.connectionPaused,
     }));
   }
 

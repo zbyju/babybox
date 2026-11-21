@@ -9,7 +9,11 @@ import {
   EmailHistory,
 } from "./history.js";
 import { metadata } from "./metadata.js";
-import { type DiscardedEmail, EmailQueue } from "./queue.js";
+import {
+  type AttemptResult,
+  type DiscardedEmail,
+  EmailQueue,
+} from "./queue.js";
 import {
   addresses,
   diagnostic,
@@ -311,12 +315,7 @@ export class EmailRelay {
       activeId = taken.message.id;
       const record = this.records.get(activeId);
       if (!record) throw new Error("Missing email record");
-      let result:
-        | "complete"
-        | "permanent"
-        | "temporary"
-        | "connection"
-        | "configuration" = "complete";
+      let result: AttemptResult = "complete";
       try {
         const requested =
           settings.mode === "device" || record.source === "test"
@@ -385,10 +384,14 @@ export class EmailRelay {
         result =
           object(error) && Number(error["responseCode"]) >= 500
             ? "permanent"
-            : "configuration";
+            : "routing";
         if (result === "permanent") record.status = "failed";
         this.error = diagnostic(error, settings);
-        this.history.event(record, result, this.error);
+        this.history.event(
+          record,
+          result === "routing" ? "configuration" : result,
+          this.error
+        );
       }
       this.discard(this.queue.settle(activeId, result));
       if (result === "temporary" || result === "connection") {
@@ -403,7 +406,7 @@ export class EmailRelay {
               pending.dueAt
             ).toISOString()}.`
           );
-      } else if (result === "configuration") {
+      } else if (result === "configuration" || result === "routing") {
         this.history.event(
           record,
           "paused",

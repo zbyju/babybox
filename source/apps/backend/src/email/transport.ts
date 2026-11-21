@@ -16,6 +16,7 @@ export function classifyFailure(error: unknown): FailureCategory {
   const originalCode =
     typeof failure["originalCode"] === "string" ? failure["originalCode"] : "";
   const response = Number(failure["responseCode"]);
+  if (response === 421) return "connection";
   if (code === "EAUTH" && response >= 400 && response < 500)
     return "connection";
   if (
