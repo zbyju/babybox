@@ -21,6 +21,13 @@ module.exports = {
     "Nahrání nové verze se nezdařilo. Obnova staré verze byla dokončena.",
   overrideRollbackFailed:
     "Nahrání nové verze se nezdařilo. Obnova staré verze se také nezdařila.",
+  stepStarted: "Krok {step} začíná.",
+  stepFinished: "Krok {step} skončil.",
+  stepFailed: "Krok {step} se nezdařil.",
+  distNextMissingBuild: "Sestavené soubory pro novou verzi chybí.",
+  treeDirty: "Pracovní strom není čistý.",
+  releaseWriteFailed: "Soubor release.json se nepodařilo zapsat.",
+  statusUnanswered: "Adresa {url} neodpověděla do {ms} ms.",
   startBegin: "Spouštím panel babyboxu.",
   startSucceeded: "Panel babyboxu byl spuštěn.",
   startFailed: "Panel babyboxu se nepodařilo spustit.",

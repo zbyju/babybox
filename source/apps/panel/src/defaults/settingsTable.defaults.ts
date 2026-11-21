@@ -185,12 +185,10 @@ export const getSettingsTableTemplateRows = (): SettingsTableRowTemplate[] => {
 export const getSettingsTableValues = (
   template: SettingsTableRowTemplate[],
 ): SettingsTableRowValue[] => {
-  return template.map(
-    (t: SettingsTableRowTemplate): SettingsTableRowValue => ({
-      engine: t.engine ? undefined : null,
-      thermal: t.thermal ? undefined : null,
-      value: "",
-      state: SettingsTableRowState.Neutral,
-    }),
-  );
+  return template.map((t: SettingsTableRowTemplate): SettingsTableRowValue => ({
+    engine: t.engine ? undefined : null,
+    thermal: t.thermal ? undefined : null,
+    value: "",
+    state: SettingsTableRowState.Neutral,
+  }));
 };

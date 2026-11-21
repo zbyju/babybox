@@ -29,10 +29,12 @@ describe("reloadBackendConfig", () => {
     const result = await reloadBackendConfig();
 
     expect(result).toEqual({ ok: true, unapplied: [] });
-    expect(requestJsonMock.mock.calls[0][0]).toBe(
+    expect(requestJsonMock.mock.calls[0]?.[0]).toBe(
       "http://localhost:5000/api/v1/reload",
     );
-    expect(requestJsonMock.mock.calls[0][1]).toMatchObject({ method: "POST" });
+    expect(requestJsonMock.mock.calls[0]?.[1]).toMatchObject({
+      method: "POST",
+    });
   });
 
   it("hands back the fields the backend could not apply", async () => {

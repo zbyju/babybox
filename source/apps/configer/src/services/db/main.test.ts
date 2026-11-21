@@ -38,15 +38,36 @@ function file(name: string): string {
   return join(configDir, name);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function readJson(name: string): Record<string, unknown> {
-  return JSON.parse(readFileSync(file(name), "utf-8")) as Record<
-    string,
-    unknown
-  >;
+  const parsed: unknown = JSON.parse(readFileSync(file(name), "utf-8"));
+  if (!isRecord(parsed)) {
+    throw new Error(`${name} is not a JSON object`);
+  }
+  return parsed;
+}
+
+function isMainConfig(value: unknown): value is MainConfig {
+  return parseMainConfig(value).ok;
 }
 
 function base(): MainConfig {
-  return JSON.parse(readFileSync(repoBase, "utf-8")) as MainConfig;
+  const parsed: unknown = JSON.parse(readFileSync(repoBase, "utf-8"));
+  if (!isMainConfig(parsed)) {
+    throw new Error("base.json is not a config");
+  }
+  return parsed;
+}
+
+function invocationAt(order: readonly number[], index: number): number {
+  const value = order[index];
+  if (value === undefined) {
+    throw new Error(`missing call order at ${index}`);
+  }
+  return value;
 }
 
 beforeEach(() => {
@@ -56,6 +77,7 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(configDir, { recursive: true, force: true });
+  vi.resetAllMocks();
   vi.restoreAllMocks();
 });
 
@@ -143,14 +165,14 @@ describe("boot", () => {
       file("main.json"),
       JSON.stringify({ babybox: { name: "x" } })
     );
-    vi.mocked(readFileSync).mockImplementation(((path, options) => {
+    vi.mocked(readFileSync).mockImplementation((path, options) => {
       if (String(path).endsWith("main.json")) {
         throw Object.assign(new Error("EACCES: permission denied"), {
           code: "EACCES",
         });
       }
       return actual.readFileSync(path, options);
-    }) as typeof readFileSync);
+    });
     const error = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
@@ -341,17 +363,24 @@ describe("update", () => {
     });
   });
 
-  it("fsyncs the data before the rename and the directory after it", async () => {
+  it("fsyncs the data before the rename and syncs the directory where supported", async () => {
     const db = await mainConfig(configDir);
     vi.mocked(fsyncSync).mockClear();
     vi.mocked(renameSync).mockClear();
 
     await db.update({ babybox: { name: "Brno" } });
 
-    const [dataSync, dirSync] = vi.mocked(fsyncSync).mock.invocationCallOrder;
-    const [rename] = vi.mocked(renameSync).mock.invocationCallOrder;
+    const fsyncOrder = vi.mocked(fsyncSync).mock.invocationCallOrder;
+    const renameOrder = vi.mocked(renameSync).mock.invocationCallOrder;
+    const dataSync = invocationAt(fsyncOrder, 0);
+
+    const rename = invocationAt(renameOrder, 0);
     expect(dataSync).toBeLessThan(rename);
-    expect(rename).toBeLessThan(dirSync);
+    if (process.platform === "win32") {
+      expect(fsyncOrder).toHaveLength(1);
+    } else {
+      expect(rename).toBeLessThan(invocationAt(fsyncOrder, 1));
+    }
   });
 
   it("keeps the config before the last write in main.json.bak across a reboot", async () => {
@@ -365,7 +394,7 @@ describe("update", () => {
     await mainConfig(configDir);
 
     expect(readJson("main.json.bak")).toEqual({ babybox: { name: "Praha" } });
-    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
+    expect(readJson("main.json")["babybox"]).toEqual({ name: "Brno" });
   });
 
   it("never copies a corrupt main.json over main.json.bak", async () => {
@@ -378,7 +407,7 @@ describe("update", () => {
     await db.update({ babybox: { name: "Brno" } });
 
     expect(readJson("main.json.bak")).toEqual(backup);
-    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
+    expect(readJson("main.json")["babybox"]).toEqual({ name: "Brno" });
   });
 
   it("leaves no temp file behind", async () => {
@@ -399,8 +428,8 @@ describe("update", () => {
     const result = await db.update(db.data());
 
     expect(result.status).toBe("saved");
-    expect(readJson("main.json.bak").babybox).toEqual({ name: "prvni" });
-    expect(readJson("main.json").babybox).toEqual({ name: "druhy" });
+    expect(readJson("main.json.bak")["babybox"]).toEqual({ name: "prvni" });
+    expect(readJson("main.json")["babybox"]).toEqual({ name: "druhy" });
   });
 
   it("rejects a change to configer.port and writes nothing", async () => {
@@ -603,8 +632,8 @@ describe("patch", () => {
     const result = await db.patch({ camera: {} });
 
     expect(result.status).toBe("saved");
-    expect(readJson("main.json.bak").babybox).toEqual({ name: "prvni" });
-    expect(readJson("main.json").babybox).toEqual({ name: "druhy" });
+    expect(readJson("main.json.bak")["babybox"]).toEqual({ name: "prvni" });
+    expect(readJson("main.json")["babybox"]).toEqual({ name: "druhy" });
   });
 
   /* The form sends every field it shows, so a save that does not touch the address
@@ -618,7 +647,7 @@ describe("patch", () => {
     });
 
     expect(result.status).toBe("saved");
-    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
+    expect(readJson("main.json")["babybox"]).toEqual({ name: "Brno" });
   });
 
   /*
@@ -647,7 +676,7 @@ describe("patch", () => {
     });
 
     expect(fixed.status).toBe("saved");
-    expect(readJson("main.json").babybox).toEqual({ name: "Brno" });
+    expect(readJson("main.json")["babybox"]).toEqual({ name: "Brno" });
   });
 
   it("keeps the old config in memory and on disk when the write fails", async () => {

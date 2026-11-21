@@ -5,10 +5,10 @@
       props.block.state === TableBlockState.ColorSuccess
         ? 'color-success'
         : props.block.state === TableBlockState.ColorWarning
-        ? 'color-warning'
-        : props.block.state === TableBlockState.ColorError
-        ? 'color-error'
-        : '',
+          ? 'color-warning'
+          : props.block.state === TableBlockState.ColorError
+            ? 'color-error'
+            : '',
     ]"
     :colspan="props.block.colspan"
   >

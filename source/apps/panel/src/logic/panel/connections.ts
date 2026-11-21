@@ -24,7 +24,11 @@ export class ConnectionTracker {
    * it past the alarm threshold.
    */
   failStreakMs: number;
-  private failStreakStartedAt: number;
+  /*
+   * Not private: pinia's state type drops private fields,
+   * so the store state would no longer be a ConnectionTracker.
+   */
+  failStreakStartedAt: number;
 
   constructor() {
     this.requests = 0;

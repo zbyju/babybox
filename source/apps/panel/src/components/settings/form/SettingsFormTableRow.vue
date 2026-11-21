@@ -8,9 +8,9 @@
       <div class="newvalue-wrapper">
         <BaseInput
           type="text"
-          :value="props.value"
+          :model-value="props.value"
           :state="inputState"
-          @input="inputChange"
+          @update:model-value="(value: string) => emit('update:value', value)"
         />
         <span v-if="props.row.type !== 'string'" class="measure-unit"
           >[{{ typeToMeasureUnit(props.row.type) }}]</span
@@ -42,8 +42,9 @@
 
   const props = defineProps<{
     row: SettingsTableRow;
-    engine: string | null;
-    thermal: string | null;
+    // undefined: not loaded, or the answer has no value at this index. null: the row has no such unit.
+    engine: string | null | undefined;
+    thermal: string | null | undefined;
     value: string;
     state: SettingsTableRowState;
   }>();
@@ -98,19 +99,15 @@
     return props.state === SettingsTableRowState.Changed
       ? BaseInputState.Accent
       : props.state === SettingsTableRowState.Success
-      ? BaseInputState.Success
-      : props.state === SettingsTableRowState.Warning
-      ? BaseInputState.Warning
-      : props.state === SettingsTableRowState.Error
-      ? BaseInputState.Error
-      : BaseInputState.Neutral;
+        ? BaseInputState.Success
+        : props.state === SettingsTableRowState.Warning
+          ? BaseInputState.Warning
+          : props.state === SettingsTableRowState.Error
+            ? BaseInputState.Error
+            : BaseInputState.Neutral;
   });
 
   const emit = defineEmits<{
     (e: "update:value", value: string): void;
   }>();
-
-  function inputChange(event: Event) {
-    emit("update:value", (event.target as HTMLInputElement).value);
-  }
 </script>

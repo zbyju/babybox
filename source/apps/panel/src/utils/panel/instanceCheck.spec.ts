@@ -5,14 +5,12 @@ import { isInstanceOfConfig, isInstanceOfVersions } from "./instanceCheck";
 
 type Fields = Record<string, unknown>;
 
-function config(): Fields {
-  return defaultConfig() as unknown as Fields;
-}
-
-function withSection(name: string, changes: Fields): Fields {
-  const value = config();
-  value[name] = { ...(value[name] as Fields), ...changes };
-  return value;
+function withSection(
+  name: keyof ReturnType<typeof defaultConfig>,
+  changes: Fields,
+): Fields {
+  const value = defaultConfig();
+  return { ...value, [name]: { ...value[name], ...changes } };
 }
 
 describe("isInstanceOfConfig", () => {
@@ -30,7 +28,7 @@ describe("isInstanceOfConfig", () => {
 
   /* A box whose main.json grew a key we do not know still has to show its panel. */
   it("accepts a config with an unknown key", () => {
-    expect(isInstanceOfConfig({ ...config(), junk: "x" })).toBe(true);
+    expect(isInstanceOfConfig({ ...defaultConfig(), junk: "x" })).toBe(true);
   });
 
   /*
@@ -49,12 +47,11 @@ describe("isInstanceOfConfig", () => {
       isInstanceOfConfig(withSection("app", { refreshRequestLimit: null })),
     ).toBe(true);
 
-    const value = config();
-    const app = { ...(value.app as Fields) };
-    delete app.refreshRequestLimit;
-    value.app = app;
+    const value = defaultConfig();
+    const app: Fields = { ...value.app };
+    delete app["refreshRequestLimit"];
 
-    expect(isInstanceOfConfig(value)).toBe(true);
+    expect(isInstanceOfConfig({ ...value, app })).toBe(true);
   });
 
   it("accepts a delay of 0", () => {
@@ -74,8 +71,8 @@ describe("isInstanceOfConfig", () => {
   });
 
   it("rejects a missing section", () => {
-    const value = config();
-    delete value.units;
+    const value: Fields = { ...defaultConfig() };
+    delete value["units"];
 
     expect(isInstanceOfConfig(value)).toBe(false);
   });
@@ -129,15 +126,24 @@ describe("isInstanceOfConfig", () => {
 });
 
 describe("isInstanceOfVersions", () => {
+  const versions = {
+    startup: "1.0.0",
+    backend: "1.0.0",
+    configer: "1.0.0",
+    frontend: "1.0.0",
+  };
+
   it("accepts a full versions body", () => {
-    expect(
-      isInstanceOfVersions({
-        startup: "1.0.0",
-        backend: "1.0.0",
-        configer: "1.0.0",
-        frontend: "1.0.0",
-      }),
-    ).toBe(true);
+    expect(isInstanceOfVersions(versions)).toBe(true);
+  });
+
+  it.each([
+    ["startup", null],
+    ["backend", 1],
+    ["configer", {}],
+    ["frontend", ["1.0.0"]],
+  ])("rejects a %s that is not a string", (key, value) => {
+    expect(isInstanceOfVersions({ ...versions, [key]: value })).toBe(false);
   });
 
   // axios hands back a body it cannot parse as a string rather than throwing.

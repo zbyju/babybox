@@ -19,12 +19,11 @@
 
   const selected = ref("no");
   const filterChange = (event: Event) => {
-    if ((event.target as HTMLInputElement).value === "no")
-      emit("filterChange", "no");
-    if ((event.target as HTMLInputElement).value === "engine")
-      emit("filterChange", "engine");
-    if ((event.target as HTMLInputElement).value === "thermal")
-      emit("filterChange", "thermal");
+    const target = event.target;
+    if (!(target instanceof HTMLSelectElement)) return;
+    if (target.value === "no") emit("filterChange", "no");
+    if (target.value === "engine") emit("filterChange", "engine");
+    if (target.value === "thermal") emit("filterChange", "thermal");
   };
 </script>
 

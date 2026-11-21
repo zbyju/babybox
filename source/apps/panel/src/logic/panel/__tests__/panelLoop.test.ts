@@ -1,3 +1,4 @@
+import { defaultConfig } from "@babybox/config-schema";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -164,7 +165,7 @@ describe("AppManager startup retries", () => {
       [10000, 3],
       [20000, 4],
       [20000, 5],
-    ]) {
+    ] as const) {
       vi.advanceTimersByTime(wait - 1);
       await drain();
       expect(getStatus).toHaveBeenCalledTimes(calls - 1);
@@ -188,7 +189,10 @@ describe("AppManager startup retries", () => {
     await drain();
     expect(getStatus).toHaveBeenCalledTimes(2);
 
-    vi.mocked(requestJson).mockResolvedValue({ data: {} } as never);
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- the generic request mock serves config for this call
+    vi.mocked(requestJson).mockResolvedValue({
+      data: defaultConfig(),
+    } as never);
     vi.advanceTimersByTime(10000);
     await drain();
 

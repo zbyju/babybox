@@ -1,7 +1,11 @@
-import { CONFIGER_API_URL } from "./constants";
-import { fetchFromUrl } from "./fetch";
+import { CONFIGER_API_URL } from "./constants.js";
+import { fetchFromUrl } from "./fetch.js";
 
-export async function fetchConfig(): Promise<any> {
+export type ConfigAnswer =
+  | { status: 200; msg: string; data: unknown }
+  | { status: 408; msg: string };
+
+export async function fetchConfig(): Promise<ConfigAnswer> {
   const url = `${CONFIGER_API_URL}/main`;
 
   try {
@@ -11,7 +15,7 @@ export async function fetchConfig(): Promise<any> {
       msg: "Data fetched successfully.",
       data: data.data,
     };
-  } catch (err) {
+  } catch {
     return {
       status: 408,
       msg: "Request timedout. The URL/IP might be wrong, check the config.",

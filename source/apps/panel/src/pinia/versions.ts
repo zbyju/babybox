@@ -4,7 +4,7 @@ import type { Versions } from "@/types/panel/versions.types";
 
 export const useVersionsStore = defineStore("versions", {
   state: () => ({
-    initialised: false as boolean,
+    initialised: false,
     backend: "",
     frontend: "",
     startup: "",

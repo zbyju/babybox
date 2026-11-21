@@ -15,9 +15,12 @@
   import QuickActions from "../components/settings/QuickActions.vue";
   import TheNav from "../components/TheNav.vue";
 
-  setTimeout(() => {
-    router.push({ path: "/" });
-  }, 1000 * 60 * 10);
+  setTimeout(
+    () => {
+      router.push({ path: "/" });
+    },
+    1000 * 60 * 10,
+  );
 </script>
 
 <style lang="stylus">

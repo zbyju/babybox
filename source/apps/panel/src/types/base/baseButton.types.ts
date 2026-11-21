@@ -10,7 +10,7 @@ export const BUTTON_VARIANTS = [
   "accent",
 ] as const;
 
-export type ButtonVariant = typeof BUTTON_VARIANTS[number];
+export type ButtonVariant = (typeof BUTTON_VARIANTS)[number];
 
 /**
  * Footprint of a `BaseButton`.
@@ -18,4 +18,4 @@ export type ButtonVariant = typeof BUTTON_VARIANTS[number];
  */
 export const BUTTON_SIZES = ["default", "small", "card"] as const;
 
-export type ButtonSize = typeof BUTTON_SIZES[number];
+export type ButtonSize = (typeof BUTTON_SIZES)[number];

@@ -6,13 +6,14 @@ import {
   rmSync,
 } from "node:fs";
 import { Server } from "node:http";
-import { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseMainConfig } from "@babybox/config-schema";
 import type { MainConfig } from "@babybox/config-schema";
 import express from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MainDb, defaultConfigDir, mainConfig } from "../services/db/main";
+import type { MainDb } from "../services/db/main";
+import { defaultConfigDir, mainConfig } from "../services/db/main";
 import { router } from "./configRoute";
 
 vi.mock("node:fs", async () => {
@@ -30,10 +31,18 @@ let configDir: string;
 let server: Server;
 let url: string;
 
+function isMainConfig(value: unknown): value is MainConfig {
+  return parseMainConfig(value).ok;
+}
+
 function base(): MainConfig {
-  return JSON.parse(
+  const parsed: unknown = JSON.parse(
     readFileSync(join(defaultConfigDir, "base.json"), "utf-8")
-  ) as MainConfig;
+  );
+  if (!isMainConfig(parsed)) {
+    throw new Error("base.json is not a config");
+  }
+  return parsed;
 }
 
 beforeEach(async () => {
@@ -49,9 +58,11 @@ beforeEach(async () => {
   app.use("/config", router);
   server = app.listen(0);
   await new Promise<void>((resolve) => server.once("listening", resolve));
-  url = `http://127.0.0.1:${
-    (server.address() as AddressInfo).port
-  }/config/main`;
+  const address = server.address();
+  if (address === null || typeof address === "string") {
+    throw new Error("server is not listening on a tcp port");
+  }
+  url = `http://127.0.0.1:${address.port}/config/main`;
 });
 
 afterEach(async () => {
@@ -134,14 +145,32 @@ describe("PATCH /config/main", () => {
 
   /* express.json() leaves the body as {} when the header is missing, so the request
    * arrives looking like an empty one. Nothing may be written for it. */
+  /*
+   * Express 5 leaves req.body undefined when no parser matched. Express 4 set
+   * it to {}, so this used to read "must not be empty". Both shapes are a 400
+   * that writes nothing, which is what matters here.
+   */
   it("answers 400 when the Content-Type header is missing", async () => {
     const res = await send("PATCH", { babybox: { name: "Brno" } }, {});
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
       msg: "Body is not a valid MainConfig",
+      errors: [{ path: "", msg: "must be an object" }],
+    });
+  });
+
+  it("answers 400 for an empty body and writes nothing", async () => {
+    const before = await (await fetch(url)).json();
+
+    const res = await patch({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      msg: "Body is not a valid MainConfig",
       errors: [{ path: "", msg: "must not be empty" }],
     });
+    expect(await (await fetch(url)).json()).toEqual(before);
   });
 
   it("answers 200 and leaves the keys the body does not name alone", async () => {

@@ -1,9 +1,11 @@
+import { describe, expect, it } from "vitest";
+
 import {
   isInstanceOfArraySetting,
   isInstanceOfGetUnitSettingsRequest,
   isInstanceOfPostUnitSettingsRequestBody,
   isInstanceOfSetting,
-} from "../request.types";
+} from "../request.types.js";
 
 describe("request.types.ts", () => {
   describe("isInstanceOfPostUnitSettingsRequestBody", () => {

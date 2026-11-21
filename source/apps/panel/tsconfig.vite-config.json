@@ -1,12 +1,10 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.node.json",
-  "include": ["vite.config.*"],
+  "extends": "./tsconfig.app.json",
+  "include": ["vite.config.mts"],
+  "exclude": [],
   "compilerOptions": {
-    "composite": true,
-    "types": ["node", "vitest"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    // vite.config.mts runs on Bun, not in the browser.
+    "lib": ["ES2022"],
+    "types": ["node"]
   }
 }

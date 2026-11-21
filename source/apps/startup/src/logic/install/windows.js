@@ -4,8 +4,9 @@ const path = require("path");
 const sudo = require("sudo-prompt");
 const logger = require("../../logger");
 const strings = require("../../strings");
+const { pinnedPm2Version } = require("./pm2-version");
 
-async function checkInstalled() {
+async function checkInstalled(exec, logger) {
   try {
     await exec("node -v");
   } catch (err) {
@@ -27,13 +28,11 @@ async function checkInstalled() {
   return true;
 }
 
-async function installDeps() {
+async function installDeps(exec, logger) {
   try {
+    const pm2Version = pinnedPm2Version();
     await exec("npm install -g pnpm@7.5.0");
-    await exec("npm install -g pm2@latest");
-    await exec("npm install -g nodemon");
-    await exec("npm install -g typescript@4.7.4");
-    await exec("npm install -g ts-node@10.9.1");
+    await exec(`npm install -g pm2@${pm2Version}`);
   } catch (err) {
     logger.error("install", strings.installDepsFailed, err);
     throw err;
@@ -65,17 +64,19 @@ async function copyStartup() {
   );
 }
 
-module.exports = async function install() {
-  const isInstalled = await checkInstalled();
+module.exports = async function install(options = {}) {
+  const run = options.exec || exec;
+  const log = options.logger || logger;
+  const isInstalled = await checkInstalled(run, log);
   if (!isInstalled) {
-    logger.error("install", strings.installFailed);
+    log.error("install", strings.installFailed);
     return false;
   }
 
   try {
-    await installDeps();
+    await installDeps(run, log);
   } catch (err) {
-    logger.error("install", strings.installFailed, err);
+    log.error("install", strings.installFailed, err);
     return false;
   }
   return true;

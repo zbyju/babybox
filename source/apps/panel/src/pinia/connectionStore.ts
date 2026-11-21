@@ -5,8 +5,8 @@ import type { Connection } from "@/types/panel/connection.types";
 
 export const useConnectionStore = defineStore("connection", {
   state: (): Connection => ({
-    engineUnit: new ConnectionTracker() as ConnectionTracker,
-    thermalUnit: new ConnectionTracker() as ConnectionTracker,
+    engineUnit: new ConnectionTracker(),
+    thermalUnit: new ConnectionTracker(),
   }),
   getters: {
     connection: (state): Connection => ({

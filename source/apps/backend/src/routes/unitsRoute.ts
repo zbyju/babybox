@@ -1,16 +1,16 @@
-import * as express from "express";
+import express from "express";
 
 import {
   fetchAction,
   fetchSettings,
   updateSettings,
-} from "../fetch/fetchFromUnits";
-import {
+} from "../fetch/fetchFromUnits.js";
+import type {
   CommonSettingsResponse,
-  isInstanceOfPostUnitSettingsRequestBody,
   SettingResult,
-} from "../types/request.types";
-import { stringToAction } from "../utils/actions";
+} from "../types/request.types.js";
+import { isInstanceOfPostUnitSettingsRequestBody } from "../types/request.types.js";
+import { stringToAction } from "../utils/actions.js";
 
 export const router = express.Router();
 
@@ -68,16 +68,16 @@ router.put("/settings", async (req, res) => {
         results,
       }
     : results.every((r) => !r.result)
-    ? {
-        status: 500,
-        msg: "All setting changes failed.",
-        results,
-      }
-    : {
-        status: 206,
-        msg: "Some setting changes failed, some were successful.",
-        results,
-      };
+      ? {
+          status: 500,
+          msg: "All setting changes failed.",
+          results,
+        }
+      : {
+          status: 206,
+          msg: "Some setting changes failed, some were successful.",
+          results,
+        };
   return res
     .status(response.status)
     .send({ msg: response.msg, results: response.results });

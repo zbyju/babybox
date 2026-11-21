@@ -36,7 +36,6 @@
 </script>
 
 <style lang="stylus">
-
   #BigClock
     font-size font-size-bigClockSmaller vw
     font-weight 900

@@ -1,0 +1,10 @@
+{
+  "plugins": ["typescript"],
+  "env": { "node": true },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }]
+  }
+}

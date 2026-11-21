@@ -5,5 +5,5 @@ export const CONFIGER_API_URL = "http://localhost:5001/api/v1/config";
  * because dotenv.config() runs later, during startup.
  */
 export function defaultFetchTimeout(): number {
-  return parseInt(process.env.DEFAULT_FETCH_TIMEOUT) || 5000;
+  return parseInt(process.env["DEFAULT_FETCH_TIMEOUT"] ?? "") || 5000;
 }
