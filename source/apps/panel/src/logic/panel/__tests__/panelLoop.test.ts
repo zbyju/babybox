@@ -1,3 +1,4 @@
+import { defaultConfig } from "@babybox/config-schema";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -188,7 +189,9 @@ describe("AppManager startup retries", () => {
     await drain();
     expect(getStatus).toHaveBeenCalledTimes(2);
 
-    vi.mocked(requestJson).mockResolvedValue({ data: {} } as never);
+    vi.mocked(requestJson).mockResolvedValue({
+      data: defaultConfig(),
+    } as never);
     vi.advanceTimersByTime(10000);
     await drain();
 

@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc -p tsconfig.tests.json",
-    "test": "vitest run"
+    "test": "bun --bun vitest run src"
   },
   "license": "ISC",
   "dependencies": {
@@ -23,6 +23,6 @@
   },
   "devDependencies": {
     "typescript": "6.0.3",
-    "vitest": "0.9.4"
+    "vitest": "5.0.1"
   }
 }

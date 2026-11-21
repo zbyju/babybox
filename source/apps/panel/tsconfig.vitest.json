@@ -9,7 +9,7 @@
   ],
   "exclude": [],
   "compilerOptions": {
-    // The tests run on Node through vitest 0.9.4 with the jsdom environment.
+    // The tests run on Node through Vitest with the jsdom environment.
     "types": ["node"]
   }
 }

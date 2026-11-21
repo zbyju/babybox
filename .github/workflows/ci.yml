@@ -231,7 +231,7 @@ jobs:
       - name: Build
         run: bun --filter babybox-panel build && bun --filter babybox-panel-backend build && bun --filter babybox-panel-configer build
 
-      # Build kontroluje jen src panelu. Testy a vite.config.ts kontroluje tenhle krok.
+      # Build kontroluje jen src panelu. Testy a vite.config.mts kontroluje tenhle krok.
       - name: Panel typecheck
         run: bun --filter babybox-panel typecheck
 
@@ -258,8 +258,13 @@ jobs:
       - name: Backend tests
         run: bun --filter babybox-panel-backend test
 
+      # jsdom 30 needs a newer host for the panel tests only.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.2
+
       - name: Panel tests
-        run: bun --filter babybox-panel test:unit -- --run
+        run: bun --filter babybox-panel test:unit --run
 
       - name: Configer tests
         run: bun --filter babybox-panel-configer test

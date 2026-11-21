@@ -51,7 +51,12 @@ describe("runtimeVersions", () => {
   });
 
   it("reads a real command and hides a missing one", () => {
-    expect(readCommandVersion(process.execPath, ["-v"])).toBe(process.version);
+    expect(
+      readCommandVersion(process.execPath, [
+        "-e",
+        "process.stdout.write(process.version)",
+      ])
+    ).toBe(process.version);
     expect(
       readCommandVersion(process.execPath, [
         "-e",

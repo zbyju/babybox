@@ -77,6 +77,7 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(configDir, { recursive: true, force: true });
+  vi.resetAllMocks();
   vi.restoreAllMocks();
 });
 
@@ -362,7 +363,7 @@ describe("update", () => {
     });
   });
 
-  it("fsyncs the data before the rename and the directory after it", async () => {
+  it("fsyncs the data before the rename and syncs the directory where supported", async () => {
     const db = await mainConfig(configDir);
     vi.mocked(fsyncSync).mockClear();
     vi.mocked(renameSync).mockClear();
@@ -372,10 +373,14 @@ describe("update", () => {
     const fsyncOrder = vi.mocked(fsyncSync).mock.invocationCallOrder;
     const renameOrder = vi.mocked(renameSync).mock.invocationCallOrder;
     const dataSync = invocationAt(fsyncOrder, 0);
-    const dirSync = invocationAt(fsyncOrder, 1);
+
     const rename = invocationAt(renameOrder, 0);
     expect(dataSync).toBeLessThan(rename);
-    expect(rename).toBeLessThan(dirSync);
+    if (process.platform === "win32") {
+      expect(fsyncOrder).toHaveLength(1);
+    } else {
+      expect(rename).toBeLessThan(invocationAt(fsyncOrder, 1));
+    }
   });
 
   it("keeps the config before the last write in main.json.bak across a reboot", async () => {
