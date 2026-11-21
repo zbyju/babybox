@@ -207,7 +207,7 @@ function installSpawnWithBun(onBun) {
   const extract = installSpawn();
   return (cmd, args, opts) => {
     if (isBunPath(cmd)) {
-      return onBun();
+      return onBun(cmd);
     }
     return extract(cmd, args, opts);
   };
@@ -688,24 +688,33 @@ describe("download", () => {
     );
   });
 
-  it("exits non-zero when the probe after install fails", async () => {
+  it("exits non-zero when the candidate fails and preserves the working executable", async () => {
     const body = Buffer.from("bad-probe-zip");
     const sha = sha256(body);
     await withFixture(
       {
-        spawnSync: installSpawnWithBun(() => ({
-          status: 1,
-          signal: null,
-          stdout: "",
-          stderr: "exec format error",
-        })),
+        spawnSync: installSpawnWithBun((command) => {
+          if (!command.includes(".candidate-")) {
+            return { status: 0, stdout: "1.4.1\n", stderr: "" };
+          }
+          return {
+            status: 1,
+            signal: null,
+            stdout: "",
+            stderr: "exec format error",
+          };
+        }),
         httpsGet(_url, callback) {
           callback(null, fakeResponse(200, {}, body));
         },
       },
       async (fx) => {
+        const exe = path.join(fx.home, ".bun", "bin", "bun");
+        fs.mkdirSync(path.dirname(exe), { recursive: true });
+        fs.writeFileSync(exe, "working runtime");
         const versionsPath = writeVersions(fx.tmpDir, sha);
         expect(await fx.run({ versionsPath })).toBe(1);
+        expect(fs.readFileSync(exe, "utf8")).toBe("working runtime");
         expect(fx.urls).toHaveLength(1);
         expect(fx.stdout.text()).toContain("Bun se nepodařilo spustit.");
         expect(fx.stdout.text()).toContain("exec format error");

@@ -142,7 +142,7 @@ make_bun_zip() {
   cat > "$dir/bun-linux-x64/bun" <<'EOF'
 #!/bin/bash
 if [ "${1:-}" = "-v" ]; then
-  printf '%s\n' "1.4.2"
+  printf '%s\n' "${CANDIDATE_BUN_PRINT:-1.4.2}"
   exit 0
 fi
 exit 0
@@ -160,6 +160,7 @@ reset_case() {
   STUB_BUN_MISSING=0
   STUB_BUN_PRINT="1.4.2"
   STUB_BUN_EXIT=0
+  CANDIDATE_BUN_PRINT="1.4.2"
   HOLD_VERSION=""
   NPM_INSTALL_EXIT=0
   PM2_UPDATE_EXIT=0
@@ -225,6 +226,7 @@ run_case() {
     STATE="$STATE" \
     CALLS="$CALLS" \
     BUN_ZIP="$BUN_ZIP" \
+    CANDIDATE_BUN_PRINT="$CANDIDATE_BUN_PRINT" \
     NPM_INSTALL_EXIT="$NPM_INSTALL_EXIT" \
     PM2_UPDATE_EXIT="$PM2_UPDATE_EXIT" \
     CURL_FAIL="$CURL_FAIL" \
@@ -292,6 +294,22 @@ if [ "$("$SANDBOX/home/.bun/bin/bun" -v 2>/dev/null)" = "0.0.1" ]; then
   pass
 else
   fail "neshodny soucet prepsal bun"
+fi
+expect_rc 0
+
+echo "invalid candidate keeps the working runtime and starts the panel"
+reset_case
+STUB_BUN_PRINT="1.4.1"
+REWRITE_SHA=1
+CANDIDATE_BUN_PRINT="0.0.1"
+run_case
+expect_called "curl "
+expect_log "Bun je 0.0.1, chceme 1.4.2"
+expect_called "pnpm run start --ubuntu"
+if [ "$("$SANDBOX/home/.bun/bin/bun" -v 2>/dev/null)" = "1.4.1" ]; then
+  pass
+else
+  fail "invalid candidate replaced the working runtime"
 fi
 expect_rc 0
 

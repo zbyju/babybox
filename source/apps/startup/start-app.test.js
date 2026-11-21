@@ -281,17 +281,33 @@ describe("start on Node", () => {
     }
   );
 
-  it("does not probe Bun when cpu-hold names the pin", () => {
+  it("uses Node when the retained executable fails on a held CPU", () => {
     withFixture((fx) => {
       placeBun(fx);
       writeCpuHold(fx, PIN);
-      expect(runStart(fx, "configer", bunMustNotRun())).toBe(0);
+      expect(
+        runStart(fx, "configer", (command) =>
+          isBun(command)
+            ? { status: null, signal: "SIGILL" }
+            : { status: 0, signal: null }
+        )
+      ).toBe(0);
       expect(fx.calls.map((call) => call.args)).toEqual([
+        ["-v"],
         ["start", "./dist/index.js", "-n", "configer"],
       ]);
       expect(fx.stdout.text()).toBe(
         "Spouštím configer na Node, procesor je v CPU_HOLD.\n"
       );
+    });
+  });
+
+  it("uses a working previous Bun while the replacement pin is on CPU hold", () => {
+    withFixture((fx) => {
+      const exe = placeBun(fx);
+      writeCpuHold(fx, PIN);
+      expect(runStart(fx, "configer", bunAnswers("1.4.1"))).toBe(0);
+      expect(fx.calls[1].args).toContain(exe);
     });
   });
 

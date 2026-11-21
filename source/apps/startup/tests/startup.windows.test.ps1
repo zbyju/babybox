@@ -130,6 +130,7 @@ function Reset-Case {
   $script:StubBunMissing = $false
   $script:StubBunPrint = $script:BunVersion
   $script:StubBunExit = "0"
+  $script:CandidateBunPrint = ""
   $script:HoldVersion = ""
   $script:NpmInstallExit = "0"
   $script:Pm2UpdateExit = "0"
@@ -159,6 +160,9 @@ public class BunStub {
       File.AppendAllText(calls, "bun " + string.Join(" ", args) + "\r\n");
     }
     string printed = Environment.GetEnvironmentVariable("STUB_BUN_PRINT");
+    string candidate = Environment.GetEnvironmentVariable("CANDIDATE_BUN_PRINT");
+    if (AppDomain.CurrentDomain.BaseDirectory.Contains(".candidate-") &&
+        !string.IsNullOrEmpty(candidate)) printed = candidate;
     if (printed == null) printed = "";
     if (args.Length > 0 && args[0] == "-v" && printed.Length > 0) {
       Console.WriteLine(printed);
@@ -357,6 +361,7 @@ exit /b 99
   $psi.EnvironmentVariables["PM2_UPDATE_EXIT"] = $script:Pm2UpdateExit
   $psi.EnvironmentVariables["STUB_BUN_PRINT"] = $script:StubBunPrint
   $psi.EnvironmentVariables["STUB_BUN_EXIT"] = $script:StubBunExit
+  $psi.EnvironmentVariables["CANDIDATE_BUN_PRINT"] = $script:CandidateBunPrint
   if ($script:UseRealVer) {
     if ($psi.EnvironmentVariables.ContainsKey("BABYBOX_OS_RELEASE")) {
       [void]$psi.EnvironmentVariables.Remove("BABYBOX_OS_RELEASE")
@@ -494,13 +499,20 @@ Expect-Log "Bun je 9.9.9, chceme $($script:BunVersion)"
 Expect-NoLog "je nainstalovany"
 Expect-Called "pnpm run start"
 Expect-Rc 0
-if (Test-Path $script:InstalledBun) {
-  $gotNew = (Get-FileHash -Algorithm SHA256 -Path $script:InstalledBun).Hash
-  $wantNew = (Get-FileHash -Algorithm SHA256 -Path $script:ZipExe).Hash
-  if ($gotNew -eq $wantNew) { Pass } else { Fail "wrong bun was not copied before the version check" }
-} else {
-  Fail "bun.exe was not written"
-}
+if (Test-Path $script:InstalledBun) { Fail "invalid candidate became live" } else { Pass }
+
+Write-Host "a checksum-good candidate with the wrong version leaves the old executable"
+Reset-Case
+$script:StubBunPrint = "1.4.1"
+$script:CandidateBunPrint = "0.0.1"
+$script:RewriteSha = $true
+Invoke-Case
+Expect-Log "Bun je 0.0.1, chceme 1.4.2"
+Expect-Called "pnpm run start"
+Expect-Rc 0
+$actual = (Get-FileHash -Algorithm SHA256 -Path $script:InstalledBun).Hash
+$previous = (Get-FileHash -Algorithm SHA256 -Path $script:OldExe).Hash
+if ($actual -eq $previous) { Pass } else { Fail "invalid candidate replaced bun.exe" }
 
 Write-Host "a checksum-good zip with no bun.exe does not install"
 Reset-Case
