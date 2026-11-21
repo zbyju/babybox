@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 
 import type { MainConfig } from "./schema.js";
 import { mainConfigSchema } from "./schema.js";
@@ -19,7 +19,7 @@ export type ParseResult =
 function toConfigErrors(error: z.ZodError): ConfigError[] {
   return error.issues.flatMap((issue) => {
     const path = issue.path.join(".");
-    if (issue.code !== z.ZodIssueCode.unrecognized_keys) {
+    if (issue.code !== "unrecognized_keys") {
       return [{ path, msg: issue.message }];
     }
     return issue.keys.map((key) => ({

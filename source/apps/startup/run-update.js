@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 
 const bootstrap = require("./bootstrap");
+const { preserveConfigerModules } = require("./configer-modules");
 const lastRecord = require("./last-record");
 
 const STEPS = [
@@ -233,6 +234,13 @@ async function run(options) {
     true,
     captured.text()
   );
+
+  const snapshotError = preserveConfigerModules(cwd);
+  if (snapshotError !== "") {
+    writeLine(state, "ERROR", `Configer: ${snapshotError}.`);
+    finishStep(state, opts, env, platform, "INSTALL", false, snapshotError);
+    return 1;
+  }
 
   for (let i = 0; i < STEPS.length; i += 1) {
     const spec = STEPS[i];

@@ -3,7 +3,8 @@
  * Node resolves that folder before source/node_modules.
  * The script stays in apps/configer/dist, so ../../../configs still reads
  * apps/configer/configs.
- * The copy runs after BUILD_CONFIGER succeeds, once per record time.
+ * Preserve the legacy dependency tree before the first workspace install.
+ * Refresh the copy after BUILD_CONFIGER succeeds, once per record time.
  * A later bun install can change source/node_modules. This copy stays.
  * @babybox/config-schema is copied as files. A link would follow the live
  * packages/config-schema/dist after a later schema build.
@@ -289,6 +290,20 @@ function failureDetail(result) {
   return "chyba";
 }
 
+function preserveConfigerModules(sourceDir) {
+  const configerDir = path.join(sourceDir, "apps", "configer");
+  const dist = path.join(configerDir, "dist");
+  if (
+    !existsAny(path.join(dist, "index.js")) ||
+    existsAny(path.join(dist, "node_modules"))
+  ) {
+    return "";
+  }
+  const result = snapshot(sourceDir, configerDir, "legacy");
+  // An incomplete install needs a chance to repair the missing packages.
+  return result.error ? failureDetail(result) : "";
+}
+
 function prepareConfigerModules(options) {
   const sourceDir = options.sourceDir;
   const configerDir = options.configerDir;
@@ -313,5 +328,6 @@ function prepareConfigerModules(options) {
 
 module.exports = {
   prepareConfigerModules,
+  preserveConfigerModules,
   snapshotNeeded,
 };

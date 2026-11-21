@@ -6,6 +6,7 @@ const path = require("path");
 const { readVersions } = require("./bootstrap");
 const {
   prepareConfigerModules,
+  preserveConfigerModules,
   snapshotNeeded,
 } = require("./configer-modules");
 const { start } = require("./start-app");
@@ -720,6 +721,17 @@ describe("configer modules", () => {
     ],
   ])("snapshotNeeded is %s", (label, record, hasTree, stamp, needed) => {
     expect(snapshotNeeded(record, hasTree, stamp)).toBe(needed);
+  });
+
+  it("preserves the installed schema before the first workspace install", () => {
+    withFixture((fx) => {
+      const { schemaIndex } = layout(fx);
+      expect(preserveConfigerModules(fx.sourceDir)).toBe("");
+      const kept = path.join(isolatedDir(fx), SCHEMA, "dist", "index.js");
+      fs.writeFileSync(schemaIndex, "throw new Error('unproven schema');");
+      expect(preserveConfigerModules(fx.sourceDir)).toBe("");
+      expect(fs.readFileSync(kept, "utf8")).toContain(SCHEMA_MARKER);
+    });
   });
 
   it("keeps the isolated package when the build did not prove configer", () => {
