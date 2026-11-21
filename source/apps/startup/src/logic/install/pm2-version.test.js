@@ -1,26 +1,7 @@
-/* eslint-env jest */
+/* global describe, it, expect */
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-
-const mockCommands = [];
-
-jest.mock("child_process", () => {
-  const actual = jest.requireActual("child_process");
-  return Object.assign({}, actual, {
-    exec: (command, ...rest) => {
-      mockCommands.push(command);
-      const callback = rest[rest.length - 1];
-      callback(null, { stdout: "", stderr: "" });
-    },
-  });
-});
-
-jest.mock("../../logger", () => ({
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-}));
 
 const { readVersions } = require("../../../bootstrap");
 const { pinnedPm2Version } = require("./pm2-version");
@@ -40,10 +21,6 @@ function withVersions(text, fn) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 }
-
-beforeEach(() => {
-  mockCommands.length = 0;
-});
 
 describe("pinnedPm2Version", () => {
   it("reads the pin from versions.env", () => {
@@ -73,8 +50,17 @@ describe.each([
   ["Windows", installWindows],
 ])("%s install", (label, install) => {
   it("installs the pinned pm2", async () => {
-    expect(await install()).toBe(true);
-    expect(mockCommands).toContain(`npm install -g pm2@${PIN}`);
-    expect(mockCommands).not.toContain("npm install -g pm2@latest");
+    const commands = [];
+    const exec = async (command) => {
+      commands.push(command);
+    };
+    const logger = {
+      error(tag, message, error) {
+        throw error || new Error(`${tag}: ${message}`);
+      },
+    };
+    expect(await install({ exec, logger })).toBe(true);
+    expect(commands).toContain(`npm install -g pm2@${PIN}`);
+    expect(commands).not.toContain("npm install -g pm2@latest");
   });
 });

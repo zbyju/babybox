@@ -270,7 +270,7 @@ jobs:
         run: bun --filter babybox-panel-configer test
 
       - name: Startup tests
-        run: (cd apps/startup && ./node_modules/.bin/jest --ci)
+        run: bun --filter startup test:unit
 
   # Kazdy soubor startupu musi projit Node 12. Sken textu na Node 18 tu chybu
   # nechyti. Jmeno jobu zustava, muze to byt povinny check.

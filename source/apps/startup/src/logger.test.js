@@ -1,4 +1,4 @@
-/* eslint-env jest */
+/* global describe, it, expect, beforeEach, afterEach */
 const fs = require("fs");
 const os = require("os");
 const path = require("path");

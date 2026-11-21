@@ -1309,7 +1309,9 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
       guard on that flag keeps `@vue/devtools-kit` out of the bundle. Added in
       #131 so the Vite 8 swap cannot quietly undo it. `legacy-image` never
       reads bundle content, so a regression would be silent.
-- [ ] Move the startup suite from Jest to Vitest, including its CommonJS mocks.
+- [x] Startup tests run on Vitest 5 and Bun 1.4.2 in CI. The installer tests
+      inject command and logger functions. Production startup still uses
+      CommonJS on Node, and the shell startup test still runs.
 - [ ] oxlint 1.85.0 + oxfmt 0.70.0 (or latest at the time): configer first (its own
       PR, with the TypeScript contract already on, type-aware oxlint rules,
       tracked suppressions), then panel (`vue` plugin), backend, startup,
