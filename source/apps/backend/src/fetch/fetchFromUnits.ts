@@ -47,7 +47,7 @@ export async function fetchDataCommon(
       msg: "Data fetched successfully.",
       data: data.data,
     };
-  } catch (err) {
+  } catch {
     return {
       status: 408,
       msg: "Request timedout. The URL/IP might be wrong, check the config.",
@@ -148,7 +148,7 @@ export async function fetchAction(action: Action): Promise<CommonDataResponse> {
       msg: "Action sent successfully.",
       data: data.data,
     };
-  } catch (err) {
+  } catch {
     return {
       status: 408,
       msg: "Request timedout. The URL/IP might be wrong, check the config.",
@@ -165,7 +165,7 @@ export async function updateWatchdog(): Promise<CommonResponse> {
       status: 200,
       msg: "Successfully updated Watchdog.",
     };
-  } catch (err) {
+  } catch {
     return {
       status: 500,
       msg: "Watchdog update was not successful.",
@@ -220,7 +220,7 @@ export async function updateSettings(
               timeout
             )
           );
-        } catch (err) {
+        } catch {
           /*
            * `onUnit` rejects when a job passes the queue deadline, and
            * `updateSetting` itself never rejects. The route awaits this
@@ -246,7 +246,7 @@ async function isReady(url: string, timeout = 5000) {
   try {
     const res = await fetchFromUrl(url, timeout);
     return res.data === 0;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -278,7 +278,7 @@ async function updateSetting(
       valueResult.data === value &&
       verificationArray[index - 100] === value.toString()
     );
-  } catch (err) {
+  } catch {
     return false;
   }
 }

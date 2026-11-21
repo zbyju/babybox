@@ -68,16 +68,16 @@ router.put("/settings", async (req, res) => {
         results,
       }
     : results.every((r) => !r.result)
-    ? {
-        status: 500,
-        msg: "All setting changes failed.",
-        results,
-      }
-    : {
-        status: 206,
-        msg: "Some setting changes failed, some were successful.",
-        results,
-      };
+      ? {
+          status: 500,
+          msg: "All setting changes failed.",
+          results,
+        }
+      : {
+          status: 206,
+          msg: "Some setting changes failed, some were successful.",
+          results,
+        };
   return res
     .status(response.status)
     .send({ msg: response.msg, results: response.results });

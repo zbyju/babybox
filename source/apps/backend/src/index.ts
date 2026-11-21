@@ -140,9 +140,9 @@ async function main() {
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
-    res.status(200).send(
-      statusBody(cachedRuntimeVersions(), startupLastFor(APP_DIR))
-    );
+    res
+      .status(200)
+      .send(statusBody(cachedRuntimeVersions(), startupLastFor(APP_DIR)));
   });
 
   //Routes
@@ -202,4 +202,4 @@ async function main() {
   });
 }
 
-main();
+void main();

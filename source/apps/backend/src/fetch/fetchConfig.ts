@@ -15,7 +15,7 @@ export async function fetchConfig(): Promise<ConfigAnswer> {
       msg: "Data fetched successfully.",
       data: data.data,
     };
-  } catch (err) {
+  } catch {
     return {
       status: 408,
       msg: "Request timedout. The URL/IP might be wrong, check the config.",
