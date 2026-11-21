@@ -1,0 +1,8 @@
+{
+  "env": {
+    "node": true
+  },
+  "rules": {
+    "eslint/no-undef": "error"
+  }
+}

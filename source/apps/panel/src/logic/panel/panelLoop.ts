@@ -289,7 +289,7 @@ export class AppManager {
       delay = Math.min(delay * 2, MAX_INIT_DELAY);
     };
 
-    attempt();
+    await attempt();
   }
 
   private nextDelay(): number {

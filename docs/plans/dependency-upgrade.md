@@ -1385,6 +1385,14 @@ Size: ~0.5 day.
 
 ---
 
+### Workspace lint gate
+
+Run `bun run lint` from `source/`. The shared rules check unsafe
+assignment and exhaustiveness in TypeScript. The pinned Oxlint backend does
+not apply type-aware rules to Vue SFCs. Vue scripts receive Oxlint's syntax
+rules and remain in the vue-tsc check. CI exercises deliberate failures in
+TypeScript, a Vue script, startup JavaScript, and the workspace scripts.
+
 ## Total
 
 Roughly **11 to 12 focused days**. Phases stay on `feat/toolchain-jump`. The

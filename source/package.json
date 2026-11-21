@@ -23,7 +23,8 @@
     "start:main": "node apps/startup/start-app.js main",
     "build:schema": "bun --filter @babybox/config-schema build",
     "build": "node apps/startup/run-update.js",
-    "echo": "echo test"
+    "echo": "echo test",
+    "lint": "bun run build:schema && bun --filter \"*\" lint && bun --bun oxlint --deny-warnings scripts"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",

@@ -26,7 +26,10 @@ describe("saveConfig", () => {
     const [url, options] = fetchMock.mock.calls[0] ?? [];
     expect(url).toContain("/config/main");
     expect(options?.method).toBe("PATCH");
-    expect(JSON.parse(String(options?.body))).toEqual(config);
+    const body = options?.body;
+    if (typeof body !== "string")
+      throw new Error("Expected a JSON request body");
+    expect(JSON.parse(body)).toEqual(config);
   });
 
   it("hands back one entry per field a 400 named", async () => {

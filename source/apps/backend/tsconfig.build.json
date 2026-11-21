@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.contract.json",
+  "include": ["src"],
+  "exclude": ["node_modules", "src/**/*.test.ts"],
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    // Node's API only: this dist also starts on the box's Node 18 when Bun is missing.
+    "types": ["node"],
+    /*
+     * The config shape, without a dependency. startup installs the backend's dist
+     * outside the workspace, where a workspace:* dependency cannot resolve, so the
+     * backend reads the package's built types straight from disk and imports
+     * nothing at runtime. The package has to be built before the backend.
+     * No baseUrl: TypeScript 6 deprecates it, and paths resolve from this file.
+     */
+    "paths": {
+      "@babybox/config-schema": ["../../packages/config-schema/dist/index.d.ts"]
+    }
+  }
+}
