@@ -674,7 +674,7 @@ function recoverRelease(ctx) {
     fileSystem.copySync(transactionPath(ctx, "configer"), paths.configerDist);
   }
   removeTree(ctx, paths.distNext);
-  fileSystem.writeFileSync(paths.committed, "");
+  fileSystem.mkdirSync(paths.committed);
 }
 
 function delayMs(ms) {
@@ -1089,7 +1089,7 @@ async function runRelease(ctx) {
     return recoverAndStart(ctx);
   }
   try {
-    ctx.fs.writeFileSync(ctx.paths.committed, "");
+    ctx.fs.mkdirSync(ctx.paths.committed);
   } catch (err) {
     fail(ctx, "SWAP", err);
     return recoverAndStart(ctx);
