@@ -88,16 +88,13 @@ function chooseRuntime(run) {
   }
   const wanted =
     bootstrap.readVersions(readText(run.versionsPath)).BUN_VERSION || "";
-  // A CPU_HOLD box keeps the binary that traps. cpu-hold names its pin.
   const hold = bootstrap.readHoldVersion(
     path.join(run.home, ".bun", "cpu-hold")
   );
-  if (hold !== "" && hold === wanted) {
-    return onNode("CPU_HOLD");
-  }
+  const held = hold !== "" && hold === wanted;
   const probed = bootstrap.probeBun(withTimeout(run.spawnSync), exe, run.env);
   if (probed.state !== "version" || probed.version === "") {
-    return onNode("PROBE");
+    return onNode(held ? "CPU_HOLD" : "PROBE");
   }
   return { kind: "BUN", exe, version: probed.version, wanted };
 }

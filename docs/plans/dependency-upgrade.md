@@ -154,6 +154,12 @@ same non-zero exit and clean tree as `OS_HOLD`.
 
 ### Where files land
 
+Bootstrap and both login wrappers verify the candidate before promoting it
+with a same-volume rename. A failed candidate leaves the previous executable
+in place. A CPU hold suppresses downloads of the held pin and can still run a
+working previous executable.
+
+
 Download the zip to the OS temp directory or to `~/.bun`. Do not write it
 inside `source/`. `source/logs/` is gitignored. `startup.last.json` there does
 not dirty the checkout. A file inside `source/` that is not ignored will block

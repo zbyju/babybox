@@ -170,7 +170,6 @@ if not exist "%HOLD_FILE%" goto :ensure_bun_cpu
 goto :ensure_bun_download
 
 :ensure_bun_not_illegal
-if not "!PROBE_STATUS!"=="127" goto :ensure_bun_download
 call :hold_matches
 if errorlevel 1 goto :ensure_bun_download
 
@@ -180,9 +179,9 @@ exit /b 1
 
 :ensure_bun_download
 call :log "Stahuji Bun !BUN_VERSION!"
-set "STAGE=%TEMP%\babybox-bun-!RANDOM!!RANDOM!"
+set "STAGE=%BUN_DIR%\.candidate-!RANDOM!!RANDOM!"
 mkdir "%STAGE%"
-if errorlevel 1 goto :ensure_bun_download_fail
+if errorlevel 1 exit /b 1
 set "ZIP=!STAGE!\bun-windows-x64.zip"
 set "URL=https://github.com/oven-sh/bun/releases/download/bun-v!BUN_VERSION!/bun-windows-x64.zip"
 call curl -fsSL --retry 3 --retry-delay 2 -A babybox-bootstrap -o "!ZIP!" "!URL!"
@@ -206,23 +205,28 @@ if not defined FOUND goto :ensure_bun_missing_exe
 goto :ensure_bun_found
 
 :ensure_bun_found
-copy /y "!FOUND!" "!BUN_EXE!" >nul
-if errorlevel 1 goto :ensure_bun_unpack_fail
-call :cleanup_stage
-call :probe_bun "!BUN_EXE!"
+call :probe_bun "!FOUND!"
 call :is_illegal_instruction "!PROBE_STATUS!"
-if not errorlevel 1 goto :ensure_bun_cpu
+if not errorlevel 1 goto :ensure_bun_candidate_cpu
 if not "!PROBE_STATUS!"=="0" goto :ensure_bun_bad_version
 call :version_matches "!PROBE_OUT!" "!BUN_VERSION!"
 if errorlevel 1 goto :ensure_bun_bad_version
+move /y "!FOUND!" "!BUN_EXE!" >nul
+if errorlevel 1 goto :ensure_bun_unpack_fail
+call :cleanup_stage
 call :clear_hold
 call :log "Bun !BUN_VERSION! je nainstalovany"
 exit /b 0
+
+:ensure_bun_candidate_cpu
+call :cleanup_stage
+goto :ensure_bun_cpu
 
 :ensure_bun_bad_version
 set "HAVE=!PROBE_OUT!"
 if "!HAVE!"=="" set "HAVE=chybi"
 call :log "Bun je !HAVE!, chceme !BUN_VERSION!"
+call :cleanup_stage
 exit /b 1
 
 :ensure_bun_missing_exe
