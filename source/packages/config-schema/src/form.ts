@@ -313,6 +313,63 @@ export const configForm: readonly FormSection[] = [
       },
     ],
   },
+  {
+    key: "email",
+    label: "E-mail (TLS port 465)",
+    fields: [
+      {
+        path: "email.listener",
+        label: "Příjem SMTP",
+        widget: "select",
+        tier: "backendReload",
+        options: ["enabled", "disabled"],
+      },
+      {
+        path: "email.mode",
+        label: "Adresáti",
+        widget: "select",
+        tier: "backendReload",
+        options: ["device", "panel"],
+      },
+      {
+        path: "email.host",
+        label: "Odchozí SMTP server",
+        widget: "text",
+        tier: "backendReload",
+      },
+      {
+        path: "email.user",
+        label: "SMTP uživatel",
+        widget: "text",
+        tier: "backendReload",
+      },
+      {
+        path: "email.password",
+        label: "SMTP heslo",
+        widget: "password",
+        tier: "backendReload",
+        secret: true,
+      },
+      {
+        path: "email.senderOverride",
+        label: "Náhradní odesílatel",
+        widget: "text",
+        tier: "backendReload",
+      },
+      {
+        path: "email.unitRecipients",
+        label: "Adresáti jednotek",
+        widget: "text",
+        tier: "backendReload",
+      },
+      {
+        path: "email.cameraRecipients",
+        label: "Adresáti kamery",
+        widget: "text",
+        tier: "backendReload",
+      },
+    ],
+  },
 ];
 
 /**

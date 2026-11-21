@@ -47,5 +47,15 @@ export function defaultConfig(): MainConfig {
       password: "password",
       refreshRequestLimit: 50000,
     },
+    email: {
+      listener: "enabled",
+      mode: "device",
+      host: "",
+      user: "",
+      password: "",
+      senderOverride: "",
+      unitRecipients: "",
+      cameraRecipients: "",
+    },
   };
 }

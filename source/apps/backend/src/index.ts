@@ -6,6 +6,7 @@ import open from "open";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
+import { EmailRelay } from "./email/relay.js";
 import { fetchConfig } from "./fetch/fetchConfig.js";
 import { jsonErrors } from "./middleware/jsonErrors.js";
 import type {
@@ -152,6 +153,53 @@ async function main() {
   app.use(prefix + "/restart", restartRoute);
   app.use(prefix + "/reload", reloadRoute);
 
+  const email = new EmailRelay(() => config);
+  app.get(prefix + "/email", (_req, res) => res.send(email.status()));
+  app.post(prefix + "/email/:action", async (req, res) => {
+    try {
+      const action = req.params["action"];
+      if (typeof action !== "string") {
+        res.sendStatus(404);
+        return;
+      }
+      if (action === "test") {
+        const id = await email.test(String(req.body?.recipient || ""));
+        res.send({
+          id,
+          msg: "Test zařazen do fronty. Sledujte výsledek v historii.",
+        });
+        return;
+      }
+      if (action !== "retry" && action !== "delete" && action !== "clear") {
+        res.status(404).send({ msg: "Neznámá akce." });
+        return;
+      }
+      if (action !== "retry" && req.body?.confirmed !== true) {
+        res.status(400).send({ msg: "Odstranění vyžaduje potvrzení." });
+        return;
+      }
+      const ids = req.body?.ids;
+      if (
+        action !== "clear" &&
+        (!Array.isArray(ids) ||
+          ids.length > 100 ||
+          ids.some((id: unknown) => typeof id !== "string"))
+      ) {
+        res.status(400).send({ msg: "Neplatný výběr zpráv." });
+        return;
+      }
+      const changed = await email.action(action, ids);
+      res.send({
+        changed,
+        msg: `Změněno zpráv: ${changed}. Aktivní odesílání se dokončí.`,
+      });
+    } catch {
+      res.status(400).send({
+        msg: "Akci nelze provést. Zkontrolujte nastavení e-mailu a stav služby.",
+      });
+    }
+  });
+
   // Serve Frontend app if running in production
   if (process.env["NODE_ENV"] === "production") {
     app.use(express.static(PUBLIC_DIR, { setHeaders: setPanelCacheHeaders }));
@@ -200,6 +248,12 @@ async function main() {
       port
     );
   });
+  // Email initialization is deliberately outside the monitoring startup path.
+  void email
+    .start()
+    .catch(() =>
+      console.error("E-mailovou službu nelze spustit. Sledování pokračuje.")
+    );
 }
 
 void main();

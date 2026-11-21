@@ -69,6 +69,7 @@
       external: false,
       secured: true,
     },
+    { link: "Email", label: "E-mail", external: false, secured: true },
     {
       link: `http://${units.value.engine.ip}/`,
       label: "SDS Motory",

@@ -82,6 +82,21 @@ afterEach(() => {
 });
 
 describe("boot", () => {
+  it("adds safe email defaults to a pre-email config in memory without rewriting it", async () => {
+    const legacy = base();
+    delete legacy.email;
+    legacy.units.engine.ip = "192.0.2.5";
+    legacy.units.thermal.ip = "192.0.2.6";
+    legacy.camera.ip = "192.0.2.7";
+    const original = JSON.stringify(legacy);
+    writeFileSync(file("main.json"), original);
+    const db = await mainConfig(configDir);
+    expect(db.data().email).toEqual(defaultConfig().email);
+    expect(db.data().units).toEqual(legacy.units);
+    expect(db.data().camera).toEqual(legacy.camera);
+    expect(readFileSync(file("main.json"), "utf8")).toBe(original);
+    expect(existsSync(file("main.json.bak"))).toBe(false);
+  });
   it("boots from base.json when there is no main.json, and writes nothing", async () => {
     const db = await mainConfig(configDir);
 

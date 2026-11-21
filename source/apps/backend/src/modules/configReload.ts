@@ -40,6 +40,8 @@ function describe(error: unknown): string {
  * and `fetch/fetchFromUnits.ts` plus `utils/url.ts` (the two unit IPs).
  */
 export interface BackendReadableConfig {
+  email?: MainConfig["email"];
+  camera?: Pick<MainConfig["camera"], "ip">;
   backend: Pick<MainConfig["backend"], "url" | "port">;
   pc: Pick<MainConfig["pc"], "os">;
   units: {
