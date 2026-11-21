@@ -176,6 +176,32 @@ describe("email relay isolation and recipient tracking", () => {
     expect(send).toHaveBeenCalledTimes(2);
   });
 
+  it("expires queued content while stored email settings are invalid", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      await relay.receive("127.0.0.1", "unit@example.com", ["a@example.com"], raw);
+      config.email = [];
+      vi.setSystemTime(Date.now() + 24 * 60 * 60 * 1000);
+      await relay.tick();
+      expect(relay.status().configured).toBe(false);
+      expect(relay.status().error).toMatch(/nastavení/);
+      expect(relay.status().queue).toHaveLength(0);
+      expect(relay.status().history[0]?.status).toBe("expired");
+      expect(send).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("continues delivery when history cannot be written", async () => {
+    await fs.mkdir(path.join(dir, "history.json.tmp"));
+    await relay.receive("127.0.0.1", "unit@example.com", ["a@example.com"], raw);
+    await relay.tick();
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(relay.status().historyError).toBeTruthy();
+    expect(relay.status().history[0]?.status).toBe("accepted");
+  });
+
   it("deletes waiting content and refuses to retry nonexistent or restart-lost content", async () => {
     const id = await relay.receive(
       "127.0.0.1",
@@ -229,6 +255,7 @@ describe("email relay isolation and recipient tracking", () => {
 
   it("classifies security and recipient failures and redacts SMTP secrets", () => {
     expect(classifyFailure({ code: "EAUTH" })).toBe("configuration");
+    expect(classifyFailure({ code: "EAUTH", responseCode: 454 })).toBe("connection");
     expect(classifyFailure({ code: "CERT_HAS_EXPIRED" })).toBe("configuration");
     expect(classifyFailure({ code: "ETIMEDOUT" })).toBe("connection");
     expect(classifyFailure({ responseCode: 550 })).toBe("permanent");
@@ -249,9 +276,9 @@ describe("email relay isolation and recipient tracking", () => {
     }
   );
 
-  onCurrentRuntime.each([false, true])(
+  onCurrentRuntime.each(["none", "PLAIN", "LOGIN"])(
     "accepts real SMTP (device AUTH: %s) and survives an occupied port",
-    async (useAuth) => {
+    async (auth) => {
       await relay.start(0, "127.0.0.1");
       const port = Number(relay.status().listener.match(/portu (\d+)/)?.[1]);
       const socket = net.connect(port, "127.0.0.1");
@@ -260,15 +287,19 @@ describe("email relay isolation and recipient tracking", () => {
       await new Promise<void>((resolve, reject) => {
         let buffer = "";
         let stage = 0;
+        const password = Buffer.from("device-password").toString("base64");
+        const authCommands = {
+          none: [],
+          PLAIN: [`AUTH PLAIN ${Buffer.from("\0device\0device-password").toString("base64")}\r\n`],
+          LOGIN: [
+            "AUTH LOGIN\r\n",
+            Buffer.from("device").toString("base64") + "\r\n",
+            password + "\r\n",
+          ],
+        };
         const commands = [
           "EHLO test\r\n",
-          ...(useAuth
-            ? [
-                `AUTH PLAIN ${Buffer.from("\0device\0device-password").toString(
-                  "base64"
-                )}\r\n`,
-              ]
-            : []),
+          ...authCommands[auth as keyof typeof authCommands],
           "MAIL FROM:<unit@example.com>\r\n",
           "RCPT TO:<a@example.com>\r\n",
           "DATA\r\n",
@@ -289,8 +320,14 @@ describe("email relay isolation and recipient tracking", () => {
           buffer = "";
         });
       });
-      expect(responses[useAuth ? 5 : 4]).toMatch(/^354 /);
-      expect(responses[useAuth ? 6 : 5]).toMatch(/^250 /);
+      if (auth === "PLAIN") expect(responses[2]).toMatch(/^235 /);
+      if (auth === "LOGIN") {
+        expect(responses.slice(2, 5).map((line) => line.slice(0, 3))).toEqual([
+          "334", "334", "235",
+        ]);
+      }
+      expect(responses[responses.length - 3]).toMatch(/^354 /);
+      expect(responses[responses.length - 2]).toMatch(/^250 /);
       expect(JSON.stringify(relay.status().history)).not.toContain(
         "device-password"
       );
@@ -303,8 +340,17 @@ describe("email relay isolation and recipient tracking", () => {
         "24.22.2"
       );
       await blocked.start(port, "127.0.0.1");
-      expect(blocked.status().error).toBeTruthy();
-      await blocked.close();
+      expect(blocked.status().listener).toMatch(/nelze spustit/);
+      await relay.close();
+      vi.useFakeTimers({ toFake: ["Date"] });
+      try {
+        vi.setSystemTime(Date.now() + 30_000);
+        await blocked.tick();
+        expect(blocked.status().listener).toContain(`portu ${port}`);
+      } finally {
+        vi.useRealTimers();
+        await blocked.close();
+      }
     }
   );
 });

@@ -22,7 +22,9 @@ export const defaultEmailSettings: EmailSettings = {
 
 export function emailSettings(config: any): EmailSettings {
   const value = config?.email;
-  if (!value) return { ...defaultEmailSettings };
+  if (value === undefined) return { ...defaultEmailSettings };
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    throw new Error("Neplatné nastavení e-mailu.");
   const result = { ...defaultEmailSettings, ...value };
   for (const key of Object.keys(
     defaultEmailSettings

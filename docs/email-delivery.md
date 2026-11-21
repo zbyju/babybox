@@ -41,9 +41,10 @@ authoritative; this file tracks implementation and release gates.
   watchdog and current direct device mail continue working.
 - Test startup and monitoring with port 25 occupied, no bind privilege, missing
   outbound configuration, broken history storage and failing outbound transport.
-- Use the deployed Node 18.12.1 / pnpm 7.5.0 toolchain, frozen workspace install,
-  full build and production-only standalone backend install, as startup does.
-  The backend must not gain a runtime workspace dependency.
+- Validate the frozen Bun workspace install and full build. Verify the first
+  boot with the legacy Node 18.12.1 / pnpm 7.5.0 updater and the standalone
+  production-only backend install. Keep runtime workspace dependencies out of
+  the deployed backend manifest.
 - Test both routing modes, partial recipient rejection without resending completed
   recipients, attachment preservation, queue limits, retries, expiry, history
   retention, restart loss and settings reload. SMTP acceptance is not inbox proof.
@@ -68,26 +69,22 @@ for explicit retry/settings changes and preserves original receipt time.
 
 ## Runtime compatibility and storage
 
-This branch builds on the Bun toolchain upgrade. The relay runs under Bun and
-remains disabled on the Node 18 fallback. The Node-only validation below records
-the original implementation before the rebase.
+This branch builds on the Bun toolchain upgrade. The relay supports Bun and
+Node.js 20 or newer. On the Node 18 fallback the backend still serves the
+panel and its monitoring API. The email page reports that reception and
+delivery are unavailable, and the SMTP/MIME libraries are loaded only on
+supported runtimes. Verify the actual runtime before redirecting a source.
 
-The deployed Node 18.12.1 toolchain still installs and builds this branch. Current
-SMTP/MIME libraries require Node 20+. Older compatible releases have known security
-advisories, so they are not used. Library imports are lazy and guarded: on Node 18
-the normal backend and panel run, and the email page reports the runtime requirement.
-No listener is opened and no email is accepted by the unsupported runtime. Updating
-the panel alone therefore does not activate email on those machines. This is a
-release constraint, not an automatic Node upgrade. Adopt a supported LTS runtime
-(tested locally: Node 24.22.2) before migrating a site's email. Verify the updater
-and startup process use that runtime, including their build step. No startup script
-or deployed Node version is changed by this branch.
+The legacy first-boot updater copies the backend manifest out of the
+workspace and runs a full pnpm 7 install. Backend tests use the workspace's
+Vitest dependency so its newer toolchain peers stay out of that install.
 
 `email` is an optional configuration section. Configer merges the new defaults into
 old configurations in memory without rewriting their files. Device mode and enabled
 reception are defaults; no outbound credentials are assumed. The email page PATCHes
 only this section and asks the backend to reload it. SMTP listener changes take
-effect on the next email worker tick; device allowlisting reads the current config.
+effect on the next email worker tick. A failed bind is retried after 30 seconds.
+Device allowlisting reads the current config.
 AUTH LOGIN/PLAIN is accepted only for allowed peers; device credentials are ignored,
 never logged and never reused upstream. Real device sessions are still needed to
 validate their behavior. The page uses the existing maintenance navigation gate,
@@ -104,7 +101,7 @@ never included in those retries. MIME parsing runs in a worker; only useful text
 headers and attachment metadata are retained in history, never attachment bytes.
 Diagnostic text and headers are limited to 64 KiB each per email.
 
-## Current validation (Windows, 2026-11-20)
+## Pre-Bun validation (Windows, 2026-11-20)
 
 - Frozen workspace install and schema/backend/panel/configer builds passed on
   Node 18.12.1 and pnpm 7.5.0.

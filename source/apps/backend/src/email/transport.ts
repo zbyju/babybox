@@ -12,6 +12,9 @@ export type FailureCategory =
 
 export function classifyFailure(error: any): FailureCategory {
   const code = String(error?.code || "");
+  const response = Number(error?.responseCode);
+  if (code === "EAUTH" && response >= 400 && response < 500)
+    return "connection";
   if (
     code === "EAUTH" ||
     code === "ETLS" ||
@@ -34,7 +37,7 @@ export function classifyFailure(error: any): FailureCategory {
     ].includes(code)
   )
     return "connection";
-  if (Number(error?.responseCode) >= 500 && Number(error?.responseCode) !== 503)
+  if (response >= 500 && response !== 503)
     return "permanent";
   return "temporary";
 }
@@ -45,6 +48,7 @@ export function routedContent(
   sender: string,
   recipients?: string[]
 ): Buffer {
+  if (!sender && !recipients) return raw;
   const boundary = raw.indexOf("\r\n\r\n");
   if (boundary < 0 || boundary > 1024 * 1024)
     throw Object.assign(
@@ -54,7 +58,6 @@ export function routedContent(
   const replace = new Set<string>();
   if (sender) replace.add("from");
   if (recipients) ["to", "cc", "bcc"].forEach((key) => replace.add(key));
-  if (!replace.size) return raw;
   const fields = raw
     .subarray(0, boundary)
     .toString("latin1")

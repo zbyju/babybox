@@ -24,7 +24,7 @@ function smtpError(message: string, responseCode = 451): Error {
 }
 
 export class EmailRelay {
-  private queue = new EmailQueue();
+  private queue = new EmailQueue(() => Date.now());
   private records = new Map<number, EmailRecord>();
   private server: any;
   private timer: ReturnType<typeof setInterval> | undefined;
@@ -33,6 +33,8 @@ export class EmailRelay {
   private listener = "Příjem není spuštěn.";
   private error: string | null = null;
   private settingKey = "";
+  private configurationError: string | null = null;
+  private nextBindAt = 0;
   private started = false;
   private readonly ready: Promise<void>;
   private listenPort = 25;
@@ -63,32 +65,33 @@ export class EmailRelay {
     await this.ready;
     if (!supportedRuntime(this.runtime)) {
       this.error =
-        "E-mail vyžaduje Node.js 20 nebo novější; doporučena je podporovaná LTS verze. Sledování babyboxu pokračuje.";
+        "E-mail vyžaduje Bun nebo Node.js 20 a novější. Sledování babyboxu pokračuje.";
       return;
     }
+    await this.tick();
+    if (!this.started) return;
+    this.timer = setInterval(() => {
+      void this.tick().catch(() => {
+        this.error = "Chyba e-mailov? slu?by. Sledov?n? babyboxu pokra?uje.";
+      });
+    }, 1000);
+    this.timer.unref();
+  }
+
+  private async updateListener(enabled: boolean): Promise<void> {
+    if (!this.started || !supportedRuntime(this.runtime)) return;
+    if (!enabled) {
+      if (this.server?.server.listening)
+        await new Promise<void>((resolve) => this.server.close(resolve));
+      this.listener = "Příjem SMTP je vypnut?.";
+      return;
+    }
+    if (this.server?.server.listening || Date.now() < this.nextBindAt) return;
+    this.nextBindAt = Date.now() + 30_000;
     try {
-      this.settingKey = JSON.stringify(emailSettings(this.getConfig()));
-      if (emailSettings(this.getConfig()).listener === "enabled")
-        await this.listen(port, host);
-      else this.listener = "Příjem SMTP je vypnutý.";
-      this.timer = setInterval(() => {
-        void this.tick().catch(() => {
-          this.error = "Chyba e-mailové služby. Sledování babyboxu pokračuje.";
-        });
-      }, 1000);
-      this.timer.unref();
+      await this.listen(this.listenPort, this.listenHost);
     } catch {
-      this.error =
-        "Příjem SMTP nelze spustit. Zkontrolujte oprávnění, nastavení a obsazení portu. Sledování babyboxu pokračuje.";
-      // Delivery and expiry still run if binding failed.
-      if (!this.timer) {
-        this.timer = setInterval(() => {
-          void this.tick().catch(() => {
-            this.error = "Chyba e-mailové služby.";
-          });
-        }, 1000);
-        this.timer.unref();
-      }
+      this.listener = "Příjem SMTP nelze spustit. Zkontrolujte port a oprávnění.";
     }
   }
 
@@ -281,32 +284,27 @@ export class EmailRelay {
     this.busy = true;
     let activeId: number | undefined;
     try {
-      const settings = emailSettings(this.getConfig());
+      const expired = this.queue.expire();
+      this.discard(expired);
+      if (expired.length) await this.history.save();
+
+      let settings;
+      try {
+        settings = emailSettings(this.getConfig());
+      } catch {
+        this.configurationError = "Neplatné nastavení e-mailu. Sledování babyboxu pokračuje.";
+        this.settingKey = "";
+        await this.updateListener(false);
+        return;
+      }
+      this.configurationError = null;
       const key = JSON.stringify(settings);
       if (key !== this.settingKey) {
         this.settingKey = key;
         this.queue.resume();
-        if (
-          this.started &&
-          settings.listener === "disabled" &&
-          this.server?.server.listening
-        ) {
-          await new Promise<void>((resolve) => this.server.close(resolve));
-          this.listener = "Příjem SMTP je vypnutý.";
-        } else if (
-          this.started &&
-          settings.listener === "enabled" &&
-          !this.server?.server.listening &&
-          supportedRuntime(this.runtime)
-        ) {
-          try {
-            await this.listen(this.listenPort, this.listenHost);
-          } catch {
-            this.listener =
-              "Příjem SMTP nelze spustit. Zkontrolujte port a oprávnění.";
-          }
-        }
+        this.nextBindAt = 0;
       }
+      await this.updateListener(settings.listener === "enabled");
       const taken = this.queue.take();
       this.discard(taken.discarded);
       if (!taken.message) {
@@ -453,7 +451,7 @@ export class EmailRelay {
     }
     return {
       listener: this.listener,
-      error: this.error,
+      error: this.configurationError ?? this.error,
       historyError: this.history.error,
       runtimeSupported: supportedRuntime(this.runtime),
       configured,
