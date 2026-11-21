@@ -532,8 +532,8 @@ async function assembleDistNext(ctx) {
       path.join(ctx.paths.distNext, "bun.lock")
     );
     // Install here, before any rename of the live dist.
-    // --no-save keeps the copied lock and writes nothing on stderr.
-    await ctx.exec(`${ctx.bun} install --no-save`, {
+    // Keep the copied lock and install only the backend runtime dependencies.
+    await ctx.exec(`${ctx.bun} install --no-save --omit=dev`, {
       cwd: ctx.paths.distNext,
       maxBuffer: 32 * 1024 * 1024,
     });
@@ -1028,8 +1028,8 @@ async function swapBack(ctx) {
     ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
   }
   try {
-    // --no-save keeps the copied lock and writes nothing on stderr.
-    await ctx.exec(`${ctx.bun} install --no-save`, {
+    // Keep the copied lock and install only the backend runtime dependencies.
+    await ctx.exec(`${ctx.bun} install --no-save --omit=dev`, {
       cwd: ctx.paths.dist,
       maxBuffer: 32 * 1024 * 1024,
     });

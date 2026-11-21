@@ -1656,7 +1656,8 @@ Context · Decision · Why · Gave up · Where
   scripts, `docs/learnings.md`.
 
 - Note: on `feat/toolchain-jump` the runtime is Bun. `dist/` installs run
-  `bun install --no-save`, not `pnpm install --prod`. See "The runtime is Bun
+  `bun install --no-save --omit=dev`. The workspace keeps build tools and
+  the first boot still runs the old startup's pnpm install. See "The runtime is Bun
   1.4.2" (2026-09-14).
 
 ### Windows release startup without a command shim (2026-11-20)

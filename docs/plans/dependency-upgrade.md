@@ -1552,10 +1552,10 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       all panel PCs run Node 18. The minor version is not known.
 - [ ] `GET /status` `node` shows the Node version Bun reports (`v26.3.0`).
       Add a runtime field?
-- [ ] `bun install --no-save` in `dist` installs the backend
-      devDependencies too. This plan says `--omit dev`. Since the type
-      contract they include vitest 0.9.4, so also vite 2.9.14 and the
-      esbuild postinstall.
+- [x] Standalone backend Bun installs use `--omit=dev` during preparation,
+      rollback, and recovery when `node_modules` is missing. The workspace
+      installs build tools, and the old startup app still controls its first
+      standalone pnpm install.
 - [ ] Owner: make `legacy-boot1` a required check. On two #128 runs it took
       about 1.5 minutes on Ubuntu and 3.5 to 5 minutes on Windows, in
       parallel with the other jobs. A whole run took 4.5 to 5 minutes. The
