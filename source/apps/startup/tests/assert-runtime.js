@@ -199,7 +199,13 @@ function checkConfigs(source, problems) {
 
 function checkModules() {
   const source = moduleSource();
-  const isolated = path.join(source, "apps", "configer", "dist", "node_modules");
+  const isolated = path.join(
+    source,
+    "apps",
+    "configer",
+    "dist",
+    "node_modules"
+  );
   const distIndex = path.join(source, "apps", "configer", "dist", "index.js");
   const problems = [];
   if (!fs.existsSync(distIndex)) {

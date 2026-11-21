@@ -1,4 +1,3 @@
-/* global describe, it, expect */
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -144,7 +143,7 @@ describe("run-update", () => {
     // A later success replaces a stale failure record.
     fs.writeFileSync(
       path.join(fx.root, "startup.last.json"),
-      "{\"step\":\"BUILD_PANEL\",\"ok\":false,\"message\":\"old\"}\n"
+      '{"step":"BUILD_PANEL","ok":false,"message":"old"}\n'
     );
     const calls = [];
     const paths = [];
@@ -232,7 +231,8 @@ describe("run-update", () => {
   it("retries Windows install once when Bun cannot link busy binaries", async () => {
     const fx = createFixture();
     const calls = [];
-    const busy = "EBUSY: failed to link binaries for package: eslint-utils@3.0.0";
+    const busy =
+      "EBUSY: failed to link binaries for package: eslint-utils@3.0.0";
     try {
       const code = await run(
         baseOptions(fx, {
@@ -259,7 +259,7 @@ describe("run-update", () => {
     const fx = createFixture();
     fs.writeFileSync(
       path.join(fx.root, "startup.last.json"),
-"{\"step\":\"OS_HOLD\",\"ok\":true}\n"
+      '{"step":"OS_HOLD","ok":true}\n'
     );
     const spawnSync = () => {
       throw new Error("bun must not run");
@@ -282,7 +282,7 @@ describe("run-update", () => {
 
   it("does not name CPU_HOLD as a bootstrap failure", async () => {
     const fx = createFixture();
-    const previous = "{\"step\":\"CPU_HOLD\",\"ok\":true}\n";
+    const previous = '{"step":"CPU_HOLD","ok":true}\n';
     fs.writeFileSync(path.join(fx.root, "startup.last.json"), previous);
     const spawnSync = () => {
       throw new Error("bun must not run");
@@ -303,9 +303,9 @@ describe("run-update", () => {
       expect(fx.stderr.text()).toBe("");
       expect(fx.stdout.text()).toContain("Krok CPU_HOLD");
       expect(fx.stdout.text()).not.toContain("nezdařil");
-      expect(fs.readFileSync(path.join(fx.root, "startup.last.json"), "utf8")).toBe(
-        previous
-      );
+      expect(
+        fs.readFileSync(path.join(fx.root, "startup.last.json"), "utf8")
+      ).toBe(previous);
     } finally {
       fx.cleanup();
     }

@@ -13,7 +13,10 @@ const fs = require("fs");
 const path = require("path");
 
 function oneLine(text) {
-  return String(text).replace(/[\r\n\t]+/g, " ").replace(/ +/g, " ").trim();
+  return String(text)
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/ +/g, " ")
+    .trim();
 }
 
 function writeOut(stdout, line) {
@@ -205,7 +208,13 @@ function installOne(name, optional, dirs, destModules, stack) {
   const nextDirs = searchDirs(realPath, dirs);
   for (let i = 0; i < deps.length; i += 1) {
     const dep = deps[i];
-    const result = installOne(dep.name, dep.optional, nextDirs, nested, nextStack);
+    const result = installOne(
+      dep.name,
+      dep.optional,
+      nextDirs,
+      nested,
+      nextStack
+    );
     if (!result.ok) {
       return result;
     }

@@ -13,17 +13,13 @@
     "start": "node src/index.js",
     "start:install": "node src/index.js --install",
     "test": "bun run test:unit && bash tests/startup.test.sh",
-    "test:unit": "bun --bun vitest run --globals"
+    "test:unit": "bun --bun vitest run --globals",
+    "lint": "bun --bun oxlint --deny-warnings .",
+    "format": "bun --bun oxfmt --write \"**/*.js\"",
+    "format:check": "bun --bun oxfmt --check \"**/*.js\""
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "eslint": "8.21.0",
-    "eslint-config-prettier": "8.5.0",
-    "eslint-plugin-simple-import-sort": "7.0.0",
-    "eslint-plugin-unused-imports": "2.0.0",
-    "prettier": "2.7.1"
-  },
   "dependencies": {
     "fs-extra": "11.4.1",
     "moment": "2.31.0",

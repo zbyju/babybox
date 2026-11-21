@@ -1,4 +1,3 @@
-/* global describe, it, expect */
 const { EventEmitter } = require("events");
 const fs = require("fs");
 const http = require("http");
@@ -94,10 +93,13 @@ function writeBackendAndPanel(root) {
   const backendDist = path.join(root, "source", "apps", "backend", "dist");
   fs.mkdirSync(backendDist, { recursive: true });
   fs.writeFileSync(path.join(backendDist, "index.js"), "new");
-  fs.writeFileSync(path.join(root, "source", "apps", "backend", ".env"), "A=1\n");
+  fs.writeFileSync(
+    path.join(root, "source", "apps", "backend", ".env"),
+    "A=1\n"
+  );
   fs.writeFileSync(
     path.join(root, "source", "apps", "backend", "package.json"),
-    "{\"name\":\"babybox-panel-backend\"}\n"
+    '{"name":"babybox-panel-backend"}\n'
   );
   fs.writeFileSync(path.join(root, "source", "bun.lock"), "{}\n");
   const panelDist = path.join(root, "source", "apps", "panel", "dist");
@@ -273,7 +275,10 @@ describe("dist-next release", () => {
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
     harness.on("bun install --no-save", (cwd) => {
       if (cwd === path.join(root, "dist-next")) {
-        distDuringInstall = fs.readFileSync(path.join(root, "dist", "index.js"), "utf8");
+        distDuringInstall = fs.readFileSync(
+          path.join(root, "dist", "index.js"),
+          "utf8"
+        );
         modulesDuringInstall = fs.existsSync(
           path.join(root, "dist", "node_modules", "keep.txt")
         );
@@ -289,23 +294,33 @@ describe("dist-next release", () => {
       expect(distDuringInstall).toBe("old");
       expect(modulesDuringInstall).toBe(true);
       expect(dist2DuringInstall).toBe(false);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
-      expect(fs.readFileSync(path.join(root, "dist", "public", "index.html"), "utf8")).toBe(
-        "panel"
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "new"
       );
-      expect(fs.readFileSync(path.join(root, "dist", ".env"), "utf8")).toBe("A=1\n");
+      expect(
+        fs.readFileSync(path.join(root, "dist", "public", "index.html"), "utf8")
+      ).toBe("panel");
+      expect(fs.readFileSync(path.join(root, "dist", ".env"), "utf8")).toBe(
+        "A=1\n"
+      );
       expect(fs.readFileSync(path.join(root, "dist", "bun.lock"), "utf8")).toBe(
         fs.readFileSync(path.join(root, "source", "bun.lock"), "utf8")
       );
-      expect(fs.readFileSync(path.join(root, "dist", "package.json"), "utf8")).toBe(
+      expect(
+        fs.readFileSync(path.join(root, "dist", "package.json"), "utf8")
+      ).toBe(
         fs.readFileSync(
           path.join(root, "source", "apps", "backend", "package.json"),
           "utf8"
         )
       );
       expect(fs.existsSync(path.join(root, "dist2", "index.js"))).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist2", "index.js"), "utf8")).toBe("old");
-      expect(fs.existsSync(path.join(root, "dist2", "node_modules"))).toBe(false);
+      expect(
+        fs.readFileSync(path.join(root, "dist2", "index.js"), "utf8")
+      ).toBe("old");
+      expect(fs.existsSync(path.join(root, "dist2", "node_modules"))).toBe(
+        false
+      );
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
       expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
@@ -326,7 +341,11 @@ describe("dist-next release", () => {
         pnpm: VERSIONS.pnpm,
         bun: VERSIONS.bun,
       });
-      expect(JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8"))).toEqual({
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        )
+      ).toEqual({
         sha: HEAD_SHA,
       });
       expect(harness.logger.lines.map((line) => line.message)).toEqual(
@@ -351,7 +370,10 @@ describe("dist-next release", () => {
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
     harness.on("bun install --no-save", (cwd) => {
       if (cwd === path.join(root, "dist")) {
-        restoredIndex = fs.readFileSync(path.join(root, "dist", "index.js"), "utf8");
+        restoredIndex = fs.readFileSync(
+          path.join(root, "dist", "index.js"),
+          "utf8"
+        );
       }
       return { stdout: "", stderr: "" };
     });
@@ -361,14 +383,18 @@ describe("dist-next release", () => {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
       expect(restoredIndex).toBe("old");
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
       expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
       expect(installCwds(harness)).toEqual([
         path.join(root, "dist-next"),
         path.join(root, "dist"),
       ]);
-      expect(installCwds(harness)).not.toContain(path.join(root, "source", "dist"));
+      expect(installCwds(harness)).not.toContain(
+        path.join(root, "source", "dist")
+      );
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
         ["start:configer"],
         ["start:configer"],
@@ -401,7 +427,9 @@ describe("dist-next release", () => {
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
         ["start:configer"],
         ["start:main"],
@@ -412,9 +440,11 @@ describe("dist-next release", () => {
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe("panel broke");
       expect(installCwds(harness)[1]).toBe(path.join(root, "dist"));
-      expect(JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha).toBe(
-        OTHER_SHA
-      );
+      expect(
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
+      ).toBe(OTHER_SHA);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -435,10 +465,12 @@ describe("dist-next release", () => {
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
-      expect(fs.existsSync(path.join(root, "dist", "node_modules", "keep.txt"))).toBe(
-        true
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
       );
+      expect(
+        fs.existsSync(path.join(root, "dist", "node_modules", "keep.txt"))
+      ).toBe(true);
       expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
       expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
@@ -475,7 +507,9 @@ describe("dist-next release", () => {
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
       expect(commands(harness)).not.toContain("bun install --no-save");
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
@@ -502,10 +536,14 @@ describe("dist-next release", () => {
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(false);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "new"
+      );
       expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
       expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
-      expect(harness.spawnCalls.map((call) => call.args)).toEqual([["start:configer"]]);
+      expect(harness.spawnCalls.map((call) => call.args)).toEqual([
+        ["start:configer"],
+      ]);
       expect(readRecord(root).step).toBe("START_CONFIGER");
       expect(readRecord(root).ok).toBe(false);
     } finally {
@@ -567,7 +605,9 @@ describe("dist-next release", () => {
         })
       );
       expect(code).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
       expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
       expect(readRecord(root).step).toBe("SWAP");
       expect(readRecord(root).ok).toBe(false);
@@ -662,7 +702,9 @@ describe("dist-next release", () => {
         pnpm: VERSIONS.pnpm,
         bun: VERSIONS.bun,
       });
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -693,7 +735,9 @@ describe("dist-next release", () => {
         ["start:configer"],
         ["start:main"],
       ]);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -703,7 +747,10 @@ describe("dist-next release", () => {
     const root = createRoot(false);
     const harness = createHarness();
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
-    harness.on("pnpm run build", () => ({ stdout: "", stderr: "schema broke\n" }));
+    harness.on("pnpm run build", () => ({
+      stdout: "",
+      stderr: "schema broke\n",
+    }));
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(false);
@@ -729,7 +776,9 @@ describe("dist-next release", () => {
       const code = await onStartup(baseOptions(root, harness));
       expect(commands(harness)).toContain("pnpm run build");
       expect(code).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "new"
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -751,7 +800,9 @@ describe("dist-next release", () => {
         ["start:configer"],
         ["start:main"],
       ]);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -840,7 +891,9 @@ describe("dist-next release", () => {
         })
       );
       expect(code).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "new"
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -907,9 +960,13 @@ describe("dist-next release", () => {
         commands(harness).indexOf("git status --porcelain")
       );
       expect(
-        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8"))
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        )
       ).toEqual({ sha: HEAD_SHA });
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("new");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "new"
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -963,7 +1020,9 @@ describe("dist-next release", () => {
       expect(code).toBe(true);
       expect(commands(harness)).toContain("git rev-parse HEAD");
       expect(
-        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
       ).toBe(HEAD_SHA);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
@@ -991,9 +1050,13 @@ describe("dist-next release", () => {
       expect(commands(harness)).not.toContain("pnpm run build");
       expect(readRecord(root).step).toBe("OS_HOLD");
       expect(readRecord(root).ok).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
       expect(
-        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
       ).toBe(OTHER_SHA);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
@@ -1027,7 +1090,9 @@ describe("dist-next release", () => {
       expect(code).toBe(true);
       expect(commands(harness)).toContain("pnpm run build");
       expect(
-        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
       ).toBe(HEAD_SHA);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
@@ -1052,9 +1117,13 @@ describe("dist-next release", () => {
       expect(commands(harness)).not.toContain("pnpm run build");
       expect(readRecord(root).step).toBe("CPU_HOLD");
       expect(readRecord(root).ok).toBe(true);
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
       expect(
-        JSON.parse(fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")).sha
+        JSON.parse(
+          fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
+        ).sha
       ).toBe(OTHER_SHA);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
@@ -1142,10 +1211,7 @@ describe("dist-next release", () => {
       });
       delete opts.bunVersion;
       delete opts.wantedBun;
-      opts.versionsPath = path.join(
-        __dirname,
-        "../../../versions.env"
-      );
+      opts.versionsPath = path.join(__dirname, "../../../versions.env");
       const code = await onStartup(opts);
       expect(code).toBe(true);
       expect(commands(harness)).not.toContain("pnpm run build");
@@ -1174,7 +1240,9 @@ describe("dist-next release", () => {
       expect(readRecord(root).step).toBe("PULL");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toContain("pnpm-lock.yaml");
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
@@ -1238,7 +1306,9 @@ describe("dist-next release", () => {
       expect(readRecord(root).step).toBe("BOOTSTRAP_BUN");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toContain("Kontrolní součet");
-      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe("old");
+      expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
+        "old"
+      );
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
         ["start:configer"],
@@ -1264,11 +1334,15 @@ describe("dist-next release", () => {
     harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     allowPm2(harness);
     try {
-      const code = await onStartup(baseOptions(root, harness, { fs: trackingFs }));
+      const code = await onStartup(
+        baseOptions(root, harness, { fs: trackingFs })
+      );
       expect(code).toBe(true);
       expect(readRecord(root).step).toBe("START_PANEL");
       expect(readRecord(root).ok).toBe(true);
-      expect(fs.existsSync(path.join(root, "dist", "release.json"))).toBe(false);
+      expect(fs.existsSync(path.join(root, "dist", "release.json"))).toBe(
+        false
+      );
       expect(harness.logger.lines.map((line) => line.message)).toContain(
         "Soubor release.json se nepodařilo zapsat."
       );

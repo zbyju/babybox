@@ -29,7 +29,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isSection(config: MainConfig, value: string): value is keyof MainConfig {
+function isSection(
+  config: MainConfig,
+  value: string
+): value is keyof MainConfig {
   return Object.hasOwn(config, value);
 }
 

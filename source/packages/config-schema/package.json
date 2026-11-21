@@ -15,7 +15,10 @@
   "scripts": {
     "build": "bun --bun tsc",
     "typecheck": "bun --bun tsc -p tsconfig.tests.json",
-    "test": "bun --bun vitest run src"
+    "test": "bun --bun vitest run src",
+    "lint": "bun --bun oxlint --type-aware --deny-warnings src",
+    "format": "bun --bun oxfmt --write \"src\"",
+    "format:check": "bun --bun oxfmt --check \"src\""
   },
   "license": "ISC",
   "dependencies": {
