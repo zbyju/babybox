@@ -902,7 +902,7 @@
     scrollbar-color #7163bd #100e2c
   .log-columns
     display grid
-    grid-template-columns minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1.25fr) 118px 12px
+    grid-template-columns minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1.25fr) 136px 12px
     align-items center
     column-gap 12px
     padding 12px
@@ -933,6 +933,9 @@
         background #191638
     &[open] > summary::after
       transform rotate(45deg)
+
+  .history-row > summary .status
+    white-space nowrap
 
   .history-row time, .event-heading time
     font-variant-numeric tabular-nums
