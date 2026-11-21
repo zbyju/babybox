@@ -1210,12 +1210,12 @@ TypeScript contract. Do not add `tsx`.
       Configer and config-schema pin their own 6.0.3, then 7 in P6.
 - [x] `typescript@6.0.3` in the panel, with `vue-tsc` 3.3.11. The panel
       contract PR, after the type-contract PR.
-- [ ] `@types/bun` and the `@types/node` version, moved here from P3.
+- [x] Keep Node 18 types and omit `@types/bun` for the Node fallback.
       TypeScript 4.7.4 cannot read either. A box on the Node fallback still
       starts the new `dist` on Node. The type-contract PR kept `@types/node`
       18.x in the backend and configer and added no `@types/bun`. The
       compiler then rejects a Node 20+ API such as `import.meta.dirname`.
-      Owner to confirm, see "Open questions". The panel contract PR moved
+      See the owner decision of 2026-09-25. The panel contract PR moved
       the panel `@types/node` to 18.11.18. Only its tests and
       `vite.config.ts` load it.
 - [x] The TypeScript contract flags in configer, the backend and
@@ -1325,15 +1325,17 @@ Size: ~1.5 days.
 
 ### P6 — TypeScript 7.0.2
 
-- [ ] Backend, configer and config-schema: `typescript@7.0.2` as their own
-      devDependency; `tsc` and `tsc --build` produce identical `dist` output
-      (diff it)
-- [ ] Root: `typescript@7.0.2`, or nothing if no root code compiles
-- [ ] Panel: stays on `typescript@6.0.3`; `vue-tsc` 3.3.11 crashes on 7 (tested
+- [x] Backend, configer and config-schema pin TypeScript 7.0.2. Build and
+      typecheck run its launcher through Bun because Node 18.12.1 cannot
+      load the extensionless ESM entry point. On Windows, `tsc` and
+      `tsc --build` emit identical JS and declarations. Compared to TS 6,
+      only the order of literal unions in `schema.d.ts` changes.
+- [x] The workspace root has no compiler dependency. Each compile unit pins its own.
+- [x] Panel stays on `typescript@6.0.3`; `vue-tsc` 3.3.11 crashes on 7 (tested
       2026-09-12, still the latest Volar on 2026-09-13). Re-test at each Volar
       major and move when it passes. `vue-tsc` also needs a Node runtime. On
       Bun it loads no `.vue` file (TS2307).
-- [ ] Remove any `ignoreDeprecations` left from P4
+- [x] No `ignoreDeprecations` entries remain in the workspace.
 - [ ] TS 7 pulls a platform binary (`@typescript/typescript-linux-x64`,
       `-win32-x64`); the legacy-image job on Linux and the Windows runner both
       confirm one resolves from the lockfile with `bun install --frozen-lockfile`

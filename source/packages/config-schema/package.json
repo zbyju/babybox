@@ -13,8 +13,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc -p tsconfig.tests.json",
+    "build": "bun --bun tsc",
+    "typecheck": "bun --bun tsc -p tsconfig.tests.json",
     "test": "bun --bun vitest run src"
   },
   "license": "ISC",
@@ -22,7 +22,7 @@
     "zod": "3.23.8"
   },
   "devDependencies": {
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "vitest": "5.0.1"
   }
 }
