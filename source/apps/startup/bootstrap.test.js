@@ -1,4 +1,4 @@
-/* eslint-env jest */
+/* global describe, it, expect */
 const childProcess = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -248,6 +248,9 @@ function installSpawn() {
       if (text === "old") {
         return { status: null, signal: "SIGILL", stdout: "", stderr: "" };
       }
+      if (process.platform === "win32") {
+        return { status: 0, signal: null, stdout: "1.4.2\n", stderr: "" };
+      }
       return childProcess.spawnSync(cmd, args, opts);
     }
     throw new Error(`unexpected spawn ${cmd}`);
@@ -390,11 +393,11 @@ describe("OS hold", () => {
         GIT_COMMITTER_EMAIL: "test@example.com",
       });
       const git = (args) =>
-        childProcess.execFileSync("git", args, {
-          cwd: root,
-          env: gitEnv,
-          encoding: "utf8",
-        });
+        childProcess.execFileSync(
+          "git",
+          ["-c", "core.autocrlf=false", ...args],
+          { cwd: root, env: gitEnv, encoding: "utf8" }
+        );
       fs.writeFileSync(
         path.join(root, ".gitignore"),
         "startup.log\nstartup.last.json\ntmp/\n"

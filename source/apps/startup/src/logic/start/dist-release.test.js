@@ -1,4 +1,4 @@
-/* eslint-env jest */
+/* global describe, it, expect */
 const { EventEmitter } = require("events");
 const fs = require("fs");
 const http = require("http");

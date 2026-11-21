@@ -1,4 +1,4 @@
-/* eslint-env jest */
+/* global describe, it, expect */
 const fs = require("fs");
 const { createRequire } = require("module");
 const os = require("os");

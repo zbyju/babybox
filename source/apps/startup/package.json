@@ -12,7 +12,8 @@
     "dev:install": "nodemon src/index.js --install",
     "start": "node src/index.js",
     "start:install": "node src/index.js --install",
-    "test": "jest && bash tests/startup.test.sh"
+    "test": "bun run test:unit && bash tests/startup.test.sh",
+    "test:unit": "bun --bun vitest run --globals"
   },
   "author": "",
   "license": "ISC",
@@ -21,7 +22,6 @@
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-simple-import-sort": "7.0.0",
     "eslint-plugin-unused-imports": "2.0.0",
-    "jest": "28.1.3",
     "prettier": "2.7.1"
   },
   "dependencies": {
