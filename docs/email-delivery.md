@@ -28,7 +28,7 @@ authoritative; this file tracks implementation and release gates.
    camera message sizes. Bind or mail failures must not prevent backend startup.
    Enabled by default on supported runtimes; an older runtime reports it unavailable.
 5. Add Czech settings, listener/transport status, history and confirmed queue
-   actions on a dedicated page (implemented; human UI review pending). Monitoring
+   actions on a dedicated page (implemented and exercised locally). Monitoring
    and watchdog traffic remain in the global app manager.
 6. Validate upgrades and pilot real Windows/Ubuntu devices before fleet rollout.
 
@@ -123,3 +123,54 @@ Diagnostic text and headers are limited to 64 KiB each per email.
   Remote CI has not run. No independent agent review, browser visual review,
   updater rehearsal, real-provider inbox test or real-device pilot was performed.
   These local results do not establish fleet upgrade readiness.
+
+## Bun release evidence (2026-11-21)
+
+- An empty or invalid panel recipient list now pauses only the affected
+  messages. Saving corrected settings or explicitly retrying resumes them.
+  SMTP 421 now applies the shared connection cooldown. The email page shows
+  paused messages and clears stale queue controls when status cannot be read.
+- Bun 1.4.2 frozen install, workspace builds, typechecks, lint and Linux
+  formatting passed. Windows ran 184 backend, 192 panel, 74 configer, 58 schema
+  and 182 startup unit tests, with one startup test skipped. A standalone
+  production-only backend install loaded the mail dependencies under Bun and
+  imported the relay module on Node 18 without initializing the SMTP stack.
+- An isolated Linux container ran the legacy startup from `legacy-runtime`
+  with Node 18.12.1, pnpm 7.5.0 and PM2 5.2.0. It started the old build,
+  recovered the previous build after a forced first-boot build failure,
+  upgraded to Bun 1.4.2, and reused the last good configer after a subsequent
+  failed build. The fixture `main.json` stayed byte-identical, with email
+  defaults supplied in memory after upgrade. A separate modern updater
+  rehearsal passed the current-checkout build, forced panel build and startup
+  failures, and Bun checksum failure with Node 18 fallback. Its fixture
+  `main.json` also stayed byte-identical.
+- The Czech page submitted a test to an isolated implicit-TLS SMTP sink and
+  showed the accepted outcome in history. Clear-queue required an inline
+  confirmation. A camera-shaped localhost SMTP LOGIN session preserved the
+  sender and decoded attachment bytes through the TLS sink. The same message
+  recorded individual 250, 450 and 550 results. An email-only save preserved the
+  fixture's unit and camera configuration. Monitoring data and watchdog HTTP
+  requests continued against a local SDS fixture during SMTP recipient failure,
+  bad outbound credentials and a history write failure. Relay tests cover
+  no AUTH, LOGIN, PLAIN, bind failure and recovery, and volatile queue loss
+  across restart.
+- Device SMTP settings remain on the devices. The fixture update and settings
+  save touched only panel-side data and issued no device SMTP setting writes.
+  A lost acknowledgement can still cause a duplicate on retry. The queue
+  remains volatile, and an attempted send may have reached the SMTP server
+  before a disconnect or restart.
+
+### Authorized pilot still required
+
+1. Capture real engine, thermal and camera SMTP sessions. Check HELO/EHLO,
+   AUTH behavior, message and attachment sizes, timeouts and source retry
+   behavior. Keep credentials out of the captured evidence.
+2. Confirm port 25 bind and inbound LAN access on deployed Windows 10/11 and
+   Ubuntu launch paths, including privileges, port conflicts, firewall rules
+   and the stable panel IP. Confirm site egress to the chosen provider's
+   TLS port 465. Windows 7 remains unverified.
+3. Verify the real provider accepts each original sender or the site's
+   explicit override. Check decoded attachment preservation and verified
+   inbox receipt at each pilot site before any source is redirected.
+4. Observe mixed direct and relayed sources, monitoring and watchdog activity,
+   plus queue recovery during a provider or connectivity outage.
