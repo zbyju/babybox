@@ -33,7 +33,8 @@ async function main() {
   app.use(express.json());
 
   // Routes
-  const rawPrefix = main.data()?.configer.url || process.env["API_PREFIX"] || "";
+  const rawPrefix =
+    main.data()?.configer.url || process.env["API_PREFIX"] || "";
   const prefix = safeRoutePrefix(rawPrefix);
   if (prefix !== rawPrefix) {
     console.error(
@@ -43,12 +44,14 @@ async function main() {
 
   // Status route
   app.get(prefix + "/status", (req, res) => {
-    res.status(200).send(
-      statusBody(
-        cachedRuntimeVersions(),
-        startupLastFor(dirname(fileURLToPath(import.meta.url)))
-      )
-    );
+    res
+      .status(200)
+      .send(
+        statusBody(
+          cachedRuntimeVersions(),
+          startupLastFor(dirname(fileURLToPath(import.meta.url)))
+        )
+      );
   });
 
   // Other routes
@@ -69,4 +72,4 @@ async function main() {
     );
   });
 }
-main();
+void main();

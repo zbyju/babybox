@@ -1312,10 +1312,10 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
 - [x] Startup tests run on Vitest 5 and Bun 1.4.2 in CI. The installer tests
       inject command and logger functions. Production startup still uses
       CommonJS on Node, and the shell startup test still runs.
-- [ ] oxlint 1.85.0 + oxfmt 0.70.0 (or latest at the time): configer first (its own
-      PR, with the TypeScript contract already on, type-aware oxlint rules,
-      tracked suppressions), then panel (`vue` plugin), backend, startup,
-      config-schema
+- [x] Configer uses oxlint 1.94.0 with type-aware rules and oxfmt 0.79.0.
+      CI checks the configer after building the shared schema.
+- [ ] Migrate panel (`vue` plugin), backend, startup and config-schema to
+      oxlint and oxfmt.
 - [ ] Remove the ESLint and Prettier family from every `package.json`; delete the three
       `.eslintrc*` files and `.prettierrc.json`
 - [ ] CI: `oxlint --deny-warnings` and `oxfmt --check` replace the three eslint lines

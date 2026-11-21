@@ -94,7 +94,7 @@ describe("startup last record", () => {
     expect(parseStartupLast(JSON.stringify(STARTUP_RECORD))).toEqual(
       STARTUP_RECORD
     );
-    expect(parseStartupLast("{\"step\":\"OS_HOLD\",\"ok\":true}")).toBe(null);
+    expect(parseStartupLast('{"step":"OS_HOLD","ok":true}')).toBe(null);
     expect(parseStartupLast("not json")).toBe(null);
   });
 
@@ -125,10 +125,7 @@ describe("startup last record", () => {
 
   it("statusBody nests that record", () => {
     expect(
-      statusBody(
-        { node: "v18.12.1", pnpm: "7.5.0", bun: "" },
-        STARTUP_RECORD
-      )
+      statusBody({ node: "v18.12.1", pnpm: "7.5.0", bun: "" }, STARTUP_RECORD)
     ).toEqual({
       msg: "Alive.",
       node: "v18.12.1",

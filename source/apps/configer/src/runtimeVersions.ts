@@ -104,7 +104,11 @@ export function parseStartupLast(text: string): StartupLast | null {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && Array.isArray(value) === false;
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    Array.isArray(value) === false
+  );
 }
 
 function hasStartupMarker(dir: string): boolean {
@@ -121,7 +125,12 @@ function findStartupLast(startDir: string): string | null {
       }
     }
     if (hasStartupMarker(path.join(dir, "source"))) {
-      const inSourceLogs = path.join(dir, "source", "logs", "startup.last.json");
+      const inSourceLogs = path.join(
+        dir,
+        "source",
+        "logs",
+        "startup.last.json"
+      );
       if (fs.existsSync(inSourceLogs)) {
         return inSourceLogs;
       }

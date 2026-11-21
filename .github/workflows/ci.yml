@@ -228,6 +228,9 @@ jobs:
       - name: Build config schema
         run: bun --filter @babybox/config-schema build
 
+      - name: Configer lint and format
+        run: bun --filter babybox-panel-configer lint && bun --filter babybox-panel-configer format:check
+
       - name: Build
         run: bun --filter babybox-panel build && bun --filter babybox-panel-backend build && bun --filter babybox-panel-configer build
 
