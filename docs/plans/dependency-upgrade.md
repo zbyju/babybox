@@ -1312,6 +1312,12 @@ panel typecheck are most of it. Pino is extra compared to the first draft.
       guard on that flag keeps `@vue/devtools-kit` out of the bundle. Added in
       #131 so the Vite 8 swap cannot quietly undo it. `legacy-image` never
       reads bundle content, so a regression would be silent.
+- [x] Vite 8.3.8, Vue 3.5.46, Pinia 4.1.0, Vue Router 5.5.1 and
+      vue-tsc 3.3.14 pass the device build on Bun and Node 18.
+- [x] Vitest 5.1.1 uses threads for Bun suites because its fork watchdog
+      calls child.channel.unref, which Bun 1.4.2 does not implement.
+      Panel tests stay on Node 24 because jsdom 31.0.1 still fails
+      EventTarget setup under Vitest on Bun.
 - [x] Startup tests run on Vitest 5 and Bun 1.4.2 in CI. The installer tests
       inject command and logger functions. Production startup still uses
       CommonJS on Node, and the shell startup test still runs.
@@ -1338,7 +1344,8 @@ Size: ~1.5 days.
 - [x] The workspace root has no compiler dependency. Each compile unit pins its own.
 - [x] Panel stays on `typescript@6.0.3`; `vue-tsc` 3.3.11 crashes on 7 (tested
       2026-09-12, still the latest Volar on 2026-09-13). Re-test at each Volar
-      major and move when it passes. `vue-tsc` also needs a Node runtime. On
+      major and move when it passes. vue-tsc 3.3.14 still resolves the TS 6
+      JavaScript compiler entry point. `vue-tsc` also needs a Node runtime. On
       Bun it loads no `.vue` file (TS2307).
 - [x] No `ignoreDeprecations` entries remain in the workspace.
 - [ ] TS 7 pulls a platform binary (`@typescript/typescript-linux-x64`,
