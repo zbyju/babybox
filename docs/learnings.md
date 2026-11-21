@@ -238,6 +238,13 @@ lesson: what happened, what to do instead.
   binary. The executable check in `assert-runtime.js` only holds on a real x64
   host such as CI.
 
+- **Boot 1 still installs the copied backend manifest with pnpm 7.** The
+  startup from the legacy tag runs plain `pnpm install` outside the workspace.
+  Vitest 5 adds peers that the standalone manifest cannot satisfy. Declare
+  backend test tooling in the workspace root, where Bun can resolve Vite and
+  Vitest together. The legacy-image build ends before the old startup copies
+  the manifest, so only legacy-boot1 exercises this install.
+
 ## Process
 
 - **A PR branch checked out in the main checkout cannot be committed to from a

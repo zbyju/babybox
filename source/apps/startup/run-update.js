@@ -237,7 +237,18 @@ async function run(options) {
   for (let i = 0; i < STEPS.length; i += 1) {
     const spec = STEPS[i];
     writeLine(state, "INFO", `Krok ${spec.step} začíná.`);
-    const result = runBun(spawnSync, spec.args, env, cwd);
+    let result = runBun(spawnSync, spec.args, env, cwd);
+    // Windows can briefly hold legacy pnpm shims open during the first install.
+    if (
+      platform === "win32" &&
+      spec.step === "INSTALL" &&
+      result.status !== 0 &&
+      result.stderr.indexOf("EBUSY: failed to link binaries") !== -1
+    ) {
+      writeLine(state, "WARN", lastRecord.commandMessage(result.stderr, ""));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      result = runBun(spawnSync, spec.args, env, cwd);
+    }
     forward(stdout, result.stdout);
     // The old startup fails the update on any build stderr.
     const failed = result.status !== 0 || result.stderr !== "";

@@ -30,6 +30,8 @@
     "@types/express": "5.0.6",
     "@types/lodash.merge": "4.6.9",
     "@types/node": "18.11.18",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vite": "8.3.0",
+    "vitest": "5.0.1"
   }
 }
