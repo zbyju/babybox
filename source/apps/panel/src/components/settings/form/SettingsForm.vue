@@ -27,7 +27,7 @@
   import moment from "moment";
   import { type Ref, ref, watch } from "vue";
 
-  import { type JsonResponse, HttpError } from "@/api/http";
+  import { HttpError } from "@/api/http";
   import { getSettings, sendSettings } from "@/api/units";
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
@@ -56,7 +56,6 @@
   import {
     getChangedSettings,
     isSettingChanged,
-    readUnitSettings,
     settingsSendToStates,
     settingsSendToStatesError,
   } from "@/utils/settings/settings";
@@ -166,7 +165,7 @@
      * Reading the response is caught below, where an error means the panel
      * got an answer it could not use.
      */
-    let response: JsonResponse;
+    let response: Awaited<ReturnType<typeof getSettings>>;
     try {
       response = await getSettings();
     } catch (err: unknown) {
@@ -191,7 +190,7 @@
     }
 
     try {
-      const settings = readUnitSettings(response.data);
+      const settings = response.data;
       if (
         response.status >= 200 &&
         response.status <= 299 &&
@@ -244,7 +243,7 @@
         addLogMessage(`Parametry úspěšně uloženy`, LogEntryType.Success);
         onLoadAction();
 
-        values.value = settingsSendToStates(response, values.value, rows);
+        values.value = settingsSendToStates(response.data, values.value, rows);
       } else {
         throw { msg: "Status code is not OK" };
       }

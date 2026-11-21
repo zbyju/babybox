@@ -72,7 +72,7 @@ describe("fetchFromUnits.ts against a real server", () => {
 
   it("should never open two connections to one unit at the same time", async () => {
     const results = await Promise.all([
-      unitApi.fetchDataCommon(Unit.Engine, { timeout: 2000 }),
+      unitApi.fetchDataCommon(Unit.Engine, 2000),
       unitApi.fetchAction(Action.OpenDoors),
       unitApi.updateWatchdog(),
     ]);
@@ -83,8 +83,8 @@ describe("fetchFromUnits.ts against a real server", () => {
 
   it("should let two callers of the same read share one request", async () => {
     const [a, b] = await Promise.all([
-      unitApi.fetchDataCommon(Unit.Engine, { timeout: 2000 }),
-      unitApi.fetchDataCommon(Unit.Engine, { timeout: 2000 }),
+      unitApi.fetchDataCommon(Unit.Engine, 2000),
+      unitApi.fetchDataCommon(Unit.Engine, 2000),
     ]);
 
     expect(requests).toBe(1);
@@ -94,8 +94,8 @@ describe("fetchFromUnits.ts against a real server", () => {
 
   it("should talk to the two units at the same time", async () => {
     await Promise.all([
-      unitApi.fetchDataCommon(Unit.Engine, { timeout: 2000 }),
-      unitApi.fetchDataCommon(Unit.Thermal, { timeout: 2000 }),
+      unitApi.fetchDataCommon(Unit.Engine, 2000),
+      unitApi.fetchDataCommon(Unit.Thermal, 2000),
     ]);
 
     expect(requests).toBe(2);

@@ -5,7 +5,7 @@ import type { Config } from "@/types/panel/config.types";
 
 export const useConfigStore = defineStore("config", {
   /* The schema's defaults, so nothing shows a number no box would ever hold. */
-  state: () => {
+  state: (): Config & { initialised: boolean } => {
     const { app, babybox, backend, camera, units } = defaultConfig();
     return { initialised: false, app, babybox, backend, camera, units };
   },

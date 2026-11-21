@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  isInstanceOfArraySetting,
-  isInstanceOfGetUnitSettingsRequest,
-  isInstanceOfPostUnitSettingsRequestBody,
-  isInstanceOfSetting,
+  settingsSchema,
+  settingsQuerySchema,
+  settingsBodySchema,
+  settingSchema,
 } from "../request.types.js";
+
+const isInstanceOfArraySetting = (data: unknown) =>
+  settingsSchema.safeParse(data).success;
+const isInstanceOfGetUnitSettingsRequest = (data: unknown) =>
+  settingsQuerySchema.safeParse(data).success;
+const isInstanceOfPostUnitSettingsRequestBody = (data: unknown) =>
+  settingsBodySchema.safeParse(data).success;
+const isInstanceOfSetting = (data: unknown) =>
+  settingSchema.safeParse(data).success;
 
 describe("request.types.ts", () => {
   describe("isInstanceOfPostUnitSettingsRequestBody", () => {
@@ -398,5 +407,32 @@ describe("request.types.ts", () => {
       expect(isInstanceOfArraySetting(0)).toBe(false);
       expect(isInstanceOfArraySetting({})).toBe(false);
     });
+  });
+});
+
+describe("parsed settings inputs", () => {
+  it.each(["", 0, null, false, ["engine"], ["engine", "thermal"]])(
+    "rejects an invalid explicit unit %p",
+    (unit) => {
+      expect(settingsQuerySchema.safeParse({ unit }).success).toBe(false);
+    }
+  );
+
+  it("rejects an array used as the entire query", () => {
+    expect(settingsQuerySchema.safeParse([]).success).toBe(false);
+  });
+
+  it.each([
+    [undefined, 5000],
+    [null, 5000],
+    ["7000", 5000],
+    [0, 5000],
+    [7000, 7000],
+    [11000, 10000],
+  ])("normalizes the legacy write timeout %p to %p", (timeout, expected) => {
+    expect(
+      settingsBodySchema.parse({ settings: [], options: { timeout } }).options
+        .timeout
+    ).toBe(expected);
   });
 });

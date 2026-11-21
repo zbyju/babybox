@@ -242,7 +242,12 @@
     serverErrors.value = flow.serverErrors;
 
     const outcome = flow.outcome;
-    if (outcome.kind === "notSent" || outcome.kind === "rejected") return;
+    if (
+      outcome.kind === "notSent" ||
+      outcome.kind === "rejected" ||
+      outcome.kind === "serverOrProtocolFailed"
+    )
+      return;
 
     /* The banner goes to sessionStorage first, because the reload wipes it all. */
     rememberBanner(bannerFor(outcome));

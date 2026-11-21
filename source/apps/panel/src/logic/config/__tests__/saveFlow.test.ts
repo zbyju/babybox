@@ -37,7 +37,7 @@ const messages = (log: { message: string }[]) => log.map((l) => l.message);
 
 describe("runSave", () => {
   it("sends nothing when the form has errors", async () => {
-    const deps = calls({ ok: true });
+    const deps = calls({ kind: "saved" });
 
     const result = await runSave(draft(), true, deps);
 
@@ -70,7 +70,7 @@ describe("runSave", () => {
 
   it("surfaces the fields a 400 named and does not reload", async () => {
     const errors = [{ path: "units.engine.ip", msg: "must be a string" }];
-    const deps = calls({ ok: false, status: 400, errors });
+    const deps = calls({ kind: "fieldValidationFailed", errors });
 
     const result = await runSave(draft(), false, deps);
 
@@ -86,22 +86,21 @@ describe("runSave", () => {
   /* A 500 is a failed write of main.json, not a refusal of the body. */
   it("calls a 500 a failed write and repeats configer's own line", async () => {
     const deps = calls({
-      ok: false,
+      kind: "serverOrProtocolFailed",
       status: 500,
-      errors: [],
       msg: "cannot write main.json: no space left on device",
     });
 
     const result = await runSave(draft(), false, deps);
 
-    expect(result.outcome).toEqual({ kind: "rejected" });
+    expect(result.outcome).toEqual({ kind: "serverOrProtocolFailed" });
     expect(messages(result.log)).toContain(
       "Configer konfiguraci nezapsal, selhal zápis souboru (HTTP 500). cannot write main.json: no space left on device",
     );
   });
 
   it("reloads the backend only after the save went through", async () => {
-    const deps = calls({ ok: true });
+    const deps = calls({ kind: "saved" });
 
     const result = await runSave(draft(), false, deps);
 
@@ -111,7 +110,7 @@ describe("runSave", () => {
 
   it("carries the fields the backend could not apply", async () => {
     const unapplied = [{ path: "backend.port", running: 5000, stored: 5050 }];
-    const deps = calls({ ok: true }, { ok: true, unapplied });
+    const deps = calls({ kind: "saved" }, { ok: true, unapplied });
 
     const result = await runSave(draft(), false, deps);
 
@@ -119,7 +118,7 @@ describe("runSave", () => {
   });
 
   it("reports a failed reload after a save that worked", async () => {
-    const deps = calls({ ok: true }, { ok: false });
+    const deps = calls({ kind: "saved" }, { ok: false });
 
     const result = await runSave(draft(), false, deps);
 
@@ -134,7 +133,7 @@ describe("runSave", () => {
   it("sends nothing when the draft does not parse", async () => {
     const bad: Record<string, unknown> = { ...draft() };
     delete bad["units"];
-    const deps = calls({ ok: true });
+    const deps = calls({ kind: "saved" });
 
     const result = await runSave(bad, false, deps);
 

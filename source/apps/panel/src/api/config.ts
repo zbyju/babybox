@@ -1,9 +1,13 @@
-import type { ConfigError, MainConfig } from "@babybox/config-schema";
+import {
+  mainConfigSchema,
+  type ConfigError,
+  type MainConfig,
+} from "@babybox/config-schema";
+import { z } from "zod";
 
 import { CONFIGER_API_URL, CONFIGER_TIMEOUT } from "@/api/base";
 import { requestJson } from "@/api/http";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
-import { isObject } from "@/utils/general";
 
 /**
  * The whole config configer is running on, straight from the file.
@@ -25,50 +29,24 @@ export async function getConfig(): Promise<unknown> {
   return data;
 }
 
-/**
- * What configer did with the config the form sent.
- *
- * A refusal is a resolved result, not a rejection: its field-level errors are the
- * useful part and they belong next to the inputs that caused them.
- *
- * `errors` is filled on a 400. `msg` carries configer's own line, which is the only
- * thing a 500 gives us — that is a failed write of `main.json`, not a rejection.
- */
 export type SaveResult =
-  | { ok: true }
-  | {
-      ok: false;
-      status: number;
-      errors: ConfigError[];
-      msg?: string | undefined;
-    };
+  | { kind: "saved" }
+  | { kind: "fieldValidationFailed"; errors: ConfigError[] }
+  | { kind: "serverOrProtocolFailed"; status: number; msg?: string };
 
-function isConfigError(value: unknown): value is ConfigError {
-  return (
-    isObject(value) &&
-    typeof value["path"] === "string" &&
-    typeof value["msg"] === "string"
-  );
-}
+const fieldFailure = z.object({
+  errors: z.array(z.object({ path: z.string(), msg: z.string() })).min(1),
+});
 
-/** The two useful parts of a refusal body. Both are absent when it is not JSON. */
-async function readFailure(
-  response: Response,
-): Promise<{ errors: ConfigError[]; msg?: string | undefined }> {
-  let body: unknown;
+const serverFailure = z.object({ msg: z.string() });
+
+async function readBody(response: Response): Promise<unknown> {
   try {
-    body = await response.json();
+    const body: unknown = await response.json();
+    return body;
   } catch {
-    return { errors: [] };
+    return undefined;
   }
-  if (!isObject(body)) return { errors: [] };
-
-  return {
-    errors: Array.isArray(body["errors"])
-      ? body["errors"].filter(isConfigError)
-      : [],
-    msg: typeof body["msg"] === "string" ? body["msg"] : undefined,
-  };
 }
 
 /**
@@ -82,14 +60,8 @@ async function readFailure(
  * one and returns early when nothing moved, so a save that changes nothing does not
  * touch the file or rotate `main.json.bak`.
  *
- * Rejects only when configer cannot be reached. A 400 resolves as `ok: false` with
- * one `{ path, msg }` per bad field, or an empty list when the body was not the
- * shape we expect. A 500 means the write of `main.json` failed and carries only
- * `msg`; the caller has to say that, not "configer refused it".
- *
- * @example
- * const result = await saveConfig(parsed.config);
- * if (!result.ok) showNextToFields(result.errors);
+ * Transport failures reject so the caller can report that the write's
+ * outcome is unknown.
  */
 export async function saveConfig(config: MainConfig): Promise<SaveResult> {
   const response = await fetchWithTimeout(`${CONFIGER_API_URL}/main`, {
@@ -99,11 +71,22 @@ export async function saveConfig(config: MainConfig): Promise<SaveResult> {
     timeout: CONFIGER_TIMEOUT,
   });
 
-  if (response.ok) return { ok: true };
+  const body = await readBody(response);
+  if (response.ok && mainConfigSchema.safeParse(body).success) {
+    return { kind: "saved" };
+  }
 
+  if (response.status === 400) {
+    const parsed = fieldFailure.safeParse(body);
+    if (parsed.success) {
+      return { kind: "fieldValidationFailed", errors: parsed.data.errors };
+    }
+  }
+
+  const parsed = serverFailure.safeParse(body);
   return {
-    ok: false,
+    kind: "serverOrProtocolFailed",
     status: response.status,
-    ...(await readFailure(response)),
+    ...(parsed.success ? { msg: parsed.data.msg } : {}),
   };
 }

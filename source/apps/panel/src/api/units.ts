@@ -1,9 +1,42 @@
+import { z } from "zod";
+
 import { backendApi } from "@/api/base";
-import { type JsonResponse, request, requestJson } from "@/api/http";
+import { request, requestJson } from "@/api/http";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 import type { SettingsToSend } from "@/types/settings/manager.types";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
-import { isObject } from "@/utils/general";
+
+const unitDataSchema = z.object({ data: z.string() });
+
+const unitSettingsSchema = z.object({
+  data: z.object({ engine: z.string(), thermal: z.string() }),
+});
+
+const settingsResultSchema = z.object({
+  unit: z.enum(["engine", "thermal"]),
+  index: z.number(),
+  value: z.number(),
+  result: z.boolean(),
+});
+
+const settingsResponseSchema = z.object({ results: z.array(z.unknown()) });
+
+export type SettingsSendResult = z.infer<typeof settingsResultSchema>;
+
+export function readUnitSettings(body: unknown) {
+  const parsed = unitSettingsSchema.safeParse(body);
+  if (!parsed.success) return undefined;
+  const { engine, thermal } = parsed.data.data;
+  return { engine: engine.split("|"), thermal: thermal.split("|") };
+}
+
+export function readSendResults(body: unknown): SettingsSendResult[] {
+  const { results } = settingsResponseSchema.parse(body);
+  return results.flatMap((entry) => {
+    const parsed = settingsResultSchema.safeParse(entry);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
 
 export const getStatus = async (): Promise<boolean> => {
   const { baseUrl, timeout } = backendApi();
@@ -21,10 +54,11 @@ export const getData = async (
 ): Promise<RawEngineUnit | RawThermalUnit | undefined> => {
   try {
     const { data: body } = await requestJson(url, { timeout });
-    if (!isObject(body) || typeof body["data"] !== "string") {
+    const parsed = unitDataSchema.safeParse(body);
+    if (!parsed.success) {
       return Promise.reject(undefined);
     }
-    return body["data"].split("|").map((x: string, i: number) => {
+    return parsed.data.data.split("|").map((x, i) => {
       return { index: i, value: x };
     });
   } catch (err) {
@@ -83,13 +117,16 @@ export const resetBabybox = async (): Promise<void> => {
   });
 };
 
-export const getSettings = (): Promise<JsonResponse> => {
+export const getSettings = async () => {
   const { baseUrl, timeout } = backendApi();
 
-  return requestJson(`${baseUrl}/units/settings`, { timeout });
+  const { status, data } = await requestJson(`${baseUrl}/units/settings`, {
+    timeout,
+  });
+  return { status, data: readUnitSettings(data) };
 };
 
-export const sendSettings = (data: SettingsToSend[]): Promise<JsonResponse> => {
+export const sendSettings = async (settings: SettingsToSend[]) => {
   const { baseUrl } = backendApi();
 
   /*
@@ -97,10 +134,11 @@ export const sendSettings = (data: SettingsToSend[]): Promise<JsonResponse> => {
    * the backend retries each setting against the units up to ten times,
    * so a write can take far longer than a read.
    */
-  return requestJson(`${baseUrl}/units/settings`, {
+  const { status, data } = await requestJson(`${baseUrl}/units/settings`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ settings: data }),
+    body: JSON.stringify({ settings }),
     timeout: 60000,
   });
+  return { status, data: readSendResults(data) };
 };

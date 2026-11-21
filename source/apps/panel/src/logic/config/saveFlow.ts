@@ -111,12 +111,25 @@ export async function runSave(
     return done({ kind: "notSent" });
   }
 
-  if (!saved.ok) {
-    add(refusalMessage(saved.status, saved.msg), LogEntryType.Error);
-    for (const error of saved.errors) {
-      add(`${error.path}: ${error.msg}`, LogEntryType.Error);
-    }
-    return done({ kind: "rejected" }, saved.errors);
+  switch (saved.kind) {
+    case "fieldValidationFailed":
+      add(refusalMessage(400, undefined), LogEntryType.Error);
+      for (const error of saved.errors) {
+        add(error.path + ": " + error.msg, LogEntryType.Error);
+      }
+      return done({ kind: "rejected" }, saved.errors);
+    case "serverOrProtocolFailed":
+      add(
+        saved.status >= 500
+          ? refusalMessage(saved.status, saved.msg)
+          : "Configer vrátil neplatnou odpověď (HTTP " +
+              saved.status +
+              "). Ověř konfiguraci po načtení stránky.",
+        LogEntryType.Error,
+      );
+      return done({ kind: "serverOrProtocolFailed" });
+    case "saved":
+      break;
   }
 
   add("Konfigurace uložena", LogEntryType.Success);

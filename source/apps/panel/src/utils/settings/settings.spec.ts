@@ -7,7 +7,8 @@ import {
   SettingsTableRowValueType,
 } from "@/types/settings/table.types";
 
-import { readUnitSettings, settingsSendToStates } from "./settings";
+import { readSendResults, readUnitSettings } from "@/api/units";
+import { settingsSendToStates } from "./settings";
 
 describe("readUnitSettings", () => {
   it("splits the engine and thermal values", () => {
@@ -69,9 +70,7 @@ describe("settingsSendToStates", () => {
   it.each([[{ msg: "Saved." }], [{ results: "nope" }], [null]])(
     "throws when the answer is %p",
     (data) => {
-      expect(() =>
-        settingsSendToStates({ status: 200, data }, values, rows),
-      ).toThrow();
+      expect(() => readSendResults(data)).toThrow();
     },
   );
 
@@ -82,7 +81,7 @@ describe("settingsSendToStates", () => {
     ["a result that is not a boolean", { ...thermalResult, result: "yes" }],
   ])("drops a result with %s and keeps a valid one", (_, malformed) => {
     const states = settingsSendToStates(
-      { status: 200, data: { results: [engineResult, malformed] } },
+      readSendResults({ results: [engineResult, malformed] }),
       values,
       rows,
     ).map((value) => value.state);

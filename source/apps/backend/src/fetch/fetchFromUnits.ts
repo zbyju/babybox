@@ -3,39 +3,22 @@ import type {
   CommonResponse,
   Setting,
   SettingResult,
+  SettingsQuery,
 } from "../types/request.types.js";
-import { isInstanceOfGetUnitSettingsRequest } from "../types/request.types.js";
+
 import type { Action } from "../types/units.types.js";
 import { Unit } from "../types/units.types.js";
 import { actionToUnit, actionToUrl, unitToIp } from "../utils/url.js";
 import { wait } from "../utils/wait.js";
+
 import { defaultFetchTimeout } from "./constants.js";
 import { fetchFromUrl } from "./fetch.js";
 import { onUnit, sharedOnUnit } from "./unitGate.js";
 
-/*
- * The panel sends no timeout. A test or a person with curl may.
- * Only a whole number of ms from 1 to 2147483647 is used.
- * Anything else is the default,
- * because axios turns a fraction below 1 into 0, which means no timeout,
- * and Node fires a longer timer after 1 ms.
- */
-function queryTimeout(query: unknown): number {
-  if (typeof query !== "object" || query === null || !("timeout" in query)) {
-    return defaultFetchTimeout();
-  }
-  const timeout = Number(query.timeout);
-  return Number.isInteger(timeout) && timeout >= 1 && timeout <= 2147483647
-    ? timeout
-    : defaultFetchTimeout();
-}
-
 export async function fetchDataCommon(
   unit: Unit,
-  query: unknown
+  timeout: number
 ): Promise<CommonDataResponse> {
-  const timeout = queryTimeout(query);
-
   const url = `http://${unitToIp(unit)}/get_ram[0]?rn=60`;
 
   try {
@@ -55,18 +38,10 @@ export async function fetchDataCommon(
   }
 }
 
-export async function fetchSettings(
-  query: unknown
-): Promise<CommonDataResponse> {
-  if (!isInstanceOfGetUnitSettingsRequest(query)) {
-    return {
-      status: 400,
-      msg: "Unit was specified, but it is wrong. Expected values are: 'engine' or 'thermal'.",
-    };
-  }
-  const { unit = "both" } = query;
-  const timeout = queryTimeout(query);
-
+export async function fetchSettings({
+  unit,
+  timeout,
+}: SettingsQuery): Promise<CommonDataResponse> {
   const timestamp = new Date().getTime();
   const settingsUrl = (u: Unit) =>
     `http://${unitToIp(u)}/get_sys[100]?rn=16&${timestamp}`;

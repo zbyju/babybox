@@ -1,8 +1,5 @@
-import type { JsonResponse } from "@/api/http";
-import type {
-  SettingsSendResult,
-  SettingsToSend,
-} from "@/types/settings/manager.types";
+import type { SettingsSendResult } from "@/api/units";
+import type { SettingsToSend } from "@/types/settings/manager.types";
 import {
   type SettingsTableRow,
   type SettingsTableRowValue,
@@ -10,7 +7,7 @@ import {
   SettingsTableRowValueType,
 } from "@/types/settings/table.types";
 
-import { isNullish, isObject, whenNotNullish } from "../general";
+import { isNullish, whenNotNullish } from "../general";
 import { isNumber } from "../number";
 import { settingsResultsToState, settingsRowValueToValue } from "./conversions";
 
@@ -110,45 +107,11 @@ export const updateValueBasedOnResult = (
   }
 };
 
-/**
- * The engine and thermal settings from a GET answer, split into values.
- * Undefined when the body has another shape.
- */
-export const readUnitSettings = (
-  body: unknown,
-): { engine: string[]; thermal: string[] } | undefined => {
-  if (!isObject(body)) return undefined;
-  const data = body["data"];
-  if (!isObject(data)) return undefined;
-  const engine = data["engine"];
-  const thermal = data["thermal"];
-  if (typeof engine !== "string" || typeof thermal !== "string") {
-    return undefined;
-  }
-  return { engine: engine.split("|"), thermal: thermal.split("|") };
-};
-
-const isSendResult = (value: unknown): value is SettingsSendResult =>
-  isObject(value) &&
-  (value["unit"] === "engine" || value["unit"] === "thermal") &&
-  typeof value["index"] === "number" &&
-  typeof value["value"] === "number" &&
-  typeof value["result"] === "boolean";
-
-/* Throws without a results list, as reading it did before. The save catches it. */
-const readSendResults = (body: unknown): SettingsSendResult[] => {
-  if (!isObject(body) || !Array.isArray(body["results"])) {
-    throw new Error("The settings answer has no results list.");
-  }
-  return body["results"].filter(isSendResult);
-};
-
 export const settingsSendToStates = (
-  response: JsonResponse,
+  results: SettingsSendResult[],
   values: SettingsTableRowValue[],
   rows: SettingsTableRow[],
 ): SettingsTableRowValue[] => {
-  const results = readSendResults(response.data);
   return values.map((value: SettingsTableRowValue, index: number) => {
     const row = rows[index];
     if (row === undefined) return value;

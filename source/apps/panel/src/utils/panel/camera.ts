@@ -18,7 +18,9 @@ const urlPostfixes: Record<MainConfigCameraType, string> = {
  */
 export const getURLPostfix = (type: string): string => {
   const postfixes: Readonly<Record<string, string>> = urlPostfixes;
-  const postfix = postfixes[type];
+  const postfix = Object.prototype.hasOwnProperty.call(postfixes, type)
+    ? postfixes[type]
+    : undefined;
   if (postfix !== undefined) return postfix;
 
   console.warn(`Unknown camera type "${type}", using the dahua url`);

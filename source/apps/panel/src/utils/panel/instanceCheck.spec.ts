@@ -1,7 +1,13 @@
 import { defaultConfig } from "@babybox/config-schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { isInstanceOfConfig, isInstanceOfVersions } from "./instanceCheck";
+import { createPinia, setActivePinia } from "pinia";
+import { useConfigStore } from "@/pinia/configStore";
+import { getURLPostfix } from "./camera";
+import { parsePanelConfig, parseVersions } from "./instanceCheck";
+
+const isInstanceOfConfig = (value: unknown) => parsePanelConfig(value).success;
+const isInstanceOfVersions = (value: unknown) => parseVersions(value).success;
 
 type Fields = Record<string, unknown>;
 
@@ -165,4 +171,22 @@ describe("isInstanceOfVersions", () => {
       }),
     ).toBe(false);
   });
+});
+
+it("passes an older camera string and null refresh limit into the store", () => {
+  const config = defaultConfig();
+  const parsed = parsePanelConfig({
+    ...config,
+    app: { ...config.app, refreshRequestLimit: null },
+    camera: { ...config.camera, cameraType: "axis" },
+  });
+  if (!parsed.success) throw parsed.error;
+
+  setActivePinia(createPinia());
+  const store = useConfigStore();
+  store.setConfig(parsed.data);
+
+  expect(store.app.refreshRequestLimit).toBeNull();
+  expect(store.camera.cameraType).toBe("axis");
+  expect(getURLPostfix(store.camera.cameraType)).toBe(getURLPostfix("dahua"));
 });

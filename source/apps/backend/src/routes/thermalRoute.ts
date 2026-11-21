@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import express from "express";
+import { dataQuerySchema } from "../types/request.types.js";
 
 import { fetchDataCommon } from "../fetch/fetchFromUnits.js";
 import { Unit } from "../types/units.types.js";
@@ -8,7 +9,10 @@ import { transformThermalData } from "../utils/transformData.js";
 export const router = express.Router();
 
 router.get("/data", async (req: Request, res: Response) => {
-  const response = await fetchDataCommon(Unit.Thermal, req.query);
+  const response = await fetchDataCommon(
+    Unit.Thermal,
+    dataQuerySchema.parse(req.query).timeout
+  );
 
   // oxlint-disable-next-line typescript/no-base-to-string -- repeated raw query values keep the existing array coercion
   const raw = req.query["raw"] ? parseInt(String(req.query["raw"])) > 0 : false;

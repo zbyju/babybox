@@ -18,10 +18,10 @@ describe("saveConfig", () => {
   });
 
   it("PATCHes the whole config and reports it written", async () => {
-    fetchMock.mockResolvedValue(answer(200, { msg: "Ok" }));
+    fetchMock.mockResolvedValue(answer(200, defaultConfig()));
     const config = defaultConfig();
 
-    expect(await saveConfig(config)).toEqual({ ok: true });
+    expect(await saveConfig(config)).toEqual({ kind: "saved" });
 
     const [url, options] = fetchMock.mock.calls[0] ?? [];
     expect(url).toContain("/config/main");
@@ -36,22 +36,19 @@ describe("saveConfig", () => {
     );
 
     expect(await saveConfig(defaultConfig())).toEqual({
-      ok: false,
-      status: 400,
+      kind: "fieldValidationFailed",
       errors,
-      msg: "Body is not a valid MainConfig",
     });
   });
 
-  it("drops an error entry that is not a path and a message", async () => {
+  it("reports a malformed error list as a protocol failure", async () => {
     fetchMock.mockResolvedValue(
       answer(400, { errors: [{ path: "pc.os" }, "nonsense"] }),
     );
 
     expect(await saveConfig(defaultConfig())).toEqual({
-      ok: false,
+      kind: "serverOrProtocolFailed",
       status: 400,
-      errors: [],
     });
   });
 
@@ -59,10 +56,24 @@ describe("saveConfig", () => {
     fetchMock.mockResolvedValue(answer(400));
 
     expect(await saveConfig(defaultConfig())).toEqual({
-      ok: false,
+      kind: "serverOrProtocolFailed",
       status: 400,
-      errors: [],
     });
+  });
+
+  it("reports an unreadable successful response as a protocol failure", async () => {
+    fetchMock.mockResolvedValue(answer(200, { msg: "Ok" }));
+    expect(await saveConfig(defaultConfig())).toEqual({
+      kind: "serverOrProtocolFailed",
+      status: 200,
+      msg: "Ok",
+    });
+  });
+
+  it("preserves the underlying transport rejection", async () => {
+    const failure = new Error("network unavailable");
+    fetchMock.mockRejectedValue(failure);
+    await expect(saveConfig(defaultConfig())).rejects.toBe(failure);
   });
 
   /* A 500 is a failed write of main.json and carries only configer's own line. */
@@ -72,9 +83,8 @@ describe("saveConfig", () => {
     );
 
     expect(await saveConfig(defaultConfig())).toEqual({
-      ok: false,
+      kind: "serverOrProtocolFailed",
       status: 500,
-      errors: [],
       msg: "cannot write main.json: no space left on device",
     });
   });

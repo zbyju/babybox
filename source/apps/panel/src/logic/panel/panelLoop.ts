@@ -23,10 +23,7 @@ import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import type { Versions } from "@/types/panel/versions.types";
-import {
-  isInstanceOfConfig,
-  isInstanceOfVersions,
-} from "@/utils/panel/instanceCheck";
+import { parsePanelConfig, parseVersions } from "@/utils/panel/instanceCheck";
 
 import { getNewState } from "./state";
 
@@ -204,18 +201,20 @@ export class AppManager {
     const { data } = await requestJson(`${CONFIGER_API_URL}/version`, {
       timeout: CONFIGER_TIMEOUT,
     });
-    if (!isInstanceOfVersions(data)) {
+    const parsed = parseVersions(data);
+    if (!parsed.success) {
       console.error("Versions file error", data);
       return undefined;
     }
-    return data;
+    return parsed.data;
   }
 
   private async initializeConfig() {
     const config = await this.getConfig();
     const versions = await this.getVersions();
-    if (isInstanceOfConfig(config)) {
-      this.configStore.setConfig(config);
+    const parsed = parsePanelConfig(config);
+    if (parsed.success) {
+      this.configStore.setConfig(parsed.data);
       if (versions !== undefined) this.versionsStore.setVersions(versions);
       return "Ok";
     } else {

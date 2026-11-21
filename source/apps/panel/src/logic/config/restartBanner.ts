@@ -14,6 +14,7 @@ export type SaveOutcome =
   | { kind: "notSent" }
   /** configer refused the body. The fields it named go next to the inputs. */
   | { kind: "rejected" }
+  | { kind: "serverOrProtocolFailed" }
   /** configer wrote it and the backend read it again. */
   | { kind: "applied"; unapplied: UnappliedField[] }
   /** configer wrote it, the backend did not read it. */

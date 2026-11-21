@@ -1,55 +1,44 @@
-import type { BothUnit, Unit } from "./units.types.js";
+import { z } from "zod";
 
-export interface CommonDataRequestQuery {
-  timeout?: number;
-  raw?: boolean;
-}
+import { defaultFetchTimeout } from "../fetch/constants.js";
+import { Unit } from "./units.types.js";
 
-export type EngineDataRequestQuery = CommonDataRequestQuery;
-export type ThermalDataRequestQuery = CommonDataRequestQuery;
+export const settingSchema = z.object({
+  index: z.number().refine(Number.isInteger),
+  value: z.number().finite(),
+  unit: z.enum(Unit),
+});
 
-export interface PostUnitSettingsRequestBody {
-  settings: Setting[];
-  options?: {
-    timeout?: number;
-  };
-}
+export const settingsSchema = z.array(settingSchema);
 
-/*
- * Arrays pass too, as they did before.
- * So isInstanceOfGetUnitSettingsRequest accepts `[]`, which has no `unit`.
- * It only reads req.query, and Express never parses that into an array.
- */
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
+// A settings write can make four requests in sequence. Cap each one so they
+// can finish within the unit queue's 60-second deadline.
+const writeTimeout = z
+  .number()
+  .positive()
+  .transform((value) => Math.min(value, 10000))
+  .catch(5000);
 
-export function isInstanceOfPostUnitSettingsRequestBody(
-  object: unknown
-): object is PostUnitSettingsRequestBody {
-  if (!isObject(object)) return false;
-  return "settings" in object && isInstanceOfArraySetting(object["settings"]);
-}
+export const settingsBodySchema = z.object({
+  settings: settingsSchema,
+  options: z.object({ timeout: writeTimeout }).catch({ timeout: 5000 }),
+});
 
-/*
- * Express sends `?timeout` as a string.
- * fetchSettings reads that string with queryTimeout.
- * This type holds `unit` only.
- */
-export interface GetUnitSettingsRequest {
-  unit?: BothUnit;
-}
+// Express delivers query values as strings. Preserve the old whole-number
+// bounds so neither Axios nor Node receives a disabled or overflowing timer.
+const queryTimeout = z
+  .union([z.string(), z.number(), z.tuple([z.string()])])
+  .transform(Number)
+  .pipe(z.number().int().min(1).max(2147483647))
+  .catch(defaultFetchTimeout);
 
-export function isInstanceOfGetUnitSettingsRequest(
-  object: unknown
-): object is GetUnitSettingsRequest {
-  if (!isObject(object)) return false;
-  const unit = object["unit"];
-  if (unit && unit !== "engine" && unit !== "thermal" && unit !== "both") {
-    return false;
-  }
-  return true;
-}
+export const dataQuerySchema = z.object({ timeout: queryTimeout });
+export const settingsQuerySchema = dataQuerySchema.extend({
+  unit: z.enum(["engine", "thermal", "both"]).default("both"),
+});
+
+export type Setting = z.infer<typeof settingSchema>;
+export type SettingsQuery = z.infer<typeof settingsQuerySchema>;
 
 export interface CommonResponse {
   msg: string;
@@ -64,32 +53,6 @@ export interface CommonSettingsResponse extends CommonResponse {
   results: SettingResult[];
 }
 
-export interface Setting {
-  index: number;
-  value: number;
-  unit: Unit;
-}
-
 export interface SettingResult extends Setting {
   result: boolean;
-}
-
-export function isInstanceOfSetting(object: unknown): object is Setting {
-  if (!isObject(object)) return false;
-  return (
-    "index" in object &&
-    "value" in object &&
-    "unit" in object &&
-    Number.isInteger(object["index"]) &&
-    Number.isFinite(object["value"]) &&
-    (object["unit"] === "engine" || object["unit"] === "thermal")
-  );
-}
-
-export function isInstanceOfArraySetting(object: unknown): object is Setting[] {
-  if (!object) return false;
-  return (
-    Array.isArray(object) &&
-    object.every((o: unknown) => isInstanceOfSetting(o))
-  );
 }
