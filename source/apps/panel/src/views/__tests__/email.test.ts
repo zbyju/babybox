@@ -222,6 +222,86 @@ describe("email maintenance page", () => {
     expect(element.textContent).toContain("Adresáti kamery");
   });
 
+  it("manages unit and camera addresses separately and saves both lists in the existing format", async () => {
+    const config = defaultConfig();
+    if (!config.email) throw new Error("Expected email defaults");
+    config.email.mode = "panel";
+    config.email.unitRecipients = "first@example.test; second@example.test";
+    config.email.cameraRecipients = "camera@example.test";
+    vi.mocked(getConfig).mockResolvedValue(parseMainConfig(config));
+    app.unmount();
+    app = createApp(EmailView);
+    app.mount(element);
+    await flush();
+
+    const [units, camera] = element.querySelectorAll(".recipient-list");
+    expect(units?.textContent).toContain("second@example.test");
+    expect(camera?.textContent).toContain("camera@example.test");
+    const click = (group: Element | undefined, label: string) =>
+      group
+        ?.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)
+        ?.click();
+    const enterAddress = (group: Element | undefined, address: string) => {
+      const input = group?.querySelector("input");
+      if (!input) throw new Error("Expected recipient editor");
+      input.value = address;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    };
+    const save = element.querySelector<HTMLButtonElement>(
+      ".smtp-setup button[type=submit]",
+    );
+    click(units, "Upravit adresu first@example.test");
+    await flush();
+    expect(save?.disabled).toBe(true);
+    enterAddress(units, "second@example.test");
+    await flush();
+    expect(units?.querySelector('[role="alert"]')?.textContent).toContain(
+      "už je",
+    );
+    expect(save?.disabled).toBe(true);
+    enterAddress(units, "updated@example.test");
+    await flush();
+    expect(units?.textContent).toContain("updated@example.test");
+    expect(units?.textContent).not.toContain("first@example.test");
+
+    click(camera, "Přidat adresu · Adresáti kamery");
+    await flush();
+    enterAddress(camera, "invalid");
+    await flush();
+    expect(camera?.querySelector('[role="alert"]')).not.toBeNull();
+    enterAddress(camera, "new-camera@example.test");
+    await flush();
+    click(camera, "Odebrat adresu camera@example.test");
+    await flush();
+
+    expect(
+      vi
+        .mocked(fetchWithTimeout)
+        .mock.calls.some(([, options]) => options?.method === "PATCH"),
+    ).toBe(false);
+    expect(save?.disabled).toBe(false);
+    save?.click();
+    await flush();
+    const body = vi
+      .mocked(fetchWithTimeout)
+      .mock.calls.find(([, options]) => options?.method === "PATCH")?.[1]?.body;
+    const patch: unknown =
+      typeof body === "string" ? JSON.parse(body) : undefined;
+    expect(patch).toMatchObject({
+      email: {
+        unitRecipients: "updated@example.test,second@example.test",
+        cameraRecipients: "new-camera@example.test",
+      },
+    });
+  });
+
   it("requires an inline confirmation before deleting and never opens a blocking dialog", async () => {
     await openDetail("queue");
     const confirm = vi.spyOn(window, "confirm");

@@ -84,29 +84,23 @@
           </InlineHelp>
         </div>
         <form @submit.prevent="save">
-          <fieldset v-if="routing === 'panel'" :disabled="busy">
-            <legend>Adresáti</legend>
-            <div class="account-fields">
-              <label
-                >Adresáti jednotek
-                <BaseInput
-                  v-model="settings.unitRecipients"
-                  type="text"
-                  placeholder="adresy oddělené čárkou"
-                  maxlength="8000"
-                />
-              </label>
-              <label
-                >Adresáti kamery
-                <BaseInput
-                  v-model="settings.cameraRecipients"
-                  type="text"
-                  placeholder="adresy oddělené čárkou"
-                  maxlength="8000"
-                />
-              </label>
-            </div>
-          </fieldset>
+          <div
+            v-if="routing === 'panel'"
+            class="account-fields recipient-groups"
+          >
+            <EmailRecipientList
+              v-model="settings.unitRecipients"
+              v-model:editing="editingUnitRecipients"
+              label="Adresáti jednotek"
+              :disabled="busy"
+            />
+            <EmailRecipientList
+              v-model="settings.cameraRecipients"
+              v-model:editing="editingCameraRecipients"
+              label="Adresáti kamery"
+              :disabled="busy"
+            />
+          </div>
           <fieldset
             :disabled="busy"
             class="account-fields"
@@ -156,7 +150,10 @@
               />
             </div>
           </fieldset>
-          <BaseButton variant="accent" type="submit" :disabled="busy"
+          <BaseButton
+            variant="accent"
+            type="submit"
+            :disabled="busy || editingRecipients"
             >Uložit nastavení</BaseButton
           >
         </form>
@@ -548,6 +545,7 @@
   } from "@/api/emailBoundary";
   import { decodeJson, requestJson } from "@/api/http";
   import { reloadBackendConfig } from "@/api/reload";
+  import EmailRecipientList from "@/components/settings/EmailRecipientList.vue";
   import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
   import BaseInput from "@/components/panel/HTMLElements/BaseInput.vue";
   import InlineHelp from "@/components/panel/HTMLElements/InlineHelp.vue";
@@ -632,6 +630,11 @@
   const queueMessage = ref("");
   const testId = ref("");
   const busy = ref(false);
+  const editingUnitRecipients = ref(false);
+  const editingCameraRecipients = ref(false);
+  const editingRecipients = computed(
+    () => editingUnitRecipients.value || editingCameraRecipients.value,
+  );
   const testRecipient = ref("");
   const selected = ref<string[]>([]);
   const confirmation = ref<"delete" | "clear" | null>(null);
@@ -826,7 +829,7 @@
     if (!disposed) refreshTimer = setTimeout(refresh, 5000);
   }
   async function save() {
-    if (busy.value || !settings.value) return;
+    if (busy.value || editingRecipients.value || !settings.value) return;
     busy.value = true;
     try {
       const response = await fetchWithTimeout(`${CONFIGER_API_URL}/main`, {
@@ -1162,6 +1165,8 @@
       color #a0f0c6
     .metric-danger
       color #ffc0cb
+  .recipient-groups
+    margin-bottom 14px
   .sender-field
     display grid
     align-content start
