@@ -18,7 +18,9 @@ export function combineTableData(
       return {
         blocks: blocksTemplate.map((block) => ({
           ...block,
-          ...(values.blockValues[block.field] ?? { state: TableBlockState.Error }),
+          ...(values.blockValues[block.field] ?? {
+            state: TableBlockState.Error,
+          }),
         })),
         rows: rowsTemplate.map((row) => ({
           ...row,
@@ -27,13 +29,25 @@ export function combineTableData(
       };
     case TableValuesState.Loading:
       return {
-        blocks: blocksTemplate.map((block) => ({ ...block, state: TableBlockState.Loading })),
-        rows: rowsTemplate.map((row) => ({ ...row, state: TableRowState.Loading })),
+        blocks: blocksTemplate.map((block) => ({
+          ...block,
+          state: TableBlockState.Loading,
+        })),
+        rows: rowsTemplate.map((row) => ({
+          ...row,
+          state: TableRowState.Loading,
+        })),
       };
     case TableValuesState.Error:
       return {
-        blocks: blocksTemplate.map((block) => ({ ...block, state: TableBlockState.Error })),
-        rows: rowsTemplate.map((row) => ({ ...row, state: TableRowState.Error })),
+        blocks: blocksTemplate.map((block) => ({
+          ...block,
+          state: TableBlockState.Error,
+        })),
+        rows: rowsTemplate.map((row) => ({
+          ...row,
+          state: TableRowState.Error,
+        })),
       };
     default:
       return values satisfies never;

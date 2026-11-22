@@ -101,7 +101,10 @@ export const settingsSendToStatesError = (
 ): SettingsTableRowValue[] =>
   values.map((value, index) => {
     const row = rows[index];
-    if (row === undefined || !submitted.some((entry) => targetsRow(entry, row))) {
+    if (
+      row === undefined ||
+      !submitted.some((entry) => targetsRow(entry, row))
+    ) {
       return value;
     }
     return { ...value, state: SettingsTableRowState.Error };

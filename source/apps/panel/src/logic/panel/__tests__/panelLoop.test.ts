@@ -141,7 +141,9 @@ describe("AppManager startup retries", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     setActivePinia(createPinia());
-    vi.mocked(fetchWithTimeout).mockReset().mockRejectedValue(new Error("configer down"));
+    vi.mocked(fetchWithTimeout)
+      .mockReset()
+      .mockRejectedValue(new Error("configer down"));
     vi.mocked(getStatus).mockRejectedValue(new Error("backend down"));
     manager = new AppManager();
   });
@@ -179,7 +181,9 @@ describe("AppManager startup retries", () => {
   });
 
   it("stops retrying once both answer", async () => {
-    vi.mocked(fetchWithTimeout).mockReset().mockRejectedValue(new Error("configer down"));
+    vi.mocked(fetchWithTimeout)
+      .mockReset()
+      .mockRejectedValue(new Error("configer down"));
     vi.mocked(getStatus).mockResolvedValue(true);
 
     await manager.initializeGlobal();
@@ -192,7 +196,9 @@ describe("AppManager startup retries", () => {
     expect(getStatus).toHaveBeenCalledTimes(2);
 
     const config = defaultConfig();
-    vi.mocked(fetchWithTimeout).mockResolvedValueOnce(new Response(JSON.stringify(config)));
+    vi.mocked(fetchWithTimeout).mockResolvedValueOnce(
+      new Response(JSON.stringify(config)),
+    );
     await vi.advanceTimersByTimeAsync(10000);
     expect(useConfigStore().initialised).toBe(true);
     expect(useVersionsStore().initialised).toBe(false);

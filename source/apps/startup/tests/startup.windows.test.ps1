@@ -742,6 +742,27 @@ Expect-Called "bun-windows-x64.zip"
 Expect-NoLog "nespusti Bun"
 Expect-Rc 0
 
+Write-Host "install.bat propagates dependency and first-start failures"
+$fixture = Join-Path $work "install-fixture"
+$scripts = Join-Path $fixture "scripts\windows"
+$src = Join-Path $fixture "src"
+New-Item -ItemType Directory -Force $scripts, $src | Out-Null
+$installer = Join-Path $scripts "install.bat"
+Copy-Item (Join-Path $StartupSrc "scripts\windows\install.bat") $installer
+$depth = Join-Path $fixture "install-workspace.js"
+$started = Join-Path $src "started"
+[IO.File]::WriteAllText((Join-Path $src "index.js"), 'require("fs").writeFileSync(__dirname + "/started", "yes"); process.exitCode = 41;')
+[IO.File]::WriteAllText($depth, 'process.exitCode = 37;')
+& $env:ComSpec /d /c "call `"$installer`""
+$script:RC = $LASTEXITCODE
+Expect-Rc 37
+if (Test-Path $started) { Fail "first start ran after dependency install failed" } else { Pass }
+[IO.File]::WriteAllText($depth, 'process.exitCode = 0;')
+& $env:ComSpec /d /c "call `"$installer`""
+$script:RC = $LASTEXITCODE
+Expect-Rc 41
+if (Test-Path $started) { Pass } else { Fail "first start did not run" }
+
 if ($script:Sandbox -and (Test-Path $script:Sandbox)) {
   Remove-Item -Recurse -Force $script:Sandbox
 }

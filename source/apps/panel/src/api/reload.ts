@@ -1,4 +1,7 @@
-import { reloadResponseSchema, type UnappliedField } from "@babybox/config-schema";
+import {
+  reloadResponseSchema,
+  type UnappliedField,
+} from "@babybox/config-schema";
 
 import { backendApi } from "@/api/base";
 import { requestJson } from "@/api/http";
@@ -31,10 +34,14 @@ export async function reloadBackendConfig(): Promise<ReloadResult> {
   if (!isConfigured) return { ok: false };
 
   try {
-    const { unapplied } = await requestJson(`${baseUrl}/reload`, reloadResponseSchema, {
-      method: "POST",
-      timeout: RELOAD_TIMEOUT,
-    });
+    const { unapplied } = await requestJson(
+      `${baseUrl}/reload`,
+      reloadResponseSchema,
+      {
+        method: "POST",
+        timeout: RELOAD_TIMEOUT,
+      },
+    );
     return { ok: true, unapplied };
   } catch {
     return { ok: false };

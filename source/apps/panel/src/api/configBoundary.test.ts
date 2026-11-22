@@ -3,8 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { panelReadableConfigSchema } from "@/api/configBoundary";
 
-const allowsConfig = (value: unknown) => panelReadableConfigSchema.safeParse(value).success;
-const allowsVersions = (value: unknown) => versionsSchema.safeParse(value).success;
+const allowsConfig = (value: unknown) =>
+  panelReadableConfigSchema.safeParse(value).success;
+const allowsVersions = (value: unknown) =>
+  versionsSchema.safeParse(value).success;
 
 type Fields = Record<string, unknown>;
 
@@ -40,9 +42,9 @@ describe("allowsConfig", () => {
    * them, but a box that already holds one must still boot.
    */
   it("accepts a refresh limit of 0", () => {
-    expect(
-      allowsConfig(withSection("app", { refreshRequestLimit: 0 })),
-    ).toBe(true);
+    expect(allowsConfig(withSection("app", { refreshRequestLimit: 0 }))).toBe(
+      true,
+    );
   });
 
   it("accepts a refresh limit that is null or missing", () => {
@@ -58,19 +60,15 @@ describe("allowsConfig", () => {
   });
 
   it("accepts a delay of 0", () => {
-    expect(allowsConfig(withSection("units", { requestDelay: 0 }))).toBe(
-      true,
-    );
-    expect(allowsConfig(withSection("camera", { updateDelay: 0 }))).toBe(
-      true,
-    );
+    expect(allowsConfig(withSection("units", { requestDelay: 0 }))).toBe(true);
+    expect(allowsConfig(withSection("camera", { updateDelay: 0 }))).toBe(true);
   });
 
   /* getURLPostfix falls back, so one unknown name costs the camera, not the panel. */
   it("accepts a camera type it does not know", () => {
-    expect(
-      allowsConfig(withSection("camera", { cameraType: "axis" })),
-    ).toBe(true);
+    expect(allowsConfig(withSection("camera", { cameraType: "axis" }))).toBe(
+      true,
+    );
   });
 
   it("rejects a missing section", () => {
@@ -81,18 +79,16 @@ describe("allowsConfig", () => {
   });
 
   it("rejects a string where a number belongs", () => {
-    expect(allowsConfig(withSection("backend", { port: "5000" }))).toBe(
+    expect(allowsConfig(withSection("backend", { port: "5000" }))).toBe(false);
+    expect(allowsConfig(withSection("units", { requestDelay: "2000" }))).toBe(
       false,
     );
-    expect(
-      allowsConfig(withSection("units", { requestDelay: "2000" })),
-    ).toBe(false);
   });
 
   it("rejects a config with a field of the wrong type", () => {
-    expect(
-      allowsConfig(withSection("units", { engine: { ip: 10 } })),
-    ).toBe(false);
+    expect(allowsConfig(withSection("units", { engine: { ip: 10 } }))).toBe(
+      false,
+    );
   });
 
   /* An unknown key is forgiven on its own, never together with a wrong value. */

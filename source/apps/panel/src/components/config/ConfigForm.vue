@@ -262,11 +262,12 @@
     try {
       parsed = await getConfig();
     } catch (error) {
-      const message = error instanceof ProtocolError
-        ? "Configer vrátil nečitelnou konfiguraci."
-        : error instanceof HttpError
-          ? `Konfiguraci nelze načíst (HTTP ${error.status}).`
-          : "Konfiguraci nelze načíst - configer neodpovídá";
+      const message =
+        error instanceof ProtocolError
+          ? "Configer vrátil nečitelnou konfiguraci."
+          : error instanceof HttpError
+            ? `Konfiguraci nelze načíst (HTTP ${error.status}).`
+            : "Konfiguraci nelze načíst - configer neodpovídá";
       addLogMessage(message, LogEntryType.Error);
       return;
     }

@@ -35,13 +35,19 @@ describe("reloadBackendConfig", () => {
   });
 
   it("accepts an environment port and a URL change in the report", async () => {
-    const unapplied = [port, { path: "backend.url", running: "/v1", stored: "/v2" }];
+    const unapplied = [
+      port,
+      { path: "backend.url", running: "/v1", stored: "/v2" },
+    ];
     answer({ unapplied });
     expect(await reloadBackendConfig()).toEqual({ ok: true, unapplied });
   });
 
   it("sends nothing until the backend address is configured", async () => {
-    vi.mocked(backendApi).mockReturnValue({ ...configured, isConfigured: false });
+    vi.mocked(backendApi).mockReturnValue({
+      ...configured,
+      isConfigured: false,
+    });
     expect(await reloadBackendConfig()).toEqual({ ok: false });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -56,7 +62,12 @@ describe("reloadBackendConfig", () => {
     { unapplied: "nope" },
     null,
     { unapplied: [{}] },
-    { unapplied: [port, { path: "backend.url", running: {}, stored: "/api/v2" }] },
+    {
+      unapplied: [
+        port,
+        { path: "backend.url", running: {}, stored: "/api/v2" },
+      ],
+    },
     { unapplied: [{ ...port, stored: "5050" }] },
     { unapplied: [{ ...port, path: "backend.nothing" }] },
   ])("returns failure for an invalid report %p", async (body) => {

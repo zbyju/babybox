@@ -188,7 +188,8 @@
       return {
         ...value,
         engine: row.engine === null ? null : settings.engine[row.engine - 100],
-        thermal: row.thermal === null ? null : settings.thermal[row.thermal - 100],
+        thermal:
+          row.thermal === null ? null : settings.thermal[row.thermal - 100],
       };
     });
     addLogMessage("Parametry úspěšně načteny", LogEntryType.Success);
@@ -218,16 +219,34 @@
 
     switch (outcome.kind) {
       case "confirmed":
-        values.value = settingsSendToStates(outcome.results, values.value, rows);
+        values.value = settingsSendToStates(
+          outcome.results,
+          values.value,
+          rows,
+        );
         addLogMessage("Parametry úspěšně uloženy", LogEntryType.Success);
         break;
       case "rejected":
-        values.value = settingsSendToStates(outcome.results, values.value, rows);
-        addLogMessage("Některé změny parametrů byly odmítnuty", LogEntryType.Error);
+        values.value = settingsSendToStates(
+          outcome.results,
+          values.value,
+          rows,
+        );
+        addLogMessage(
+          "Některé změny parametrů byly odmítnuty",
+          LogEntryType.Error,
+        );
         break;
       case "unconfirmed":
-        values.value = settingsSendToStatesError(changedValues, values.value, rows);
-        addLogMessage("Uložení parametrů se nepodařilo potvrdit", LogEntryType.Error);
+        values.value = settingsSendToStatesError(
+          changedValues,
+          values.value,
+          rows,
+        );
+        addLogMessage(
+          "Uložení parametrů se nepodařilo potvrdit",
+          LogEntryType.Error,
+        );
         break;
       default:
         outcome satisfies never;

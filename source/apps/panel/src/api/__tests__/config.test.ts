@@ -35,7 +35,9 @@ describe("saveConfig", () => {
 
   it("does not confirm a successful HTTP status without a saved config", async () => {
     fetchMock.mockResolvedValue(answer(200, { msg: "Ok" }));
-    expect(await saveConfig(defaultConfig())).toEqual({ kind: "protocolError" });
+    expect(await saveConfig(defaultConfig())).toEqual({
+      kind: "protocolError",
+    });
   });
 
   it("hands back one entry per field a 400 named", async () => {
@@ -94,11 +96,18 @@ describe("getConfig", () => {
 
   it("retains strict field errors for a readable legacy config", async () => {
     const config = defaultConfig();
-    fetchMock.mockResolvedValueOnce(answer(200, { ...config, app: { ...config.app, refreshRequestLimit: null } }));
+    fetchMock.mockResolvedValueOnce(
+      answer(200, {
+        ...config,
+        app: { ...config.app, refreshRequestLimit: null },
+      }),
+    );
     const result = await getConfig();
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("Expected a field error");
-    expect(result.errors.map(({ path }) => path)).toContain("app.refreshRequestLimit");
+    expect(result.errors.map(({ path }) => path)).toContain(
+      "app.refreshRequestLimit",
+    );
   });
 
   it("distinguishes invalid JSON, HTTP and transport failures", async () => {

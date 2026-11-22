@@ -83,27 +83,47 @@ export const resetBabybox = async (): Promise<void> => {
 };
 
 type SettingsUnit = keyof typeof settingsResponseSchemas;
-export type SettingsRead<U extends SettingsUnit> =
-  z.infer<(typeof settingsResponseSchemas)[U]>["data"];
+export type SettingsRead<U extends SettingsUnit> = z.infer<
+  (typeof settingsResponseSchemas)[U]
+>["data"];
 
 export function getSettings(): Promise<SettingsRead<"both">>;
-export function getSettings<U extends SettingsUnit>(unit: U): Promise<SettingsRead<U>>;
-export async function getSettings(unit: SettingsUnit = "both"): Promise<SettingsRead<SettingsUnit>> {
+export function getSettings<U extends SettingsUnit>(
+  unit: U,
+): Promise<SettingsRead<U>>;
+export async function getSettings(
+  unit: SettingsUnit = "both",
+): Promise<SettingsRead<SettingsUnit>> {
   const { baseUrl, timeout } = backendApi();
   const url = `${baseUrl}/units/settings`;
   switch (unit) {
     case "both":
-      return (await requestJson(url, settingsResponseSchemas.both, { timeout })).data;
+      return (await requestJson(url, settingsResponseSchemas.both, { timeout }))
+        .data;
     case "engine":
-      return (await requestJson(`${url}?unit=engine`, settingsResponseSchemas.engine, { timeout })).data;
+      return (
+        await requestJson(
+          `${url}?unit=engine`,
+          settingsResponseSchemas.engine,
+          { timeout },
+        )
+      ).data;
     case "thermal":
-      return (await requestJson(`${url}?unit=thermal`, settingsResponseSchemas.thermal, { timeout })).data;
+      return (
+        await requestJson(
+          `${url}?unit=thermal`,
+          settingsResponseSchemas.thermal,
+          { timeout },
+        )
+      ).data;
     default:
       return unit satisfies never;
   }
 }
 
-export async function sendSettings(data: SettingsToSend[]): Promise<SettingsSave> {
+export async function sendSettings(
+  data: SettingsToSend[],
+): Promise<SettingsSave> {
   const { baseUrl } = backendApi();
   // The backend retries each setting against the units up to ten times.
   const response = await fetchWithTimeout(`${baseUrl}/units/settings`, {
@@ -113,7 +133,10 @@ export async function sendSettings(data: SettingsToSend[]): Promise<SettingsSave
     timeout: 60000,
   });
   try {
-    const { results } = await decodeJson(response, settingsAcknowledgementsSchema);
+    const { results } = await decodeJson(
+      response,
+      settingsAcknowledgementsSchema,
+    );
     return reconcileSettings(data, results, response.status);
   } catch {
     return { kind: "unconfirmed" };

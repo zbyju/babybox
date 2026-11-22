@@ -18,7 +18,11 @@ function answer(body: unknown, status = 200) {
 
 beforeEach(() => {
   fetchMock.mockReset();
-  vi.mocked(backendApi).mockReturnValue({ baseUrl, timeout: 5000, isConfigured: true });
+  vi.mocked(backendApi).mockReturnValue({
+    baseUrl,
+    timeout: 5000,
+    isConfigured: true,
+  });
 });
 
 describe("unit reads", () => {
@@ -34,22 +38,38 @@ describe("unit reads", () => {
     "rejects a malformed unit response %p",
     async (body) => {
       answer(body);
-      await expect(getData(`${baseUrl}/engine/data`)).rejects.toBeInstanceOf(ProtocolError);
+      await expect(getData(`${baseUrl}/engine/data`)).rejects.toBeInstanceOf(
+        ProtocolError,
+      );
     },
   );
 
   it("splits both settings lists by default", async () => {
     answer({ data: { engine: "1|2", thermal: "3|4" } });
-    expect(await getSettings()).toEqual({ engine: ["1", "2"], thermal: ["3", "4"] });
-    expect(fetchMock).toHaveBeenCalledWith(`${baseUrl}/units/settings`, { timeout: 5000 });
+    expect(await getSettings()).toEqual({
+      engine: ["1", "2"],
+      thermal: ["3", "4"],
+    });
+    expect(fetchMock).toHaveBeenCalledWith(`${baseUrl}/units/settings`, {
+      timeout: 5000,
+    });
   });
 
-  it.each(["engine", "thermal"] as const)("leaves the unrequested unit null for %s", async (unit) => {
-    const body = unit === "engine" ? { engine: "1|2", thermal: null } : { engine: null, thermal: "1|2" };
-    answer({ data: body });
-    expect(await getSettings(unit)).toEqual({ ...body, [unit]: ["1", "2"] });
-    expect(fetchMock).toHaveBeenCalledWith(`${baseUrl}/units/settings?unit=${unit}`, { timeout: 5000 });
-  });
+  it.each(["engine", "thermal"] as const)(
+    "leaves the unrequested unit null for %s",
+    async (unit) => {
+      const body =
+        unit === "engine"
+          ? { engine: "1|2", thermal: null }
+          : { engine: null, thermal: "1|2" };
+      answer({ data: body });
+      expect(await getSettings(unit)).toEqual({ ...body, [unit]: ["1", "2"] });
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${baseUrl}/units/settings?unit=${unit}`,
+        { timeout: 5000 },
+      );
+    },
+  );
 
   it("rejects a missing side when both units were requested", async () => {
     answer({ data: { engine: "1|2", thermal: null } });
@@ -72,13 +92,19 @@ describe("settings acknowledgements", () => {
   it("confirms reordered acknowledgements for all submitted writes", async () => {
     const results = [thermalAck, engineAck];
     answer({ results });
-    expect(await sendSettings(submitted)).toEqual({ kind: "confirmed", results });
+    expect(await sendSettings(submitted)).toEqual({
+      kind: "confirmed",
+      results,
+    });
   });
 
   it("confirms an intentional one-unit write", async () => {
     const results = [engineAck];
     answer({ results });
-    expect(await sendSettings([engine])).toEqual({ kind: "confirmed", results });
+    expect(await sendSettings([engine])).toEqual({
+      kind: "confirmed",
+      results,
+    });
   });
 
   it.each([
@@ -90,7 +116,10 @@ describe("settings acknowledgements", () => {
     ["wrong value", { results: [engineAck, { ...thermalAck, value: 3 }] }],
     ["wrong index", { results: [engineAck, { ...thermalAck, index: 101 }] }],
     ["wrong unit", { results: [engineAck, { ...thermalAck, unit: "engine" }] }],
-    ["malformed acknowledgement", { results: [engineAck, { ...thermalAck, result: "yes" }] }],
+    [
+      "malformed acknowledgement",
+      { results: [engineAck, { ...thermalAck, result: "yes" }] },
+    ],
   ])("cannot confirm a response with %s", async (_, body) => {
     answer(body);
     expect(await sendSettings(submitted)).toEqual({ kind: "unconfirmed" });
@@ -99,7 +128,10 @@ describe("settings acknowledgements", () => {
   it("reports an explicit rejection when the device results and status agree", async () => {
     const results = [engineAck, { ...thermalAck, result: false }];
     answer({ results }, 206);
-    expect(await sendSettings(submitted)).toEqual({ kind: "rejected", results });
+    expect(await sendSettings(submitted)).toEqual({
+      kind: "rejected",
+      results,
+    });
     answer({ results });
     expect(await sendSettings(submitted)).toEqual({ kind: "unconfirmed" });
   });

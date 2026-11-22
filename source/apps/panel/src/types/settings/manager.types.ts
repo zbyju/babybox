@@ -1,4 +1,7 @@
-export type { Setting as SettingsToSend, SettingResult as SettingsSendResult } from "@babybox/config-schema";
+export type {
+  Setting as SettingsToSend,
+  SettingResult as SettingsSendResult,
+} from "@babybox/config-schema";
 import type { Moment } from "moment";
 
 export enum LogEntryType {

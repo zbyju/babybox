@@ -19,12 +19,14 @@ const row: SettingsTableRow = {
   note: "",
 };
 
-const values: SettingsTableRowValue[] = [{
-  engine: "1",
-  thermal: "1",
-  value: "2",
-  state: SettingsTableRowState.Changed,
-}];
+const values: SettingsTableRowValue[] = [
+  {
+    engine: "1",
+    thermal: "1",
+    value: "2",
+    state: SettingsTableRowState.Changed,
+  },
+];
 
 describe("settings table acknowledgements", () => {
   it("marks a confirmed one-unit row as successful", () => {
