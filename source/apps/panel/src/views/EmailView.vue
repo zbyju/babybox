@@ -3,9 +3,11 @@
     <section v-if="section === 'overview'" class="routing-card">
       <div class="section-title">
         <h2 id="email-routing-title">Jak se odesílají e-maily?</h2>
-        <InlineHelp label="Jak nastavit cíl SMTP">
-          Cíl SMTP se nastavuje přímo na jednotkách a kameře. Uložení zde jejich
-          nastavení nemění.
+        <InlineHelp label="Co je potřeba nastavit na zařízeních">
+          Tato volba mění jen nastavení panelu. Pro odesílání přes panel
+          nastavte na jednotkách a kameře IP adresu panelu jako SMTP server na
+          portu 25. Při přímém odesílání používají zařízení vlastní poštovní
+          server.
         </InlineHelp>
       </div>
       <fieldset
@@ -34,6 +36,10 @@
             </span>
           </label>
         </div>
+        <p v-if="routing === 'direct' && receiving" class="hint">
+          Uložením vypnete příjem zpráv na panelu. Nejdřív ověřte, že všechna
+          zařízení umí posílat přímo.
+        </p>
         <BaseButton
           v-if="routing === 'direct' && routing !== savedRouting"
           variant="accent"
@@ -70,9 +76,11 @@
         class="card smtp-setup"
       >
         <div class="section-title">
-          <h3>SMTP nastavení</h3>
-          <InlineHelp label="Připojení SMTP">
-            Panel odesílá zprávy přes TLS na portu 465.
+          <h3>Poštovní účet panelu</h3>
+          <InlineHelp label="Kde najít údaje k poštovnímu účtu">
+            Údaje k účtu vám poskytne správce pošty nebo poskytovatel e-mailu.
+            Zadejte adresu SMTP serveru bez protokolu a portu. Panel se
+            připojuje přes TLS na portu 465.
           </InlineHelp>
         </div>
         <form @submit.prevent="save">
@@ -114,7 +122,7 @@
               />
             </label>
             <label
-              >SMTP uživatel
+              >Přihlašovací jméno
               <BaseInput
                 v-model="settings.user"
                 type="text"
@@ -123,7 +131,7 @@
               />
             </label>
             <label
-              >SMTP heslo
+              >Heslo k poštovnímu účtu
               <BaseInput
                 v-model="settings.password"
                 type="password"
@@ -131,14 +139,22 @@
                 autocomplete="new-password"
               />
             </label>
-            <label
-              >Náhradní odesílatel (volitelné)
+            <div class="sender-field">
+              <div class="section-title">
+                <label for="email-sender">Adresa odesílatele (volitelná)</label>
+                <InlineHelp label="Kdy vyplnit adresu odesílatele">
+                  Obvykle ji nechte prázdnou, aby se zachovala adresa z příchozí
+                  zprávy. Pokud ji poštovní server odmítá, zadejte adresu
+                  povolenou pro účet panelu.
+                </InlineHelp>
+              </div>
               <BaseInput
+                id="email-sender"
                 v-model="settings.senderOverride"
                 type="text"
                 maxlength="320"
               />
-            </label>
+            </div>
           </fieldset>
           <BaseButton variant="accent" type="submit" :disabled="busy"
             >Uložit nastavení</BaseButton
@@ -155,11 +171,14 @@
           }}</InlineHelp>
         </div>
         <details v-if="receiving" class="smtp-test">
-          <summary>Zkušební e-mail</summary>
+          <summary>Ověřit odesílání</summary>
+          <p class="hint">
+            Test použije uložené údaje. Výsledek se zobrazí zde.
+          </p>
           <form @submit.prevent="act('test', { recipient: testRecipient })">
             <fieldset :disabled="busy">
               <label
-                >Adresa pro test
+                >Kam poslat zkušební zprávu
                 <BaseInput
                   v-model="testRecipient"
                   type="email"
@@ -171,11 +190,11 @@
                 variant="primary"
                 type="submit"
                 :disabled="busy || !status?.runtimeSupported"
-                >Zařadit test do fronty</BaseButton
+                >Odeslat zkušební e-mail</BaseButton
               >
             </fieldset>
           </form>
-          <p v-if="testMessage" class="notice" role="status">
+          <p v-if="testMessage && !testRecord" class="notice" role="status">
             {{ testMessage }}
           </p>
           <p
@@ -248,7 +267,7 @@
           <p v-else class="hint">Historie zatím není k dispozici.</p>
           <dl v-if="historyTotals" class="overview-metrics">
             <div>
-              <dt>Úspěch</dt>
+              <dt>Převzal server</dt>
               <dd class="metric-success">{{ historyTotals.success }}</dd>
             </div>
             <div>
@@ -263,8 +282,9 @@
           <div v-if="status" class="source-summary">
             <div class="section-title">
               <h4>Poslední příjem ze zařízení</h4>
-              <InlineHelp label="Jak se počítá poslední příjem">
-                Z posledních 100 záznamů přijatých panelem.
+              <InlineHelp label="Proč může chybět poslední zpráva">
+                Bez záznamu znamená, že v uchované historii není žádná zpráva od
+                tohoto zařízení. Přímo odeslané e-maily se tu neobjeví.
               </InlineHelp>
             </div>
             <dl class="sources">
@@ -276,16 +296,12 @@
                     :datetime="new Date(source.last.receivedAt).toISOString()"
                     >{{ time(source.last.receivedAt) }}</time
                   >
-                  <span v-else>{{
-                    status ? "Bez záznamu" : "Stav nedostupný"
-                  }}</span>
+                  <span v-else>Bez záznamu</span>
                 </dd>
               </div>
             </dl>
           </div>
           <p v-if="status?.historyError" class="notice warning" role="status">
-            <span aria-hidden="true">⚠ </span> Historii nelze spolehlivě
-            zaznamenávat.
             {{ status.historyError }}
           </p>
         </article>
@@ -299,9 +315,11 @@
       <section v-if="section === 'queue'" class="card">
         <div class="section-title">
           <h3 ref="detailHeading" tabindex="-1">Fronta a opakování</h3>
-          <InlineHelp label="Platnost zpráv ve frontě">
-            Zprávy mají platnost 24 hodin od přijetí. Restart obsah fronty
-            smaže.
+          <InlineHelp label="Kdy se odeslání zkusí znovu">
+            Po dočasné chybě to panel zkusí sám. Pozastavené odesílání obnoví
+            změna nastavení nebo ruční pokus. U stavu Selhalo je další pokus
+            pouze ruční. Zprávy čekají nejvýše 24 hodin a restart frontu
+            vyprázdní.
           </InlineHelp>
         </div>
         <template v-if="status">
@@ -334,7 +352,7 @@
                 variant="primary"
                 :disabled="busy || !selected.length || !!confirmation"
                 @click="act('retry', { ids: selected })"
-                >Opakovat vybrané</BaseButton
+                >Zkusit odeslat znovu</BaseButton
               >
               <BaseButton
                 variant="error"
@@ -394,14 +412,12 @@
           <h3 ref="detailHeading" tabindex="-1">
             Historie zpráv přijatých panelem
           </h3>
-          <InlineHelp label="Co znamená výsledek Úspěch">
-            SMTP server zprávu přijal. Výsledek nepotvrzuje doručení do
-            schránky.
+          <InlineHelp label="Jak ověřit doručení zprávy">
+            Poštovní server zprávu převzal k dalšímu doručení. Jestli dorazila,
+            ověřte ve schránce příjemce.
           </InlineHelp>
         </div>
         <p v-if="status?.historyError" class="notice warning" role="status">
-          <span aria-hidden="true">⚠ </span> Historii nelze spolehlivě
-          zaznamenávat.
           {{ status.historyError }}
         </p>
         <template v-if="status">
@@ -443,7 +459,7 @@
                     <dd>{{ record.sender || "—" }}</dd>
                   </div>
                   <div>
-                    <dt>Původní adresáti</dt>
+                    <dt>Adresy z příchozí zprávy</dt>
                     <dd>{{ record.requestedRecipients.join(", ") || "—" }}</dd>
                   </div>
                   <div v-if="record.sourceIp">
@@ -548,19 +564,17 @@
     {
       value: "direct",
       title: "Přímo ze zařízení",
-      description:
-        "Jednotky a kamera odesílají e-maily samy. Panel jejich zprávy nesleduje.",
+      description: "Zařízení posílají sama. Jejich zprávy v panelu neuvidíte.",
     },
     {
       value: "device",
-      title: "Přes panel · adresáti ze zařízení",
-      description:
-        "Panel zprávy odesílá na adresy určené jednotkami a kamerou.",
+      title: "Přes panel · ponechat adresáty",
+      description: "Příjemce měníte v nastavení jednotek a kamery.",
     },
     {
       value: "panel",
-      title: "Přes panel · adresáti z panelu",
-      description: "Panel zprávy odesílá na adresy nastavené zde.",
+      title: "Přes panel · nastavit adresáty",
+      description: "Příjemce pro jednotky a kameru zadáte níže.",
     },
   ] as const;
   const savedRouting = ref<Routing>();
@@ -650,9 +664,9 @@
     if (!status.value.runtimeSupported)
       return "Odesílání v této verzi není dostupné.";
     if (!status.value.configured)
-      return "Doplňte SMTP server, uživatele a heslo.";
-    if (status.value.error) return "Služba hlásí chybu";
-    return "SMTP účet nastaven";
+      return "Chybí server, přihlašovací jméno nebo heslo.";
+    if (status.value.error) return "Odesílání hlásí chybu";
+    return "Údaje k účtu jsou vyplněné";
   });
   const sourceName = (id: string) =>
     id === "test"
@@ -706,7 +720,7 @@
   }
 
   const resultLabels = {
-    success: { icon: "✓", label: "Úspěch" },
+    success: { icon: "✓", label: "Převzal server" },
     danger: { icon: "×", label: "Chyba" },
     neutral: { icon: "•", label: "Rozpracováno" },
   };
@@ -825,12 +839,12 @@
       const result = await reloadBackendConfig();
       if (result.ok) savedRouting.value = routing.value;
       settingsMessage.value = result.ok
-        ? "Nastavení uloženo a načteno backendem."
-        : "Nastavení uloženo. Backend ho nyní nemohl načíst; zkuste uložit znovu.";
+        ? "Nastavení bylo uloženo a panel ho už používá."
+        : "Nastavení se uložilo, ale panel ho zatím nepoužívá. Zkuste uložit znovu.";
       if (receiving.value) await readStatus();
     } catch {
       settingsMessage.value =
-        "Nastavení se nepodařilo ověřit nebo uložit. Načtěte stránku znovu a ověřte uložené hodnoty.";
+        "Uložení se nepodařilo potvrdit. Obnovte stránku a zkontrolujte uložené údaje.";
     } finally {
       busy.value = false;
     }
@@ -852,7 +866,10 @@
         },
       );
       const result = await decodeJson(response, emailActionResultSchema);
-      message.value = result.msg;
+      message.value =
+        response.ok && action === "test"
+          ? "Panel převzal zkušební zprávu."
+          : result.msg;
       if (response.ok) {
         if (action === "test") testId.value = result.id ?? "";
         else {
@@ -864,7 +881,7 @@
       await readStatus();
     } catch {
       message.value =
-        "Výsledek akce není známý. Obnovte stav a před opakováním zkontrolujte historii.";
+        "Panel nepotvrdil výsledek. Před dalším pokusem zkontrolujte historii.";
     } finally {
       busy.value = false;
     }
@@ -1145,6 +1162,10 @@
       color #a0f0c6
     .metric-danger
       color #ffc0cb
+  .sender-field
+    display grid
+    align-content start
+    gap 4px
   .smtp-health
     display flex
     flex-wrap wrap
@@ -1158,8 +1179,8 @@
     > summary
       font-weight 700
       cursor pointer
-    form
-      margin-top 12px
+    p, form
+      margin-top 10px
   .routing-card
     display grid
     gap 10px
