@@ -124,6 +124,13 @@ lesson: what happened, what to do instead.
   while `legacy-boot1` entered that block only on Bun. The pair a Bun-less box
   uses had no job at all, and that is where the `app.get("*")` throw lived.
 
+- **A reachable config response is still untrusted JSON.** Backend startup used
+  to cast the response from configer and only reload checked the fields the
+  pollers read. Validate those fields with the backend's local Zod schema at both
+  boundaries; retry startup on invalid data and keep the running config on a
+  failed reload. The backend dist installs standalone, so it cannot import a
+  workspace-only schema at runtime.
+
 - **express 5 validates every route string at registration, including the ones
   built from config.** path-to-regexp 8 throws for `{ } ( ) [ ] + ? !` and for
   `:`/`*` with no name. `app.get(prefix + "/status")` with a config-set prefix

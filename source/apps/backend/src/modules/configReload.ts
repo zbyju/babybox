@@ -1,4 +1,8 @@
-import type { MainConfig, UnappliedField } from "../types/config.types.js";
+import type { UnappliedField } from "../types/config.types.js";
+import {
+  backendReadableConfigSchema,
+  type BackendReadableConfig,
+} from "../types/configBoundary.js";
 
 /**
  * The address the server really bound, taken when it started listening.
@@ -29,56 +33,6 @@ function isObject(value: unknown): value is Fields {
 
 function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-/**
- * Exactly the five leaves the backend reads, each one taken from `MainConfig`.
- *
- * This is the type `config` in `index.ts` carries, so a future read of a section
- * nothing checked does not compile. Grep for `config.` in `apps/backend/src`: the
- * readers are `index.ts` (port and prefix at listen), `modules/restart.ts` (`pc.os`)
- * and `fetch/fetchFromUnits.ts` plus `utils/url.ts` (the two unit IPs).
- */
-export interface BackendReadableConfig {
-  backend: Pick<MainConfig["backend"], "url" | "port">;
-  pc: Pick<MainConfig["pc"], "os">;
-  units: {
-    engine: Pick<MainConfig["units"]["engine"], "ip">;
-    thermal: Pick<MainConfig["units"]["thermal"], "ip">;
-  };
-}
-
-/**
- * Checks the five fields the backend reads, and narrows to just those five.
- *
- * The backend cannot run the shared zod schema: its `dist` is installed outside the
- * workspace, so the package is a type here and nothing more. The panel narrows the
- * same way in `utils/panel/instanceCheck.ts`, to the five sections it reads; this
- * one goes further and narrows to the leaves, because the backend reads five leaves
- * and not five sections.
- *
- * It is deliberately narrow. A stored value the schema refuses but the backend never
- * touches must not stop the reload; a missing `units.engine.ip` must, because the
- * next poll would throw on it and take the panel down with the process.
- */
-export function isBackendReadableConfig(
-  value: unknown
-): value is BackendReadableConfig {
-  if (!isObject(value)) return false;
-
-  const { backend, pc, units } = value;
-  if (!isObject(backend) || !isObject(pc) || !isObject(units)) return false;
-
-  const { engine, thermal } = units;
-  if (!isObject(engine) || !isObject(thermal)) return false;
-
-  return (
-    typeof backend["url"] === "string" &&
-    typeof backend["port"] === "number" &&
-    typeof pc["os"] === "string" &&
-    typeof engine["ip"] === "string" &&
-    typeof thermal["ip"] === "string"
-  );
 }
 
 /**
@@ -153,7 +107,8 @@ export async function reloadConfig(
     return { status: "failed", msg: `configer returned no config: ${reason}` };
   }
 
-  if (!isBackendReadableConfig(answer.data)) {
+  const parsed = backendReadableConfigSchema.safeParse(answer.data);
+  if (!parsed.success) {
     return {
       status: "failed",
       msg: "the stored config is missing a field the backend reads",
@@ -162,7 +117,7 @@ export async function reloadConfig(
 
   return {
     status: "reloaded",
-    config: answer.data,
-    unapplied: unappliedFields(answer.data, bound),
+    config: parsed.data,
+    unapplied: unappliedFields(parsed.data, bound),
   };
 }

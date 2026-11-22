@@ -8,10 +8,12 @@ import { fileURLToPath } from "url";
 
 import { fetchConfig } from "./fetch/fetchConfig.js";
 import { jsonErrors } from "./middleware/jsonErrors.js";
-import type {
-  BackendReadableConfig,
-  BoundAddress,
-} from "./modules/configReload.js";
+import {
+  CONFIG_RETRY_DELAY_MS,
+  loadBackendConfig,
+} from "./modules/loadConfig.js";
+import type { BoundAddress } from "./modules/configReload.js";
+import type { BackendReadableConfig } from "./types/configBoundary.js";
 import { modulesObject } from "./modules/init.js";
 import { router as engineRoute } from "./routes/engineRoute.js";
 import { router as reloadRoute } from "./routes/reloadRoute.js";
@@ -25,8 +27,6 @@ import {
   statusBody,
 } from "./utils/runtimeVersions.js";
 import { wait } from "./utils/wait.js";
-
-const CONFIG_RETRY_DELAY_MS = 5000;
 
 /*
  * Not import.meta.dirname: that needs Node 20.11.
@@ -93,23 +93,15 @@ async function main() {
    * Keep retrying instead of starting with no config,
    * because this backend runs unattended and nobody can restart it on site.
    */
-  let c = await fetchConfig();
-  let attempt = 1;
-  while (c.status !== 200 || !c.data) {
-    console.log(
-      `Config not available (attempt ${attempt}): ${c.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
-    );
-    await wait(CONFIG_RETRY_DELAY_MS);
-    c = await fetchConfig();
-    attempt++;
-  }
-  /*
-   * Boot takes what configer sends without a check, as it always has.
-   * A check here would keep a box with one odd stored value from ever listening.
-   * POST /reload checks with isBackendReadableConfig before it swaps.
-   */
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- boot trusts configer, see above
-  const loaded = c.data as BackendReadableConfig;
+  const loaded = await loadBackendConfig(
+    fetchConfig,
+    wait,
+    (attempt, reason) => {
+      console.log(
+        `Config not available (attempt ${attempt}): ${reason} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
+      );
+    }
+  );
   config = loaded;
 
   const app = express();

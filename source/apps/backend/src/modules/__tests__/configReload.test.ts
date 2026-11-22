@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type { MainConfig } from "../../types/config.types.js";
+import { backendReadableConfigSchema } from "../../types/configBoundary.js";
 import type { BoundAddress } from "../configReload.js";
-import {
-  isBackendReadableConfig,
-  reloadConfig,
-  unappliedFields,
-} from "../configReload.js";
+import { reloadConfig, unappliedFields } from "../configReload.js";
 
 function storedConfig(): MainConfig {
   return {
@@ -49,9 +46,11 @@ function answerWithNothing() {
     });
 }
 
-describe("isBackendReadableConfig", () => {
+describe("backendReadableConfigSchema", () => {
   it("accepts a config that has the five fields the backend reads", () => {
-    expect(isBackendReadableConfig(storedConfig())).toBe(true);
+    expect(backendReadableConfigSchema.safeParse(storedConfig()).success).toBe(
+      true
+    );
   });
 
   it("accepts a value the write path would refuse but the backend never reads", () => {
@@ -59,7 +58,7 @@ describe("isBackendReadableConfig", () => {
     config.units.requestDelay = 0;
     Reflect.set(config.camera, "cameraType", "something else");
 
-    expect(isBackendReadableConfig(config)).toBe(true);
+    expect(backendReadableConfigSchema.safeParse(config).success).toBe(true);
   });
 
   it.each([
@@ -85,13 +84,13 @@ describe("isBackendReadableConfig", () => {
     const config = storedConfig();
     breakIt(config);
 
-    expect(isBackendReadableConfig(config)).toBe(false);
+    expect(backendReadableConfigSchema.safeParse(config).success).toBe(false);
   });
 
   it.each([[null], [undefined], ["a string"], [[]], [42]])(
     "refuses %p",
     (value) => {
-      expect(isBackendReadableConfig(value)).toBe(false);
+      expect(backendReadableConfigSchema.safeParse(value).success).toBe(false);
     }
   );
 });
