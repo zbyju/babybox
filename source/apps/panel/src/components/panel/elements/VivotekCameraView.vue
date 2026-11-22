@@ -3,6 +3,7 @@
     <iframe
       v-show="state === CameraState.Ok"
       name="vivotek"
+      title="Záběr kamery Babyboxu"
       scrolling="no"
       :style="[topBorder, maxSize]"
     />
@@ -12,8 +13,7 @@
     class="camera-error"
     :style="topBorder"
   >
-    <h4>Error</h4>
-    <p>Chyba při načítání kamery.</p>
+    <h4>Kamera nedostupná</h4>
   </div>
   <div
     v-show="state === CameraState.Loading"

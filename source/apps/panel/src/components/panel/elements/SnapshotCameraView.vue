@@ -1,5 +1,6 @@
 <template>
   <img
+    alt="Záběr kamery Babyboxu"
     v-show="state === CameraState.Ok"
     v-bind="srcAttr"
     :style="[topBorder, maxSize]"
@@ -11,8 +12,7 @@
     class="camera-error"
     :style="topBorder"
   >
-    <h4>Error</h4>
-    <p>Chyba při načítání kamery.</p>
+    <h4>Kamera nedostupná</h4>
   </div>
   <div
     v-show="state === CameraState.Loading"

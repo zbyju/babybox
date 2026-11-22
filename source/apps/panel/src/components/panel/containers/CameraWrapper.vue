@@ -1,24 +1,30 @@
 <template>
-  <div id="CameraWrapper" :style="maxSize">
-    <div v-if="doors !== undefined" id="DoorBars">
-      <HorizontalPositionBar
-        :max-value="doors.max"
-        :min-value="doors.min"
-        :value="doors.left"
-        :direction="'row'"
-      />
-      <HorizontalPositionBar
-        :max-value="doors.max"
-        :min-value="doors.min"
-        :value="doors.right"
-        :direction="'row-reverse'"
-      />
+  <div class="camera-wrapper">
+    <div
+      v-if="showDoorBars"
+      class="camera-door-bars"
+      role="group"
+      :aria-label="doors ? 'Poloha dveří' : 'Poloha dveří není k dispozici'"
+    >
+      <template v-if="doors">
+        <HorizontalPositionBar
+          :max-value="doors.max"
+          :min-value="doors.min"
+          :value="doors.left"
+          :direction="'row'"
+        />
+        <HorizontalPositionBar
+          :max-value="doors.max"
+          :min-value="doors.min"
+          :value="doors.right"
+          :direction="'row-reverse'"
+        />
+      </template>
     </div>
-    <CameraView
-      :display-top-border="doors === undefined"
-      :max-w="props.maxW ? props.maxW - 6 : undefined"
-      :max-h="props.maxH ? props.maxH - 6 : undefined"
-    />
+    <div class="camera-frame">
+      <CameraView :display-top-border="!showDoorBars" />
+      <slot name="overlay" />
+    </div>
   </div>
 </template>
 
@@ -31,15 +37,9 @@
   import { useUnitsStore } from "@/pinia/unitsStore";
 
   const props = defineProps<{
-    maxW?: number;
-    maxH?: number;
     displayDoors: boolean;
+    showEmptyDoors?: boolean;
   }>();
-
-  const maxSize = computed(() => ({
-    ...(props.maxH === undefined ? {} : { maxHeight: `${props.maxH}px` }),
-    ...(props.maxW === undefined ? {} : { maxWidth: `${props.maxW}px` }),
-  }));
 
   const unitsStore = useUnitsStore();
   const { engineUnit } = storeToRefs(unitsStore);
@@ -59,14 +59,21 @@
     }
     return { min, max, left, right };
   });
+  const showDoorBars = computed(
+    () => !!doors.value || (props.displayDoors && props.showEmptyDoors),
+  );
 </script>
 
 <style lang="stylus">
-  #CameraWrapper
+  .camera-wrapper
     max-width 35%
     height 100%
 
-    #DoorBars
+    > .camera-frame
+      position relative
+      height 100%
+
+    .camera-door-bars
       width calc(100% + 5px)
       max-height 100%
       display flex

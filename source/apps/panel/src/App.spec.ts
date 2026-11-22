@@ -31,13 +31,14 @@ vi.mock("./api/restart", () => ({
   refreshRestartCooldown: vi.fn().mockResolvedValue(undefined),
 }));
 
-it("keeps one monitoring and alarm lifecycle when moving from the panel to email", async () => {
+it("keeps one monitoring and alarm lifecycle across the main panel and all settings tabs", async () => {
   const screen = { render: () => null };
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       { path: "/", name: "Main", component: screen },
       { path: "/settings", name: "Settings", component: screen },
+      { path: "/data", name: "Data", component: screen },
     ],
   });
   const pinia = createPinia();
@@ -68,7 +69,12 @@ it("keeps one monitoring and alarm lifecycle when moving from the panel to email
       { active: false, message: undefined },
     );
 
+    await router.push({ name: "Settings", query: { tab: "panel" } });
     await router.push({ name: "Settings" });
+    expect(runtime.startPanelLoop).toHaveBeenCalledOnce();
+    expect(runtime.stopPanelLoop).toHaveBeenCalledTimes(stops);
+
+    await router.push({ name: "Data" });
     expect(runtime.stopPanelLoop).toHaveBeenCalledTimes(stops + 1);
   } finally {
     app.unmount();

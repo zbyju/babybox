@@ -8,7 +8,6 @@
       <BaseButton variant="warning" size="card" @click="openServiceDoors">
         Otevřít servisní dveře
       </BaseButton>
-      <CameraWrapper :max-h="100" :max-w="200" :display-doors="false" />
     </div>
   </div>
 </template>
@@ -16,8 +15,6 @@
 <script lang="ts" setup>
   import { openDoors, resetBabybox } from "@/api/units";
   import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
-
-  import CameraWrapper from "../panel/containers/CameraWrapper.vue";
 
   const openBabybox = async () => {
     try {

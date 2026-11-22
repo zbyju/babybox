@@ -28,12 +28,11 @@
   const panelState = usePanelStateStore();
   const soundPlayer = useSounds();
   const appManager = new AppManager();
-  // The email workspace shares the monitoring lifecycle with the main panel.
+  // Settings uses the same live monitoring loop as the main panel.
   const monitoring = computed(
     () =>
       appState.state === StartupState.Ok &&
-      (route.name === "Main" ||
-        (route.name === "Settings" && route.query["tab"] === "email")),
+      (route.name === "Main" || route.name === "Settings"),
   );
   watch(
     monitoring,

@@ -126,17 +126,18 @@ describe("email maintenance page", () => {
     );
   });
 
-  it("keeps history and queued messages available when reception is disabled", async () => {
-    const toggle = element.querySelector<HTMLInputElement>('[role="switch"]');
-    expect(toggle?.checked).toBe(true);
-    toggle?.click();
+  it("keeps history and queued messages when devices send directly", async () => {
+    const routing = element.querySelector<HTMLInputElement>(
+      '[name="email-routing"][value="direct"]',
+    );
+    routing?.click();
     await flush();
     expect(element.querySelector('input[type="password"]')).toBeNull();
     expect(element.querySelector('input[type="email"]')).not.toBeNull();
 
     element
-      .querySelector("form")
-      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      .querySelector<HTMLButtonElement>('[form="email-configuration"]')
+      ?.click();
     await flush();
     const call = vi
       .mocked(fetchWithTimeout)
@@ -147,6 +148,18 @@ describe("email maintenance page", () => {
     expect(element.querySelector('input[type="email"]')).toBeNull();
     expect(element.querySelector(".history-row")).not.toBeNull();
     expect(element.querySelector(".queue-row")).not.toBeNull();
+  });
+
+  it("shows panel recipient fields only when the panel selects recipients", async () => {
+    expect(element.textContent).not.toContain("Adresáti jednotek");
+    expect(element.querySelector('input[type="password"]')).not.toBeNull();
+    const routing = element.querySelector<HTMLInputElement>(
+      '[name="email-routing"][value="panel"]',
+    );
+    routing?.click();
+    await flush();
+    expect(element.textContent).toContain("Adresáti jednotek");
+    expect(element.textContent).toContain("Adresáti kamery");
   });
 
   it("requires an inline confirmation before deleting and never opens a blocking dialog", async () => {

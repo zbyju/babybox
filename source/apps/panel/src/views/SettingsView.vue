@@ -6,6 +6,7 @@
       :class="{ 'email-settings': activeTab === 'email' }"
     >
       <h1>Nastavení</h1>
+      <MiniPanel class="settings-preview" />
       <nav class="settings-tabs" aria-label="Sekce nastavení">
         <RouterLink
           v-for="tab in tabs"
@@ -22,12 +23,7 @@
           >
         </RouterLink>
       </nav>
-      <template v-if="activeTab === 'email'">
-        <p v-if="panelState.message" class="panel-alarm" role="alert">
-          <span aria-hidden="true">? </span>{{ panelState.message.text }}
-        </p>
-        <EmailView />
-      </template>
+      <EmailView v-if="activeTab === 'email'" />
       <ConfigView v-else-if="activeTab === 'panel'" />
       <template v-else>
         <QuickActions />
@@ -41,7 +37,7 @@
   import { computed, onUnmounted } from "vue";
   import { useRoute, useRouter } from "vue-router";
 
-  import { usePanelStateStore } from "@/pinia/panelStateStore";
+  import MiniPanel from "@/components/panel/containers/MiniPanel.vue";
 
   import SettingsForm from "../components/settings/form/SettingsForm.vue";
   import QuickActions from "../components/settings/QuickActions.vue";
@@ -51,7 +47,6 @@
 
   const route = useRoute();
   const router = useRouter();
-  const panelState = usePanelStateStore();
   const tabs = [
     { id: "units", label: "Jednotky", to: { name: "Settings" } },
     {
@@ -91,14 +86,8 @@
       #SettingsWrapper.email-settings
         padding-right 138px
 
-    .panel-alarm
-      margin 0 0 16px
-      border 1px solid #862222
-      border-radius 8px
-      padding 10px 14px
-      background #472135
-      color #ffc0cb
-      font-weight 700
+    .settings-preview
+      margin-bottom 16px
 
     h1
       font-size 1.85rem

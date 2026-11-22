@@ -6,6 +6,7 @@
         <p>Příjem zpráv z jednotek a kamery a jejich předání SMTP serveru.</p>
       </div>
       <span
+        v-if="statusUnavailable || (status && savedRouting)"
         class="status"
         :class="
           status && !status.error && status.runtimeSupported
@@ -15,16 +16,65 @@
       >
         <span aria-hidden="true">●</span>
         {{
-          status
-            ? receiving
+          statusUnavailable
+            ? "Stav nedostupný"
+            : receiving
               ? "Živý přehled"
               : "Příjem vypnutý"
-            : statusUnavailable
-              ? "Stav nedostupný"
-              : "Načítání stavu"
         }}
       </span>
     </header>
+
+    <section class="card routing-card">
+      <fieldset v-if="settings" class="routing" :disabled="busy">
+        <legend>Jak se odesílají e-maily?</legend>
+        <div class="routing-options">
+          <label
+            v-for="option in routingOptions"
+            :key="option.value"
+            class="routing-option"
+          >
+            <input
+              type="radio"
+              name="email-routing"
+              :checked="routing === option.value"
+              :value="option.value"
+              @change="selectRouting(option.value)"
+            />
+            <span>
+              <strong>{{ option.title }}</strong>
+              <span class="hint">{{ option.description }}</span>
+            </span>
+          </label>
+        </div>
+        <p class="hint">
+          Cíl SMTP se nastavuje přímo na jednotkách a kameře. Uložení této volby
+          zařízení nepřenastaví.
+        </p>
+        <p v-if="routing === 'direct'" class="hint">
+          Panel v tomto režimu nepřijímá nové zprávy. Přímé odesílání se
+          nastavuje a ověřuje na jednotkách a kameře. Zprávy, které už panel
+          přijal, zůstávají ve frontě a historii.
+        </p>
+        <BaseButton
+          v-if="routing === 'direct' || routing !== savedRouting"
+          variant="accent"
+          type="submit"
+          form="email-configuration"
+          :disabled="busy"
+        >
+          Uložit nastavení
+        </BaseButton>
+      </fieldset>
+      <p
+        v-if="settingsMessage && (!settings || routing === 'direct')"
+        class="notice"
+        role="status"
+      >
+        {{ settingsMessage }}
+      </p>
+      <p v-else-if="!settings" role="status">Načítání nastavení…</p>
+    </section>
 
     <p v-if="statusUnavailable" class="notice warning" role="status">
       Stav e-mailové služby nelze načíst. Panel se znovu pokusí o spojení.
@@ -92,7 +142,7 @@
         </section>
 
         <section v-if="status" class="card">
-          <h3>Historie zpráv</h3>
+          <h3>Historie zpráv přijatých panelem</h3>
           <p class="hint">
             Úspěch znamená přijetí SMTP serverem. Doručení do schránky tím není
             potvrzeno.
@@ -293,80 +343,30 @@
       </div>
 
       <div class="column">
-        <section class="card">
-          <h3>Nastavení e-mailu</h3>
-          <p class="hint">
-            Tato nastavení platí pro zprávy přijaté panelem. Cíl odesílání
-            nastavuje technik přímo na jednotkách a kameře.
-          </p>
-          <form v-if="settings" @submit.prevent="save">
-            <label class="receive-toggle">
-              <span>
-                <strong>Příjem e-mailů do panelu</strong>
-                <span class="hint"
-                  >Nové zprávy z jednotek a kamery na portu 25</span
-                >
-              </span>
-              <input
-                v-model="settings.listener"
-                type="checkbox"
-                role="switch"
-                true-value="enabled"
-                false-value="disabled"
-                :disabled="busy"
-              />
-            </label>
-            <p v-if="settings.listener === 'disabled'" class="hint off-note">
-              {{
-                receiving
-                  ? "Po uložení panel přestane přijímat nové zprávy."
-                  : "Panel má vypnutý příjem nových zpráv."
-              }}
-              Zprávy ve frontě se dál zpracovávají a historie zůstává dostupná.
-            </p>
-            <fieldset v-if="settings.listener === 'enabled'" :disabled="busy">
+        <section v-show="settings && routing !== 'direct'" class="card">
+          <h3>Nastavení odesílání z panelu</h3>
+          <form v-if="settings" id="email-configuration" @submit.prevent="save">
+            <fieldset v-if="routing === 'panel'" :disabled="busy">
               <legend>Adresáti</legend>
+              <p class="hint">Více adres oddělte čárkou.</p>
               <label
-                >Zdroj adresátů
-                <BaseSelect
-                  :model-value="settings.mode"
-                  :options="['device', 'panel']"
-                  :option-labels="{
-                    device: 'Jednotky a kamera',
-                    panel: 'Panel Babybox',
-                  }"
-                  @update:model-value="
-                    settings.mode = $event === 'panel' ? 'panel' : 'device'
-                  "
+                >Adresáti jednotek
+                <BaseInput
+                  v-model="settings.unitRecipients"
+                  type="text"
+                  maxlength="8000"
                 />
               </label>
-              <p class="hint">
-                {{
-                  settings.mode === "device"
-                    ? "Panel použije adresáty z příchozí zprávy."
-                    : "Panel použije níže uvedené adresáty. Více adres oddělte čárkou."
-                }}
-              </p>
-              <template v-if="settings.mode === 'panel'">
-                <label
-                  >Adresáti jednotek
-                  <BaseInput
-                    v-model="settings.unitRecipients"
-                    type="text"
-                    maxlength="8000"
-                  />
-                </label>
-                <label
-                  >Adresáti kamery
-                  <BaseInput
-                    v-model="settings.cameraRecipients"
-                    type="text"
-                    maxlength="8000"
-                  />
-                </label>
-              </template>
+              <label
+                >Adresáti kamery
+                <BaseInput
+                  v-model="settings.cameraRecipients"
+                  type="text"
+                  maxlength="8000"
+                />
+              </label>
             </fieldset>
-            <fieldset v-if="settings.listener === 'enabled'" :disabled="busy">
+            <fieldset v-if="routing !== 'direct'" :disabled="busy">
               <legend>Odchozí účet</legend>
               <label
                 >SMTP server (TLS, port 465)
@@ -413,7 +413,6 @@
           <p v-if="settingsMessage" class="notice" role="status">
             {{ settingsMessage }}
           </p>
-          <p v-else-if="!settings" role="status">Načítání nastavení…</p>
         </section>
 
         <section v-if="receiving" class="card">
@@ -478,7 +477,6 @@
   import { reloadBackendConfig } from "@/api/reload";
   import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
   import BaseInput from "@/components/panel/HTMLElements/BaseInput.vue";
-  import BaseSelect from "@/components/panel/HTMLElements/BaseSelect.vue";
 
   import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
@@ -521,8 +519,42 @@
   type QueueItem = Status["queue"][number];
   type EmailAction = "test" | "retry" | "delete" | "clear";
   const settings = ref<Settings>();
-  const savedListener = ref<Settings["listener"]>();
-  const receiving = computed(() => savedListener.value !== "disabled");
+  type Routing = Settings["mode"] | "direct";
+  const routingOptions = [
+    {
+      value: "direct",
+      title: "Přímo ze zařízení",
+      description:
+        "Jednotky a kamera odesílají e-maily samy. Panel jejich zprávy nesleduje.",
+    },
+    {
+      value: "device",
+      title: "Přes panel · adresáti ze zařízení",
+      description:
+        "Panel zprávy odesílá na adresy určené jednotkami a kamerou.",
+    },
+    {
+      value: "panel",
+      title: "Přes panel · adresáti z panelu",
+      description: "Panel zprávy odesílá na adresy nastavené zde.",
+    },
+  ] as const;
+  const savedRouting = ref<Routing>();
+  const routing = computed<Routing | undefined>(() => {
+    if (!settings.value) return undefined;
+    return settings.value.listener === "disabled"
+      ? "direct"
+      : settings.value.mode;
+  });
+  const receiving = computed(
+    () => savedRouting.value !== undefined && savedRouting.value !== "direct",
+  );
+
+  function selectRouting(value: Routing) {
+    if (!settings.value) return;
+    settings.value.listener = value === "direct" ? "disabled" : "enabled";
+    if (value !== "direct") settings.value.mode = value;
+  }
 
   const status = ref<Status>();
   const statusUnavailable = ref(false);
@@ -716,7 +748,7 @@
         timeout: CONFIGER_TIMEOUT,
       });
       if (!response.ok) throw new Error();
-      savedListener.value = settings.value?.listener;
+      savedRouting.value = routing.value;
       const result = await reloadBackendConfig();
       settingsMessage.value = result.ok
         ? "Nastavení uloženo a načteno backendem."
@@ -781,7 +813,7 @@
       const defaults = defaultConfig().email;
       if (!defaults) throw new Error();
       settings.value = { ...defaults, ...parsed.config.email };
-      savedListener.value = settings.value.listener;
+      savedRouting.value = routing.value;
     } catch {
       settingsMessage.value =
         "Nastavení nelze načíst. Zkuste znovu otevřít kartu E-mail.";
@@ -1021,54 +1053,40 @@
     outline 2px solid #c3b6ff
     outline-offset 2px
 
-  form .receive-toggle
+  .routing
+    margin 0
+    gap 10px
+  .routing legend
+    font-size 1.08rem
+  .routing button
+    justify-self start
+  .routing-options
+    display grid
+    gap 10px
+    grid-template-columns repeat(3, minmax(0, 1fr))
+  .routing-option
     display flex
-    align-items center
-    justify-content space-between
-    gap 12px
-    padding 12px
+    align-items flex-start
+    gap 9px
     background #191638
+    border 1px solid #666086
     border-radius 8px
-    margin-bottom 14px
+    padding 12px
     cursor pointer
-    .hint
+    span
       display block
     input
-      appearance none
-      box-sizing border-box
       flex none
-      width 44px
-      height 25px
-      margin 0
-      padding 3px
-      border-radius 20px
-      border-color #8e86b6
-      background #282445
-      cursor pointer
-      &::after
-        content ""
-        display block
-        width 17px
-        height 17px
-        border-radius 50%
-        background white
-      &:checked
-        background #6543bd
-        &::after
-          margin-inline-start 18px
-      &:disabled
-        cursor not-allowed
-        opacity .65
-  .off-note
-    margin-bottom 12px
-
-  @media (forced-colors: active)
-    form .receive-toggle input
-      appearance auto
-      &::after
-        display none
+      width 1rem
+      height 1rem
+      margin 3px 0 0
+      accent-color #8d70ff
+    &:focus-within
+      border-color #c3b6ff
 
   @media (max-width: 750px)
+    .routing-options
+      grid-template-columns minmax(0, 1fr)
     .log-columns
       grid-template-columns minmax(0, 1fr) max-content 12px
     .log-header
