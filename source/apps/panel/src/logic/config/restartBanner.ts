@@ -14,7 +14,6 @@ export type SaveOutcome =
   | { kind: "notSent" }
   /** configer refused the body. The fields it named go next to the inputs. */
   | { kind: "rejected" }
-  | { kind: "serverOrProtocolFailed" }
   /** configer wrote it and the backend read it again. */
   | { kind: "applied"; unapplied: UnappliedField[] }
   /** configer wrote it, the backend did not read it. */
@@ -29,7 +28,7 @@ const fieldLabels = new Map(
   configFormFields.map((field) => [field.path, field.label]),
 );
 
-function labelFor(path: string): string {
+function labelFor(path: UnappliedField["path"]): string {
   return fieldLabels.get(path) ?? path;
 }
 

@@ -1659,26 +1659,6 @@ Context · Decision · Why · Gave up · Where
   `bun install --no-save`, not `pnpm install --prod`. See "The runtime is Bun
   1.4.2" (2026-09-14).
 
-## 2026-11-22 - Parse backend config at boot and reload
-
-- Context: the #102 review found the backend trusted configer JSON at startup and
-  used a handwritten type predicate on reload. A missing unit IP can crash the
-  poll loop while pm2 leaves the HTTP server alive.
-- Decision: parse the backend's five required config leaves with a Zod schema
-  owned by the backend package, and infer its type from that schema. Boot retries
-  on an invalid reply using the existing five-second cadence; reload keeps the
-  current config and reports failure. The schema passes through unrelated keys
-  so successful reloads retain the original config object shape.
-- Why: the backend distribution is installed standalone and cannot import the
-  workspace config-schema package at runtime. Zod is already a direct backend
-  dependency. A single local schema protects both entry points without rejecting
-  fields the backend never reads.
-- Gave up: starting the backend with a malformed but reachable config. It now
-  stays in its retry loop until configer returns the fields the pollers require.
-- Where: `source/apps/backend/src/types/configBoundary.ts`,
-  `source/apps/backend/src/modules/loadConfig.ts`, `configReload.ts`, and
-  `index.ts`; covered by `loadConfig.test.ts`.
-
 ### Windows release startup without a command shim (2026-11-20)
 
 The release flow invokes `start-app.js configer` and `start-app.js main` with

@@ -1,20 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  settingsSchema,
-  settingsQuerySchema,
-  settingsBodySchema,
-  settingSchema,
-} from "../request.types.js";
+import { settingSchema, z } from "../../boundary.js";
+import { settingsBodySchema, settingsQuerySchema } from "../request.types.js";
 
-const isInstanceOfArraySetting = (data: unknown) =>
-  settingsSchema.safeParse(data).success;
-const isInstanceOfGetUnitSettingsRequest = (data: unknown) =>
-  settingsQuerySchema.safeParse(data).success;
-const isInstanceOfPostUnitSettingsRequestBody = (data: unknown) =>
-  settingsBodySchema.safeParse(data).success;
-const isInstanceOfSetting = (data: unknown) =>
-  settingSchema.safeParse(data).success;
+const isInstanceOfArraySetting = (raw: unknown) =>
+  z.array(settingSchema).safeParse(raw).success;
+const isInstanceOfGetUnitSettingsRequest = (raw: unknown) =>
+  settingsQuerySchema.safeParse(raw).success;
+const isInstanceOfPostUnitSettingsRequestBody = (raw: unknown) =>
+  settingsBodySchema.safeParse(raw).success;
+const isInstanceOfSetting = (raw: unknown) =>
+  settingSchema.safeParse(raw).success;
 
 describe("request.types.ts", () => {
   describe("isInstanceOfPostUnitSettingsRequestBody", () => {
@@ -410,29 +406,44 @@ describe("request.types.ts", () => {
   });
 });
 
-describe("parsed settings inputs", () => {
-  it.each(["", 0, null, false, ["engine"], ["engine", "thermal"]])(
-    "rejects an invalid explicit unit %p",
+describe("normalized input", () => {
+  it.each([undefined, "bad", -1, null])(
+    "defaults a bad write timeout %p",
+    (timeout) => {
+      expect(
+        settingsBodySchema.parse({ settings: [], options: { timeout } })
+      ).toEqual({
+        settings: [],
+        timeout: 5000,
+      });
+    }
+  );
+  it("clamps a valid high write timeout and accepts omitted options", () => {
+    expect(settingsBodySchema.parse({ settings: [] }).timeout).toBe(5000);
+    expect(
+      settingsBodySchema.parse({ settings: [], options: { timeout: 20000 } })
+        .timeout
+    ).toBe(10000);
+  });
+  it.each(["", ["engine"], { kind: "thermal" }])(
+    "rejects invalid unit %p",
     (unit) => {
       expect(settingsQuerySchema.safeParse({ unit }).success).toBe(false);
     }
   );
-
-  it("rejects an array used as the entire query", () => {
-    expect(settingsQuerySchema.safeParse([]).success).toBe(false);
-  });
-
-  it.each([
-    [undefined, 5000],
-    [null, 5000],
-    ["7000", 5000],
-    [0, 5000],
-    [7000, 7000],
-    [11000, 10000],
-  ])("normalizes the legacy write timeout %p to %p", (timeout, expected) => {
-    expect(
-      settingsBodySchema.parse({ settings: [], options: { timeout } }).options
-        .timeout
-    ).toBe(expected);
-  });
+  it.each([[], ["100", "200"], { ms: 100 }, "1.5", "2147483648"])(
+    "ignores bad query timeout %p",
+    (timeout) => {
+      expect(settingsQuerySchema.parse({ timeout }).timeout).toBeUndefined();
+    }
+  );
+  it.each(["100", "1e2", 100, ["100"]])(
+    "preserves legacy timeout %p",
+    (timeout) => {
+      expect(settingsQuerySchema.parse({ timeout })).toEqual({
+        unit: "both",
+        timeout: 100,
+      });
+    }
+  );
 });

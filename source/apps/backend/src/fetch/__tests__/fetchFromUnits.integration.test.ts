@@ -1,3 +1,4 @@
+import express from "express";
 import * as http from "http";
 import {
   afterAll,
@@ -24,6 +25,9 @@ describe("fetchFromUnits.ts against a real server", () => {
   let inFlight = 0;
   let maxInFlight = 0;
   let requests = 0;
+  let payload = "0|1|2";
+  let apiServer: http.Server;
+  let apiUrl: string;
   let unitApi: typeof import("../fetchFromUnits.js");
 
   beforeAll(async () => {
@@ -35,7 +39,7 @@ describe("fetchFromUnits.ts against a real server", () => {
       setTimeout(() => {
         inFlight -= 1;
         res.setHeader("Content-Type", "text/plain");
-        res.end("0|1|2");
+        res.end(payload);
       }, RESPONSE_DELAY);
     });
 
@@ -58,9 +62,20 @@ describe("fetchFromUnits.ts against a real server", () => {
       },
     }));
     unitApi = await import("../fetchFromUnits.js");
+    const app = express();
+    app.set("query parser", "extended");
+    app.use(express.json());
+    app.use("/engine", (await import("../../routes/engineRoute.js")).router);
+    app.use("/thermal", (await import("../../routes/thermalRoute.js")).router);
+    app.use("/units", (await import("../../routes/unitsRoute.js")).router);
+    apiServer = app.listen(0, "127.0.0.1");
+    await new Promise<void>((resolve) => apiServer.once("listening", resolve));
+    apiUrl = "http://127.0.0.1:" + tcpPort(apiServer);
   });
 
   afterAll(async () => {
+    apiServer.closeAllConnections();
+    await new Promise<void>((resolve) => apiServer.close(() => resolve()));
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
@@ -68,11 +83,74 @@ describe("fetchFromUnits.ts against a real server", () => {
     inFlight = 0;
     maxInFlight = 0;
     requests = 0;
+    payload = "0|1|2";
+  });
+
+  it.each(["engine", "thermal"])(
+    "serves validated %s data and rejects empty replies",
+    async (unit) => {
+      const url = apiUrl + "/" + unit + "/data";
+      const success = await fetch(url);
+      expect(success.status).toBe(200);
+      expect(await success.json()).toEqual({
+        msg: "Data fetched successfully.",
+        data: "0|1|2",
+      });
+
+      payload = "";
+      const failure = await fetch(url);
+      expect(failure.status).toBe(408);
+      expect(await failure.json()).toEqual({
+        msg: "Request timedout. The URL/IP might be wrong, check the config.",
+      });
+    }
+  );
+
+  it.each(["unit=", "unit=engine&unit=thermal", "unit%5Bwhich%5D=engine"])(
+    "rejects the HTTP query %s",
+    async (query) => {
+      const response = await fetch(apiUrl + "/units/settings?" + query);
+      expect(response.status).toBe(400);
+      expect(requests).toBe(0);
+    }
+  );
+
+  it("preserves one-unit reads and defaults a repeated timeout", async () => {
+    const response = await fetch(
+      apiUrl + "/units/settings?unit=engine&timeout=1&timeout=1"
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      data: { engine: "0|1|2", thermal: null },
+    });
+    expect(requests).toBe(1);
+  });
+
+  it("preserves the settings body acceptance and rejection envelopes", async () => {
+    const send = (body: unknown) =>
+      fetch(apiUrl + "/units/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    const success = await send({ settings: [], options: { timeout: "bad" } });
+    expect(success.status).toBe(200);
+    expect(await success.json()).toEqual({
+      msg: "All setting changes have been applied.",
+      results: [],
+    });
+    const failure = await send({
+      settings: [{ unit: "engine", index: 100.5, value: 1 }],
+    });
+    expect(failure.status).toBe(400);
+    expect(await failure.json()).toEqual({
+      msg: "The body needs to be an array of settings ({index: number, value: number, unit: 'engine' | 'thermal'}).",
+    });
   });
 
   it("should never open two connections to one unit at the same time", async () => {
     const results = await Promise.all([
-      unitApi.fetchDataCommon(Unit.Engine, 2000),
+      unitApi.fetchDataCommon(Unit.Engine, { timeout: 2000 }),
       unitApi.fetchAction(Action.OpenDoors),
       unitApi.updateWatchdog(),
     ]);
@@ -83,8 +161,8 @@ describe("fetchFromUnits.ts against a real server", () => {
 
   it("should let two callers of the same read share one request", async () => {
     const [a, b] = await Promise.all([
-      unitApi.fetchDataCommon(Unit.Engine, 2000),
-      unitApi.fetchDataCommon(Unit.Engine, 2000),
+      unitApi.fetchDataCommon(Unit.Engine, { timeout: 2000 }),
+      unitApi.fetchDataCommon(Unit.Engine, { timeout: 2000 }),
     ]);
 
     expect(requests).toBe(1);
@@ -94,8 +172,8 @@ describe("fetchFromUnits.ts against a real server", () => {
 
   it("should talk to the two units at the same time", async () => {
     await Promise.all([
-      unitApi.fetchDataCommon(Unit.Engine, 2000),
-      unitApi.fetchDataCommon(Unit.Thermal, 2000),
+      unitApi.fetchDataCommon(Unit.Engine, { timeout: 2000 }),
+      unitApi.fetchDataCommon(Unit.Thermal, { timeout: 2000 }),
     ]);
 
     expect(requests).toBe(2);

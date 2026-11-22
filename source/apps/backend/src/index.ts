@@ -1,3 +1,5 @@
+import { bindingPort } from "./boundary.js";
+import { readConfig } from "./fetch/readConfig.js";
 import cors from "cors";
 import * as dotenv from "dotenv";
 import express from "express";
@@ -8,12 +10,10 @@ import { fileURLToPath } from "url";
 
 import { fetchConfig } from "./fetch/fetchConfig.js";
 import { jsonErrors } from "./middleware/jsonErrors.js";
-import {
-  CONFIG_RETRY_DELAY_MS,
-  loadBackendConfig,
-} from "./modules/loadConfig.js";
-import type { BoundAddress } from "./modules/configReload.js";
-import type { BackendReadableConfig } from "./types/configBoundary.js";
+import type {
+  BackendReadableConfig,
+  BoundAddress,
+} from "./modules/configReload.js";
 import { modulesObject } from "./modules/init.js";
 import { router as engineRoute } from "./routes/engineRoute.js";
 import { router as reloadRoute } from "./routes/reloadRoute.js";
@@ -27,6 +27,8 @@ import {
   statusBody,
 } from "./utils/runtimeVersions.js";
 import { wait } from "./utils/wait.js";
+
+const CONFIG_RETRY_DELAY_MS = 5000;
 
 /*
  * Not import.meta.dirname: that needs Node 20.11.
@@ -93,19 +95,22 @@ async function main() {
    * Keep retrying instead of starting with no config,
    * because this backend runs unattended and nobody can restart it on site.
    */
-  const loaded = await loadBackendConfig(
-    fetchConfig,
-    wait,
-    (attempt, reason) => {
-      console.log(
-        `Config not available (attempt ${attempt}): ${reason} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
-      );
-    }
-  );
-  config = loaded;
+  let answer = await readConfig(fetchConfig);
+  let attempt = 1;
+  while (answer.status === "failed") {
+    console.log(
+      `Config not available (attempt ${attempt}): ${answer.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
+    );
+    await wait(CONFIG_RETRY_DELAY_MS);
+    answer = await readConfig(fetchConfig);
+    attempt++;
+  }
+  const loaded = answer.config;
+  applyConfig(loaded);
 
   const app = express();
-  const port = loaded.backend.port || process.env["PORT"] || 5000;
+  app.set("query parser", "extended");
+  const port = bindingPort(loaded.backend.port, process.env["PORT"], 5000);
 
   // Setup logger - morgan
   if (process.env["NODE_ENV"] === "development") {

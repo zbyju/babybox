@@ -55,6 +55,17 @@ describe("the json error middleware", () => {
       Object.assign(err, { status: 404, expose: false });
       throw err;
     });
+    for (const [name, status] of [
+      ["nan", NaN],
+      ["fractional", 400.5],
+    ] as const) {
+      app.get("/status-" + name, () => {
+        throw Object.assign(new Error("private"), { status });
+      });
+    }
+    app.get("/exposed-object", () => {
+      throw { status: 400, expose: true, message: "private" };
+    });
     app.use(jsonErrors);
 
     server = app.listen(0);
@@ -114,6 +125,21 @@ describe("the json error middleware", () => {
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: "Internal Server Error" });
+  });
+
+  it.each(["nan", "fractional"])(
+    "uses 500 for %s error status",
+    async (name) => {
+      const res = await fetch(url + "/status-" + name);
+      expect(res.status).toBe(500);
+      expect(await res.json()).toEqual({ error: "Internal Server Error" });
+    }
+  );
+
+  it("requires a genuine Error to expose the message", async () => {
+    const res = await fetch(url + "/exposed-object");
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Bad Request" });
   });
 
   it("hides the message when expose is false", async () => {

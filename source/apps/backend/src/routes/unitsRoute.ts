@@ -5,14 +5,7 @@ import {
   fetchSettings,
   updateSettings,
 } from "../fetch/fetchFromUnits.js";
-import type {
-  CommonSettingsResponse,
-  SettingResult,
-} from "../types/request.types.js";
-import {
-  settingsBodySchema,
-  settingsQuerySchema,
-} from "../types/request.types.js";
+import { settingsBodySchema } from "../types/request.types.js";
 import { stringToAction } from "../utils/actions.js";
 
 export const router = express.Router();
@@ -29,13 +22,7 @@ router.get("/actions/:action", async (req, res) => {
 });
 
 router.get("/settings", async (req, res) => {
-  const query = settingsQuerySchema.safeParse(req.query);
-  if (!query.success) {
-    return res.status(400).send({
-      msg: "Unit was specified, but it is wrong. Expected values are: 'engine' or 'thermal'.",
-    });
-  }
-  const response = await fetchSettings(query.data);
+  const response = await fetchSettings(req.query);
 
   return res
     .status(response.status)
@@ -43,18 +30,18 @@ router.get("/settings", async (req, res) => {
 });
 
 router.put("/settings", async (req, res) => {
-  const body = settingsBodySchema.safeParse(req.body);
-  if (!body.success) {
+  const parsed = settingsBodySchema.safeParse(req.body);
+  if (!parsed.success) {
     return res.status(400).send({
       msg: "The body needs to be an array of settings ({index: number, value: number, unit: 'engine' | 'thermal'}).",
     });
   }
 
-  const results: SettingResult[] = await updateSettings(
-    body.data.settings,
-    body.data.options.timeout
+  const results = await updateSettings(
+    parsed.data.settings,
+    parsed.data.timeout
   );
-  const response: CommonSettingsResponse = results.every((r) => r.result)
+  const response = results.every((r) => r.result)
     ? {
         status: 200,
         msg: "All setting changes have been applied.",

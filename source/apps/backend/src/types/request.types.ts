@@ -1,58 +1,41 @@
-import { z } from "zod";
+import { settingSchema, z } from "../boundary.js";
 
-import { defaultFetchTimeout } from "../fetch/constants.js";
-import { Unit } from "./units.types.js";
+export type { Setting, SettingResult } from "../boundary.js";
 
-export const settingSchema = z.object({
-  index: z.number().refine(Number.isInteger),
-  value: z.number().finite(),
-  unit: z.enum(Unit),
-});
+const timerMs = z.number().int().min(1).max(2147483647);
+// Express parses timeout[]=100 as a singleton array. Preserve the legacy
+// numeric conversion for that form while rejecting multi-value timeouts.
+const queryNumber = z.union([
+  z.number(),
+  z.string().transform(Number),
+  z.tuple([z.string()]).transform(([value]) => Number(value)),
+]);
+const timeout = queryNumber.pipe(timerMs).optional().catch(undefined);
 
-export const settingsSchema = z.array(settingSchema);
+export const dataQuerySchema = z.object({ timeout });
 
-// A settings write can make four requests in sequence. Cap each one so they
-// can finish within the unit queue's 60-second deadline.
-const writeTimeout = z
-  .number()
-  .positive()
-  .transform((value) => Math.min(value, 10000))
-  .catch(5000);
-
-export const settingsBodySchema = z.object({
-  settings: settingsSchema,
-  options: z.object({ timeout: writeTimeout }).catch({ timeout: 5000 }),
-});
-
-// Express delivers query values as strings. Preserve the old whole-number
-// bounds so neither Axios nor Node receives a disabled or overflowing timer.
-const queryTimeout = z
-  .union([z.string(), z.number(), z.tuple([z.string()])])
-  .transform(Number)
-  .pipe(z.number().int().min(1).max(2147483647))
-  .catch(defaultFetchTimeout);
-
-export const dataQuerySchema = z.object({ timeout: queryTimeout });
-export const settingsQuerySchema = dataQuerySchema.extend({
+export const settingsQuerySchema = z.object({
   unit: z.enum(["engine", "thermal", "both"]).default("both"),
+  timeout,
 });
 
-export type Setting = z.infer<typeof settingSchema>;
-export type SettingsQuery = z.infer<typeof settingsQuerySchema>;
+export const settingsBodySchema = z
+  .object({
+    settings: z.array(settingSchema),
+    options: z
+      .object({
+        timeout: z.number().finite().positive().optional().catch(undefined),
+      })
+      .optional()
+      .catch(undefined),
+  })
+  .transform(({ settings, options }) => ({
+    settings,
+    timeout: Math.min(options?.timeout ?? 5000, 10000),
+  }));
 
-export interface CommonResponse {
-  msg: string;
-  status: number;
-}
+export type CommonResponse = { status: 200 | 400 | 408 | 500; msg: string };
 
-export interface CommonDataResponse extends CommonResponse {
-  data?: unknown;
-}
-
-export interface CommonSettingsResponse extends CommonResponse {
-  results: SettingResult[];
-}
-
-export interface SettingResult extends Setting {
-  result: boolean;
-}
+export type DataResponse<T> =
+  | { status: 200; msg: string; data: T }
+  | { status: 400 | 408 | 500; msg: string; data?: never };

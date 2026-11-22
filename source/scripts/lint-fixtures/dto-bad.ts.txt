@@ -1,0 +1,26 @@
+declare function isObject(value: unknown): value is Record<string, unknown>;
+type SettingsSendResult = { unit: string; index: number; value: number; result: boolean };
+
+export const isSendResult = (value: unknown): value is SettingsSendResult =>
+  isObject(value) &&
+  (value["unit"] === "engine" || value["unit"] === "thermal") &&
+  typeof value["index"] === "number" &&
+  typeof value["value"] === "number" &&
+  typeof value["result"] === "boolean";
+
+export const readUnitSettings = (
+  body: unknown,
+): { engine: string[]; thermal: string[] } | undefined => {
+  if (!isObject(body)) return undefined;
+  const data = body["data"];
+  if (!isObject(data)) return undefined;
+  const engine = data["engine"];
+  const thermal = data["thermal"];
+  if (typeof engine !== "string" || typeof thermal !== "string") return undefined;
+  return { engine: engine.split("|"), thermal: thermal.split("|") };
+};
+
+export function hasUnits(body: unknown): boolean {
+  return typeof body === "object" && body !== null &&
+    "units" in body && Array.isArray(body.units);
+}

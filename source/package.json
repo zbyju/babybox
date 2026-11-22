@@ -22,6 +22,9 @@
     "start:configer": "node apps/startup/start-app.js configer",
     "start:main": "node apps/startup/start-app.js main",
     "build:schema": "bun --filter @babybox/config-schema build",
+    "lint": "bun run build:schema && bun run lint:apps && bun run lint:fixtures",
+    "lint:apps": "bun --bun oxlint --deny-warnings scripts && bun --filter startup lint && bun --filter @babybox/config-schema lint && bun --filter babybox-panel-backend lint && bun --filter babybox-panel-configer lint && bun --filter babybox-panel lint",
+    "lint:fixtures": "bun scripts/lint-fixtures.js",
     "build": "node apps/startup/run-update.js",
     "echo": "echo test"
   },

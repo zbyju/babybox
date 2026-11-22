@@ -14,13 +14,14 @@ describe("focusPanelPassword", () => {
   it("scrolls the password input into view and focuses it", () => {
     const input = document.createElement("input");
     input.id = PANEL_PASSWORD_INPUT_ID;
-    input.scrollIntoView = vi.fn();
+    const scrollIntoView = vi.fn();
+    input.scrollIntoView = scrollIntoView;
     const focus = vi.spyOn(input, "focus");
     document.body.appendChild(input);
 
     focusPanelPassword(document);
 
-    expect(input.scrollIntoView).toHaveBeenCalledWith({
+    expect(scrollIntoView).toHaveBeenCalledWith({
       behavior: "smooth",
       block: "end",
     });
@@ -34,12 +35,13 @@ describe("focusPanelPassword", () => {
   it("ignores a node with the same id that is not an input", () => {
     const decoy = document.createElement("div");
     decoy.id = PANEL_PASSWORD_INPUT_ID;
-    decoy.scrollIntoView = vi.fn();
+    const scrollIntoView = vi.fn();
+    decoy.scrollIntoView = scrollIntoView;
     document.body.appendChild(decoy);
 
     focusPanelPassword(document);
 
-    expect(decoy.scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });
 

@@ -155,6 +155,7 @@ exit /b 0
 :ensure_bun
 if not exist "%BUN_DIR%" mkdir "%BUN_DIR%"
 call :probe_bun "%BUN_EXE%"
+set "PRIOR_STATUS=!PROBE_STATUS!"
 if not "!PROBE_STATUS!"=="0" goto :ensure_bun_after_match
 call :version_matches "!PROBE_OUT!" "!BUN_VERSION!"
 if errorlevel 1 goto :ensure_bun_after_match
@@ -180,7 +181,7 @@ exit /b 1
 
 :ensure_bun_download
 call :log "Stahuji Bun !BUN_VERSION!"
-set "STAGE=%TEMP%\babybox-bun-!RANDOM!!RANDOM!"
+set "STAGE=%BUN_DIR%\.candidate-!RANDOM!!RANDOM!"
 mkdir "%STAGE%"
 if errorlevel 1 goto :ensure_bun_download_fail
 set "ZIP=!STAGE!\bun-windows-x64.zip"
@@ -202,19 +203,24 @@ set "FOUND="
 for /d %%D in ("!STAGE!\extract\*") do (
   if exist "%%D\bun.exe" set "FOUND=%%D\bun.exe"
 )
-if not defined FOUND goto :ensure_bun_missing_exe
-goto :ensure_bun_found
+if defined FOUND goto :ensure_bun_found
+call :log "Rozbaleni Bun se nezdarilo. V archivu chybi bun."
+call :cleanup_stage
+exit /b 1
 
 :ensure_bun_found
-copy /y "!FOUND!" "!BUN_EXE!" >nul
-if errorlevel 1 goto :ensure_bun_unpack_fail
-call :cleanup_stage
-call :probe_bun "!BUN_EXE!"
+call :probe_bun "!FOUND!"
 call :is_illegal_instruction "!PROBE_STATUS!"
-if not errorlevel 1 goto :ensure_bun_cpu
+if not errorlevel 1 if not "!PRIOR_STATUS!"=="0" (
+  call :cleanup_stage
+  goto :ensure_bun_cpu
+)
 if not "!PROBE_STATUS!"=="0" goto :ensure_bun_bad_version
 call :version_matches "!PROBE_OUT!" "!BUN_VERSION!"
 if errorlevel 1 goto :ensure_bun_bad_version
+move /y "!FOUND!" "!BUN_EXE!" >nul
+if errorlevel 1 goto :ensure_bun_unpack_fail
+call :cleanup_stage
 call :clear_hold
 call :log "Bun !BUN_VERSION! je nainstalovany"
 exit /b 0
@@ -223,10 +229,6 @@ exit /b 0
 set "HAVE=!PROBE_OUT!"
 if "!HAVE!"=="" set "HAVE=chybi"
 call :log "Bun je !HAVE!, chceme !BUN_VERSION!"
-exit /b 1
-
-:ensure_bun_missing_exe
-call :log "Rozbaleni Bun se nezdarilo. V archivu chybi bun."
 call :cleanup_stage
 exit /b 1
 

@@ -70,7 +70,7 @@ describe("runSave", () => {
 
   it("surfaces the fields a 400 named and does not reload", async () => {
     const errors = [{ path: "units.engine.ip", msg: "must be a string" }];
-    const deps = calls({ kind: "fieldValidationFailed", errors });
+    const deps = calls({ kind: "fieldErrors", status: 400, errors });
 
     const result = await runSave(draft(), false, deps);
 
@@ -86,14 +86,14 @@ describe("runSave", () => {
   /* A 500 is a failed write of main.json, not a refusal of the body. */
   it("calls a 500 a failed write and repeats configer's own line", async () => {
     const deps = calls({
-      kind: "serverOrProtocolFailed",
+      kind: "serverError",
       status: 500,
       msg: "cannot write main.json: no space left on device",
     });
 
     const result = await runSave(draft(), false, deps);
 
-    expect(result.outcome).toEqual({ kind: "serverOrProtocolFailed" });
+    expect(result.outcome).toEqual({ kind: "rejected" });
     expect(messages(result.log)).toContain(
       "Configer konfiguraci nezapsal, selhal zápis souboru (HTTP 500). cannot write main.json: no space left on device",
     );
@@ -109,7 +109,9 @@ describe("runSave", () => {
   });
 
   it("carries the fields the backend could not apply", async () => {
-    const unapplied = [{ path: "backend.port", running: 5000, stored: 5050 }];
+    const unapplied = [
+      { path: "backend.port" as const, running: 5000, stored: 5050 },
+    ];
     const deps = calls({ kind: "saved" }, { ok: true, unapplied });
 
     const result = await runSave(draft(), false, deps);

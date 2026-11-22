@@ -9,11 +9,13 @@ vi.mock("@/api/units", () => ({
   getStatus: vi.fn(),
 }));
 
-vi.mock("@/api/http", () => ({
-  requestJson: vi.fn(),
+vi.mock("@/utils/fetchWithTimeout", () => ({
+  fetchWithTimeout: vi.fn(),
 }));
 
-import { requestJson } from "@/api/http";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
+import { useConfigStore } from "@/pinia/configStore";
+import { useVersionsStore } from "@/pinia/versions";
 import {
   getEngineData,
   getStatus,
@@ -139,7 +141,9 @@ describe("AppManager startup retries", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     setActivePinia(createPinia());
-    vi.mocked(requestJson).mockRejectedValue(new Error("configer down"));
+    vi.mocked(fetchWithTimeout)
+      .mockReset()
+      .mockRejectedValue(new Error("configer down"));
     vi.mocked(getStatus).mockRejectedValue(new Error("backend down"));
     manager = new AppManager();
   });
@@ -177,7 +181,9 @@ describe("AppManager startup retries", () => {
   });
 
   it("stops retrying once both answer", async () => {
-    vi.mocked(requestJson).mockRejectedValue(new Error("configer down"));
+    vi.mocked(fetchWithTimeout)
+      .mockReset()
+      .mockRejectedValue(new Error("configer down"));
     vi.mocked(getStatus).mockResolvedValue(true);
 
     await manager.initializeGlobal();
@@ -189,16 +195,45 @@ describe("AppManager startup retries", () => {
     await drain();
     expect(getStatus).toHaveBeenCalledTimes(2);
 
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- the generic request mock serves config for this call
-    vi.mocked(requestJson).mockResolvedValue({
-      data: defaultConfig(),
-    } as never);
-    vi.advanceTimersByTime(10000);
-    await drain();
+    const config = defaultConfig();
+    vi.mocked(fetchWithTimeout).mockResolvedValueOnce(
+      new Response(JSON.stringify(config)),
+    );
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(useConfigStore().initialised).toBe(true);
+    expect(useVersionsStore().initialised).toBe(false);
 
     const settled = vi.mocked(getStatus).mock.calls.length;
     vi.advanceTimersByTime(60000);
     await drain();
     expect(getStatus).toHaveBeenCalledTimes(settled);
+  });
+
+  it("retries an invalid 200 and stores readable legacy values even without version metadata", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const config = defaultConfig();
+    const legacy = {
+      ...config,
+      app: { ...config.app, refreshRequestLimit: null },
+      camera: { ...config.camera, cameraType: "axis" },
+    };
+    vi.mocked(fetchWithTimeout)
+      .mockResolvedValueOnce(new Response("null"))
+      .mockResolvedValueOnce(new Response(JSON.stringify(legacy)))
+      .mockResolvedValueOnce(new Response("{}"));
+    vi.mocked(getStatus).mockResolvedValue(true);
+
+    await manager.initializeGlobal();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useConfigStore().initialised).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    const store = useConfigStore();
+    expect(store.initialised).toBe(true);
+    expect(store.app.refreshRequestLimit).toBeNull();
+    expect(store.camera.cameraType).toBe("axis");
+    expect(useVersionsStore().initialised).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

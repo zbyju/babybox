@@ -10,4 +10,6 @@ export type {
 } from "./schema.js";
 export { parseMainConfig, validateMainConfig } from "./validate.js";
 export type { ConfigError, ParseResult } from "./validate.js";
-export { parseStartupLast, type StartupLast } from "./startupRecord.js";
+
+export * from "./boundaries.js";
+export { reloadResponseSchema } from "./reload.js";

@@ -1,4 +1,5 @@
-import type { MainConfigCameraType } from "@babybox/config-schema";
+import { cameraTypes, type MainConfigCameraType } from "@babybox/config-schema";
+import { z } from "zod";
 
 const AVTECH_SNAPSHOT = "/cgi-bin/guest/Video.cgi?media=JPEG&channel=0/";
 
@@ -17,11 +18,8 @@ const urlPostfixes: Record<MainConfigCameraType, string> = {
  * snapshot url costs one camera; refusing the config costs the whole panel.
  */
 export const getURLPostfix = (type: string): string => {
-  const postfixes: Readonly<Record<string, string>> = urlPostfixes;
-  const postfix = Object.prototype.hasOwnProperty.call(postfixes, type)
-    ? postfixes[type]
-    : undefined;
-  if (postfix !== undefined) return postfix;
+  const parsed = z.enum(cameraTypes).safeParse(type);
+  if (parsed.success) return urlPostfixes[parsed.data];
 
   console.warn(`Unknown camera type "${type}", using the dahua url`);
   return urlPostfixes.dahua;

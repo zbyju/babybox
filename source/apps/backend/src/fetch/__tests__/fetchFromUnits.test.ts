@@ -1,7 +1,3 @@
-import {
-  dataQuerySchema,
-  settingsQuerySchema,
-} from "../../types/request.types.js";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Unit } from "../../types/units.types.js";
@@ -34,10 +30,7 @@ describe("fetchDataCommon ?timeout", () => {
   it.each([["abc"], ["0.5"], ["0"], ["2147483648"]])(
     "should use the default for ?timeout=%s",
     async (timeout) => {
-      await unitApi.fetchDataCommon(
-        Unit.Engine,
-        dataQuerySchema.parse({ timeout }).timeout
-      );
+      await unitApi.fetchDataCommon(Unit.Engine, { timeout });
 
       expect(fetchFromUrl).toHaveBeenCalledWith(
         expect.any(String),
@@ -47,10 +40,7 @@ describe("fetchDataCommon ?timeout", () => {
   );
 
   it("should use the default when there is no ?timeout", async () => {
-    await unitApi.fetchDataCommon(
-      Unit.Engine,
-      dataQuerySchema.parse({}).timeout
-    );
+    await unitApi.fetchDataCommon(Unit.Engine, {});
 
     expect(fetchFromUrl).toHaveBeenCalledWith(
       expect.any(String),
@@ -62,10 +52,7 @@ describe("fetchDataCommon ?timeout", () => {
     ["2000", 2000],
     ["2147483647", 2147483647],
   ])("should use ?timeout=%s as it is", async (timeout, expected) => {
-    await unitApi.fetchDataCommon(
-      Unit.Engine,
-      dataQuerySchema.parse({ timeout }).timeout
-    );
+    await unitApi.fetchDataCommon(Unit.Engine, { timeout });
 
     expect(fetchFromUrl).toHaveBeenCalledWith(expect.any(String), expected);
   });
@@ -94,9 +81,7 @@ describe("fetchSettings ?timeout", () => {
   it.each([["abc"], ["0.5"], ["0"], ["2147483648"]])(
     "should use the default for ?timeout=%s",
     async (timeout) => {
-      await unitApi.fetchSettings(
-        settingsQuerySchema.parse({ unit: "engine", timeout })
-      );
+      await unitApi.fetchSettings({ unit: "engine", timeout });
 
       expect(fetchFromUrl).toHaveBeenCalledWith(
         expect.any(String),
@@ -109,9 +94,7 @@ describe("fetchSettings ?timeout", () => {
     ["2000", 2000],
     ["2147483647", 2147483647],
   ])("should use ?timeout=%s as a number of ms", async (timeout, expected) => {
-    await unitApi.fetchSettings(
-      settingsQuerySchema.parse({ unit: "engine", timeout })
-    );
+    await unitApi.fetchSettings({ unit: "engine", timeout });
 
     expect(fetchFromUrl).toHaveBeenCalledWith(expect.any(String), expected);
   });

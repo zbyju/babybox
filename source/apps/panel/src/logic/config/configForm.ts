@@ -63,7 +63,9 @@ function writePath(target: Fields, path: string, value: unknown): void {
 }
 
 function toInput(value: unknown): string {
-  return value === undefined || value === null ? "" : String(value);
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return "";
 }
 
 /*

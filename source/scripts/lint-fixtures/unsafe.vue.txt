@@ -1,0 +1,17 @@
+<template>{{ value.label }} {{ label({ kind: "saved" }) }}</template>
+
+<script setup lang="ts">
+const value: { label: string } = JSON.parse('{"label":"legacy"}');
+
+type State = { kind: "saved" } | { kind: "failed"; message: string };
+function label(state: State): string {
+  switch (state.kind) {
+    case "saved":
+      return "saved";
+    default: {
+      const exhaustive: never = state;
+      return exhaustive;
+    }
+  }
+}
+</script>

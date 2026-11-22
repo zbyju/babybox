@@ -1,8 +1,8 @@
-const crypto = require("crypto");
 // One startup.last.json record per step end. Node 12 syntax. No packages.
 // message is the step output, collapsed, without a node_modules stack.
 
 const childProcess = require("child_process");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -109,31 +109,33 @@ function buildRecord(step, ok, message, date, versions) {
   };
 }
 
-function writeRecord(logPath, record, fileSystem) {
-  const io = fileSystem || fs;
+function writeRecord(logPath, record) {
   const filePath = path.join(path.dirname(logPath), "startup.last.json");
-  let tempPath = null;
+  let ownedTemp;
   try {
-    io.mkdirSync(path.dirname(filePath), { recursive: true });
-    const suffix = crypto.randomBytes(12).toString("hex");
-    const candidate = filePath + "." + suffix + ".tmp";
-    // Open exclusively so cleanup can only remove a file created by this writer.
-    const fd = io.openSync(candidate, "wx");
-    tempPath = candidate;
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    const tempPath =
+      filePath +
+      "." +
+      process.pid +
+      "." +
+      crypto.randomBytes(8).toString("hex");
+    const fd = fs.openSync(tempPath, "wx");
+    ownedTemp = tempPath;
     try {
-      io.writeFileSync(fd, JSON.stringify(record) + "\n");
-      io.fsyncSync(fd);
+      fs.writeFileSync(fd, JSON.stringify(record) + "\n");
     } finally {
-      io.closeSync(fd);
+      fs.closeSync(fd);
     }
-    io.renameSync(tempPath, filePath);
+    fs.renameSync(tempPath, filePath);
     return true;
-  } catch (err) {
-    if (tempPath !== null) {
+  } catch {
+    // A status write must not stop the panel.
+    if (ownedTemp) {
       try {
-        io.unlinkSync(tempPath);
+        fs.unlinkSync(ownedTemp);
       } catch {
-        // A write failure must not stop the panel.
+        // No other writer owns this path.
       }
     }
     return false;

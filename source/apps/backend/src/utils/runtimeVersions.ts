@@ -1,10 +1,9 @@
+import { parseStartupLast, type StartupLast } from "../boundary.js";
+export { parseStartupLast };
+export type { StartupLast };
 import { spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-
-import { parseStartupLast, type StartupLast } from "./startupRecord.js";
-
-export { parseStartupLast, type StartupLast };
 
 const VERSION_TIMEOUT_MS = 5000;
 

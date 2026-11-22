@@ -207,7 +207,7 @@ function installSpawnWithBun(onBun) {
   const extract = installSpawn();
   return (cmd, args, opts) => {
     if (isBunPath(cmd)) {
-      return onBun();
+      return onBun(cmd);
     }
     return extract(cmd, args, opts);
   };
@@ -717,15 +717,15 @@ describe("download", () => {
     );
   });
 
-  it("exits non-zero when the probe after install returns another version", async () => {
+  it("keeps a working old Bun when the candidate reports a wrong version", async () => {
     const body = Buffer.from("wrong-version-zip");
     const sha = sha256(body);
     await withFixture(
       {
-        spawnSync: installSpawnWithBun(() => ({
+        spawnSync: installSpawnWithBun((cmd) => ({
           status: 0,
           signal: null,
-          stdout: "0.0.1\n",
+          stdout: cmd.includes(".candidate-") ? "0.0.1\n" : "1.0.0\n",
           stderr: "",
         })),
         httpsGet(_url, callback) {
@@ -733,9 +733,14 @@ describe("download", () => {
         },
       },
       async (fx) => {
+        const oldBun = path.join(fx.home, ".bun", "bin", "bun");
+        fs.mkdirSync(path.dirname(oldBun), { recursive: true });
+        fs.writeFileSync(oldBun, "old-bun");
         const versionsPath = writeVersions(fx.tmpDir, sha);
         expect(await fx.run({ versionsPath })).toBe(1);
         expect(fx.urls).toHaveLength(1);
+        expect(fs.readFileSync(oldBun, "utf8")).toBe("old-bun");
+        expect(fs.readdirSync(path.dirname(oldBun))).toEqual(["bun"]);
         expect(fx.stdout.text()).toContain("Bun je 0.0.1, chceme 1.4.2.");
       }
     );

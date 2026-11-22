@@ -1505,7 +1505,7 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 | Which `@types/node` in the backend and configer? | 18.x, no `@types/bun`. Pending owner confirmation. | The new `dist` can start on the Node 18 fallback. The compiler must reject a Node 20+ API. |
 | How does the ESM backend find its folder? | `path.dirname(fileURLToPath(import.meta.url))` | `import.meta.dirname` needs Node 20.11. |
 | Which vitest runs the backend tests? | 0.9.4, the version configer and the panel use | vitest 5 needs vite 6.4 or newer and fails on Node 18. P5 moves every unit to 5. |
-| How is a cast tracked? | `// oxlint-disable-next-line typescript/consistent-type-assertions -- <reason>` on the line above | One remains in configer boot merge. Backend boot config now parses the five fields it reads with its local Zod schema. `as const` is not a cast. |
+| How is a cast tracked? | `// oxlint-disable-next-line typescript/consistent-type-assertions -- <reason>` on the line above | Two in this PR: configer boot merge, backend boot config. `as const` is not a cast. |
 | Are test files type-checked? | Not yet | They stay out of every tsconfig, as in configer. Test tsconfigs come in P5. The panel is the exception, see below. |
 | What does the panel build check? | `src`, with `vue-tsc --noEmit -p tsconfig.app.json` | 99 files. The CI step "Panel typecheck" checks the tests and `vite.config.ts`. The box does not. |
 | Are the panel tests type-checked? | Yes, in CI | The panel already had `tsconfig.vitest.json`. `@vue/reactivity` 3.2.37 is a devDependency for the chai bail type. It moves with vue. |

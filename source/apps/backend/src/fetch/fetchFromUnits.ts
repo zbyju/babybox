@@ -1,24 +1,34 @@
 import type {
-  CommonDataResponse,
+  DataResponse,
   CommonResponse,
   Setting,
   SettingResult,
-  SettingsQuery,
 } from "../types/request.types.js";
-
+import { z } from "../boundary.js";
+import {
+  dataQuerySchema,
+  settingsQuerySchema,
+} from "../types/request.types.js";
 import type { Action } from "../types/units.types.js";
 import { Unit } from "../types/units.types.js";
 import { actionToUnit, actionToUrl, unitToIp } from "../utils/url.js";
 import { wait } from "../utils/wait.js";
-
 import { defaultFetchTimeout } from "./constants.js";
 import { fetchFromUrl } from "./fetch.js";
 import { onUnit, sharedOnUnit } from "./unitGate.js";
 
+const deviceData = z.string().min(1);
+const settingsData = z.string();
+const deviceNumber = z.number().finite();
+
 export async function fetchDataCommon(
   unit: Unit,
-  timeout: number
-): Promise<CommonDataResponse> {
+  query: unknown
+): Promise<DataResponse<string>> {
+  const parsed = dataQuerySchema.safeParse(query);
+  const timeout =
+    (parsed.success ? parsed.data.timeout : undefined) ?? defaultFetchTimeout();
+
   const url = `http://${unitToIp(unit)}/get_ram[0]?rn=60`;
 
   try {
@@ -28,7 +38,7 @@ export async function fetchDataCommon(
     return {
       status: 200,
       msg: "Data fetched successfully.",
-      data: data.data,
+      data: deviceData.parse(data.data),
     };
   } catch {
     return {
@@ -38,10 +48,18 @@ export async function fetchDataCommon(
   }
 }
 
-export async function fetchSettings({
-  unit,
-  timeout,
-}: SettingsQuery): Promise<CommonDataResponse> {
+export async function fetchSettings(
+  query: unknown
+): Promise<DataResponse<{ engine: string | null; thermal: string | null }>> {
+  const parsed = settingsQuerySchema.safeParse(query);
+  if (!parsed.success) {
+    return {
+      status: 400,
+      msg: "Unit was specified, but it is wrong. Expected values are: 'engine' or 'thermal'.",
+    };
+  }
+  const { unit, timeout = defaultFetchTimeout() } = parsed.data;
+
   const timestamp = new Date().getTime();
   const settingsUrl = (u: Unit) =>
     `http://${unitToIp(u)}/get_sys[100]?rn=16&${timestamp}`;
@@ -54,7 +72,7 @@ export async function fetchSettings({
   const readSettings = (u: Unit) =>
     sharedOnUnit(u, `settings:${timeout}`, () =>
       fetchFromUrl(settingsUrl(u), timeout)
-    );
+    ).then(({ data }) => settingsData.parse(data));
 
   const enginePromise =
     unit === "engine" || unit === "both" ? readSettings(Unit.Engine) : null;
@@ -96,13 +114,13 @@ export async function fetchSettings({
     status: 200,
     msg: "Successfully fetched settings.",
     data: {
-      engine: engineResult.value === null ? null : engineResult.value.data,
-      thermal: thermalResult.value === null ? null : thermalResult.value.data,
+      engine: engineResult.value,
+      thermal: thermalResult.value,
     },
   };
 }
 
-export async function fetchAction(action: Action): Promise<CommonDataResponse> {
+export async function fetchAction(action: Action): Promise<CommonResponse> {
   const timeout = defaultFetchTimeout();
 
   const url = actionToUrl(action);
@@ -117,11 +135,10 @@ export async function fetchAction(action: Action): Promise<CommonDataResponse> {
 
   try {
     // Operator actions jump the queue so they never wait behind polling.
-    const data = await onUnit(unit, () => fetchFromUrl(url, timeout), true);
+    await onUnit(unit, () => fetchFromUrl(url, timeout), true);
     return {
       status: 200,
       msg: "Action sent successfully.",
-      data: data.data,
     };
   } catch {
     return {
@@ -220,7 +237,7 @@ export async function updateSettings(
 async function isReady(url: string, timeout = 5000) {
   try {
     const res = await fetchFromUrl(url, timeout);
-    return res.data === 0;
+    return z.literal(0).safeParse(res.data).success;
   } catch {
     return false;
   }
@@ -244,13 +261,12 @@ async function updateSetting(
     const valueResult = await fetchFromUrl(urlValue, timeout);
     const indexResult = await fetchFromUrl(urlIndex, timeout);
     const verification = await fetchFromUrl(urlVerification, timeout);
-    if (typeof verification.data !== "string") return false;
-    const verificationArray = verification.data.split("|");
+    const verificationArray = settingsData.parse(verification.data).split("|");
     return (
       isStatusOk(indexResult.status) &&
       isStatusOk(valueResult.status) &&
-      indexResult.data === index &&
-      valueResult.data === value &&
+      deviceNumber.parse(indexResult.data) === index &&
+      deviceNumber.parse(valueResult.data) === value &&
       verificationArray[index - 100] === value.toString()
     );
   } catch {
