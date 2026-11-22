@@ -1,0 +1,335 @@
+import { defaultConfig, parseMainConfig } from "@babybox/config-schema";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createApp, nextTick } from "vue";
+
+import { getConfig } from "@/api/config";
+import { reloadBackendConfig } from "@/api/reload";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
+
+import EmailView from "../EmailView.vue";
+
+vi.mock("@/api/base", () => ({
+  backendApi: () => ({ baseUrl: "http://localhost:5000/api/v1" }),
+  CONFIGER_API_URL: "http://localhost:5001/api/v1/config",
+  CONFIGER_TIMEOUT: 10000,
+}));
+vi.mock("@/api/config", () => ({ getConfig: vi.fn() }));
+vi.mock("@/api/reload", () => ({ reloadBackendConfig: vi.fn() }));
+vi.mock("@/utils/fetchWithTimeout", () => ({ fetchWithTimeout: vi.fn() }));
+
+describe("email maintenance page", () => {
+  let element: HTMLDivElement;
+  let app: ReturnType<typeof createApp>;
+  const state = {
+    listener: "SMTP naslouchá",
+    error: null,
+    historyError: null,
+    configured: true,
+    runtimeSupported: true,
+    bytes: 1,
+    queue: [
+      {
+        id: "one",
+        subject: "Alarm",
+        receivedAt: 1,
+        attempts: 0,
+        active: false,
+        stopped: false,
+        paused: false,
+      },
+    ],
+    history: [
+      {
+        id: "one",
+        receivedAt: 1,
+        subject: "<img src=x onerror=alert(1)>",
+        source: "engine",
+        sender: "unit@example.com",
+        bytes: 1,
+        status: "pending",
+        contentAvailable: true,
+        requestedRecipients: [],
+        recipients: {},
+        attachments: [],
+        text: "<script>bad()</script>",
+        headers: "Subject: Alarm",
+        events: [],
+      },
+    ],
+  };
+  async function flush() {
+    for (let i = 0; i < 12; i++) await Promise.resolve();
+    await nextTick();
+  }
+  async function openDetail(detail: "queue" | "history") {
+    element
+      .querySelector<HTMLButtonElement>(`[data-detail="${detail}"]`)
+      ?.click();
+    await flush();
+  }
+
+  async function returnToOverview() {
+    element.querySelector<HTMLButtonElement>(".detail-toolbar button")?.click();
+    await flush();
+  }
+
+  beforeEach(async () => {
+    vi.mocked(getConfig).mockResolvedValue(parseMainConfig(defaultConfig()));
+    vi.mocked(reloadBackendConfig).mockResolvedValue({
+      ok: true,
+      unapplied: [],
+    });
+    vi.mocked(fetchWithTimeout).mockImplementation(
+      async (_url, options) =>
+        new Response(
+          JSON.stringify(
+            options?.method === "POST" ? { changed: 1, msg: "Hotovo" } : state,
+          ),
+        ),
+    );
+    element = document.createElement("div");
+    document.body.appendChild(element);
+    app = createApp(EmailView);
+    app.mount(element);
+    await flush();
+  });
+  afterEach(() => {
+    app.unmount();
+    element.remove();
+    vi.clearAllMocks();
+    vi.useRealTimers();
+  });
+
+  it("escapes message content and masks the SMTP password", async () => {
+    await openDetail("history");
+    expect(element.querySelector("script")).toBeNull();
+    expect(element.querySelector("img")).toBeNull();
+    expect(element.textContent).toContain("<script>bad()</script>");
+    await returnToOverview();
+    expect(element.querySelector('input[type="password"]')).toBeTruthy();
+  });
+
+  it("saves only email settings so unrelated device configuration is not overwritten", async () => {
+    element
+      .querySelector("form")
+      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+    const call = vi
+      .mocked(fetchWithTimeout)
+      .mock.calls.find(([, options]) => options?.method === "PATCH");
+    const body = call?.[1]?.body;
+    const patch: unknown =
+      typeof body === "string" ? JSON.parse(body) : undefined;
+    expect(patch).toEqual({
+      email: defaultConfig().email,
+    });
+    expect(reloadBackendConfig).toHaveBeenCalledOnce();
+  });
+
+  it("shows routing and summary counts first, then gives detail rows their own view", async () => {
+    expect(element.querySelector(".routing-card h2")?.textContent).toContain(
+      "Jak se odesílají e-maily?",
+    );
+    expect(
+      element.querySelector(".routing-card fieldset")?.closest("details"),
+    ).toBeNull();
+    const cards = element.querySelectorAll(".overview-card");
+    expect(cards).toHaveLength(2);
+    const form = element.querySelector(".smtp-setup");
+    expect(form?.nextElementSibling).toBe(
+      element.querySelector(".overview-cards"),
+    );
+    expect(cards[0]?.textContent).toContain("Selhalo");
+    expect(cards[1]?.querySelector(".sources")).not.toBeNull();
+    expect(cards[0]?.querySelector(".overview-total strong")?.textContent).toBe(
+      "1",
+    );
+    expect(cards[1]?.querySelector(".overview-total strong")?.textContent).toBe(
+      "1",
+    );
+    expect(element.querySelector(".queue-row")).toBeNull();
+    await openDetail("queue");
+    expect(document.activeElement?.textContent).toContain("Fronta a opakování");
+    expect(element.querySelector(".overview-cards")).toBeNull();
+    expect(element.querySelector(".queue-row")).not.toBeNull();
+    expect(element.querySelector(".routing-card")).toBeNull();
+    expect(element.querySelector(".smtp-setup")).toBeNull();
+    await returnToOverview();
+    expect(document.activeElement).toBe(
+      element.querySelector('[data-detail="queue"]'),
+    );
+  });
+
+  it("shows a single log row with its result and keeps diagnostics in its details", async () => {
+    await openDetail("history");
+    expect(element.querySelector(".routing-card")).toBeNull();
+    const rows = element.querySelectorAll(".history-row");
+    expect(rows).toHaveLength(1);
+    const row = rows[0];
+    expect(row?.querySelector("summary")?.textContent).toContain(
+      "Rozpracováno",
+    );
+    expect(row?.querySelector("summary")?.textContent).not.toContain(
+      "unit@example.com",
+    );
+    expect(row?.querySelector(".record-details")?.textContent).toContain(
+      "unit@example.com",
+    );
+    expect(row?.querySelector(".record-details")?.textContent).toContain(
+      "Události zprávy",
+    );
+  });
+
+  it("hides panel-only tools when devices send directly without deleting mail", async () => {
+    const routing = element.querySelector<HTMLInputElement>(
+      '[name="email-routing"][value="direct"]',
+    );
+    routing?.click();
+    await flush();
+    expect(element.querySelector('input[type="password"]')).toBeNull();
+    expect(element.querySelector(".overview-cards")).toBeNull();
+
+    element.querySelector<HTMLButtonElement>(".routing-card button")?.click();
+    await flush();
+    const call = vi
+      .mocked(fetchWithTimeout)
+      .mock.calls.find(([, options]) => options?.method === "PATCH");
+    const body = call?.[1]?.body;
+    const patch: unknown =
+      typeof body === "string" ? JSON.parse(body) : undefined;
+    expect(patch).toEqual({
+      email: { ...defaultConfig().email, listener: "disabled" },
+    });
+    expect(element.querySelector('input[type="email"]')).toBeNull();
+    expect(element.querySelector(".history-row")).toBeNull();
+    expect(element.querySelector(".queue-row")).toBeNull();
+    expect(element.querySelector(".overview-cards")).toBeNull();
+    const posts = vi
+      .mocked(fetchWithTimeout)
+      .mock.calls.filter(([, options]) => options?.method === "POST");
+    expect(posts).toHaveLength(0);
+  });
+
+  it("shows panel recipient fields only when the panel selects recipients", async () => {
+    expect(element.textContent).not.toContain("Adresáti jednotek");
+    expect(element.querySelector('input[type="password"]')).not.toBeNull();
+    const routing = element.querySelector<HTMLInputElement>(
+      '[name="email-routing"][value="panel"]',
+    );
+    routing?.click();
+    await flush();
+    expect(element.textContent).toContain("Adresáti jednotek");
+    expect(element.textContent).toContain("Adresáti kamery");
+  });
+
+  it("manages unit and camera addresses separately and saves both lists in the existing format", async () => {
+    const config = defaultConfig();
+    if (!config.email) throw new Error("Expected email defaults");
+    config.email.mode = "panel";
+    config.email.unitRecipients = "first@example.test; second@example.test";
+    config.email.cameraRecipients = "camera@example.test";
+    vi.mocked(getConfig).mockResolvedValue(parseMainConfig(config));
+    app.unmount();
+    app = createApp(EmailView);
+    app.mount(element);
+    await flush();
+
+    const [units, camera] = element.querySelectorAll(".recipient-list");
+    expect(units?.textContent).toContain("second@example.test");
+    expect(camera?.textContent).toContain("camera@example.test");
+    const click = (group: Element | undefined, label: string) =>
+      group
+        ?.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)
+        ?.click();
+    const enterAddress = (group: Element | undefined, address: string) => {
+      const input = group?.querySelector("input");
+      if (!input) throw new Error("Expected recipient editor");
+      input.value = address;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    };
+    const save = element.querySelector<HTMLButtonElement>(
+      ".smtp-setup button[type=submit]",
+    );
+    click(units, "Upravit adresu first@example.test");
+    await flush();
+    expect(save?.disabled).toBe(true);
+    enterAddress(units, "second@example.test");
+    await flush();
+    expect(units?.querySelector('[role="alert"]')?.textContent).toContain(
+      "už je",
+    );
+    expect(save?.disabled).toBe(true);
+    enterAddress(units, "updated@example.test");
+    await flush();
+    expect(units?.textContent).toContain("updated@example.test");
+    expect(units?.textContent).not.toContain("first@example.test");
+
+    click(camera, "Přidat adresu · Adresáti kamery");
+    await flush();
+    enterAddress(camera, "invalid");
+    await flush();
+    expect(camera?.querySelector('[role="alert"]')).not.toBeNull();
+    enterAddress(camera, "new-camera@example.test");
+    await flush();
+    click(camera, "Odebrat adresu camera@example.test");
+    await flush();
+
+    expect(
+      vi
+        .mocked(fetchWithTimeout)
+        .mock.calls.some(([, options]) => options?.method === "PATCH"),
+    ).toBe(false);
+    expect(save?.disabled).toBe(false);
+    save?.click();
+    await flush();
+    const body = vi
+      .mocked(fetchWithTimeout)
+      .mock.calls.find(([, options]) => options?.method === "PATCH")?.[1]?.body;
+    const patch: unknown =
+      typeof body === "string" ? JSON.parse(body) : undefined;
+    expect(patch).toMatchObject({
+      email: {
+        unitRecipients: "updated@example.test,second@example.test",
+        cameraRecipients: "new-camera@example.test",
+      },
+    });
+  });
+
+  it("requires an inline confirmation before deleting and never opens a blocking dialog", async () => {
+    await openDetail("queue");
+    const confirm = vi.spyOn(window, "confirm");
+    const button = Array.from(element.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Vyprázdnit frontu"),
+    );
+    expect(button).toBeDefined();
+    button?.click();
+    await flush();
+    expect(
+      vi
+        .mocked(fetchWithTimeout)
+        .mock.calls.some(([, options]) => options?.method === "POST"),
+    ).toBe(false);
+    const confirmButton = Array.from(element.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Potvrdit odstranění"),
+    );
+    expect(confirmButton).toBeDefined();
+    confirmButton?.click();
+    await flush();
+    const call = vi
+      .mocked(fetchWithTimeout)
+      .mock.calls.find(([url]) => String(url).endsWith("/email/clear"));
+    const body = call?.[1]?.body;
+    const action: unknown =
+      typeof body === "string" ? JSON.parse(body) : undefined;
+    expect(action).toMatchObject({ confirmed: true });
+    expect(confirm).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+});

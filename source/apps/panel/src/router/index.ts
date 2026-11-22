@@ -17,7 +17,12 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config",
     name: "Config",
-    component: () => import("../views/ConfigView.vue"),
+    redirect: { name: "Settings", query: { tab: "panel" } },
+  },
+  {
+    path: "/email",
+    name: "Email",
+    redirect: { name: "Settings", query: { tab: "email" } },
   },
   {
     path: "/data",

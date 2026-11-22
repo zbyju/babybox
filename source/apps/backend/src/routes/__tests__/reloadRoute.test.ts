@@ -99,6 +99,7 @@ describe("POST /reload", () => {
     expect(response.data).toEqual({ msg: "Ok", unapplied: [] });
     expect(applyConfig).toHaveBeenCalledWith({
       backend: { port: config.backend.port, url: "/api/v1" },
+      camera: { ip: config.camera.ip },
       pc: { os: { status: "supported", value: "windows" } },
       units: {
         engine: { ip: config.units.engine.ip },
@@ -144,6 +145,7 @@ describe("POST /reload", () => {
     });
     expect(applyConfig).toHaveBeenCalledWith({
       backend: { port: config.backend.port, url: "/api/v1" },
+      camera: { ip: config.camera.ip },
       pc: { os: { status: "supported", value: "windows" } },
       units: {
         engine: { ip: config.units.engine.ip },

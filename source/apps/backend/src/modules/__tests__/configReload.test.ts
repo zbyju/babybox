@@ -51,6 +51,21 @@ function answerWithNothing(): () => Promise<ConfigAnswer> {
 }
 
 describe("accepts", () => {
+  it("retains relay settings and the camera address without making email required", async () => {
+    const email = { listener: "disabled", mode: "panel" };
+    const config = { ...storedConfig(), email };
+    expect(await reloadConfig(answerWith(config), bound)).toMatchObject({
+      status: "reloaded",
+      config: { email, camera: { ip: config.camera.ip } },
+    });
+    expect(
+      await reloadConfig(
+        answerWith({ ...config, email: "invalid", camera: null }),
+        bound
+      )
+    ).toMatchObject({ status: "reloaded", config: { email: "invalid" } });
+  });
+
   it("accepts a config that has the five fields the backend reads", () => {
     expect(accepts(storedConfig())).toBe(true);
   });

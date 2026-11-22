@@ -1,4 +1,4 @@
-import { bindingPort } from "./boundary.js";
+import { bindingPort, z } from "./boundary.js";
 import { readConfig } from "./fetch/readConfig.js";
 import cors from "cors";
 import * as dotenv from "dotenv";
@@ -8,6 +8,8 @@ import open from "open";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
+import { EmailRelay } from "./email/relay.js";
+import { object } from "./email/settings.js";
 import { fetchConfig } from "./fetch/fetchConfig.js";
 import { jsonErrors } from "./middleware/jsonErrors.js";
 import type {
@@ -29,6 +31,7 @@ import {
 import { wait } from "./utils/wait.js";
 
 const CONFIG_RETRY_DELAY_MS = 5000;
+const emailIds = z.array(z.string()).max(100);
 
 /*
  * Not import.meta.dirname: that needs Node 20.11.
@@ -149,6 +152,53 @@ async function main() {
   app.use(prefix + "/restart", restartRoute);
   app.use(prefix + "/reload", reloadRoute);
 
+  const email = new EmailRelay(() => config);
+  app.get(prefix + "/email", (_req, res) => res.send(email.status()));
+  app.post(prefix + "/email/:action", async (req, res) => {
+    try {
+      const action = req.params["action"];
+      if (typeof action !== "string") {
+        res.sendStatus(404);
+        return;
+      }
+      const body: unknown = req.body;
+      const fields = object(body) ? body : {};
+      if (action === "test") {
+        const recipient = fields["recipient"];
+        const id = await email.test(
+          typeof recipient === "string" ? recipient : ""
+        );
+        res.send({
+          id,
+          msg: "Test zařazen do fronty. Sledujte výsledek v historii.",
+        });
+        return;
+      }
+      if (action !== "retry" && action !== "delete" && action !== "clear") {
+        res.status(404).send({ msg: "Neznámá akce." });
+        return;
+      }
+      if (action !== "retry" && fields["confirmed"] !== true) {
+        res.status(400).send({ msg: "Odstranění vyžaduje potvrzení." });
+        return;
+      }
+      const ids = emailIds.safeParse(action === "clear" ? [] : fields["ids"]);
+      if (!ids.success) {
+        res.status(400).send({ msg: "Neplatný výběr zpráv." });
+        return;
+      }
+      const changed = await email.action(action, ids.data);
+      res.send({
+        changed,
+        msg: `Změněno zpráv: ${changed}. Aktivní odesílání se dokončí.`,
+      });
+    } catch {
+      res.status(400).send({
+        msg: "Akci nelze provést. Zkontrolujte nastavení e-mailu a stav služby.",
+      });
+    }
+  });
+
   // Serve Frontend app if running in production
   if (process.env["NODE_ENV"] === "production") {
     app.use(express.static(PUBLIC_DIR, { setHeaders: setPanelCacheHeaders }));
@@ -197,6 +247,12 @@ async function main() {
       port
     );
   });
+  // Email initialization is deliberately outside the monitoring startup path.
+  void email
+    .start()
+    .catch(() =>
+      console.error("E-mailovou službu nelze spustit. Sledování pokračuje.")
+    );
 }
 
 void main();

@@ -1,5 +1,6 @@
 <template>
   <input
+    class="base-input"
     :type="type"
     :placeholder="props.placeholder"
     :pattern="props.pattern"
@@ -49,13 +50,7 @@
 
 <style lang="stylus">
   input
-    background-color color-bg-black
-    border 1px solid color-border-secondary
-    border-radius 5px
-    padding 5px 4px
-    color color-text-white
-    flex-grow 1
-    font-size 1.1em
+    panel-field()
 
   input.border-accent
     border 1px solid color-border-accent
@@ -65,11 +60,4 @@
     border 1px solid color-border-warning
   input.border-error
     border 1px solid color-border-error
-
-  input:focus
-    border 1px solid color-border-secondary
-
-  input:disabled
-    color color-text-secondary
-    cursor not-allowed
 </style>

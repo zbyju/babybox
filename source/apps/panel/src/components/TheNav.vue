@@ -64,12 +64,6 @@
       secured: true,
     },
     {
-      link: "Config",
-      label: "Konfigurace",
-      external: false,
-      secured: true,
-    },
-    {
       link: `http://${units.value.engine.ip}/`,
       label: "SDS Motory",
       external: true,

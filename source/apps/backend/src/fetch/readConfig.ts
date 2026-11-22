@@ -17,6 +17,9 @@ export const backendReadableConfigSchema = z.object({
   }),
   pc: z.object({ os: legacyOs }),
   units: z.object({ engine: unit, thermal: unit }),
+  // Malformed relay settings must not prevent device monitoring from starting.
+  email: z.unknown().optional(),
+  camera: unit.optional().catch(undefined),
 });
 
 export type BackendReadableConfig = z.infer<typeof backendReadableConfigSchema>;

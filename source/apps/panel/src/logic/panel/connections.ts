@@ -1,3 +1,6 @@
+import type { UnitsConfig } from "@/types/panel/config.types";
+import type { Connection } from "@/types/panel/connection.types";
+
 // TODO: Remove this file - move to connection store
 
 export enum ConnectionResult {
@@ -65,4 +68,14 @@ export class ConnectionTracker {
   getQuality(): number {
     return this.calculateQuality(this.requests, this.successes);
   }
+}
+
+/** Apply the configured alarm thresholds to the combined unit downtime. */
+export function connectionAlert(connection: Connection, units: UnitsConfig) {
+  const downtime =
+    connection.engineUnit.failStreakMs + connection.thermalUnit.failStreakMs;
+  const interval = 2 * (units.requestDelay || 2000);
+  if (downtime > (units.errorThreshold || 25) * interval) return "error";
+  if (downtime > (units.warningThreshold || 5) * interval) return "warning";
+  return undefined;
 }

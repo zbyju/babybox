@@ -5,8 +5,7 @@ import type { PanelState } from "@/types/panel/main.types";
 /*
   Howler fetches and decodes the file when the Howl is built, so building one per
   playback delays every alert by a fetch plus a decode.
-  The cache is module level, not per player, because MainView is remounted every
-  time the user navigates back to "/".
+  The module-level cache preloads the sounds used by the panel.
 */
 const howls = new Map<string, Howl>();
 

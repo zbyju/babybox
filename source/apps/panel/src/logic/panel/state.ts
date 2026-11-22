@@ -6,6 +6,8 @@ import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
 import { daysToString } from "@/utils/panel/dataDisplay";
 
+import { connectionAlert } from "./connections";
+
 export const getNewState = (
   engineUnit: Maybe<EngineUnit>,
   thermalUnit: Maybe<ThermalUnit>,
@@ -13,10 +15,6 @@ export const getNewState = (
   unitsConfig: UnitsConfig,
 ): PanelState => {
   let result = getDefaultPanelState();
-
-  const warningThreshold = unitsConfig.warningThreshold || 5;
-  const errorThreshold = unitsConfig.errorThreshold || 25;
-  const requestDelay = unitsConfig.requestDelay || 2000;
 
   // X dni neprovedena zkouska
   const inspection = engineUnit?.data.misc.inspectionNotDoneForDays;
@@ -184,10 +182,9 @@ export const getNewState = (
    * the alarm out by several times. The * 2 keeps the old shape, where a single
    * dead unit takes twice as long to alarm as both dead together.
    */
-  const downtime: number =
-    connection.engineUnit.failStreakMs + connection.thermalUnit.failStreakMs;
+  const alert = connectionAlert(connection, unitsConfig);
 
-  if (downtime > warningThreshold * 2 * requestDelay) {
+  if (alert === "warning") {
     result = {
       active: false,
       message: {
@@ -196,7 +193,7 @@ export const getNewState = (
       },
     };
   }
-  if (downtime > errorThreshold * 2 * requestDelay) {
+  if (alert === "error") {
     result = {
       active: false,
       message: {

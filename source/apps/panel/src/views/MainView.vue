@@ -11,14 +11,12 @@
 
 <script lang="ts" setup>
   import { storeToRefs } from "pinia";
-  import { computed, onBeforeMount, onBeforeUnmount, watch } from "vue";
+  import { computed } from "vue";
 
   import TheContent from "@/components/panel/containers/TheContent.vue";
   import TheHeader from "@/components/panel/containers/TheHeader.vue";
   import HighlightMessage from "@/components/panel/elements/HighlightMessage.vue";
   import TheNav from "@/components/TheNav.vue";
-  import { useSounds } from "@/composables/useSounds";
-  import { AppManager } from "@/logic/panel/panelLoop";
   import { usePanelStateStore } from "@/pinia/panelStateStore";
   import type { PanelState } from "@/types/panel/main.types";
 
@@ -30,18 +28,6 @@
     message: message.value,
     active: active.value,
   }));
-  // Sounds
-  const soundPlayer = useSounds();
-  watch(panelState, (newValue, prevValue) =>
-    soundPlayer.updateSound(newValue, prevValue),
-  );
-  // App loop
-  const appManager = new AppManager();
-  onBeforeMount(() => appManager.startPanelLoop());
-  onBeforeUnmount(() => {
-    appManager.stopPanelLoop();
-    soundPlayer.stopSound();
-  });
 </script>
 
 <style lang="stylus">

@@ -6,10 +6,15 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, onBeforeMount, onUnmounted } from "vue";
+  import { computed, onBeforeMount, onUnmounted, watch } from "vue";
   import { useRoute } from "vue-router";
 
+  import { useSounds } from "@/composables/useSounds";
   import { AppManager } from "@/logic/panel/panelLoop";
+  import { useAppStateStore } from "@/pinia/appStateStore";
+  import { usePanelStateStore } from "@/pinia/panelStateStore";
+  import { AppState as StartupState } from "@/types/app/appState.types";
+  import type { PanelState } from "@/types/panel/main.types";
 
   import { refreshRestartCooldown } from "./api/restart";
   import AppState from "./components/AppState.vue";
@@ -19,7 +24,35 @@
   /* The panel is one screen. Settings and config are long pages. */
   const showFloatingActions = computed(() => route.name !== "Main");
 
+  const appState = useAppStateStore();
+  const panelState = usePanelStateStore();
+  const soundPlayer = useSounds();
   const appManager = new AppManager();
+  // Settings uses the same live monitoring loop as the main panel.
+  const monitoring = computed(
+    () =>
+      appState.state === StartupState.Ok &&
+      (route.name === "Main" || route.name === "Settings"),
+  );
+  watch(
+    monitoring,
+    (enabled) => {
+      if (enabled) void appManager.startPanelLoop();
+      else appManager.stopPanelLoop();
+    },
+    { immediate: true },
+  );
+  const alarmState = computed<PanelState>(() => ({
+    message: monitoring.value ? panelState.message : undefined,
+    active: monitoring.value && panelState.active,
+  }));
+  watch(alarmState, (next, previous) =>
+    soundPlayer.updateSound(next, previous),
+  );
+  onUnmounted(() => {
+    appManager.stopPanelLoop();
+    soundPlayer.stopSound();
+  });
   onBeforeMount(async () => await appManager.initializeGlobal());
 
   const RESTART_COOLDOWN_DELAY = 5000;

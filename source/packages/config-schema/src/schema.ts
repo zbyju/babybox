@@ -109,6 +109,22 @@ export const mainConfigSchema = z
           objectMessage
         )
         .strict(),
+      email: z
+        .object(
+          {
+            listener: oneOf(["enabled", "disabled"] as const),
+            mode: oneOf(["device", "panel"] as const),
+            host: text.max(253),
+            user: text.max(1000),
+            password: text.max(1000),
+            senderOverride: text.max(320),
+            unitRecipients: text.max(8000),
+            cameraRecipients: text.max(8000),
+          },
+          objectMessage
+        )
+        .strict()
+        .optional(),
     },
     objectMessage
   )
