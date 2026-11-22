@@ -1,0 +1,4 @@
+{
+  "extends": ["../../.oxlintrc.typescript.json"],
+  "env": { "node": true }
+}

@@ -1,4 +1,7 @@
-import type { UnappliedField } from "@babybox/config-schema";
+import {
+  reloadResponseSchema,
+  type UnappliedField,
+} from "@babybox/config-schema";
 
 import { backendApi } from "@/api/base";
 import { requestJson } from "@/api/http";
@@ -13,35 +16,6 @@ const RELOAD_TIMEOUT = 15000;
 export type ReloadResult =
   | { ok: true; unapplied: UnappliedField[] }
   | { ok: false };
-
-type Fields = Record<string, unknown>;
-
-function isObject(value: unknown): value is Fields {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isPlainValue(value: unknown): value is string | number {
-  return typeof value === "string" || typeof value === "number";
-}
-
-function isUnappliedField(value: unknown): value is UnappliedField {
-  return (
-    isObject(value) &&
-    typeof value.path === "string" &&
-    isPlainValue(value.running) &&
-    isPlainValue(value.stored)
-  );
-}
-
-/*
- * Null, not an empty list, for a body we cannot read. An empty list means "the
- * backend applied everything", which clears the restart banner — so an answer the
- * panel does not understand would wipe a warning it never checked.
- */
-function readUnapplied(body: unknown): UnappliedField[] | null {
-  if (!isObject(body) || !Array.isArray(body.unapplied)) return null;
-  return body.unapplied.filter(isUnappliedField);
-}
 
 /**
  * Asks the backend to read the config again, so a saved unit IP or `pc.os` takes
@@ -60,12 +34,14 @@ export async function reloadBackendConfig(): Promise<ReloadResult> {
   if (!isConfigured) return { ok: false };
 
   try {
-    const { data } = await requestJson<unknown>(`${baseUrl}/reload`, {
-      method: "POST",
-      timeout: RELOAD_TIMEOUT,
-    });
-    const unapplied = readUnapplied(data);
-    if (unapplied === null) return { ok: false };
+    const { unapplied } = await requestJson(
+      `${baseUrl}/reload`,
+      reloadResponseSchema,
+      {
+        method: "POST",
+        timeout: RELOAD_TIMEOUT,
+      },
+    );
     return { ok: true, unapplied };
   } catch {
     return { ok: false };

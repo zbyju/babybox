@@ -1,85 +1,35 @@
-import { BothUnit, Unit } from "./units.types";
+import { settingSchema, z } from "../boundary.js";
 
-export interface CommonDataRequestQuery {
-  timeout?: number;
-  raw?: boolean;
-}
+export type { Setting, SettingResult } from "../boundary.js";
 
-export type EngineDataRequestQuery = CommonDataRequestQuery;
-export type ThermalDataRequestQuery = CommonDataRequestQuery;
+const timerMs = z.number().int().min(1).max(2147483647);
+const scalarNumber = z.union([z.number(), z.string().transform(Number)]);
+const timeout = scalarNumber.pipe(timerMs).optional().catch(undefined);
 
-export interface PostUnitSettingsRequestBody {
-  settings: Setting[];
-  options?: {
-    timeout?: number;
-  };
-}
+export const dataQuerySchema = z.object({ timeout });
 
-export function isInstanceOfPostUnitSettingsRequestBody(
-  object: any
-): object is PostUnitSettingsRequestBody {
-  if (!object || typeof object !== "object") return false;
-  return "settings" in object && isInstanceOfArraySetting(object.settings);
-}
+export const settingsQuerySchema = z.object({
+  unit: z.enum(["engine", "thermal", "both"]).default("both"),
+  timeout,
+});
 
-export interface GetUnitSettingsRequest {
-  unit?: BothUnit;
-  timeout?: number;
-}
+export const settingsBodySchema = z
+  .object({
+    settings: z.array(settingSchema),
+    options: z
+      .object({
+        timeout: z.number().finite().positive().optional().catch(undefined),
+      })
+      .optional()
+      .catch(undefined),
+  })
+  .transform(({ settings, options }) => ({
+    settings,
+    timeout: Math.min(options?.timeout ?? 5000, 10000),
+  }));
 
-export function isInstanceOfGetUnitSettingsRequest(
-  object: any
-): object is GetUnitSettingsRequest {
-  if (!object || typeof object !== "object") return false;
-  if (
-    object.unit &&
-    object.unit !== "engine" &&
-    object.unit !== "thermal" &&
-    object.unit !== "both"
-  ) {
-    return false;
-  }
-  return true;
-}
+export type CommonResponse = { status: 200 | 400 | 408 | 500; msg: string };
 
-export interface CommonResponse {
-  msg: string;
-  status: number;
-}
-
-export interface CommonDataResponse extends CommonResponse {
-  data?: any;
-}
-
-export interface CommonSettingsResponse extends CommonResponse {
-  results: SettingResult[];
-}
-
-export interface Setting {
-  index: number;
-  value: number;
-  unit: Unit;
-}
-
-export interface SettingResult extends Setting {
-  result: boolean;
-}
-
-export function isInstanceOfSetting(object: any): object is Setting {
-  if (!object || typeof object !== "object") return false;
-  return (
-    "index" in object &&
-    "value" in object &&
-    "unit" in object &&
-    Number.isInteger(object.index) &&
-    Number.isFinite(object.value) &&
-    (object.unit === "engine" || object.unit === "thermal")
-  );
-}
-
-export function isInstanceOfArraySetting(object: any): object is Setting[] {
-  if (!object) return false;
-  return (
-    Array.isArray(object) && object.every((o: any) => isInstanceOfSetting(o))
-  );
-}
+export type DataResponse<T> =
+  | { status: 200; msg: string; data: T }
+  | { status: 400 | 408 | 500; msg: string; data?: never };

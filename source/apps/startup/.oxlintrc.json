@@ -1,0 +1,13 @@
+{
+  "env": { "node": true },
+  "rules": {
+    "eslint/no-undef": "error",
+    "eslint/no-unused-vars": ["warn", { "caughtErrors": "none" }]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.js"],
+      "env": { "vitest": true }
+    }
+  ]
+}

@@ -14,8 +14,8 @@
 
   const props = defineProps<{
     displayTopBorder: boolean;
-    maxH?: number;
-    maxW?: number;
+    maxH?: number | undefined;
+    maxW?: number | undefined;
   }>();
 
   const configStore = useConfigStore();

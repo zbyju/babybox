@@ -457,15 +457,22 @@ fi
 
 step "Instalace zavislosti panelu a prvni spusteni"
 info "Toto je nejdelsi krok — muze trvat i vice nez 10 minut."
-if [ "$(pnpm --version 2>/dev/null || echo none)" != "$PNPM_VERSION" ]; then
-  info "Instaluji pnpm $PNPM_VERSION..."
-  npm install -g "pnpm@$PNPM_VERSION"
-fi
-cd "$BABYBOX_DIR/source/apps/startup"
-info "Instaluji zavislosti (pnpm install --frozen-lockfile)..."
-pnpm install --frozen-lockfile
-info "Spoustim instalaci a prvni start panelu..."
-node src/index.js --install --ubuntu
+# Bun se zapisuje do $HOME/.bun/bin. Tento krok nevola n a neinstaluje pnpm 12.
+# shellcheck disable=SC1090,SC1091
+. "$UBUNTU_SCRIPTS_DIR/startup.sh"
+# shellcheck disable=SC1090,SC1091
+. "$STARTUP_DIR/versions.env"
+for rcfile in "$HOME/.bashrc" "$HOME/.profile"; do
+  touch "$rcfile"
+  if ! grep -q '.bun/bin' "$rcfile"; then
+    # $HOME se ma rozvinout az pri startu shellu, proto jednoduche uvozovky
+    # shellcheck disable=SC2016
+    echo 'export PATH="$HOME/.bun/bin:$PATH"' >> "$rcfile"
+  fi
+done
+ensure_npm_prefix
+info "Instaluji Bun $BUN_VERSION a zavislosti, potom spoustim panel..."
+bash "$UBUNTU_SCRIPTS_DIR/install.sh"
 ok "Panel nainstalovan a spusten"
 
 # ----- Hotovo -----------------------------------------------------------------------
@@ -478,7 +485,7 @@ echo ""
 echo "Co bylo nainstalovano a nastaveno:"
 echo "  - System aktualizovan, zakladni a sitove nastroje"
 echo "  - TeamViewer (Wayland vypnut)"
-echo "  - Node.js $NODE_VERSION, pnpm $PNPM_VERSION"
+echo "  - Node.js $NODE_VERSION, pnpm $PNPM_VERSION, Bun $BUN_VERSION"
 echo "  - Wine"
 echo "  - Repozitare babybox a BB v $HOME"
 echo "  - Firefox (snap) + rozsireni AutoFullscreen + povoleny zvuk"

@@ -35,9 +35,12 @@
   }
 
   /* Back to the panel, so an unattended box never sits on the config page. */
-  setTimeout(() => {
-    router.push({ path: "/" });
-  }, 1000 * 60 * 10);
+  setTimeout(
+    () => {
+      router.push({ path: "/" });
+    },
+    1000 * 60 * 10,
+  );
 </script>
 
 <style lang="stylus">

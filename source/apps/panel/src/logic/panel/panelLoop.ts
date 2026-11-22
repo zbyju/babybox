@@ -3,8 +3,7 @@ import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
-import { CONFIGER_API_URL, CONFIGER_TIMEOUT } from "@/api/base";
-import { requestJson } from "@/api/http";
+import { getPanelConfig, getVersions } from "@/api/config";
 import {
   getEngineData,
   getStatus,
@@ -22,11 +21,6 @@ import type { AppConfig, UnitsConfig } from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
-import type { Versions } from "@/types/panel/versions.types";
-import {
-  isInstanceOfConfig,
-  isInstanceOfVersions,
-} from "@/utils/panel/instanceCheck";
 
 import { getNewState } from "./state";
 
@@ -44,7 +38,8 @@ const MAX_INIT_DELAY = 20000;
  */
 const LOOP_TICK = 250;
 
-type LoopUnit = "engine" | "thermal";
+const LOOP_UNITS = ["engine", "thermal"] as const;
+type LoopUnit = (typeof LOOP_UNITS)[number];
 
 export class AppManager {
   private loopTimers: Record<LoopUnit, Maybe<ReturnType<typeof setInterval>>> =
@@ -177,49 +172,17 @@ export class AppManager {
     }
   }
 
-  /*
-   * These must reject when configer is unreachable.
-   * The startup retry chain waits for them, so a promise that never settles
-   * would stop the panel from ever retrying.
-   */
-  private async getConfig(): Promise<unknown> {
-    const { data } = await requestJson<unknown>(`${CONFIGER_API_URL}/main`, {
-      timeout: CONFIGER_TIMEOUT,
-    });
-    return data;
-  }
-
-  /*
-   * Returns undefined on a body that is valid JSON but not a versions file.
-   *
-   * Versions only feed the display string in the header. Failing the config
-   * step over them would keep AppState short of Ok, so MainView never mounts
-   * and the panel does no polling, no watchdog and no alarms. A bad body fails
-   * the same way on every retry, so that would last until someone visits.
-   *
-   * A request that fails still rejects, so a configer outage keeps retrying.
-   */
-  private async getVersions(): Promise<Maybe<Versions>> {
-    const { data } = await requestJson(`${CONFIGER_API_URL}/version`, {
-      timeout: CONFIGER_TIMEOUT,
-    });
-    if (!isInstanceOfVersions(data)) {
-      console.error("Versions file error", data);
-      return undefined;
-    }
-    return data;
-  }
-
   private async initializeConfig() {
-    const config = await this.getConfig();
-    const versions = await this.getVersions();
-    if (isInstanceOfConfig(config)) {
-      this.configStore.setConfig(config);
-      if (versions !== undefined) this.versionsStore.setVersions(versions);
-      return "Ok";
-    } else {
-      throw "Config file error";
+    const config = await getPanelConfig();
+    this.configStore.setConfig(config);
+
+    try {
+      this.versionsStore.setVersions(await getVersions());
+    } catch {
+      // Version metadata is optional for polling, the watchdog and alarms.
+      console.warn("Versions file unavailable");
     }
+    return "Ok";
   }
 
   private async initializeBackend() {
@@ -245,7 +208,7 @@ export class AppManager {
    * Each later attempt is scheduled after the current one settles,
    * so a hanging backend cannot collect overlapping status requests.
    */
-  async initializeGlobal(): Promise<any> {
+  async initializeGlobal(): Promise<void> {
     /*
      * Retries back off from 5 s to 20 s.
      * The old code meant to retry at 20 s but setInterval had already captured
@@ -284,11 +247,11 @@ export class AppManager {
 
       if (configOk && backendOk) return;
 
-      setTimeout(attempt, delay);
+      setTimeout(() => void attempt(), delay);
       delay = Math.min(delay * 2, MAX_INIT_DELAY);
     };
 
-    attempt();
+    void attempt();
   }
 
   private nextDelay(): number {
@@ -352,7 +315,7 @@ export class AppManager {
 
   stopPanelLoop() {
     this.panelLoopRunning = false;
-    for (const unit of Object.keys(this.loopTimers) as LoopUnit[]) {
+    for (const unit of LOOP_UNITS) {
       const timer = this.loopTimers[unit];
       if (timer !== undefined) {
         clearInterval(timer);

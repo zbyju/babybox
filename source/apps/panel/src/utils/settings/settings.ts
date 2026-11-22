@@ -46,6 +46,7 @@ export const getChangedSettings = (
 
       if (curr.value === null || !isNumber(curr.value)) return res;
       const row = rows[index];
+      if (row === undefined) return res;
 
       if (!isSettingChanged(engineValue, thermalValue, curr.value, row.type))
         return res;
@@ -68,88 +69,43 @@ export const getChangedSettings = (
       }
       return res;
     },
-    [] as SettingsToSend[],
+    [],
   );
 };
 
-export const updateValueBasedOnResult = (
-  resultEngine: SettingsSendResult | null | undefined,
-  resultThermal: SettingsSendResult | null | undefined,
-  value: SettingsTableRowValue,
-): SettingsTableRowValue => {
-  if (!isNullish(resultEngine)) {
-    if (!isNullish(resultThermal)) {
-      // Both were sent
-      return {
-        ...value,
-        state: settingsResultsToState(
-          resultEngine!.result,
-          resultThermal!.result,
-        ),
-      };
-    } else {
-      // Only engine was sent
-      return {
-        ...value,
-        state: settingsResultsToState(resultEngine!.result, true),
-      };
-    }
-  } else {
-    if (!isNullish(resultThermal)) {
-      // Only thermal was sent
-      return {
-        ...value,
-        state: settingsResultsToState(true, resultThermal!.result),
-      };
-    } else {
-      // None of them were sent
-      return value;
-    }
-  }
-};
+function targetsRow(setting: SettingsToSend, row: SettingsTableRow): boolean {
+  return setting.index === row[setting.unit];
+}
 
 export const settingsSendToStates = (
-  response: any,
+  results: SettingsSendResult[],
   values: SettingsTableRowValue[],
   rows: SettingsTableRow[],
-): SettingsTableRowValue[] => {
-  return values.map((value: SettingsTableRowValue, index: number) => {
+): SettingsTableRowValue[] =>
+  values.map((value, index) => {
     const row = rows[index];
-    const data = response.data;
-    const resultEngine = row.engine
-      ? data.results.find(
-          (d: any) => d.index === row.engine && d.unit === "engine",
-        )
-      : null;
-    const resultThermal = row.thermal
-      ? data.results.find(
-          (d: any) => d.index === row.thermal && d.unit === "thermal",
-        )
-      : null;
-
-    return updateValueBasedOnResult(resultEngine, resultThermal, value);
+    if (row === undefined) return value;
+    const entries = results.filter((result) => targetsRow(result, row));
+    if (entries.length === 0) return value;
+    const state = settingsResultsToState(
+      entries.every(({ result }) => result),
+      entries.some(({ result }) => result),
+    );
+    return { ...value, state };
   });
-};
 
 export const settingsSendToStatesError = (
-  changedValues: SettingsToSend[],
+  submitted: SettingsToSend[],
   values: SettingsTableRowValue[],
   rows: SettingsTableRow[],
-): SettingsTableRowValue[] => {
-  return values.map((value: SettingsTableRowValue, index: number) => {
+): SettingsTableRowValue[] =>
+  values.map((value, index) => {
     const row = rows[index];
-    const data = changedValues;
-    const resultEngine = row.engine
-      ? data.find((d: any) => d.index === row.engine && d.unit === "engine")
-      : null;
-    const resultThermal = row.thermal
-      ? data.find((d: any) => d.index === row.thermal && d.unit === "thermal")
-      : null;
-
-    if (resultEngine || resultThermal) {
-      return { ...value, state: SettingsTableRowState.Error };
-    } else {
+    if (
+      row === undefined ||
+      !submitted.some((entry) => targetsRow(entry, row))
+    ) {
       return value;
     }
+    return { ...value, state: SettingsTableRowState.Error };
   });
-};

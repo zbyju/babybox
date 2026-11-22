@@ -7,12 +7,21 @@ import {
 
 import { isNumber } from "../number";
 
-export const typeToMeasureUnit = (type: SettingsTableRowValueType) => {
-  if (type === "string") return "";
-  if (type === "temperature") return "°C";
-  if (type === "voltage") return "V";
-  if (type === "seconds") return "s";
-  if (type === "days") return "den";
+export const typeToMeasureUnit = (type: SettingsTableRowValueType): string => {
+  switch (type) {
+    case SettingsTableRowValueType.String:
+      return "";
+    case SettingsTableRowValueType.Temperature:
+      return "°C";
+    case SettingsTableRowValueType.Voltage:
+      return "V";
+    case SettingsTableRowValueType.Seconds:
+      return "s";
+    case SettingsTableRowValueType.Days:
+      return "den";
+    default:
+      return type satisfies never;
+  }
 };
 
 export const settingsRowValueToValue = (
@@ -20,20 +29,21 @@ export const settingsRowValueToValue = (
   type: SettingsTableRowValueType,
 ): Maybe<number> => {
   if (!isNumber(value) || value === "") return undefined;
-  if (type === SettingsTableRowValueType.Temperature)
-    return Number(value) * 100;
-
-  if (type === SettingsTableRowValueType.Voltage) {
-    const divider = useConfigStore()?.units?.voltage?.divider || 63;
-    const multiplier = useConfigStore()?.units?.voltage?.multiplier || 100;
-    return Math.round(Number(value) * divider);
+  switch (type) {
+    case SettingsTableRowValueType.String:
+    case SettingsTableRowValueType.Seconds:
+      return Number(value);
+    case SettingsTableRowValueType.Temperature:
+      return Number(value) * 100;
+    case SettingsTableRowValueType.Voltage: {
+      const divider = useConfigStore().units.voltage.divider || 63;
+      return Math.round(Number(value) * divider);
+    }
+    case SettingsTableRowValueType.Days:
+      return Number(value) * 86400;
+    default:
+      return type satisfies never;
   }
-
-  if (type === SettingsTableRowValueType.Days) {
-    return Number(value) * 86400;
-  }
-
-  return Number(value);
 };
 
 export const settingsResultsToState = (

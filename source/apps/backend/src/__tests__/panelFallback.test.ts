@@ -1,10 +1,12 @@
 import axios from "axios";
-import * as express from "express";
+import express from "express";
 import * as fs from "fs";
 import * as http from "http";
-import type { AddressInfo } from "net";
 import * as os from "os";
 import * as path from "path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+import { tcpPort } from "../../test/tcpPort.js";
 
 /*
  * The production block of index.ts, rebuilt here. Importing index.ts for real runs
@@ -36,7 +38,7 @@ describe("the panel fallback in production", () => {
       });
     });
 
-    app.get("*", (req, res) => {
+    app.get("/{*splat}", (req, res) => {
       res.sendFile(path.join(publicDir, "index.html"), {
         headers: { "Cache-Control": "no-cache" },
       });
@@ -46,7 +48,7 @@ describe("the panel fallback in production", () => {
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve)
     );
-    const { port } = server.address() as AddressInfo;
+    const port = tcpPort(server);
     url = `http://127.0.0.1:${port}`;
   });
 

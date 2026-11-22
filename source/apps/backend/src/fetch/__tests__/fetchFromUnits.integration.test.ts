@@ -1,7 +1,17 @@
+import express from "express";
 import * as http from "http";
-import type { AddressInfo } from "net";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
-import { Action, Unit } from "../../types/units.types";
+import { tcpPort } from "../../../test/tcpPort.js";
+import { Action, Unit } from "../../types/units.types.js";
 
 /*
  * Drives the real axios and socket path against a local HTTP server, so it
@@ -15,7 +25,10 @@ describe("fetchFromUnits.ts against a real server", () => {
   let inFlight = 0;
   let maxInFlight = 0;
   let requests = 0;
-  let unitApi: typeof import("../fetchFromUnits");
+  let payload = "0|1|2";
+  let apiServer: http.Server;
+  let apiUrl: string;
+  let unitApi: typeof import("../fetchFromUnits.js");
 
   beforeAll(async () => {
     server = http.createServer((req, res) => {
@@ -26,21 +39,21 @@ describe("fetchFromUnits.ts against a real server", () => {
       setTimeout(() => {
         inFlight -= 1;
         res.setHeader("Content-Type", "text/plain");
-        res.end("0|1|2");
+        res.end(payload);
       }, RESPONSE_DELAY);
     });
 
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve)
     );
-    const { port } = server.address() as AddressInfo;
+    const port = tcpPort(server);
 
     /*
      * Both units point at the same server, so a second connection is visible
      * whichever unit opened it.
      */
-    jest.resetModules();
-    jest.doMock("../..", () => ({
+    vi.resetModules();
+    vi.doMock("../../index.js", () => ({
       config: {
         units: {
           engine: { ip: `127.0.0.1:${port}` },
@@ -48,10 +61,21 @@ describe("fetchFromUnits.ts against a real server", () => {
         },
       },
     }));
-    unitApi = require("../fetchFromUnits");
+    unitApi = await import("../fetchFromUnits.js");
+    const app = express();
+    app.set("query parser", "extended");
+    app.use(express.json());
+    app.use("/engine", (await import("../../routes/engineRoute.js")).router);
+    app.use("/thermal", (await import("../../routes/thermalRoute.js")).router);
+    app.use("/units", (await import("../../routes/unitsRoute.js")).router);
+    apiServer = app.listen(0, "127.0.0.1");
+    await new Promise<void>((resolve) => apiServer.once("listening", resolve));
+    apiUrl = "http://127.0.0.1:" + tcpPort(apiServer);
   });
 
   afterAll(async () => {
+    apiServer.closeAllConnections();
+    await new Promise<void>((resolve) => apiServer.close(() => resolve()));
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
@@ -59,6 +83,69 @@ describe("fetchFromUnits.ts against a real server", () => {
     inFlight = 0;
     maxInFlight = 0;
     requests = 0;
+    payload = "0|1|2";
+  });
+
+  it.each(["engine", "thermal"])(
+    "serves validated %s data and rejects empty replies",
+    async (unit) => {
+      const url = apiUrl + "/" + unit + "/data";
+      const success = await fetch(url);
+      expect(success.status).toBe(200);
+      expect(await success.json()).toEqual({
+        msg: "Data fetched successfully.",
+        data: "0|1|2",
+      });
+
+      payload = "";
+      const failure = await fetch(url);
+      expect(failure.status).toBe(408);
+      expect(await failure.json()).toEqual({
+        msg: "Request timedout. The URL/IP might be wrong, check the config.",
+      });
+    }
+  );
+
+  it.each(["unit=", "unit=engine&unit=thermal", "unit%5Bwhich%5D=engine"])(
+    "rejects the HTTP query %s",
+    async (query) => {
+      const response = await fetch(apiUrl + "/units/settings?" + query);
+      expect(response.status).toBe(400);
+      expect(requests).toBe(0);
+    }
+  );
+
+  it("preserves one-unit reads and defaults a repeated timeout", async () => {
+    const response = await fetch(
+      apiUrl + "/units/settings?unit=engine&timeout=1&timeout=1"
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      data: { engine: "0|1|2", thermal: null },
+    });
+    expect(requests).toBe(1);
+  });
+
+  it("preserves the settings body acceptance and rejection envelopes", async () => {
+    const send = (body: unknown) =>
+      fetch(apiUrl + "/units/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    const success = await send({ settings: [], options: { timeout: "bad" } });
+    expect(success.status).toBe(200);
+    expect(await success.json()).toEqual({
+      msg: "All setting changes have been applied.",
+      results: [],
+    });
+    const failure = await send({
+      settings: [{ unit: "engine", index: 100.5, value: 1 }],
+    });
+    expect(failure.status).toBe(400);
+    expect(await failure.json()).toEqual({
+      msg: "The body needs to be an array of settings ({index: number, value: number, unit: 'engine' | 'thermal'}).",
+    });
   });
 
   it("should never open two connections to one unit at the same time", async () => {
@@ -102,7 +189,11 @@ describe("fetchFromUnits.ts against a real server", () => {
 
     const results = await unitApi.updateSettings([setting], 2000, 10, 200);
 
-    expect(results[0].result).toBe(false);
+    const result = results[0];
+    if (result === undefined) {
+      throw new Error("updateSettings returned no result");
+    }
+    expect(result.result).toBe(false);
     expect(requests).toBeLessThan(10);
   });
 
@@ -125,12 +216,13 @@ describe("updateSettings against a unit that is ready", () => {
   const VALUE = 7;
 
   let server: http.Server;
-  let unitApi: typeof import("../fetchFromUnits");
+  let unitApi: typeof import("../fetchFromUnits.js");
   let order: string[] = [];
   let inFlight = 0;
   let maxInFlight = 0;
   let stored: number | undefined;
   let reportWrongValue = false;
+  let verifyAsJson = false;
 
   beforeAll(async () => {
     server = http.createServer((req, res) => {
@@ -149,18 +241,21 @@ describe("updateSettings against a unit that is ready", () => {
       if (url.startsWith("/get_sys[141]")) return json("0");
 
       const value = url.match(/sys140=(\d+)/);
-      if (value !== null) {
-        stored = Number(value[1]);
-        return json(value[1]);
+      const written = value?.[1];
+      if (written !== undefined) {
+        stored = Number(written);
+        return json(written);
       }
 
       const index = url.match(/sys141=(\d+)/);
-      if (index !== null) return json(index[1]);
+      const selected = index?.[1];
+      if (selected !== undefined) return json(selected);
 
       // Verification read. Slot 0 is setting index 100.
       if (url.startsWith("/get_sys[100]")) {
+        if (verifyAsJson) return json(String(stored ?? 0));
         res.setHeader("Content-Type", "text/plain");
-        const slot = reportWrongValue ? (stored ?? 0) + 1 : stored ?? 0;
+        const slot = reportWrongValue ? (stored ?? 0) + 1 : (stored ?? 0);
         return res.end(`${slot}|0|0`);
       }
 
@@ -171,10 +266,10 @@ describe("updateSettings against a unit that is ready", () => {
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve)
     );
-    const { port } = server.address() as AddressInfo;
+    const port = tcpPort(server);
 
-    jest.resetModules();
-    jest.doMock("../..", () => ({
+    vi.resetModules();
+    vi.doMock("../../index.js", () => ({
       config: {
         units: {
           engine: { ip: `127.0.0.1:${port}` },
@@ -182,7 +277,7 @@ describe("updateSettings against a unit that is ready", () => {
         },
       },
     }));
-    unitApi = require("../fetchFromUnits");
+    unitApi = await import("../fetchFromUnits.js");
   });
 
   afterAll(async () => {
@@ -195,6 +290,7 @@ describe("updateSettings against a unit that is ready", () => {
     maxInFlight = 0;
     stored = undefined;
     reportWrongValue = false;
+    verifyAsJson = false;
   });
 
   it("should write the value, then the index, then verify", async () => {
@@ -234,6 +330,27 @@ describe("updateSettings against a unit that is ready", () => {
       1
     );
 
-    expect(results[0].result).toBe(false);
+    const result = results[0];
+    if (result === undefined) {
+      throw new Error("updateSettings returned no result");
+    }
+    expect(result.result).toBe(false);
+  });
+
+  it("should fail the setting when the verification read is not text", async () => {
+    verifyAsJson = true;
+
+    const results = await unitApi.updateSettings(
+      [{ index: INDEX, value: VALUE, unit: Unit.Engine }],
+      5000,
+      1
+    );
+
+    expect(order.some((u) => u.startsWith("/get_sys[100]"))).toBe(true);
+    const result = results[0];
+    if (result === undefined) {
+      throw new Error("updateSettings returned no result");
+    }
+    expect(result.result).toBe(false);
   });
 });

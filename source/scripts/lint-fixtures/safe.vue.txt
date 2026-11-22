@@ -1,0 +1,17 @@
+<template>{{ label({ kind: "saved" }) }}</template>
+
+<script setup lang="ts">
+type State = { kind: "saved" } | { kind: "failed"; message: string };
+function label(state: State): string {
+  switch (state.kind) {
+    case "saved":
+      return "saved";
+    case "failed":
+      return state.message;
+    default: {
+      const exhaustive: never = state;
+      return exhaustive;
+    }
+  }
+}
+</script>

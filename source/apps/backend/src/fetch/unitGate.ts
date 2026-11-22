@@ -1,4 +1,4 @@
-import { Unit } from "../types/units.types";
+import { Unit } from "../types/units.types.js";
 
 type Job<T> = () => Promise<T>;
 
@@ -20,7 +20,7 @@ export type SharedRead = `data:${number}` | `settings:${number}`;
  */
 export interface UnitReadResult {
   status: number;
-  data: any;
+  data: unknown;
 }
 
 /**
@@ -90,7 +90,7 @@ export class UnitQueue {
       if (first) this.waiting.unshift(waiter);
       else this.waiting.push(waiter);
 
-      this.drain();
+      void this.drain();
     });
   }
 

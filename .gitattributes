@@ -1,0 +1,6 @@
+# startup.bat uses labels. Windows 10 1809 cmd needs CR LF.
+source/apps/startup/scripts/windows/startup.bat text eol=crlf
+source/apps/startup/scripts/windows/record-hold.bat text eol=crlf
+source/apps/startup/scripts/windows/install.bat text eol=crlf
+source/apps/startup/versions.env text eol=lf
+source/apps/startup/**/*.sh text eol=lf

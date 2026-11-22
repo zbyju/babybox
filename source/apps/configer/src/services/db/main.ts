@@ -12,11 +12,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import {
-  ConfigError,
-  MainConfig,
   parseMainConfig,
+  portSchema,
   validateMainConfig,
+  z,
 } from "@babybox/config-schema";
+import type { ConfigError, MainConfig } from "@babybox/config-schema";
 import merge from "lodash.merge";
 
 export type MainDb = ReturnType<typeof mainConfig>;
@@ -51,10 +52,22 @@ function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-type Fields = Record<string, unknown>;
+const configDocument = z.record(z.unknown());
+type Fields = z.infer<typeof configDocument>;
 
-function isPlainObject(value: unknown): value is Fields {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+const bindingSchema = z.object({
+  configer: z.object({
+    url: z.string().optional().catch(undefined),
+    port: z
+      .union([portSchema, z.literal(0)])
+      .optional()
+      .catch(undefined),
+  }),
+});
+
+function readBinding(data: unknown) {
+  const parsed = bindingSchema.safeParse(data);
+  return parsed.success ? parsed.data.configer : undefined;
 }
 
 type CheckedBody =
@@ -64,17 +77,18 @@ type CheckedBody =
 /*
  * Both writers merge the body over something, and lodash.merge spreads a string
  * or an array over the target, so neither may reach the merge.
- * express.json() also leaves req.body as {} when the Content-Type is not JSON:
- * without this a PUT with a forgotten header would reset the whole box to
- * base.json, and a PATCH would rewrite the file for nothing.
+ * express.json() leaves req.body undefined when the Content-Type is not JSON
+ * (Express 4 set it to {}): without this a PUT with a forgotten header would
+ * reset the whole box to base.json, and a PATCH would rewrite it for nothing.
  * It returns the narrowed body, so the merge never takes an unknown.
  */
 function checkBody(body: unknown): CheckedBody {
-  if (!isPlainObject(body))
+  const parsed = configDocument.safeParse(body);
+  if (!parsed.success)
     return { ok: false, errors: [{ path: "", msg: "must be an object" }] };
-  if (Object.keys(body).length === 0)
+  if (Object.keys(parsed.data).length === 0)
     return { ok: false, errors: [{ path: "", msg: "must not be empty" }] };
-  return { ok: true, body };
+  return { ok: true, body: parsed.data };
 }
 
 type StoredFile =
@@ -85,8 +99,9 @@ type StoredFile =
 // Only a JSON object is a config: lodash.merge would spread a string or an array.
 function parseObject(text: string): Fields | undefined {
   try {
-    const value = JSON.parse(text) as unknown;
-    return isPlainObject(value) ? value : undefined;
+    const value: unknown = JSON.parse(text);
+    const parsed = configDocument.safeParse(value);
+    return parsed.success ? parsed.data : undefined;
   } catch {
     return undefined;
   }
@@ -108,7 +123,7 @@ function readConfigFile(file: string): StoredFile {
  * A box with a corrupt main.json must still boot: without a config neither the
  * backend nor the panel starts, and that needs someone on site.
  */
-function loadStored(mainFile: string, backupFile: string): unknown {
+function loadStored(mainFile: string, backupFile: string): Fields | undefined {
   if (!existsSync(mainFile)) return undefined;
 
   const stored = readConfigFile(mainFile);
@@ -138,7 +153,9 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
   const tempFile = join(configDir, "main.json.tmp");
 
   const baseText = readFileSync(join(configDir, "base.json"), "utf-8");
-  const freshBase = (): unknown => JSON.parse(baseText) as unknown;
+  const base = parseObject(baseText);
+  if (!base) throw new Error("base.json must be a JSON object");
+  const freshBase = (): Fields => merge({}, base);
 
   function write(config: MainConfig): void {
     /*
@@ -166,7 +183,16 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
    * Boot never rejects: an odd stored value must not stop the box. It warns, so a
    * value a write would refuse shows in the log before the UI trips on it.
    */
-  let data = merge(freshBase(), loadStored(mainFile, backupFile)) as MainConfig;
+  let data: Fields = merge(freshBase(), loadStored(mainFile, backupFile));
+  const storedBinding = readBinding(data);
+  const backup = readConfigFile(backupFile);
+  const backupBinding =
+    backup.kind === "ok" ? readBinding(backup.config) : undefined;
+  const baseBinding = readBinding(base);
+  const binding = {
+    url: storedBinding?.url ?? backupBinding?.url ?? baseBinding?.url,
+    port: storedBinding?.port ?? backupBinding?.port ?? baseBinding?.port,
+  };
   for (const { path, msg } of validateMainConfig(data)) {
     console.warn(`${mainFile}: ${path} ${msg}`);
   }
@@ -181,7 +207,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
    * A body that repeats the running values changes nothing and passes.
    */
   function rejectAddressChange(config: MainConfig): ConfigError[] {
-    const running = data.configer;
+    const running = binding;
     return (["port", "url"] as const)
       .filter((field) => config.configer[field] !== running[field])
       .map((field) => ({
@@ -206,8 +232,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
      * over main.json.bak first, so a no-op save would drop the one undo copy. The
      * form saves with a PATCH every time, so no-op saves are the normal case.
      */
-    if (isDeepStrictEqual(config, data))
-      return { status: "saved", config: data };
+    if (isDeepStrictEqual(config, data)) return { status: "saved", config };
 
     // Disk first: memory must never hold a config the disk does not have.
     try {
@@ -220,7 +245,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
       };
     }
     data = config;
-    return { status: "saved", config: data };
+    return { status: "saved", config };
   }
 
   /*
@@ -255,6 +280,7 @@ export async function mainConfig(configDir: string = defaultConfigDir) {
 
   return {
     data: () => data,
+    binding,
     update,
     patch,
   };

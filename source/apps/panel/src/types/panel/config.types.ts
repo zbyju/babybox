@@ -1,18 +1,11 @@
-import type { MainConfig } from "@babybox/config-schema";
+import type { z } from "zod";
 
-/*
- * The panel reads five of the eight sections of configer's config. The shape of each
- * one comes from @babybox/config-schema, so the panel cannot drift from the file on
- * the box.
- */
-export type Config = Pick<
-  MainConfig,
-  "app" | "babybox" | "backend" | "camera" | "units"
->;
+import type { panelReadableConfigSchema } from "@/api/configBoundary";
 
-export type AppConfig = MainConfig["app"];
-export type BabyboxConfig = MainConfig["babybox"];
-export type BackendConfig = MainConfig["backend"];
-export type CameraConfig = MainConfig["camera"];
-export type UnitsConfig = MainConfig["units"];
+export type Config = z.infer<typeof panelReadableConfigSchema>;
+export type AppConfig = Config["app"];
+export type BabyboxConfig = Config["babybox"];
+export type BackendConfig = Config["backend"];
+export type CameraConfig = Config["camera"];
+export type UnitsConfig = Config["units"];
 export type VoltageConfig = UnitsConfig["voltage"];

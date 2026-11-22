@@ -1,11 +1,12 @@
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 const path = require("path");
-const sudo = require("sudo-prompt");
+const fs = require("fs");
 const logger = require("../../logger");
 const strings = require("../../strings");
+const { pinnedPm2Version } = require("./pm2-version");
 
-async function checkInstalled() {
+async function checkInstalled(exec, logger) {
   try {
     await exec("node -v");
   } catch (err) {
@@ -27,55 +28,56 @@ async function checkInstalled() {
   return true;
 }
 
-async function installDeps() {
+async function installDeps(exec, logger) {
   try {
+    const pm2Version = pinnedPm2Version();
     await exec("npm install -g pnpm@7.5.0");
-    await exec("npm install -g pm2@latest");
-    await exec("npm install -g nodemon");
-    await exec("npm install -g typescript@4.7.4");
-    await exec("npm install -g ts-node@10.9.1");
+    await exec(`npm install -g pm2@${pm2Version}`);
   } catch (err) {
     logger.error("install", strings.installDepsFailed, err);
     throw err;
   }
 }
 
-// eslint-disable-next-line no-unused-vars
-async function copyStartup() {
-  const pathToScript = path.resolve("./scripts/windows/startup.bat");
-  const pathToLink = path.resolve(
-    "C:/ProgramData/Microsoft/Windows/Start Menu/Programs/StartUp/babybox.bat"
+function registerStartup(appData, startupDir) {
+  if (!appData) throw new Error("APPDATA is unavailable.");
+  const folder = path.join(
+    appData,
+    "Microsoft",
+    "Windows",
+    "Start Menu",
+    "Programs",
+    "Startup"
   );
-  const sudoOptions = {
-    name: "Babybox Startup",
-  };
-  return sudo.exec(
-    `mklink "${pathToLink}" "${pathToScript}"`,
-    sudoOptions,
-    (error, stdout, stderr) => {
-      if (error || stderr) {
-        const err = error || new Error(String(stderr));
-        err.stderr = stderr;
-        logger.error("install", strings.installFailed, err);
-        return false;
-      }
-      logger.info("install", strings.installSucceeded);
-      return true;
-    }
+  const script = path.join(startupDir, "scripts", "windows", "startup.bat");
+  const command = script.replace(/%/g, "%%");
+  fs.mkdirSync(folder, { recursive: true });
+  fs.writeFileSync(
+    path.join(folder, "Babybox.bat"),
+    "@echo off\r\nsetlocal DisableDelayedExpansion\r\n" +
+      '"' +
+      command +
+      '"\r\n'
   );
 }
 
-module.exports = async function install() {
-  const isInstalled = await checkInstalled();
+module.exports = async function install(options = {}) {
+  const run = options.exec || exec;
+  const log = options.logger || logger;
+  const isInstalled = await checkInstalled(run, log);
   if (!isInstalled) {
-    logger.error("install", strings.installFailed);
+    log.error("install", strings.installFailed);
     return false;
   }
 
   try {
-    await installDeps();
+    await installDeps(run, log);
+    registerStartup(
+      options.appData || process.env.APPDATA,
+      options.startupDir || path.resolve(__dirname, "../../..")
+    );
   } catch (err) {
-    logger.error("install", strings.installFailed, err);
+    log.error("install", strings.installFailed, err);
     return false;
   }
   return true;
