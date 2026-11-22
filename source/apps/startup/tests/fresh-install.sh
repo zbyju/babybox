@@ -30,11 +30,10 @@ on_exit() {
 }
 trap 'on_exit $?' EXIT
 
-run_batch() {
-  local script
-  script="$(cygpath -w "$1")"
-  MSYS2_ARG_CONV_EXCL='*' cmd.exe /d /c "call \"$script\""
-}
+run_batch() (
+  cd -- "$(dirname -- "$1")"
+  MSYS2_ARG_CONV_EXCL='*' cmd.exe /d /c ".\\$(basename -- "$1")"
+)
 
 test ! -d node_modules
 test ! -d apps/startup/node_modules
