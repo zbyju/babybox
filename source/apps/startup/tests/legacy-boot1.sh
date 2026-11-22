@@ -98,21 +98,21 @@ old_startup() {
   fi
 }
 
-# TARGET_SHA with a panel build that exits 1. The work tree does not change.
+# TARGET_SHA with a build step that exits 1. The work tree does not change.
 broken_commit() {
-  local index blob tree
+  local manifest="$1" index blob tree
   index="$RUNNER_TEMP/boot1-broken.index"
   rm -f "$index"
   GIT_INDEX_FILE="$index" git -C "$ROOT" read-tree "$TARGET_SHA"
-  blob="$(git -C "$ROOT" show "$TARGET_SHA:source/apps/panel/package.json" |
+  blob="$(git -C "$ROOT" show "$TARGET_SHA:$manifest" |
     node -e "let s='';process.stdin.on('data',(d)=>{s+=d;}).on('end',()=>{const p=JSON.parse(s);p.scripts.build='exit 1';process.stdout.write(JSON.stringify(p,null,2)+'\n');});" |
     git -C "$ROOT" hash-object -w --stdin)"
   GIT_INDEX_FILE="$index" git -C "$ROOT" update-index \
-    --cacheinfo "100644,${blob},source/apps/panel/package.json"
+    --cacheinfo "100644,${blob},${manifest}"
   tree="$(GIT_INDEX_FILE="$index" git -C "$ROOT" write-tree)"
   GIT_AUTHOR_NAME=ci GIT_AUTHOR_EMAIL=ci@example.com \
     GIT_COMMITTER_NAME=ci GIT_COMMITTER_EMAIL=ci@example.com \
-    git -C "$ROOT" commit-tree "$tree" -p "$TARGET_SHA" -m "test: break the panel build"
+    git -C "$ROOT" commit-tree "$tree" -p "$TARGET_SHA" -m "test: break the build in $manifest"
 }
 
 assert_head() {
@@ -218,6 +218,19 @@ assert_modules() {
   fi
 }
 
+assert_zod() {
+  ZOD_WANT="$1" node <<'EOF'
+const path = require("path");
+const { createRequire } = require("module");
+const configer = createRequire(path.resolve("apps/configer/dist/index.js"));
+const schema = createRequire(configer.resolve("@babybox/config-schema"));
+const zod = schema("zod/package.json");
+if (zod.version !== process.env.ZOD_WANT) {
+  throw new Error("expected isolated Zod " + process.env.ZOD_WANT + ", got " + zod.version);
+}
+EOF
+}
+
 # The isolated lowdb copy gets a marker. source/node_modules and the live
 # schema dist then lose the export the old configer needs.
 poison_source_packages() {
@@ -283,16 +296,19 @@ assert_apps
 assert_runtime node
 printf '%s\n' "legacy" >"$ROOT/dist/marker.txt"
 
-echo "boot 1 with a failed build starts the legacy dist on Bun"
-BROKEN_SHA="$(broken_commit)"
+echo "boot 1 with a failed schema build starts the legacy dist on Bun"
+BROKEN_SHA="$(broken_commit source/packages/config-schema/package.json)"
 publish_tip "$BROKEN_SHA"
 old_startup
 assert_head "$BROKEN_SHA"
 assert_clean
-assert_record "BUILD_PANEL" "false"
+assert_record "BUILD_SCHEMA" "false"
 assert_marker "dist" "legacy"
 assert_apps
 assert_runtime bun
+
+assert_modules
+assert_zod 3.23.8
 
 echo "boot 1 with a good build starts the new dist on Bun"
 pm2 kill >/dev/null 2>&1 || true
@@ -309,6 +325,7 @@ assert_apps
 assert_panel_page
 assert_runtime bun
 assert_modules
+assert_zod "$(node -p 'require("./packages/config-schema/package.json").dependencies.zod')"
 if [ "$(pm2_version)" != "$PM2_WANT" ]; then
   fail "pm2 is $(pm2_version), want ${PM2_WANT}"
 fi
@@ -326,7 +343,7 @@ echo "bun install does not replace the proven configer packages"
 assert_isolated_marker
 
 echo "a failed build starts the previous configer packages"
-BROKEN_AGAIN="$(broken_commit)"
+BROKEN_AGAIN="$(broken_commit source/apps/panel/package.json)"
 publish_tip "$BROKEN_AGAIN"
 old_startup
 assert_head "$BROKEN_AGAIN"

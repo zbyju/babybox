@@ -1667,3 +1667,21 @@ entry points. Keep `shell: false` and pass the script path as one argument so
 spaces and shell metacharacters in the checkout path remain literal. This avoids
 Node 18.20.2+ rejecting `pnpm.cmd` with EINVAL without enabling a command shell.
 The Unix launch path and the readiness probes and rollback policy stay as before.
+
+## 2026-11-21 - Config-schema moves to patched Zod 4
+
+- `bun audit --prod` flagged `zod@3.23.8` for
+  [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5).
+  The first patched version is 4.6.6. Pin 4.6.7.
+- Keep config validation messages and paths, strict sections, startup extras,
+  optional-field omission, and the key order used when writing `main.json`.
+  Use explicit integer and range checks because Zod 4's built-in integer
+  check would reject large integer values the old schema accepted.
+- Before the first workspace install, copy the legacy configer's installed
+  dependencies and compiled schema into its private dependency tree. If
+  the schema build fails, the previous configer still loads its own Zod 3
+  schema and dependency. The next successful configer build replaces this
+  snapshot with the Zod 4 version. A fresh or incomplete install can still
+  proceed when it has no complete dependency tree to preserve.
+- Keep lowdb 3.0.0. The legacy configer needs its top-level `JSONFile` export
+  on this same first-failure path.

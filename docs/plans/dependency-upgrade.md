@@ -381,7 +381,7 @@ mistaken for P1. The 2026-09-13 target runtime (Node 24 LTS 24.21.0 and pnpm
 
 | Change | PRs | What it does to this plan |
 |---|---|---|
-| `@babybox/config-schema` with `zod@3.23.8` | #86 | New package in the inventory. Already `module: node16` and `strict: true`. Backend imports the type only, through `baseUrl` + `paths`, because a `workspace:*` dep breaks the standalone `dist` install (learnings.md, Startup). TS 7 removes `baseUrl`; P4 must replace that path with a relative `paths` entry. Zod stays on 3.23.8 in this plan. Zod 4 is a separate project. |
+| `@babybox/config-schema` with `zod@3.23.8` | #86 | New package in the inventory. Already `module: node16` and `strict: true`. Backend imports the type only, through `baseUrl` + `paths`, because a `workspace:*` dep breaks the standalone `dist` install (learnings.md, Startup). TS 7 removes `baseUrl`; P4 must replace that path with a relative `paths` entry. Zod was pinned to 3.23.8 at this checkpoint. |
 | Config write path, PATCH, panel config page, apply-on-save | #85 #88 #89 #91 | Manual run in P4 includes the config page, PUT and PATCH. Express 5 now has 11 async route handlers (7 backend, 4 configer), not 9. Empty-body tests exist for PUT and PATCH; they still assume Express 4's `req.body = {}` when the header is missing. |
 | Startup logs through pino, not winston | #90 | Startup depends on `pino@^8.21.0` and `pino-pretty@^10.3.1`, with a fallback when `require("pino")` fails so a boot after a failed install still runs. `bootstrap.js` stays dependency-free. pino stops at 9.14.0: pino 10 needs Node 19.9 or newer and the startup app always runs on Node (2026-09-28). The Czech one-line file format from #90 is a constraint, not a nice-to-have. |
 | Startup has tests | #90 | `apps/startup/src/logger.test.js` runs under jest. P0 must not remove jest from startup. P5 moves those tests to vitest and puts them in CI. CI today lints startup and does not test it. |
@@ -968,7 +968,13 @@ earlier note said to wait for Bun; that premise was wrong, because the startup
 app always runs on Node (decided 2026-09-25). Revisit pino 10 only when every
 box runs Node 20 or newer. `bootstrap.js` never imports pino.
 
-**Zod.** Leave at `3.23.8`. A bump to 3.25 or 4 is not this project.
+**Zod.** Move config-schema to 4.6.7 for
+[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5).
+Preserve field errors, integer and range checks, optional fields, startup
+passthrough, and persisted key order. Exercise the first failed schema build
+in `legacy-boot1`. Snapshot the legacy configer's compiled schema and
+dependencies before the first workspace install so rollback keeps its
+original validation behavior.
 
 ## Pull requests from here
 
@@ -1372,8 +1378,8 @@ Size: ~0.5 day.
       merge. CI checks exact version pins and the deployment matrix.
 - [x] CI summarizes `bun outdated --recursive` and `bun audit`. The refresh
       resolves the fixable lock entries in the serving dependency graph.
-      The production audit still reports the Zod 3 advisory. Moving to
-      Zod 4 requires the separate schema migration described above.
+      On Bun 1.4.2, `bun audit --prod` reports zero advisories after the
+      config-schema migration to Zod 4.6.7.
 - [ ] Delete `pnpm-lock.yaml` only when `GET /status` from every known box
       shows Bun, or a box is written off
 - [ ] Decide when the legacy bootstrap may go: only when `GET /status` from every
@@ -1422,7 +1428,6 @@ contract, which is where most of the migration risk sits.
 - `moment` stays. It works, and 17 call sites are a separate, smaller project.
 - The backend `dist` is installed standalone. No `workspace:*` in the backend
   `package.json`. Config-schema stays a type-only import.
-- Zod stays at 3.23.8. Zod 4 is out of scope.
 - `@types/node` stays 18.x in the backend and configer while the Node
   fallback can start their new `dist`. No `@types/bun` there. Pending owner
   confirmation. Do not follow npm's 26.
@@ -1540,10 +1545,9 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       The daemon stays on Node. Every pm2 call starts it on the Node its
       shim finds, including the old startup's `pm2 delete`. The app
       interpreter is the absolute Bun path.
-- [ ] `START_CONFIGER` and `START_PANEL` pass when pm2 accepts the process.
-      Should `START_PANEL` wait for `GET /status` before it writes
-      `release.json`? A Bun crash after `pm2 start` returns 0 is not rolled
-      back.
+- [x] `START_CONFIGER` and `START_PANEL` require HTTP 200 before writing
+      `dist/release.json` (#141). The first boot still uses the old startup
+      app, so its behavior is covered separately by `legacy-boot1`.
 - [x] `dist-release.js` now starts `start-app.js` directly with the current Node
       executable on Windows, avoiding the `.cmd` shim with `shell: false`.
       Regression coverage checks the executable, both app arguments and shell mode.
@@ -1563,35 +1567,28 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 - [x] The install scripts still install `nodemon` at `latest`.
       Answered 2026-09-29. `ubuntu.js` and `windows.js` no longer run
       `npm install -g nodemon`.
-- [ ] `bootstrap.js` logs `pm2 je [PM2] Spawning PM2 daemon …` when its
-      `pm2 -v` starts the daemon. It reads the first stdout line. The log
-      line is wrong. The build does not fail.
-- [ ] Owner: `@types/node` stays 18.x in the backend and configer, with no
-      `@types/bun`. Their new `dist` can start on the Node 18 fallback
-      (hold OS, CPU hold, missing Bun), so the compiler must reject a Node
-      20+ API. With 24.13.4, `import.meta.dirname` compiles and throws on
-      Node 18. This deviates from the P3 plan text (24.x plus `@types/bun`).
-      Move to 24.x when no box can start the apps on Node 18.
-- [ ] Owner: land the panel contract before Libraries. See "Pull requests
-      from here", item 4.
-- [ ] No tsconfig type-checks the test files. Under the contract they have
-      18 errors in the backend, 16 in configer and 56 in config-schema, and
-      about 50 `as`. Add a test tsconfig per unit in P5. The panel tests
-      are checked since the panel contract PR.
+- [x] `bootstrap.js` extracts the version from pm2 output even when the daemon
+      prints a banner (#135).
+- [x] `@types/node` stays at 18.x for backend and configer per the owner
+      decision in [decisions.md](../decisions.md).
+- [x] The panel uses the shared type contract with Vite 8 (#144). The subsequent
+      dependency and Oxc refreshes retain that gate.
+- [x] CI type-checks tests for schema (#138), configer (#139), backend (#140),
+      and panel (#144).
 - [ ] `tsc` does not clean `outDir`. A box keeps the old
       `apps/backend/dist/__tests__/*.js` and `types/data.types.js`, and the
-      startup copies them into `dist`. Nothing imports them.
+      startup copies them into `dist`. Nothing imports them. A general
+      configer dist cleanup must keep the previous build and its private
+      dependencies available during failed upgrades.
 - [x] `?timeout` on the settings route is a string at run time, but
       `GetUnitSettingsRequest` types it as a number. The data routes read it
       through `queryTimeout()`; the settings route does not.
       Fixed in #136. `fetchSettings` reads the string with `queryTimeout`.
       `GetUnitSettingsRequest` holds `unit` only.
-- [ ] The root `dev` scripts still call `pnpm -F`.
-- [ ] `bun install --no-save` in a `dist` that has `.env` prints the `.env`
-      load and the resolve lines on stderr (Bun 1.4.2). Exit 0, the lock
-      does not change, and the startup does not fail on it. The same
-      happens before the type contract. The comment in `dist-release.js`
-      says the install writes nothing on stderr.
+- [x] The root `dev` scripts use Bun filters (#133).
+- [x] Standalone Bun installs can write to stderr with a `.env` file. The
+      release preparation and start paths use exit status. The old workspace
+      build hook still treats stderr as a build failure.
 - [x] Small backend and configer leftovers: `restartRepository()` returns
       `lastRequest` and `errorStreak` as values that never update; the
       configer `DbFactory` error names a `getInstance` that does not exist;
@@ -1600,9 +1597,8 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       Fixed in #136. The returned object is the one the interval updates.
       The error names `getMainDb` and `getVersionDb`. The engine route sends
       the unit payload. `main` is `./dist/index.js`.
-- [ ] npm reports vitest 5.0.2 on 2026-09-25; the plan pins 5.0.1.
-      Re-check at P5. `bun audit` still reports 79 (2 critical, 27 high,
-      38 moderate, 12 low).
+- [x] The Bun workspace uses Vitest 5.1.1 (#155). The older audit counts in P2
+      are historical.
 - [x] Owner: one shared `source/tsconfig.contract.json` that every unit
       extends, instead of a copy of the contract flags in each tsconfig.
       Answered 2026-09-25 in the review of #129: yes. The backend, configer
@@ -1640,15 +1636,12 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
       page, `/config` falls through to the SPA route, and the apps run on
       Node. `open()` was checked on a headless `node:18.12.1-bullseye`: it
       neither rejects nor ends the process, and it now has a `.catch` anyway.
-- [ ] Owner: give configer's `dist` its own `node_modules`, the way the backend
-      `dist` already has. Today `start-app.js` starts the backend from `../dist`
-      with `install: true` and configer from `apps/configer` with
-      `install: false`, so configer resolves from the shared
-      `source/node_modules`. `INSTALL` runs before every build step, so after a
-      failed build the kept configer `dist` is a stale compile against the new
-      packages. That blocks every configer library major, lowdb 7 first.
-      Found 2026-09-28 by `legacy-boot1`, not by `legacy-image`.
-- [ ] `dist-release.js` keeps its own copy of the Bun path and the CPU hold
+- [x] Configer snapshots runtime dependencies alongside its compiled output
+      after a successful build (#142). The Zod migration also preserves the
+      first legacy dependency tree before the workspace install. Keep
+      lowdb 3.0.0 through the first jump.
+- [ ] Defer sharing runtime probes until after canary validation.
+      `dist-release.js` keeps its own copy of the Bun path and the CPU hold
       check (`installedBunVersion`, `readCpuHold`). `start-app.js` uses the
       `bootstrap.js` exports. Fold the startup copy in in a later change.
 - [ ] `isInstanceOfGetUnitSettingsRequest` accepts `?unit=` (an empty
@@ -1689,13 +1682,8 @@ Copied into `decisions.md` in P0. `decisions.md` exists as of #85.
 - [ ] The panel no longer reads the root `@types` folder. TypeScript 6
       loads only what `types` names. The root `@types/*` can move to the
       apps that use them.
-- [ ] Small panel leftovers: `VivotekCameraView` types `imageRef` as
-      `HTMLImageElement`, binds it to an `<iframe>`, and never reads it.
-      `SettingsFormTableRow` passes `:value` to `BaseInput` as a
-      fall-through attribute, not as `modelValue`. `maxH + 'px'` renders
-      `undefinedpx` when no size is passed. `settingsRowValueToValue` reads
-      `multiplier` and never uses it. `ConnectionResult` is defined twice.
-      `logic/settings/table.ts` is an empty file.
+- [x] The small panel leftovers were addressed in #137, including the unused
+      iframe ref, config value bindings, height style, and duplicate types.
 
 ## Progress log
 

@@ -98,6 +98,20 @@ describe("validateMainConfig", () => {
     ]);
   });
 
+  it("accepts stored integers outside the safe integer range", () => {
+    expect(validateMainConfig(withUnits({ requestDelay: 1e30 }))).toEqual([]);
+  });
+
+  it("preserves the integer and range errors on a fractional port", () => {
+    const value = config();
+    value["configer"] = { ...fields(value["configer"]), port: 65535.5 };
+
+    expect(validateMainConfig(value)).toEqual([
+      { path: "configer.port", msg: "must be an integer" },
+      { path: "configer.port", msg: "must be between 1 and 65535" },
+    ]);
+  });
+
   it("rejects a port outside 1..65535", () => {
     const value = config();
     value["configer"] = { ...fields(value["configer"]), port: 70000 };
@@ -267,6 +281,21 @@ describe("parseMainConfig", () => {
       ok: true,
       config: defaultConfig(),
     });
+  });
+
+  it("writes the declared key order and leaves an omitted optional field absent", () => {
+    const value = defaultConfig();
+    delete value.app.refreshRequestLimit;
+    const result = parseMainConfig(
+      Object.fromEntries(Object.entries(value).reverse())
+    );
+
+    expect(result.ok && JSON.stringify(result.config)).toBe(
+      JSON.stringify(value)
+    );
+    expect(
+      result.ok && Object.hasOwn(result.config.app, "refreshRequestLimit")
+    ).toBe(false);
   });
 
   it("keeps the keys of startup", () => {
