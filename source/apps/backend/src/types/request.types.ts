@@ -3,8 +3,14 @@ import { settingSchema, z } from "../boundary.js";
 export type { Setting, SettingResult } from "../boundary.js";
 
 const timerMs = z.number().int().min(1).max(2147483647);
-const scalarNumber = z.union([z.number(), z.string().transform(Number)]);
-const timeout = scalarNumber.pipe(timerMs).optional().catch(undefined);
+// Express parses timeout[]=100 as a singleton array. Preserve the legacy
+// numeric conversion for that form while rejecting multi-value timeouts.
+const queryNumber = z.union([
+  z.number(),
+  z.string().transform(Number),
+  z.tuple([z.string()]).transform(([value]) => Number(value)),
+]);
+const timeout = queryNumber.pipe(timerMs).optional().catch(undefined);
 
 export const dataQuerySchema = z.object({ timeout });
 

@@ -431,16 +431,19 @@ describe("normalized input", () => {
       expect(settingsQuerySchema.safeParse({ unit }).success).toBe(false);
     }
   );
-  it.each([["100"], { ms: 100 }, "1.5", "2147483648"])(
+  it.each([[], ["100", "200"], { ms: 100 }, "1.5", "2147483648"])(
     "ignores bad query timeout %p",
     (timeout) => {
       expect(settingsQuerySchema.parse({ timeout }).timeout).toBeUndefined();
     }
   );
-  it.each(["100", "1e2", 100])("preserves scalar timeout %p", (timeout) => {
-    expect(settingsQuerySchema.parse({ timeout })).toEqual({
-      unit: "both",
-      timeout: 100,
-    });
-  });
+  it.each(["100", "1e2", 100, ["100"]])(
+    "preserves legacy timeout %p",
+    (timeout) => {
+      expect(settingsQuerySchema.parse({ timeout })).toEqual({
+        unit: "both",
+        timeout: 100,
+      });
+    }
+  );
 });
