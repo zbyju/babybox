@@ -1,4 +1,4 @@
-import { bindingPort } from "./boundary.js";
+import { bindingPort, z } from "./boundary.js";
 import { readConfig } from "./fetch/readConfig.js";
 import cors from "cors";
 import * as dotenv from "dotenv";
@@ -9,6 +9,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 import { EmailRelay } from "./email/relay.js";
+import { object } from "./email/settings.js";
 import { fetchConfig } from "./fetch/fetchConfig.js";
 import { jsonErrors } from "./middleware/jsonErrors.js";
 import type {
@@ -30,6 +31,7 @@ import {
 import { wait } from "./utils/wait.js";
 
 const CONFIG_RETRY_DELAY_MS = 5000;
+const emailIds = z.array(z.string()).max(100);
 
 /*
  * Not import.meta.dirname: that needs Node 20.11.
@@ -159,8 +161,13 @@ async function main() {
         res.sendStatus(404);
         return;
       }
+      const body: unknown = req.body;
+      const fields = object(body) ? body : {};
       if (action === "test") {
-        const id = await email.test(String(req.body?.recipient || ""));
+        const recipient = fields["recipient"];
+        const id = await email.test(
+          typeof recipient === "string" ? recipient : ""
+        );
         res.send({
           id,
           msg: "Test zařazen do fronty. Sledujte výsledek v historii.",
@@ -171,21 +178,16 @@ async function main() {
         res.status(404).send({ msg: "Neznámá akce." });
         return;
       }
-      if (action !== "retry" && req.body?.confirmed !== true) {
+      if (action !== "retry" && fields["confirmed"] !== true) {
         res.status(400).send({ msg: "Odstranění vyžaduje potvrzení." });
         return;
       }
-      const ids = req.body?.ids;
-      if (
-        action !== "clear" &&
-        (!Array.isArray(ids) ||
-          ids.length > 100 ||
-          ids.some((id: unknown) => typeof id !== "string"))
-      ) {
+      const ids = emailIds.safeParse(action === "clear" ? [] : fields["ids"]);
+      if (!ids.success) {
         res.status(400).send({ msg: "Neplatný výběr zpráv." });
         return;
       }
-      const changed = await email.action(action, ids);
+      const changed = await email.action(action, ids.data);
       res.send({
         changed,
         msg: `Změněno zpráv: ${changed}. Aktivní odesílání se dokončí.`,

@@ -1,5 +1,9 @@
 <template>
-  <section class="mini-panel" aria-label="Živý náhled Babyboxu">
+  <section
+    class="mini-panel"
+    :class="{ 'with-message': showMessage }"
+    aria-label="Živý náhled Babyboxu"
+  >
     <CameraWrapper :display-doors="true" show-empty-doors class="mini-camera">
       <template #overlay>
         <span
@@ -67,22 +71,17 @@
     return "Spojení s jednotkami je v pořádku";
   });
   const messageTone = computed(() => {
-    switch (panel.message?.color) {
-      case "color-text-error":
-        return "error";
-      case "color-text-warning":
-        return "warning";
-      case "color-text-success":
-        return "success";
-      case undefined:
-        return health.value === "online"
-          ? "success"
-          : health.value === "offline"
-            ? "error"
-            : "warning";
-      default:
-        return "info";
+    if (panel.message) {
+      if (panel.message.color === "color-text-error") return "error";
+      if (panel.message.color === "color-text-warning") return "warning";
+      if (panel.message.color === "color-text-success") return "success";
+      return "info";
     }
+    return health.value === "online"
+      ? "success"
+      : health.value === "offline"
+        ? "error"
+        : "warning";
   });
 </script>
 
@@ -91,7 +90,8 @@
     width 280px
     max-width 100%
     display grid
-    gap 4px
+    border-radius 6px
+    overflow hidden
 
   .mini-camera
     width 100%
@@ -103,13 +103,20 @@
     height auto
     overflow hidden
     background color-bg-black
-    border-radius 0 0 6px 6px
+    border 1px solid #3b3763
+    box-sizing border-box
+
+  .with-message .mini-camera :deep(.camera-frame)
+    border-bottom 0
 
   .mini-camera :deep(.camera-door-bars)
     width 100%
     min-height 4px
     background #25224b
     border-radius 4px 4px 0 0
+
+  .mini-camera :deep(iframe)
+    border 0
 
   .mini-camera :deep(.verticalPositionBar)
     flex-basis 0
@@ -120,6 +127,8 @@
     height 100%
     min-width 0
     min-height 0
+    border 0
+    border-radius 0
 
   .mini-camera :deep(.camera-error), .mini-camera :deep(.camera-loading)
     display grid
@@ -150,7 +159,7 @@
   .mini-message
     margin 0
     padding 6px 10px
-    border-radius 6px
+    border-radius 0 0 6px 6px
     font-weight 700
     font-size .88rem
     line-height 1.4

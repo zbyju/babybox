@@ -1,6 +1,21 @@
 import { createRequire } from "node:module";
 import { Worker } from "worker_threads";
 
+import { z } from "../boundary.js";
+
+const metadataResult = z.object({
+  subject: z.string(),
+  text: z.string(),
+  headers: z.string(),
+  attachments: z.array(
+    z.object({
+      filename: z.string(),
+      contentType: z.string(),
+      size: z.number(),
+    })
+  ),
+});
+
 /** MIME parsing stays off the monitoring event loop. Attachment bytes are never returned. */
 const require = createRequire(import.meta.url);
 
@@ -32,10 +47,12 @@ export function metadata(content: Buffer): Promise<{
       void worker.terminate();
       reject(new Error("Čtení obsahu zprávy překročilo časový limit."));
     }, 15_000);
-    worker.once("message", (value) => {
+    worker.once("message", (value: unknown) => {
       clearTimeout(timer);
       void worker.terminate();
-      resolve(value);
+      const result = metadataResult.safeParse(value);
+      if (result.success) resolve(result.data);
+      else reject(new Error("Obsah zprávy nelze načíst."));
     });
     worker.once("error", () => {
       clearTimeout(timer);

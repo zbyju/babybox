@@ -81,9 +81,10 @@ describe("persistent email lifecycle", () => {
     const first = history.save();
     history.event(record, "attempt", "second");
     await Promise.all([first, history.save()]);
-    expect(JSON.parse(await fs.readFile(file, "utf8"))[0].events).toHaveLength(
-      2
-    );
+    const stored: unknown = JSON.parse(await fs.readFile(file, "utf8"));
+    expect(stored).toMatchObject([
+      { events: [{ kind: "received" }, { kind: "attempt" }] },
+    ]);
   });
 
   it("keeps corrupt history untouched and exposes failure without throwing into monitoring", async () => {

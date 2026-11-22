@@ -1,4 +1,3 @@
-import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import * as path from "path";
 import type { SMTPServer } from "smtp-server";
@@ -26,7 +25,6 @@ import {
 } from "./settings.js";
 import { classifyFailure, routedContent, submit } from "./transport.js";
 
-const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const MAX_BYTES = 100 * 1024 * 1024;
@@ -108,8 +106,8 @@ export class EmailRelay {
     }
   }
 
-  private listen(port: number, host: string): Promise<void> {
-    const smtp: typeof import("smtp-server") = require("smtp-server");
+  private async listen(port: number, host: string): Promise<void> {
+    const smtp = await import("smtp-server");
     const server = new smtp.SMTPServer({
       name: "babybox-panel",
       banner: "Babybox SMTP",

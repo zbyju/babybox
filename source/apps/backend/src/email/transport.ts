@@ -1,8 +1,4 @@
-import { createRequire } from "node:module";
-
 import { type EmailSettings, diagnostic, mailbox, object } from "./settings.js";
-
-const require = createRequire(import.meta.url);
 
 export type FailureCategory =
   | "temporary"
@@ -107,7 +103,7 @@ export async function submit(
   }
   // Lazy load: deployed Node 18 panels must still boot and monitor normally.
   const connect: CreateTransport =
-    createTransport ?? require("nodemailer").createTransport;
+    createTransport ?? (await import("nodemailer")).default.createTransport;
   const transport = connect({
     host: settings.host.trim(),
     port: 465,

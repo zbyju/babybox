@@ -58,8 +58,12 @@ describe("accepts", () => {
       status: "reloaded",
       config: { email, camera: { ip: config.camera.ip } },
     });
-    expect(await reloadConfig(answerWith({ ...config, email: "invalid", camera: null }), bound))
-      .toMatchObject({ status: "reloaded", config: { email: "invalid" } });
+    expect(
+      await reloadConfig(
+        answerWith({ ...config, email: "invalid", camera: null }),
+        bound
+      )
+    ).toMatchObject({ status: "reloaded", config: { email: "invalid" } });
   });
 
   it("accepts a config that has the five fields the backend reads", () => {

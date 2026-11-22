@@ -96,10 +96,12 @@ export class EmailHistory {
       "id" | "status" | "contentAvailable" | "events" | "recipients"
     >
   ): EmailRecord {
+    const recipients: EmailRecord["recipients"] = {};
+    Object.setPrototypeOf(recipients, null);
     const record: EmailRecord = {
       ...input,
       id: randomUUID(),
-      recipients: Object.create(null),
+      recipients,
       status: "pending",
       contentAvailable: true,
       events: [
@@ -120,7 +122,7 @@ export class EmailHistory {
   }
 
   list(): EmailRecord[] {
-    return JSON.parse(JSON.stringify(this.records.slice().reverse()));
+    return structuredClone(this.records.slice().reverse());
   }
 
   save(): Promise<void> {

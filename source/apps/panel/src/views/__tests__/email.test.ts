@@ -1,4 +1,4 @@
-import { defaultConfig } from "@babybox/config-schema";
+import { defaultConfig, parseMainConfig } from "@babybox/config-schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, nextTick } from "vue";
 
@@ -35,6 +35,7 @@ describe("email maintenance page", () => {
         attempts: 0,
         active: false,
         stopped: false,
+        paused: false,
       },
     ],
     history: [
@@ -60,8 +61,17 @@ describe("email maintenance page", () => {
     for (let i = 0; i < 12; i++) await Promise.resolve();
     await nextTick();
   }
+  async function openSection(label: string) {
+    Array.from(
+      element.querySelectorAll<HTMLButtonElement>(".email-sections button"),
+    )
+      .find((button) => button.textContent?.trim() === label)
+      ?.click();
+    await flush();
+  }
+
   beforeEach(async () => {
-    vi.mocked(getConfig).mockResolvedValue(defaultConfig());
+    vi.mocked(getConfig).mockResolvedValue(parseMainConfig(defaultConfig()));
     vi.mocked(reloadBackendConfig).mockResolvedValue({
       ok: true,
       unapplied: [],
@@ -87,14 +97,17 @@ describe("email maintenance page", () => {
     vi.useRealTimers();
   });
 
-  it("escapes message content and masks the SMTP password", () => {
+  it("escapes message content and masks the SMTP password", async () => {
+    await openSection("Historie");
     expect(element.querySelector("script")).toBeNull();
     expect(element.querySelector("img")).toBeNull();
     expect(element.textContent).toContain("<script>bad()</script>");
+    await openSection("SMTP a test");
     expect(element.querySelector('input[type="password"]')).toBeTruthy();
   });
 
   it("saves only email settings so unrelated device configuration is not overwritten", async () => {
+    await openSection("SMTP a test");
     element
       .querySelector("form")
       ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -102,13 +115,17 @@ describe("email maintenance page", () => {
     const call = vi
       .mocked(fetchWithTimeout)
       .mock.calls.find(([, options]) => options?.method === "PATCH");
-    expect(JSON.parse(String(call?.[1]?.body))).toEqual({
+    const body = call?.[1]?.body;
+    const patch: unknown =
+      typeof body === "string" ? JSON.parse(body) : undefined;
+    expect(patch).toEqual({
       email: defaultConfig().email,
     });
     expect(reloadBackendConfig).toHaveBeenCalledOnce();
   });
 
-  it("shows a single log row with its result and keeps diagnostics in its details", () => {
+  it("shows a single log row with its result and keeps diagnostics in its details", async () => {
+    await openSection("Historie");
     const rows = element.querySelectorAll(".history-row");
     expect(rows).toHaveLength(1);
     const row = rows[0];
@@ -126,31 +143,38 @@ describe("email maintenance page", () => {
     );
   });
 
-  it("keeps history and queued messages when devices send directly", async () => {
+  it("hides panel-only tools when devices send directly without deleting mail", async () => {
     const routing = element.querySelector<HTMLInputElement>(
       '[name="email-routing"][value="direct"]',
     );
     routing?.click();
     await flush();
     expect(element.querySelector('input[type="password"]')).toBeNull();
-    expect(element.querySelector('input[type="email"]')).not.toBeNull();
+    expect(element.querySelector(".email-sections")).toBeNull();
 
-    element
-      .querySelector<HTMLButtonElement>('[form="email-configuration"]')
-      ?.click();
+    element.querySelector<HTMLButtonElement>(".routing-card button")?.click();
     await flush();
     const call = vi
       .mocked(fetchWithTimeout)
       .mock.calls.find(([, options]) => options?.method === "PATCH");
-    expect(JSON.parse(String(call?.[1]?.body))).toEqual({
+    const body = call?.[1]?.body;
+    const patch: unknown =
+      typeof body === "string" ? JSON.parse(body) : undefined;
+    expect(patch).toEqual({
       email: { ...defaultConfig().email, listener: "disabled" },
     });
     expect(element.querySelector('input[type="email"]')).toBeNull();
-    expect(element.querySelector(".history-row")).not.toBeNull();
-    expect(element.querySelector(".queue-row")).not.toBeNull();
+    expect(element.querySelector(".history-row")).toBeNull();
+    expect(element.querySelector(".queue-row")).toBeNull();
+    expect(element.querySelector(".email-sections")).toBeNull();
+    const posts = vi
+      .mocked(fetchWithTimeout)
+      .mock.calls.filter(([, options]) => options?.method === "POST");
+    expect(posts).toHaveLength(0);
   });
 
   it("shows panel recipient fields only when the panel selects recipients", async () => {
+    await openSection("SMTP a test");
     expect(element.textContent).not.toContain("Adresáti jednotek");
     expect(element.querySelector('input[type="password"]')).not.toBeNull();
     const routing = element.querySelector<HTMLInputElement>(
@@ -163,6 +187,7 @@ describe("email maintenance page", () => {
   });
 
   it("requires an inline confirmation before deleting and never opens a blocking dialog", async () => {
+    await openSection("Fronta");
     const confirm = vi.spyOn(window, "confirm");
     const button = Array.from(element.querySelectorAll("button")).find(
       (button) => button.textContent?.includes("Vyprázdnit frontu"),
@@ -184,7 +209,10 @@ describe("email maintenance page", () => {
     const call = vi
       .mocked(fetchWithTimeout)
       .mock.calls.find(([url]) => String(url).endsWith("/email/clear"));
-    expect(JSON.parse(String(call?.[1]?.body)).confirmed).toBe(true);
+    const body = call?.[1]?.body;
+    const action: unknown =
+      typeof body === "string" ? JSON.parse(body) : undefined;
+    expect(action).toMatchObject({ confirmed: true });
     expect(confirm).not.toHaveBeenCalled();
     confirm.mockRestore();
   });
