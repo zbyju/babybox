@@ -11,7 +11,7 @@
     "dev": "bun --watch src/index.ts",
     "start": "node ../startup/start-app.js configer",
     "build": "bun --bun tsc",
-    "lint": "bun --bun oxlint --type-aware --deny-warnings src",
+    "lint": "bun --bun oxlint --type-aware --deny-warnings src && bun ../../scripts/lint-boundaries.js apps/configer/src",
     "format": "bun --bun oxfmt --write src",
     "format:check": "bun --bun oxfmt --check src",
     "test": "bun --bun vitest run --pool threads src",

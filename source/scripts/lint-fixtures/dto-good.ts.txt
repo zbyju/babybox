@@ -1,0 +1,16 @@
+import { z } from "zod";
+
+const schema = z.object({ engine: z.string(), thermal: z.string() });
+export function readUnitSettings(raw: unknown) {
+  return schema.safeParse(raw);
+}
+
+export function supportsReload(api: unknown): boolean {
+  return typeof api === "object" && api !== null &&
+    "reload" in api && typeof api.reload === "function";
+}
+
+type Result = { status: "ok"; data: string } | { status: "error"; message: string };
+export function readResult(value: Result) {
+  return value.status === "ok" && typeof value.data === "string";
+}

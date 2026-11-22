@@ -116,7 +116,7 @@ jobs:
   # stare pm2 a PATH bez ~/.bun/bin. Stary startup po chybe startu dist2
   # neobnovi, takze chybny start je krabice, ktera nenabehne.
   legacy-boot1:
-    name: legacy-boot1 (${{ matrix.os }}, pm2 ${{ matrix.pm2 }})
+    name: legacy-boot1 (${{ matrix.os }}, pm2 ${{ matrix.pm2 }}, ${{ matrix.revision }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -124,11 +124,17 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         pm2: ["5.2.0", "6.0.14"]
+        revision: [legacy-runtime, 303b61e7a7632fa37479ecfe4adf0756be5e90c8, 8c5ce842aeae0038874464f2ae7c6af4ee2f77fa]
+        exclude:
+          - revision: 303b61e7a7632fa37479ecfe4adf0756be5e90c8
+            pm2: "6.0.14"
+          - revision: 8c5ce842aeae0038874464f2ae7c6af4ee2f77fa
+            pm2: "6.0.14"
     steps:
-      - name: Checkout legacy-runtime
+      - name: Checkout legacy starting revision
         uses: actions/checkout@v4
         with:
-          ref: legacy-runtime
+          ref: ${{ matrix.revision }}
           fetch-depth: 0
 
       # Skripty testu jsou jen v hlave PR, tag je nema.
@@ -178,7 +184,28 @@ jobs:
         working-directory: source
         env:
           TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          LEGACY_REVISION: ${{ matrix.revision }}
         run: bash "${RUNNER_TEMP}/legacy-boot1.sh"
+
+  fresh-install:
+    name: Fresh install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.12.1
+      - name: Install and start twice
+        shell: bash
+        working-directory: source
+        run: bash apps/startup/tests/fresh-install.sh
 
   # Bun 1.4.2 je jedina brana pro install, build a testy.
   # Node 18 zustava jen v jobu legacy-image.
@@ -218,24 +245,16 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Panel lint and format
-        run: bun --filter babybox-panel lint && bun --filter babybox-panel format:check
+      - name: Workspace lint and fixtures
+        run: bun run lint
 
-      - name: Build config schema
-        run: bun --filter @babybox/config-schema build
-
-      - name: Startup and schema lint and format
+      - name: Format
         run: |
-          bun --filter startup lint
+          bun --filter babybox-panel format:check
           bun --filter startup format:check
-          bun --filter @babybox/config-schema lint
           bun --filter @babybox/config-schema format:check
-
-      - name: Backend lint and format
-        run: bun --filter babybox-panel-backend lint && bun --filter babybox-panel-backend format:check
-
-      - name: Configer lint and format
-        run: bun --filter babybox-panel-configer lint && bun --filter babybox-panel-configer format:check
+          bun --filter babybox-panel-backend format:check
+          bun --filter babybox-panel-configer format:check
 
       - name: Build
         run: bun --filter babybox-panel build && bun --filter babybox-panel-backend build && bun --filter babybox-panel-configer build
@@ -252,10 +271,17 @@ jobs:
       - name: Configer typecheck
         run: bun --filter babybox-panel-configer typecheck
 
-      - name: Backend dist has no schema import
-        run: |
-          test -d apps/backend/dist
-          ! grep -rl "config-schema" apps/backend/dist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.12.1
+
+      - name: Standalone backend retries invalid config
+        run: node scripts/test-packaged-backend.js
+
+      # jsdom 30 needs a newer host for the panel tests only.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.2
 
       # The build checks src only. This step checks the tests.
       - name: Config schema typecheck
@@ -266,11 +292,6 @@ jobs:
 
       - name: Backend tests
         run: bun --filter babybox-panel-backend test
-
-      # jsdom 30 needs a newer host for the panel tests only.
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.22.2
 
       - name: Panel tests
         run: bun --filter babybox-panel test:unit --run

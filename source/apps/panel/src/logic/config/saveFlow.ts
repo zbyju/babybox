@@ -111,12 +111,26 @@ export async function runSave(
     return done({ kind: "notSent" });
   }
 
-  if (!saved.ok) {
-    add(refusalMessage(saved.status, saved.msg), LogEntryType.Error);
-    for (const error of saved.errors) {
-      add(`${error.path}: ${error.msg}`, LogEntryType.Error);
-    }
-    return done({ kind: "rejected" }, saved.errors);
+  switch (saved.kind) {
+    case "fieldErrors":
+      add(refusalMessage(saved.status, undefined), LogEntryType.Error);
+      for (const error of saved.errors) {
+        add(`${error.path}: ${error.msg}`, LogEntryType.Error);
+      }
+      return done({ kind: "rejected" }, saved.errors);
+    case "serverError":
+      add(refusalMessage(saved.status, saved.msg), LogEntryType.Error);
+      return done({ kind: "rejected" });
+    case "protocolError":
+      add(
+        "Configer vrátil nečitelnou odpověď. Konfigurace se možná uložila. Načti stránku znovu a zkontroluj to.",
+        LogEntryType.Error,
+      );
+      return done({ kind: "notSent" });
+    case "saved":
+      break;
+    default:
+      saved satisfies never;
   }
 
   add("Konfigurace uložena", LogEntryType.Success);

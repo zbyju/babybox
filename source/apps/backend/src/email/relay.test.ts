@@ -43,8 +43,6 @@ describe("email relay isolation and recipient tracking", () => {
       password: "secret",
     };
     config = {
-      backend: { url: "/api/v1", port: 5000 },
-      pc: { os: "windows" },
       units: { engine: { ip: "127.0.0.1" }, thermal: { ip: "127.0.0.2" } },
       camera: { ip: "127.0.0.3" },
       email: settings,

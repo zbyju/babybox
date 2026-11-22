@@ -1,3 +1,6 @@
+import { parseStartupLast, type StartupLast } from "@babybox/config-schema";
+export { parseStartupLast };
+export type { StartupLast };
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -5,16 +8,6 @@ import * as path from "node:path";
 const VERSION_TIMEOUT_MS = 5000;
 
 export type RuntimeVersions = {
-  node: string;
-  pnpm: string;
-  bun: string;
-};
-
-export type StartupLast = {
-  step: string;
-  ok: boolean;
-  message: string;
-  at: string;
   node: string;
   pnpm: string;
   bun: string;
@@ -70,45 +63,6 @@ export function startupLastFor(startDir: string): StartupLast | null {
     return null;
   }
   return readStartupLast(filePath);
-}
-
-export function parseStartupLast(text: string): StartupLast | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
-    return null;
-  }
-  if (!isRecord(value)) {
-    return null;
-  }
-  const step = value["step"];
-  const ok = value["ok"];
-  const message = value["message"];
-  const at = value["at"];
-  const node = value["node"];
-  const pnpm = value["pnpm"];
-  const bun = value["bun"];
-  if (
-    typeof step !== "string" ||
-    typeof ok !== "boolean" ||
-    typeof message !== "string" ||
-    typeof at !== "string" ||
-    typeof node !== "string" ||
-    typeof pnpm !== "string" ||
-    typeof bun !== "string"
-  ) {
-    return null;
-  }
-  return { step, ok, message, at, node, pnpm, bun };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    Array.isArray(value) === false
-  );
 }
 
 function hasStartupMarker(dir: string): boolean {

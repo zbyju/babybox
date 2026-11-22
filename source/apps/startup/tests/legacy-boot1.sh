@@ -271,7 +271,7 @@ EOF
   fi
 }
 
-LEGACY_SHA="$(git rev-parse "legacy-runtime^{commit}")"
+LEGACY_SHA="$(git rev-parse "${LEGACY_REVISION:-legacy-runtime}^{commit}")"
 PM2_WANT="$(pm2_version)"
 assert_head "$LEGACY_SHA"
 set_up_remote

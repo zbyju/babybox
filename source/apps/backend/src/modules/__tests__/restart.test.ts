@@ -1,60 +1,54 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import moment from "moment";
+import { describe, expect, it, vi } from "vitest";
 
-const exec = vi.fn();
+vi.mock("../../index.js", () => ({ config: null }));
 
-async function loadRepo() {
-  vi.resetModules();
-  vi.doMock("child_process", () => ({ exec }));
-  vi.doMock("winston", () => ({
-    default: {
-      createLogger: () => ({ info: () => undefined }),
-      format: { json: () => ({}) },
-      transports: { File: vi.fn() },
-    },
-  }));
-  vi.doMock("../../index.js", () => ({
-    config: { pc: { os: "windows" } },
-  }));
-  const { restartRepository } = await import("../restart.js");
-  return restartRepository();
-}
+import { restartRepository } from "../restart.js";
+import type { RestartOs } from "../../fetch/readConfig.js";
 
-describe("restartRepository", () => {
-  afterEach(() => {
-    vi.clearAllTimers();
-    vi.useRealTimers();
-    vi.resetModules();
-    delete process.env["RESTART_INTERVAL"];
-    delete process.env["RESTART_ERROR_THRESHOLD"];
-    exec.mockReset();
+describe("automatic restart", () => {
+  it.each([
+    ["-1", 20000],
+    ["10oops", 20000],
+    ["2147483648", 20000],
+    ["1500", 1500],
+  ])("schedules %s with delay %s", (raw, expected) => {
+    const schedule = vi.fn();
+    const repo = restartRepository(
+      { RESTART_INTERVAL: raw, RESTART_ERROR_THRESHOLD: "bad" },
+      schedule
+    );
+    expect(schedule).toHaveBeenCalledWith(expect.any(Function), expected);
+    expect(repo.errorThreshold).toBe(9);
   });
 
-  it("shows the request time after onIncomingRequest", async () => {
-    vi.useFakeTimers();
-    const repo = await loadRepo();
+  const cases: [RestartOs, string[]][] = [
+    [{ status: "unsupported", value: "linux" }, []],
+    [
+      { status: "supported", value: "windows" },
+      ["shutdown -r -t 60", "shutdown -a"],
+    ],
+    [
+      { status: "supported", value: "ubuntu" },
+      ["shutdown -r +1", "shutdown -c"],
+    ],
+  ];
 
-    expect(repo.lastRequest).toBeNull();
+  it.each(cases)("selects restart commands for %j", (os, commands) => {
+    let tick = () => {};
+    const run = vi.fn<(command: string) => void>();
+    const repo = restartRepository(
+      { RESTART_ERROR_THRESHOLD: "1", RESTART_INTERVAL: "1000" },
+      (callback) => {
+        tick = callback;
+      },
+      run,
+      () => os
+    );
+    repo.lastRequest = moment().subtract(5, "seconds");
+    tick();
     repo.onIncomingRequest();
-
-    expect(repo.lastRequest?.isValid()).toBe(true);
-  });
-
-  it("shows the error streak after requests stop", async () => {
-    vi.useFakeTimers();
-    process.env["RESTART_INTERVAL"] = "1000";
-    process.env["RESTART_ERROR_THRESHOLD"] = "9";
-    const repo = await loadRepo();
-    repo.onIncomingRequest();
-
-    /*
-     * The first tick is 1 s after the request. That gap equals the interval,
-     * so the streak stays 0. The next tick adds 1.
-     */
-    vi.advanceTimersByTime(1000);
-    expect(repo.errorStreak).toBe(0);
-
-    vi.advanceTimersByTime(1000);
-    expect(repo.errorStreak).toBe(1);
-    expect(exec).not.toHaveBeenCalled();
+    tick();
+    expect(run.mock.calls.flat()).toEqual(commands);
   });
 });

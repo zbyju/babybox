@@ -127,8 +127,8 @@ describe("boot", () => {
 
     const db = await mainConfig(configDir);
 
-    expect(db.data().babybox.name).toBe("Praha");
-    expect(db.data().units.engine.ip).toBe("10.1.1.5");
+    expect(db.data()).toMatchObject({ babybox: { name: "Praha" } });
+    expect(db.data()).toMatchObject({ units: { engine: { ip: "10.1.1.5" } } });
   });
 
   it("boots with a stored value PUT would reject, and warns", async () => {
@@ -140,7 +140,8 @@ describe("boot", () => {
 
     const db = await mainConfig(configDir);
 
-    expect(db.data().configer.port).toBe("8080");
+    expect(db.data()).toMatchObject({ configer: { port: "8080" } });
+    expect(db.binding.port).toBe(8080);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("configer.port"));
   });
 
@@ -154,7 +155,7 @@ describe("boot", () => {
 
     const db = await mainConfig(configDir);
 
-    expect(db.data().babybox.name).toBe("ze zalohy");
+    expect(db.data()).toMatchObject({ babybox: { name: "ze zalohy" } });
     expect(warn).toHaveBeenCalled();
   });
 
@@ -166,7 +167,7 @@ describe("boot", () => {
 
     const db = await mainConfig(configDir);
 
-    expect(db.data().babybox.name).toBe("ze zalohy");
+    expect(db.data()).toMatchObject({ babybox: { name: "ze zalohy" } });
     expect(readJson("main.json.bak")).toEqual(backup);
   });
 
@@ -194,7 +195,7 @@ describe("boot", () => {
 
     const db = await mainConfig(configDir);
 
-    expect(db.data().babybox.name).toBe("ze zalohy");
+    expect(db.data()).toMatchObject({ babybox: { name: "ze zalohy" } });
     expect(error).toHaveBeenCalledWith(expect.stringContaining("EACCES"));
   });
 
@@ -371,7 +372,7 @@ describe("update", () => {
       status: "write-failed",
       msg: "cannot write main.json: no space left on device",
     });
-    expect(db.data().babybox.name).toBe("prvni");
+    expect(db.data()).toMatchObject({ babybox: { name: "prvni" } });
     expect(readJson("main.json")).toEqual({
       ...base(),
       babybox: { name: "prvni" },
@@ -710,7 +711,7 @@ describe("patch", () => {
       status: "write-failed",
       msg: "cannot write main.json: no space left on device",
     });
-    expect(db.data().babybox.name).toBe("prvni");
+    expect(db.data()).toMatchObject({ babybox: { name: "prvni" } });
     expect(readJson("main.json")).toEqual({
       ...base(),
       babybox: { name: "prvni" },

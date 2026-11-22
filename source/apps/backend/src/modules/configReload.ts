@@ -1,4 +1,7 @@
-import type { MainConfig, UnappliedField } from "../types/config.types.js";
+import type { UnappliedField } from "../types/config.types.js";
+import type { ConfigAnswer } from "../fetch/fetchConfig.js";
+import { readConfig, type BackendReadableConfig } from "../fetch/readConfig.js";
+export type { BackendReadableConfig } from "../fetch/readConfig.js";
 
 /**
  * The address the server really bound, taken when it started listening.
@@ -21,68 +24,6 @@ export type ReloadResult =
     }
   | { status: "failed"; msg: string };
 
-type Fields = Record<string, unknown>;
-
-function isObject(value: unknown): value is Fields {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function describe(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-/**
- * Exactly the five leaves the backend reads, each one taken from `MainConfig`.
- *
- * This is the type `config` in `index.ts` carries, so a future read of a section
- * nothing checked does not compile. Grep for `config.` in `apps/backend/src`: the
- * readers are `index.ts` (port and prefix at listen), `modules/restart.ts` (`pc.os`)
- * and `fetch/fetchFromUnits.ts` plus `utils/url.ts` (the two unit IPs).
- */
-export interface BackendReadableConfig {
-  email?: MainConfig["email"];
-  camera?: Pick<MainConfig["camera"], "ip">;
-  backend: Pick<MainConfig["backend"], "url" | "port">;
-  pc: Pick<MainConfig["pc"], "os">;
-  units: {
-    engine: Pick<MainConfig["units"]["engine"], "ip">;
-    thermal: Pick<MainConfig["units"]["thermal"], "ip">;
-  };
-}
-
-/**
- * Checks the five fields the backend reads, and narrows to just those five.
- *
- * The backend cannot run the shared zod schema: its `dist` is installed outside the
- * workspace, so the package is a type here and nothing more. The panel narrows the
- * same way in `utils/panel/instanceCheck.ts`, to the five sections it reads; this
- * one goes further and narrows to the leaves, because the backend reads five leaves
- * and not five sections.
- *
- * It is deliberately narrow. A stored value the schema refuses but the backend never
- * touches must not stop the reload; a missing `units.engine.ip` must, because the
- * next poll would throw on it and take the panel down with the process.
- */
-export function isBackendReadableConfig(
-  value: unknown
-): value is BackendReadableConfig {
-  if (!isObject(value)) return false;
-
-  const { backend, pc, units } = value;
-  if (!isObject(backend) || !isObject(pc) || !isObject(units)) return false;
-
-  const { engine, thermal } = units;
-  if (!isObject(engine) || !isObject(thermal)) return false;
-
-  return (
-    typeof backend["url"] === "string" &&
-    typeof backend["port"] === "number" &&
-    typeof pc["os"] === "string" &&
-    typeof engine["ip"] === "string" &&
-    typeof thermal["ip"] === "string"
-  );
-}
-
 /**
  * The fields a reload read but a running process cannot take on.
  *
@@ -95,7 +36,7 @@ export function unappliedFields(
 ): UnappliedField[] {
   const unapplied: UnappliedField[] = [];
 
-  if (String(config.backend.port) !== String(bound.port)) {
+  if (config.backend.port && config.backend.port !== Number(bound.port)) {
     unapplied.push({
       path: "backend.port",
       running: bound.port,
@@ -119,52 +60,16 @@ export function unappliedFields(
   return unapplied;
 }
 
-/**
- * Reads the config again and says whether the caller may swap it in.
- *
- * On any failure it returns `failed` and no config, so the caller keeps the one it
- * has. That is the whole point of the function: `fetchConfig()` answers a failure
- * with an object that has no `data` key, and assigning that would leave `config`
- * undefined. The next poll would throw on `config.units.engine.ip`, and in
- * production that same process serves the panel, so the box would serve nothing
- * while pm2 keeps it alive. Someone would have to drive to the hospital.
- *
- * @param fetchConfig `fetch/fetchConfig`, injected so a test can fail it
- * @param bound what the server is listening on, for the unapplied list
- *
- * @example
- * const result = await reloadConfig(fetchConfig, bound);
- * if (result.status === "reloaded") applyConfig(result.config);
- */
+/** Read configer again and keep the current config on any failure. */
 export async function reloadConfig(
-  fetchConfig: () => Promise<{ data?: unknown; msg?: string }>,
+  fetchConfig: () => Promise<ConfigAnswer>,
   bound: BoundAddress
 ): Promise<ReloadResult> {
-  let answer: { data?: unknown; msg?: string };
-  try {
-    answer = await fetchConfig();
-  } catch (error) {
-    return {
-      status: "failed",
-      msg: `configer request threw: ${describe(error)}`,
-    };
-  }
-
-  if (!isObject(answer) || answer.data === undefined) {
-    const reason = isObject(answer) ? String(answer.msg) : "no answer";
-    return { status: "failed", msg: `configer returned no config: ${reason}` };
-  }
-
-  if (!isBackendReadableConfig(answer.data)) {
-    return {
-      status: "failed",
-      msg: "the stored config is missing a field the backend reads",
-    };
-  }
-
+  const answer = await readConfig(fetchConfig);
+  if (answer.status === "failed") return answer;
   return {
     status: "reloaded",
-    config: answer.data,
-    unapplied: unappliedFields(answer.data, bound),
+    config: answer.config,
+    unapplied: unappliedFields(answer.config, bound),
   };
 }

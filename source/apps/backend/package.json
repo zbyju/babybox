@@ -12,12 +12,12 @@
   "main": "./dist/index.js",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "lint": "bun --bun oxlint --type-aware --deny-warnings src",
+    "lint": "bun --bun oxlint --type-aware --deny-warnings src && bun ../../scripts/lint-boundaries.js apps/backend/src",
     "format": "bun --bun oxfmt --write \"src/**/*.ts\"",
     "test": "bun --bun vitest run --pool threads src",
     "typecheck": "bun --bun tsc -p tsconfig.vitest.json",
     "test:postman": "newman run ./src/routes/__postman__/babybox-panel.postman_collection.json -e ./src/routes/__postman__/BabyboxPanel.postman_environment.json",
-    "build": "bun --bun tsc",
+    "build": "bun --bun tsc && bun build ./src/boundary.ts --target=node --outfile=dist/boundary.js",
     "echo": "echo 'Hello from babybox panel backend'",
     "format:check": "bun --bun oxfmt --check \"src/**/*.ts\""
   },

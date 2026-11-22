@@ -19,6 +19,8 @@ export const typeToMeasureUnit = (type: SettingsTableRowValueType): string => {
       return "s";
     case SettingsTableRowValueType.Days:
       return "den";
+    default:
+      return type satisfies never;
   }
 };
 
@@ -27,19 +29,21 @@ export const settingsRowValueToValue = (
   type: SettingsTableRowValueType,
 ): Maybe<number> => {
   if (!isNumber(value) || value === "") return undefined;
-  if (type === SettingsTableRowValueType.Temperature)
-    return Number(value) * 100;
-
-  if (type === SettingsTableRowValueType.Voltage) {
-    const divider = useConfigStore()?.units?.voltage?.divider || 63;
-    return Math.round(Number(value) * divider);
+  switch (type) {
+    case SettingsTableRowValueType.String:
+    case SettingsTableRowValueType.Seconds:
+      return Number(value);
+    case SettingsTableRowValueType.Temperature:
+      return Number(value) * 100;
+    case SettingsTableRowValueType.Voltage: {
+      const divider = useConfigStore().units.voltage.divider || 63;
+      return Math.round(Number(value) * divider);
+    }
+    case SettingsTableRowValueType.Days:
+      return Number(value) * 86400;
+    default:
+      return type satisfies never;
   }
-
-  if (type === SettingsTableRowValueType.Days) {
-    return Number(value) * 86400;
-  }
-
-  return Number(value);
 };
 
 export const settingsResultsToState = (

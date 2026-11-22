@@ -28,7 +28,7 @@ const fieldLabels = new Map(
   configFormFields.map((field) => [field.path, field.label]),
 );
 
-function labelFor(path: string): string {
+function labelFor(path: UnappliedField["path"]): string {
   return fieldLabels.get(path) ?? path;
 }
 

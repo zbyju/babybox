@@ -58,8 +58,34 @@ describe.each([
         throw error || new Error(`${tag}: ${message}`);
       },
     };
-    expect(await install({ exec, logger })).toBe(true);
-    expect(commands).toContain(`npm install -g pm2@${PIN}`);
-    expect(commands).not.toContain("npm install -g pm2@latest");
+    const appData = fs.mkdtempSync(path.join(os.tmpdir(), "babybox-appdata-"));
+    const startupDir = path.join(appData, "checkout with spaces");
+    try {
+      const options = { exec, logger, appData, startupDir };
+      expect(await install(options)).toBe(true);
+      expect(commands).toContain(`npm install -g pm2@${PIN}`);
+      expect(commands).not.toContain("npm install -g pm2@latest");
+
+      if (label === "Windows") {
+        const startup = path.join(
+          appData,
+          "Microsoft",
+          "Windows",
+          "Start Menu",
+          "Programs",
+          "Startup"
+        );
+        const launcher = path.join(startup, "Babybox.bat");
+        const contents = fs.readFileSync(launcher, "utf8");
+        expect(contents).toContain(
+          '"' + path.join(startupDir, "scripts", "windows", "startup.bat") + '"'
+        );
+        expect(await install(options)).toBe(true);
+        expect(fs.readdirSync(startup)).toEqual(["Babybox.bat"]);
+        expect(fs.readFileSync(launcher, "utf8")).toBe(contents);
+      }
+    } finally {
+      fs.rmSync(appData, { recursive: true, force: true });
+    }
   });
 });

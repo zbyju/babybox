@@ -1,9 +1,17 @@
+import type { z } from "zod";
+
 import { backendApi } from "@/api/base";
-import { type JsonResponse, request, requestJson } from "@/api/http";
+import { decodeJson, request, requestJson } from "@/api/http";
+import {
+  reconcileSettings,
+  settingsAcknowledgementsSchema,
+  settingsResponseSchemas,
+  unitDataSchema,
+  type SettingsSave,
+} from "@/api/unitsBoundary";
 import type { RawEngineUnit, RawThermalUnit } from "@/types/panel/units.types";
 import type { SettingsToSend } from "@/types/settings/manager.types";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
-import { isObject } from "@/utils/general";
 
 export const getStatus = async (): Promise<boolean> => {
   const { baseUrl, timeout } = backendApi();
@@ -19,17 +27,8 @@ export const getData = async (
   url: string,
   timeout = 5000,
 ): Promise<RawEngineUnit | RawThermalUnit | undefined> => {
-  try {
-    const { data: body } = await requestJson(url, { timeout });
-    if (!isObject(body) || typeof body["data"] !== "string") {
-      return Promise.reject(undefined);
-    }
-    return body["data"].split("|").map((x: string, i: number) => {
-      return { index: i, value: x };
-    });
-  } catch (err) {
-    return Promise.reject(undefined);
-  }
+  const { data } = await requestJson(url, unitDataSchema, { timeout });
+  return data;
 };
 
 export const getEngineData = (): Promise<RawEngineUnit | undefined> => {
@@ -83,24 +82,63 @@ export const resetBabybox = async (): Promise<void> => {
   });
 };
 
-export const getSettings = (): Promise<JsonResponse> => {
+type SettingsUnit = keyof typeof settingsResponseSchemas;
+export type SettingsRead<U extends SettingsUnit> = z.infer<
+  (typeof settingsResponseSchemas)[U]
+>["data"];
+
+export function getSettings(): Promise<SettingsRead<"both">>;
+export function getSettings<U extends SettingsUnit>(
+  unit: U,
+): Promise<SettingsRead<U>>;
+export async function getSettings(
+  unit: SettingsUnit = "both",
+): Promise<SettingsRead<SettingsUnit>> {
   const { baseUrl, timeout } = backendApi();
+  const url = `${baseUrl}/units/settings`;
+  switch (unit) {
+    case "both":
+      return (await requestJson(url, settingsResponseSchemas.both, { timeout }))
+        .data;
+    case "engine":
+      return (
+        await requestJson(
+          `${url}?unit=engine`,
+          settingsResponseSchemas.engine,
+          { timeout },
+        )
+      ).data;
+    case "thermal":
+      return (
+        await requestJson(
+          `${url}?unit=thermal`,
+          settingsResponseSchemas.thermal,
+          { timeout },
+        )
+      ).data;
+    default:
+      return unit satisfies never;
+  }
+}
 
-  return requestJson(`${baseUrl}/units/settings`, { timeout });
-};
-
-export const sendSettings = (data: SettingsToSend[]): Promise<JsonResponse> => {
+export async function sendSettings(
+  data: SettingsToSend[],
+): Promise<SettingsSave> {
   const { baseUrl } = backendApi();
-
-  /*
-   * Not the configured request timeout:
-   * the backend retries each setting against the units up to ten times,
-   * so a write can take far longer than a read.
-   */
-  return requestJson(`${baseUrl}/units/settings`, {
+  // The backend retries each setting against the units up to ten times.
+  const response = await fetchWithTimeout(`${baseUrl}/units/settings`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ settings: data }),
     timeout: 60000,
   });
-};
+  try {
+    const { results } = await decodeJson(
+      response,
+      settingsAcknowledgementsSchema,
+    );
+    return reconcileSettings(data, results, response.status);
+  } catch {
+    return { kind: "unconfirmed" };
+  }
+}

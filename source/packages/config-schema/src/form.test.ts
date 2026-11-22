@@ -19,8 +19,12 @@ import { mainConfigSchema } from "./schema.js";
 function leafPaths(shape: z.ZodRawShape, prefix = ""): string[] {
   return Object.entries(shape).flatMap(([key, value]) => {
     const path = prefix ? `${prefix}.${key}` : key;
-    const inner = value instanceof z.ZodOptional ? value.unwrap() : value;
-    if (inner instanceof z.ZodObject) return leafPaths(inner.shape, path);
+    const inner: unknown =
+      value instanceof z.ZodOptional ? value.unwrap() : value;
+    if (inner instanceof z.ZodObject) {
+      const fields: unknown = inner.shape;
+      return leafPaths(z.record(z.instanceof(z.ZodType)).parse(fields), path);
+    }
     return [path];
   });
 }

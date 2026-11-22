@@ -1,8 +1,6 @@
 import type { BackendReadableConfig } from "../modules/configReload.js";
 
-export type RelayConfig = Omit<BackendReadableConfig, "email"> & {
-  email?: unknown;
-};
+export type RelayConfig = Pick<BackendReadableConfig, "units" | "camera" | "email">;
 
 export function object(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

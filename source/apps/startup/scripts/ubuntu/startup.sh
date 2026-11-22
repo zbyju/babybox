@@ -121,9 +121,11 @@ ensure_bun() {
   local actual=""
   local found=""
   local want=""
+  local prior_status
 
   mkdir -p "$bin_dir"
   probe_bun "$exe"
+  prior_status="$PROBE_STATUS"
   if [ "$PROBE_STATUS" -eq 0 ] && version_matches "$PROBE_OUT" "$BUN_VERSION"; then
     rm -f "$hold"
     return 0
@@ -140,7 +142,7 @@ ensure_bun() {
   fi
 
   log "Stahuji Bun $BUN_VERSION"
-  stage="$(mktemp -d "${TMPDIR:-/tmp}/babybox-bun.XXXXXX")" || {
+  stage="$(mktemp -d "$bin_dir/.candidate.XXXXXX")" || {
     log "Stazeni Bun se nezdarilo"
     return 1
   }
@@ -177,26 +179,31 @@ ensure_bun() {
     rm -rf "$stage"
     return 1
   fi
-  if ! cp "$found" "$exe"; then
+  if ! chmod 755 "$found"; then
     log "Rozbaleni Bun se nezdarilo"
     rm -rf "$stage"
     return 1
   fi
-  chmod 755 "$exe"
-  rm -rf "$stage"
-
-  probe_bun "$exe"
-  if [ "$PROBE_STATUS" -eq 132 ]; then
+  probe_bun "$found"
+  if [ "$PROBE_STATUS" -eq 132 ] && [ "$prior_status" -ne 0 ]; then
+    rm -rf "$stage"
     cpu_hold "$hold" || true
     return 1
   fi
-  if [ "$PROBE_STATUS" -eq 0 ] && version_matches "$PROBE_OUT" "$BUN_VERSION"; then
-    rm -f "$hold"
-    log "Bun $BUN_VERSION je nainstalovany"
-    return 0
+  if [ "$PROBE_STATUS" -ne 0 ] || ! version_matches "$PROBE_OUT" "$BUN_VERSION"; then
+    log "Bun je ${PROBE_OUT:-chybi}, chceme $BUN_VERSION"
+    rm -rf "$stage"
+    return 1
   fi
-  log "Bun je ${PROBE_OUT:-chybi}, chceme $BUN_VERSION"
-  return 1
+  if ! mv -fT -- "$found" "$exe"; then
+    log "Bun se nepodarilo nahradit"
+    rm -rf "$stage"
+    return 1
+  fi
+  rm -rf "$stage"
+  rm -f "$hold"
+  log "Bun $BUN_VERSION je nainstalovany"
+  return 0
 }
 
 ensure_pm2() {

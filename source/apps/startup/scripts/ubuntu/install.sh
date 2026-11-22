@@ -1,5 +1,5 @@
-cd ../../
-npm install -g pnpm@7.5.0
-pnpm install --frozen-lockfile
+#!/bin/bash
+set -e
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.."
+node install-workspace.js
 node src/index.js --install --ubuntu
-$SHELL

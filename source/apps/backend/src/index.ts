@@ -1,3 +1,5 @@
+import { bindingPort } from "./boundary.js";
+import { readConfig } from "./fetch/readConfig.js";
 import cors from "cors";
 import * as dotenv from "dotenv";
 import express from "express";
@@ -94,27 +96,22 @@ async function main() {
    * Keep retrying instead of starting with no config,
    * because this backend runs unattended and nobody can restart it on site.
    */
-  let c = await fetchConfig();
+  let answer = await readConfig(fetchConfig);
   let attempt = 1;
-  while (c.status !== 200 || !c.data) {
+  while (answer.status === "failed") {
     console.log(
-      `Config not available (attempt ${attempt}): ${c.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
+      `Config not available (attempt ${attempt}): ${answer.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
     );
     await wait(CONFIG_RETRY_DELAY_MS);
-    c = await fetchConfig();
+    answer = await readConfig(fetchConfig);
     attempt++;
   }
-  /*
-   * Boot takes what configer sends without a check, as it always has.
-   * A check here would keep a box with one odd stored value from ever listening.
-   * POST /reload checks with isBackendReadableConfig before it swaps.
-   */
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- boot trusts configer, see above
-  const loaded = c.data as BackendReadableConfig;
-  config = loaded;
+  const loaded = answer.config;
+  applyConfig(loaded);
 
   const app = express();
-  const port = loaded.backend.port || process.env["PORT"] || 5000;
+  app.set("query parser", "extended");
+  const port = bindingPort(loaded.backend.port, process.env["PORT"], 5000);
 
   // Setup logger - morgan
   if (process.env["NODE_ENV"] === "development") {

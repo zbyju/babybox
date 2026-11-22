@@ -5,31 +5,10 @@ import {
   fetchSettings,
   updateSettings,
 } from "../fetch/fetchFromUnits.js";
-import type {
-  CommonSettingsResponse,
-  SettingResult,
-} from "../types/request.types.js";
-import { isInstanceOfPostUnitSettingsRequestBody } from "../types/request.types.js";
+import { settingsBodySchema } from "../types/request.types.js";
 import { stringToAction } from "../utils/actions.js";
 
 export const router = express.Router();
-
-const DEFAULT_SETTING_TIMEOUT = 5000;
-
-/*
- * The client picks the timeout, and one settings attempt is four sequential
- * requests at that value. The unit queue drops a job after 60 s, so an
- * uncapped number makes every attempt die on the deadline instead of on the
- * unit.
- */
-const MAX_SETTING_TIMEOUT = 10000;
-
-function settingTimeout(raw: unknown): number {
-  if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
-    return DEFAULT_SETTING_TIMEOUT;
-  }
-  return Math.min(raw, MAX_SETTING_TIMEOUT);
-}
 
 router.get("/actions/:action", async (req, res) => {
   const action = stringToAction(req.params.action);
@@ -51,17 +30,18 @@ router.get("/settings", async (req, res) => {
 });
 
 router.put("/settings", async (req, res) => {
-  if (!isInstanceOfPostUnitSettingsRequestBody(req.body)) {
+  const parsed = settingsBodySchema.safeParse(req.body);
+  if (!parsed.success) {
     return res.status(400).send({
       msg: "The body needs to be an array of settings ({index: number, value: number, unit: 'engine' | 'thermal'}).",
     });
   }
 
-  const results: SettingResult[] = await updateSettings(
-    req.body.settings,
-    settingTimeout(req.body.options?.timeout)
+  const results = await updateSettings(
+    parsed.data.settings,
+    parsed.data.timeout
   );
-  const response: CommonSettingsResponse = results.every((r) => r.result)
+  const response = results.every((r) => r.result)
     ? {
         status: 200,
         msg: "All setting changes have been applied.",

@@ -1,9 +1,7 @@
 {
+  "extends": ["../../.oxlintrc.typescript.json"],
   "plugins": ["typescript", "vue"],
   "rules": {
-    "eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "caughtErrors": "none" }],
-    "typescript/no-explicit-any": "error",
-    "typescript/no-non-null-assertion": "error",
-    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }]
+    "eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "caughtErrors": "none" }]
   }
 }

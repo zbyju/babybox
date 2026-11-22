@@ -3,8 +3,7 @@ import { storeToRefs } from "pinia";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
-import { CONFIGER_API_URL, CONFIGER_TIMEOUT } from "@/api/base";
-import { requestJson } from "@/api/http";
+import { getPanelConfig, getVersions } from "@/api/config";
 import {
   getEngineData,
   getStatus,
@@ -22,11 +21,6 @@ import type { AppConfig, UnitsConfig } from "@/types/panel/config.types";
 import type { Connection } from "@/types/panel/connection.types";
 import type { PanelState } from "@/types/panel/main.types";
 import type { EngineUnit, ThermalUnit } from "@/types/panel/units.types";
-import type { Versions } from "@/types/panel/versions.types";
-import {
-  isInstanceOfConfig,
-  isInstanceOfVersions,
-} from "@/utils/panel/instanceCheck";
 
 import { getNewState } from "./state";
 
@@ -178,49 +172,17 @@ export class AppManager {
     }
   }
 
-  /*
-   * These must reject when configer is unreachable.
-   * The startup retry chain waits for them, so a promise that never settles
-   * would stop the panel from ever retrying.
-   */
-  private async getConfig(): Promise<unknown> {
-    const { data } = await requestJson(`${CONFIGER_API_URL}/main`, {
-      timeout: CONFIGER_TIMEOUT,
-    });
-    return data;
-  }
-
-  /*
-   * Returns undefined on a body that is valid JSON but not a versions file.
-   *
-   * Versions only feed the display string in the header. Failing the config
-   * step over them would keep AppState short of Ok, so MainView never mounts
-   * and the panel does no polling, no watchdog and no alarms. A bad body fails
-   * the same way on every retry, so that would last until someone visits.
-   *
-   * A request that fails still rejects, so a configer outage keeps retrying.
-   */
-  private async getVersions(): Promise<Maybe<Versions>> {
-    const { data } = await requestJson(`${CONFIGER_API_URL}/version`, {
-      timeout: CONFIGER_TIMEOUT,
-    });
-    if (!isInstanceOfVersions(data)) {
-      console.error("Versions file error", data);
-      return undefined;
-    }
-    return data;
-  }
-
   private async initializeConfig() {
-    const config = await this.getConfig();
-    const versions = await this.getVersions();
-    if (isInstanceOfConfig(config)) {
-      this.configStore.setConfig(config);
-      if (versions !== undefined) this.versionsStore.setVersions(versions);
-      return "Ok";
-    } else {
-      throw "Config file error";
+    const config = await getPanelConfig();
+    this.configStore.setConfig(config);
+
+    try {
+      this.versionsStore.setVersions(await getVersions());
+    } catch {
+      // Version metadata is optional for polling, the watchdog and alarms.
+      console.warn("Versions file unavailable");
     }
+    return "Ok";
   }
 
   private async initializeBackend() {
@@ -285,11 +247,11 @@ export class AppManager {
 
       if (configOk && backendOk) return;
 
-      setTimeout(attempt, delay);
+      setTimeout(() => void attempt(), delay);
       delay = Math.min(delay * 2, MAX_INIT_DELAY);
     };
 
-    attempt();
+    void attempt();
   }
 
   private nextDelay(): number {

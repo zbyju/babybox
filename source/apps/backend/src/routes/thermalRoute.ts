@@ -3,27 +3,12 @@ import express from "express";
 
 import { fetchDataCommon } from "../fetch/fetchFromUnits.js";
 import { Unit } from "../types/units.types.js";
-import { transformThermalData } from "../utils/transformData.js";
 
 export const router = express.Router();
 
 router.get("/data", async (req: Request, res: Response) => {
   const response = await fetchDataCommon(Unit.Thermal, req.query);
 
-  // oxlint-disable-next-line typescript/no-base-to-string -- repeated raw query values keep the existing array coercion
-  const raw = req.query["raw"] ? parseInt(String(req.query["raw"])) > 0 : false;
-
-  const data = raw ? response.data : transformThermalData(response.data);
-
-  if (response.data) {
-    return res.status(response.status).send({
-      msg: response.msg,
-      data,
-    });
-  } else {
-    return res.status(response.status).send({
-      msg: response.msg,
-      data,
-    });
-  }
+  const { status, ...body } = response;
+  return res.status(status).send(body);
 });

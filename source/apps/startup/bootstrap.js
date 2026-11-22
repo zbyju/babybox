@@ -103,13 +103,7 @@ function isSha256(value) {
 }
 
 function versionsMatch(actual, wanted) {
-  if (actual === wanted) {
-    return true;
-  }
-  if (actual === `v${wanted}`) {
-    return true;
-  }
-  return false;
+  return actual === wanted || actual === `v${wanted}`;
 }
 
 function firstLine(value) {
@@ -587,9 +581,38 @@ async function installPinnedBun(spec) {
       };
     }
     fs.mkdirSync(spec.binDir, { recursive: true });
-    fs.copyFileSync(found, spec.exePath);
-    if (spec.platform !== "win32") {
-      fs.chmodSync(spec.exePath, 0o755);
+    const candidateDir = fs.mkdtempSync(path.join(spec.binDir, ".candidate-"));
+    try {
+      const candidate = path.join(candidateDir, spec.exeName);
+      fs.copyFileSync(found, candidate);
+      if (spec.platform !== "win32") {
+        fs.chmodSync(candidate, 0o755);
+      }
+      const probe = probeBun(spec.spawnSync, candidate, spec.env);
+      if (probe.state === "illegal") {
+        return {
+          ok: false,
+          illegal: true,
+          message: "Procesor nespust\u00ed nov\u00fd Bun.",
+        };
+      }
+      if (probe.state !== "version") {
+        return {
+          ok: false,
+          message: withDetail("Bun se nepoda\u0159ilo spustit.", probe.detail),
+        };
+      }
+      if (!versionsMatch(probe.version, spec.version)) {
+        return {
+          ok: false,
+          message: `Bun je ${probe.version}, chceme ${spec.version}.`,
+        };
+      }
+      // Source and destination are on the same volume. A failed replacement
+      // leaves the previous executable at its original path.
+      fs.renameSync(candidate, spec.exePath);
+    } finally {
+      rmRecursive(candidateDir);
     }
     return { ok: true };
   } finally {
@@ -724,9 +747,12 @@ async function runInner(state, opts) {
     return 0;
   }
 
-  if (probed.state === "illegal") {
-    const recorded = readHoldVersion(holdPath);
-    if (recorded === "" || recorded === version) {
+  const recorded = readHoldVersion(holdPath);
+  if (probed.state === "illegal" || probed.state === "missing") {
+    if (
+      recorded === version ||
+      (probed.state === "illegal" && recorded === "")
+    ) {
       return holdCpu(
         state,
         spawnSync,
@@ -766,39 +792,27 @@ async function runInner(state, opts) {
     httpsGet,
   });
   if (!installed.ok) {
+    if (installed.illegal && probed.state !== "version") {
+      return holdCpu(
+        state,
+        spawnSync,
+        env,
+        platform,
+        pm2Version,
+        holdPath,
+        version,
+        tools
+      );
+    }
     writeLine(state, "ERROR", installed.message);
     comparePm2(state, spawnSync, env, platform, pm2Version);
     return 1;
   }
 
-  const after = probeBun(spawnSync, exePath, env);
-  if (after.state === "illegal") {
-    return holdCpu(
-      state,
-      spawnSync,
-      env,
-      platform,
-      pm2Version,
-      holdPath,
-      version,
-      tools
-    );
-  }
-  if (after.state === "version" && versionsMatch(after.version, version)) {
-    clearHold(holdPath);
-    writeLine(state, "INFO", `Bun ${version} je nainstalovaný.`);
-    comparePm2(state, spawnSync, env, platform, pm2Version);
-    return 0;
-  }
-
-  const have = after.state === "version" ? after.version : "";
-  const mismatch =
-    have === ""
-      ? "Bun se nepodařilo spustit."
-      : `Bun je ${have}, chceme ${version}.`;
-  writeLine(state, "ERROR", withDetail(mismatch, after.detail));
+  clearHold(holdPath);
+  writeLine(state, "INFO", `Bun ${version} je nainstalovan\u00fd.`);
   comparePm2(state, spawnSync, env, platform, pm2Version);
-  return 1;
+  return 0;
 }
 
 async function run(options) {

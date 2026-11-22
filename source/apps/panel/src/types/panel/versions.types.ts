@@ -1,6 +1,1 @@
-export interface Versions {
-  startup: string;
-  backend: string;
-  configer: string;
-  frontend: string;
-}
+export type { Versions } from "@babybox/config-schema";

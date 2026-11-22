@@ -1,95 +1,35 @@
-import type { BothUnit, Unit } from "./units.types.js";
+import { settingSchema, z } from "../boundary.js";
 
-export interface CommonDataRequestQuery {
-  timeout?: number;
-  raw?: boolean;
-}
+export type { Setting, SettingResult } from "../boundary.js";
 
-export type EngineDataRequestQuery = CommonDataRequestQuery;
-export type ThermalDataRequestQuery = CommonDataRequestQuery;
+const timerMs = z.number().int().min(1).max(2147483647);
+const scalarNumber = z.union([z.number(), z.string().transform(Number)]);
+const timeout = scalarNumber.pipe(timerMs).optional().catch(undefined);
 
-export interface PostUnitSettingsRequestBody {
-  settings: Setting[];
-  options?: {
-    timeout?: number;
-  };
-}
+export const dataQuerySchema = z.object({ timeout });
 
-/*
- * Arrays pass too, as they did before.
- * So isInstanceOfGetUnitSettingsRequest accepts `[]`, which has no `unit`.
- * It only reads req.query, and Express never parses that into an array.
- */
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
+export const settingsQuerySchema = z.object({
+  unit: z.enum(["engine", "thermal", "both"]).default("both"),
+  timeout,
+});
 
-export function isInstanceOfPostUnitSettingsRequestBody(
-  object: unknown
-): object is PostUnitSettingsRequestBody {
-  if (!isObject(object)) return false;
-  return "settings" in object && isInstanceOfArraySetting(object["settings"]);
-}
+export const settingsBodySchema = z
+  .object({
+    settings: z.array(settingSchema),
+    options: z
+      .object({
+        timeout: z.number().finite().positive().optional().catch(undefined),
+      })
+      .optional()
+      .catch(undefined),
+  })
+  .transform(({ settings, options }) => ({
+    settings,
+    timeout: Math.min(options?.timeout ?? 5000, 10000),
+  }));
 
-/*
- * Express sends `?timeout` as a string.
- * fetchSettings reads that string with queryTimeout.
- * This type holds `unit` only.
- */
-export interface GetUnitSettingsRequest {
-  unit?: BothUnit;
-}
+export type CommonResponse = { status: 200 | 400 | 408 | 500; msg: string };
 
-export function isInstanceOfGetUnitSettingsRequest(
-  object: unknown
-): object is GetUnitSettingsRequest {
-  if (!isObject(object)) return false;
-  const unit = object["unit"];
-  if (unit && unit !== "engine" && unit !== "thermal" && unit !== "both") {
-    return false;
-  }
-  return true;
-}
-
-export interface CommonResponse {
-  msg: string;
-  status: number;
-}
-
-export interface CommonDataResponse extends CommonResponse {
-  data?: unknown;
-}
-
-export interface CommonSettingsResponse extends CommonResponse {
-  results: SettingResult[];
-}
-
-export interface Setting {
-  index: number;
-  value: number;
-  unit: Unit;
-}
-
-export interface SettingResult extends Setting {
-  result: boolean;
-}
-
-export function isInstanceOfSetting(object: unknown): object is Setting {
-  if (!isObject(object)) return false;
-  return (
-    "index" in object &&
-    "value" in object &&
-    "unit" in object &&
-    Number.isInteger(object["index"]) &&
-    Number.isFinite(object["value"]) &&
-    (object["unit"] === "engine" || object["unit"] === "thermal")
-  );
-}
-
-export function isInstanceOfArraySetting(object: unknown): object is Setting[] {
-  if (!object) return false;
-  return (
-    Array.isArray(object) &&
-    object.every((o: unknown) => isInstanceOfSetting(o))
-  );
-}
+export type DataResponse<T> =
+  | { status: 200; msg: string; data: T }
+  | { status: 400 | 408 | 500; msg: string; data?: never };

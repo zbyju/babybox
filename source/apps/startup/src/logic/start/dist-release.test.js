@@ -6,7 +6,9 @@ const path = require("path");
 
 const fsExtra = require("fs-extra");
 
-const { onStartup } = require("./dist-release");
+const portCases = require("../../../../../scripts/binding-port-cases.json");
+
+const { choosePort, onStartup } = require("./dist-release");
 const ubuntuStart = require("./ubuntu");
 const windowsStart = require("./windows");
 
@@ -264,6 +266,15 @@ function listenStatus(readyPath) {
     });
   });
 }
+describe("startup port selection", () => {
+  it.each(portCases)(
+    "selects $expected from $stored and $env",
+    ({ stored, env, fallback, expected }) => {
+      expect(choosePort(stored, { PORT: env }, fallback)).toBe(expected);
+    }
+  );
+});
+
 describe("dist-next release", () => {
   it("keeps the live dist until dist-next is installed, then swaps and starts both apps", async () => {
     const root = createRoot();
@@ -318,9 +329,12 @@ describe("dist-next release", () => {
       expect(
         fs.readFileSync(path.join(root, "dist2", "index.js"), "utf8")
       ).toBe("old");
-      expect(fs.existsSync(path.join(root, "dist2", "node_modules"))).toBe(
-        false
-      );
+      expect(
+        fs.readFileSync(
+          path.join(root, "dist2", "node_modules", "keep.txt"),
+          "utf8"
+        )
+      ).toBe("keep");
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
       expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
@@ -364,34 +378,21 @@ describe("dist-next release", () => {
   it("restores dist and starts both apps when configer fails to start", async () => {
     const root = createRoot();
     const harness = createHarness();
-    let restoredIndex = "";
     harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
-    harness.on("bun install --no-save", (cwd) => {
-      if (cwd === path.join(root, "dist")) {
-        restoredIndex = fs.readFileSync(
-          path.join(root, "dist", "index.js"),
-          "utf8"
-        );
-      }
-      return { stdout: "", stderr: "" };
-    });
+    harness.on("bun install --no-save", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete configer", () => ({ stdout: "", stderr: "" }));
     harness.on("pm2 delete babybox", () => ({ stdout: "", stderr: "" }));
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
-      expect(restoredIndex).toBe("old");
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
         "old"
       );
       expect(fs.existsSync(path.join(root, "dist2"))).toBe(false);
       expect(fs.existsSync(path.join(root, "dist-next"))).toBe(false);
-      expect(installCwds(harness)).toEqual([
-        path.join(root, "dist-next"),
-        path.join(root, "dist"),
-      ]);
+      expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
       expect(installCwds(harness)).not.toContain(
         path.join(root, "source", "dist")
       );
@@ -439,7 +440,7 @@ describe("dist-next release", () => {
       expect(readRecord(root).step).toBe("START_PANEL");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe("panel broke");
-      expect(installCwds(harness)[1]).toBe(path.join(root, "dist"));
+      expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
       expect(
         JSON.parse(
           fs.readFileSync(path.join(root, "dist", "release.json"), "utf8")
@@ -710,16 +711,14 @@ describe("dist-next release", () => {
     }
   });
 
-  it("starts both apps when install of the restored dist throws", async () => {
+  it("starts both apps offline using the restored dist dependencies", async () => {
     const root = createRoot();
     const harness = createHarness();
-    let spawnsAtRestoreInstall = -1;
     harness.spawnQueue.push({ code: 1, stderr: "configer broke\n" });
     harness.on("git pull", () => ({ stdout: "Updating abc\n", stderr: "" }));
     harness.on("pnpm run build", () => ({ stdout: "", stderr: "" }));
     harness.on("bun install --no-save", (cwd) => {
       if (cwd === path.join(root, "dist")) {
-        spawnsAtRestoreInstall = harness.spawnCalls.length;
         throw new Error("restore install failed");
       }
       return { stdout: "", stderr: "" };
@@ -729,7 +728,13 @@ describe("dist-next release", () => {
     try {
       const code = await onStartup(baseOptions(root, harness));
       expect(code).toBe(true);
-      expect(spawnsAtRestoreInstall).toBe(1);
+      expect(installCwds(harness)).toEqual([path.join(root, "dist-next")]);
+      expect(
+        fs.readFileSync(
+          path.join(root, "dist", "node_modules", "keep.txt"),
+          "utf8"
+        )
+      ).toBe("keep");
       expect(harness.spawnCalls.map((call) => call.args)).toEqual([
         ["start:configer"],
         ["start:configer"],
@@ -820,6 +825,8 @@ describe("dist-next release", () => {
           target === path.join(repoRoot, "dist")
         );
       },
+      mkdirSync() {},
+      writeFileSync() {},
       copySync() {},
       copyFileSync() {},
       rmSync() {},
@@ -863,7 +870,139 @@ describe("dist-next release", () => {
     }
   });
 
-  it("finishes the swap when node_modules would block rename", async () => {
+  it.each([
+    ["before the first rename", false, false, true],
+    ["between the two renames", true, false, true],
+    ["after the candidate rename", true, true, true],
+    ["between the rollback renames", true, false, true],
+    [
+      "before the rollback health check, if the previous service is down",
+      true,
+      true,
+      false,
+    ],
+  ])(
+    "recovers a boot interrupted %s and rolls back a failed retry offline",
+    async (boundary, movedOld, promotedNew, healthyPrevious) => {
+      const root = createRoot();
+      const live = path.join(root, "dist");
+      const second = path.join(root, "dist2");
+      const staged = path.join(root, "dist-next");
+      const transaction = path.join(root, "dist-transaction");
+      const configer = path.join(root, "source", "apps", "configer", "dist");
+      const configerBackup = path.join(transaction, "configer");
+      const harness = createHarness();
+      const clock = manualClock();
+      const config = JSON.stringify({
+        babybox: { name: "saved site" },
+        backend: { port: 5000, url: "/api/v1" },
+        configer: { port: 5001, url: "/api/v1" },
+      });
+      try {
+        writeConfig(root, "main.json", config);
+        writeReleaseFile(root, OTHER_SHA);
+        fs.mkdirSync(staged);
+        fs.writeFileSync(path.join(staged, ".pending-release"), "");
+        fs.writeFileSync(
+          path.join(staged, "index.js"),
+          "interrupted candidate"
+        );
+        fs.mkdirSync(configer, { recursive: true });
+        fs.writeFileSync(
+          path.join(configer, "index.js"),
+          "interrupted configer"
+        );
+        fs.mkdirSync(path.join(configerBackup, "node_modules"), {
+          recursive: true,
+        });
+        fs.writeFileSync(path.join(configerBackup, "index.js"), "old configer");
+        fs.writeFileSync(
+          path.join(configerBackup, "node_modules", "cached.txt"),
+          "old modules"
+        );
+        if (movedOld) fs.renameSync(live, second);
+        if (promotedNew) fs.renameSync(staged, live);
+        if (boundary === "between the rollback renames") {
+          fs.renameSync(configer, path.join(transaction, "failed-configer"));
+        }
+
+        alreadyCurrent(harness);
+        allowPm2(harness);
+        harness.on("pnpm run build", () => {
+          expect(fs.readFileSync(path.join(live, "index.js"), "utf8")).toBe(
+            "old"
+          );
+          expect(fs.readFileSync(path.join(configer, "index.js"), "utf8")).toBe(
+            "old configer"
+          );
+          fs.writeFileSync(path.join(configer, "index.js"), "new configer");
+          return { stdout: "", stderr: "" };
+        });
+        harness.on("bun install --no-save", (cwd) => {
+          if (cwd === live) throw new Error("network unavailable");
+          return { stdout: "", stderr: "" };
+        });
+        const checked = [];
+        const result = await onStartup(
+          baseOptions(root, harness, {
+            ...clock,
+            statusWaitMs: 2,
+            async httpGet(target) {
+              const isNew =
+                fs.readFileSync(path.join(live, "index.js"), "utf8") === "new";
+              checked.push([isNew, target]);
+              if (target.includes(":5000/") && (isNew || !healthyPrevious))
+                return 503;
+              return 200;
+            },
+          })
+        );
+        expect(result).toBe(healthyPrevious);
+        expect(checked).toContainEqual([true, statusUrl(5000, "/api/v1")]);
+        expect(checked).toContainEqual([false, statusUrl(5000, "/api/v1")]);
+        expect(installCwds(harness)).toEqual([staged]);
+        expect(
+          fs.readFileSync(path.join(live, "node_modules", "keep.txt"), "utf8")
+        ).toBe("keep");
+        expect(
+          fs.readFileSync(
+            path.join(configer, "node_modules", "cached.txt"),
+            "utf8"
+          )
+        ).toBe("old modules");
+        expect(
+          fs.readFileSync(path.join(configDir(root), "main.json"), "utf8")
+        ).toBe(config);
+        expect(readRecord(root)).toMatchObject({
+          step: "START_PANEL",
+          ok: false,
+        });
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it("recovers the older interrupted swap that left only dist2", async () => {
+    const root = createRoot();
+    const live = path.join(root, "dist");
+    const harness = createHarness();
+    try {
+      fs.renameSync(live, path.join(root, "dist2"));
+      allowPm2(harness);
+      harness.on("git pull", () => {
+        throw new Error("offline");
+      });
+      expect(await onStartup(baseOptions(root, harness))).toBe(true);
+      expect(
+        fs.readFileSync(path.join(live, "node_modules", "keep.txt"), "utf8")
+      ).toBe("keep");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the bootable live release when Windows blocks its rename", async () => {
     const root = createRoot();
     const harness = createHarness();
     const trackingFs = Object.create(fsExtra);
@@ -888,11 +1027,19 @@ describe("dist-next release", () => {
       const code = await onStartup(
         baseOptions(root, harness, {
           fs: trackingFs,
+          platform: "win32",
         })
       );
       expect(code).toBe(true);
+      expect(
+        fs.readFileSync(
+          path.join(root, "dist", "node_modules", "keep.txt"),
+          "utf8"
+        )
+      ).toBe("keep");
+      expect(readRecord(root).step).toBe("SWAP");
       expect(fs.readFileSync(path.join(root, "dist", "index.js"), "utf8")).toBe(
-        "new"
+        "old"
       );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
@@ -1365,6 +1512,8 @@ describe("dist-next release", () => {
           nowMs: clock.nowMs,
           delay: clock.delay,
           httpGet: async (target) => {
+            if (fs.existsSync(path.join(root, "dist", "release.json")))
+              return 200;
             expect(target).toBe(url);
             clock.advance(budget);
             throw new Error("down");
@@ -1413,6 +1562,8 @@ describe("dist-next release", () => {
           nowMs: clock.nowMs,
           delay: clock.delay,
           httpGet: async (target) => {
+            if (fs.existsSync(path.join(root, "dist", "release.json")))
+              return 200;
             if (target === configer) {
               return 200;
             }
@@ -1467,6 +1618,8 @@ describe("dist-next release", () => {
           nowMs: clock.nowMs,
           delay: clock.delay,
           httpGet: async (target) => {
+            if (fs.existsSync(path.join(root, "dist", "release.json")))
+              return 200;
             releaseSeen.push(
               fs.existsSync(path.join(root, "dist", "release.json"))
             );
@@ -1686,6 +1839,46 @@ describe("dist-next release", () => {
     }
   });
 
+  it("uses each deployed .env for empty bindings, with parent environment taking precedence", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const seen = [];
+    writeConfig(root, "main.json", {
+      configer: { port: 0, url: "" },
+      backend: { port: 0, url: "" },
+    });
+    const apps = path.join(root, "source", "apps");
+    fs.writeFileSync(
+      path.join(apps, "configer", ".env"),
+      "PORT=5101\nAPI_PREFIX=/configer\n"
+    );
+    fs.writeFileSync(
+      path.join(apps, "backend", ".env"),
+      "PORT=5100\nAPI_PREFIX=/backend\n"
+    );
+    prepareRelease(harness);
+    try {
+      expect(
+        await onStartup(
+          baseOptions(root, harness, {
+            env: { API_PREFIX: "/system" },
+            httpGet: async (url) => {
+              seen.push(url);
+              return 200;
+            },
+          })
+        )
+      ).toBe(true);
+      expect(seen).toEqual([
+        statusUrl(5101, "/system"),
+        statusUrl(5100, "/system"),
+        statusUrl(5101, "/system"),
+      ]);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("retries status until a later answer is 200", async () => {
     const root = createRoot();
     const harness = createHarness();
@@ -1744,7 +1937,7 @@ describe("dist-next release", () => {
         })
       );
       expect(Date.now() - started).toBeLessThan(500);
-      expect(code).toBe(true);
+      expect(code).toBe(false);
       expect(readRecord(root).step).toBe("START_CONFIGER");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe(
@@ -1856,7 +2049,7 @@ describe("dist-next release", () => {
       const opts = baseOptions(root, harness, { statusWaitMs: budget });
       delete opts.httpGet;
       const code = await onStartup(opts);
-      expect(code).toBe(true);
+      expect(code).toBe(false);
       expect(readRecord(root).step).toBe("START_CONFIGER");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe(

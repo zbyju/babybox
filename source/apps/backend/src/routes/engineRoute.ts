@@ -9,16 +9,8 @@ export const router = express.Router();
 router.get("/data", async (req: Request, res: Response) => {
   const response = await fetchDataCommon(Unit.Engine, req.query);
 
-  if (response.data) {
-    return res.status(response.status).send({
-      msg: response.msg,
-      data: response.data,
-    });
-  } else {
-    return res.status(response.status).send({
-      msg: response.msg,
-    });
-  }
+  const { status, ...body } = response;
+  return res.status(status).send(body);
 });
 
 router.put("/watchdog", async (req: Request, res: Response) => {

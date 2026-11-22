@@ -483,9 +483,8 @@ $wantOld = (Get-FileHash -Algorithm SHA256 -Path $script:OldExe).Hash
 $gotOld = (Get-FileHash -Algorithm SHA256 -Path $script:InstalledBun).Hash
 if ($wantOld -eq $gotOld) { Pass } else { Fail "bad checksum replaced bun.exe" }
 
-Write-Host "a good zip whose bun prints 9.9.9 is not the pin"
+Write-Host "a checksum-good candidate with the wrong version keeps the working Bun"
 Reset-Case
-$script:StubBunMissing = $true
 $script:StubBunPrint = "9.9.9"
 $script:RewriteSha = $true
 Invoke-Case
@@ -494,13 +493,9 @@ Expect-Log "Bun je 9.9.9, chceme $($script:BunVersion)"
 Expect-NoLog "je nainstalovany"
 Expect-Called "pnpm run start"
 Expect-Rc 0
-if (Test-Path $script:InstalledBun) {
-  $gotNew = (Get-FileHash -Algorithm SHA256 -Path $script:InstalledBun).Hash
-  $wantNew = (Get-FileHash -Algorithm SHA256 -Path $script:ZipExe).Hash
-  if ($gotNew -eq $wantNew) { Pass } else { Fail "wrong bun was not copied before the version check" }
-} else {
-  Fail "bun.exe was not written"
-}
+$wantOld = (Get-FileHash -Algorithm SHA256 -Path $script:OldExe).Hash
+$gotOld = (Get-FileHash -Algorithm SHA256 -Path $script:InstalledBun).Hash
+if ($wantOld -eq $gotOld) { Pass } else { Fail "wrong candidate replaced working bun.exe" }
 
 Write-Host "a checksum-good zip with no bun.exe does not install"
 Reset-Case
@@ -746,6 +741,27 @@ Invoke-Case
 Expect-Called "bun-windows-x64.zip"
 Expect-NoLog "nespusti Bun"
 Expect-Rc 0
+
+Write-Host "install.bat propagates dependency and first-start failures"
+$fixture = Join-Path $work "install-fixture"
+$scripts = Join-Path $fixture "scripts\windows"
+$src = Join-Path $fixture "src"
+New-Item -ItemType Directory -Force $scripts, $src | Out-Null
+$installer = Join-Path $scripts "install.bat"
+Copy-Item (Join-Path $StartupSrc "scripts\windows\install.bat") $installer
+$depth = Join-Path $fixture "install-workspace.js"
+$started = Join-Path $src "started"
+[IO.File]::WriteAllText((Join-Path $src "index.js"), 'require("fs").writeFileSync(__dirname + "/started", "yes"); process.exitCode = 41;')
+[IO.File]::WriteAllText($depth, 'process.exitCode = 37;')
+& $env:ComSpec /d /c "call `"$installer`""
+$script:RC = $LASTEXITCODE
+Expect-Rc 37
+if (Test-Path $started) { Fail "first start ran after dependency install failed" } else { Pass }
+[IO.File]::WriteAllText($depth, 'process.exitCode = 0;')
+& $env:ComSpec /d /c "call `"$installer`""
+$script:RC = $LASTEXITCODE
+Expect-Rc 41
+if (Test-Path $started) { Pass } else { Fail "first start did not run" }
 
 if ($script:Sandbox -and (Test-Path $script:Sandbox)) {
   Remove-Item -Recurse -Force $script:Sandbox
