@@ -1,4 +1,3 @@
-import type { JsonResponse } from "@/api/http";
 import type {
   SettingsSendResult,
   SettingsToSend,
@@ -10,7 +9,7 @@ import {
   SettingsTableRowValueType,
 } from "@/types/settings/table.types";
 
-import { isNullish, isObject, whenNotNullish } from "../general";
+import { isNullish, whenNotNullish } from "../general";
 import { isNumber } from "../number";
 import { settingsResultsToState, settingsRowValueToValue } from "./conversions";
 
@@ -74,115 +73,36 @@ export const getChangedSettings = (
   );
 };
 
-export const updateValueBasedOnResult = (
-  resultEngine: SettingsSendResult | null | undefined,
-  resultThermal: SettingsSendResult | null | undefined,
-  value: SettingsTableRowValue,
-): SettingsTableRowValue => {
-  if (!isNullish(resultEngine)) {
-    if (!isNullish(resultThermal)) {
-      // Both were sent
-      return {
-        ...value,
-        state: settingsResultsToState(
-          resultEngine.result,
-          resultThermal.result,
-        ),
-      };
-    } else {
-      // Only engine was sent
-      return {
-        ...value,
-        state: settingsResultsToState(resultEngine.result, true),
-      };
-    }
-  } else {
-    if (!isNullish(resultThermal)) {
-      // Only thermal was sent
-      return {
-        ...value,
-        state: settingsResultsToState(true, resultThermal.result),
-      };
-    } else {
-      // None of them were sent
-      return value;
-    }
-  }
-};
-
-/**
- * The engine and thermal settings from a GET answer, split into values.
- * Undefined when the body has another shape.
- */
-export const readUnitSettings = (
-  body: unknown,
-): { engine: string[]; thermal: string[] } | undefined => {
-  if (!isObject(body)) return undefined;
-  const data = body["data"];
-  if (!isObject(data)) return undefined;
-  const engine = data["engine"];
-  const thermal = data["thermal"];
-  if (typeof engine !== "string" || typeof thermal !== "string") {
-    return undefined;
-  }
-  return { engine: engine.split("|"), thermal: thermal.split("|") };
-};
-
-const isSendResult = (value: unknown): value is SettingsSendResult =>
-  isObject(value) &&
-  (value["unit"] === "engine" || value["unit"] === "thermal") &&
-  typeof value["index"] === "number" &&
-  typeof value["value"] === "number" &&
-  typeof value["result"] === "boolean";
-
-/* Throws without a results list, as reading it did before. The save catches it. */
-const readSendResults = (body: unknown): SettingsSendResult[] => {
-  if (!isObject(body) || !Array.isArray(body["results"])) {
-    throw new Error("The settings answer has no results list.");
-  }
-  return body["results"].filter(isSendResult);
-};
+function targetsRow(setting: SettingsToSend, row: SettingsTableRow): boolean {
+  return setting.index === row[setting.unit];
+}
 
 export const settingsSendToStates = (
-  response: JsonResponse,
+  results: SettingsSendResult[],
   values: SettingsTableRowValue[],
   rows: SettingsTableRow[],
-): SettingsTableRowValue[] => {
-  const results = readSendResults(response.data);
-  return values.map((value: SettingsTableRowValue, index: number) => {
+): SettingsTableRowValue[] =>
+  values.map((value, index) => {
     const row = rows[index];
     if (row === undefined) return value;
-    const resultEngine = row.engine
-      ? results.find((d) => d.index === row.engine && d.unit === "engine")
-      : null;
-    const resultThermal = row.thermal
-      ? results.find((d) => d.index === row.thermal && d.unit === "thermal")
-      : null;
-
-    return updateValueBasedOnResult(resultEngine, resultThermal, value);
+    const entries = results.filter((result) => targetsRow(result, row));
+    if (entries.length === 0) return value;
+    const state = settingsResultsToState(
+      entries.every(({ result }) => result),
+      entries.some(({ result }) => result),
+    );
+    return { ...value, state };
   });
-};
 
 export const settingsSendToStatesError = (
-  changedValues: SettingsToSend[],
+  submitted: SettingsToSend[],
   values: SettingsTableRowValue[],
   rows: SettingsTableRow[],
-): SettingsTableRowValue[] => {
-  return values.map((value: SettingsTableRowValue, index: number) => {
+): SettingsTableRowValue[] =>
+  values.map((value, index) => {
     const row = rows[index];
-    if (row === undefined) return value;
-    const data = changedValues;
-    const resultEngine = row.engine
-      ? data.find((d) => d.index === row.engine && d.unit === "engine")
-      : null;
-    const resultThermal = row.thermal
-      ? data.find((d) => d.index === row.thermal && d.unit === "thermal")
-      : null;
-
-    if (resultEngine || resultThermal) {
-      return { ...value, state: SettingsTableRowState.Error };
-    } else {
+    if (row === undefined || !submitted.some((entry) => targetsRow(entry, row))) {
       return value;
     }
+    return { ...value, state: SettingsTableRowState.Error };
   });
-};

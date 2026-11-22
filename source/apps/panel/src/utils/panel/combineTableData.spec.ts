@@ -71,4 +71,13 @@ describe("combineTableData", () => {
       TableRowState.Error,
     ]);
   });
+
+  it.each([
+    [TableValuesState.Loading, TableBlockState.Loading, TableRowState.Loading],
+    [TableValuesState.Error, TableBlockState.Error, TableRowState.Error],
+  ] as const)("renders table state %s distinctly", (state, block, row) => {
+    const data = combineTableData(rows, blocks, { state });
+    expect(data.blocks.map(({ state }) => state)).toEqual([block, block]);
+    expect(data.rows.map(({ state }) => state)).toEqual([row, row]);
+  });
 });

@@ -12,9 +12,9 @@ import {
 } from "vitest";
 
 import { tcpPort } from "../../../test/tcpPort.js";
-import type { MainConfig } from "../../types/config.types.js";
+import type { ConfigAnswer } from "../../fetch/fetchConfig.js";
 
-function storedConfig(): MainConfig {
+function storedConfig() {
   return {
     babybox: { name: "Praha" },
     backend: { url: "/api/v1", port: 5000, requestTimeout: 5000 },
@@ -41,7 +41,7 @@ function storedConfig(): MainConfig {
 }
 
 const applyConfig = vi.fn();
-const fetchConfig = vi.fn();
+const fetchConfig = vi.fn<() => Promise<ConfigAnswer>>();
 
 /*
  * The route reads `bound` and calls `applyConfig` on index.ts, which starts the
@@ -71,7 +71,7 @@ async function stopRoute(server: http.Server) {
 }
 
 const post = (url: string) =>
-  axios.post(url, {}, { validateStatus: () => true });
+  axios.post<unknown>(url, {}, { validateStatus: () => true });
 
 describe("POST /reload", () => {
   let server: http.Server;
@@ -91,13 +91,20 @@ describe("POST /reload", () => {
   it("swaps in the new config and reports nothing unapplied", async () => {
     const config = storedConfig();
     config.units.engine.ip = "10.1.1.99";
-    fetchConfig.mockResolvedValue({ status: 200, data: config });
+    fetchConfig.mockResolvedValue({ status: 200, msg: "Ok", data: config });
 
     const response = await post(url);
 
     expect(response.status).toBe(200);
     expect(response.data).toEqual({ msg: "Ok", unapplied: [] });
-    expect(applyConfig).toHaveBeenCalledWith(config);
+    expect(applyConfig).toHaveBeenCalledWith({
+      backend: { port: config.backend.port, url: "/api/v1" },
+      pc: { os: { status: "supported", value: "windows" } },
+      units: {
+        engine: { ip: config.units.engine.ip },
+        thermal: { ip: "10.1.1.51" },
+      },
+    });
   });
 
   it("keeps the old config when configer does not answer", async () => {
@@ -112,29 +119,37 @@ describe("POST /reload", () => {
   it("keeps the old config when the stored one lost a field the backend reads", async () => {
     const config = storedConfig();
     Reflect.deleteProperty(config.units.engine, "ip");
-    fetchConfig.mockResolvedValue({ status: 200, data: config });
+    fetchConfig.mockResolvedValue({ status: 200, msg: "Ok", data: config });
 
     const response = await post(url);
 
     expect(response.status).toBe(503);
-    expect(response.data.msg).toBe(
-      "the stored config is missing a field the backend reads"
-    );
+    expect(response.data).toEqual({
+      msg: "the stored config has invalid backend fields: units.engine.ip",
+    });
     expect(applyConfig).not.toHaveBeenCalled();
   });
 
   it("names the address it bound at listen and cannot change", async () => {
     const config = storedConfig();
     config.backend.port = 5050;
-    fetchConfig.mockResolvedValue({ status: 200, data: config });
+    fetchConfig.mockResolvedValue({ status: 200, msg: "Ok", data: config });
 
     const response = await post(url);
 
     expect(response.status).toBe(200);
-    expect(response.data.unapplied).toEqual([
-      { path: "backend.port", running: 5000, stored: 5050 },
-    ]);
-    expect(applyConfig).toHaveBeenCalledWith(config);
+    expect(response.data).toEqual({
+      msg: "Ok",
+      unapplied: [{ path: "backend.port", running: 5000, stored: 5050 }],
+    });
+    expect(applyConfig).toHaveBeenCalledWith({
+      backend: { port: config.backend.port, url: "/api/v1" },
+      pc: { os: { status: "supported", value: "windows" } },
+      units: {
+        engine: { ip: config.units.engine.ip },
+        thermal: { ip: "10.1.1.51" },
+      },
+    });
   });
 });
 

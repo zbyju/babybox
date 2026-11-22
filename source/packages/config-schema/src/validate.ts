@@ -3,10 +3,9 @@ import { z } from "zod";
 import type { MainConfig } from "./schema.js";
 import { mainConfigSchema } from "./schema.js";
 
-export interface ConfigError {
-  path: string;
-  msg: string;
-}
+import type { configErrorSchema } from "./boundaries.js";
+
+export type ConfigError = z.infer<typeof configErrorSchema>;
 
 export type ParseResult =
   | { ok: true; config: MainConfig }

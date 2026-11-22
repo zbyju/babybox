@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  isInstanceOfArraySetting,
-  isInstanceOfGetUnitSettingsRequest,
-  isInstanceOfPostUnitSettingsRequestBody,
-  isInstanceOfSetting,
-} from "../request.types.js";
+import { settingSchema, z } from "../../boundary.js";
+import { settingsBodySchema, settingsQuerySchema } from "../request.types.js";
+
+const isInstanceOfArraySetting = (raw: unknown) =>
+  z.array(settingSchema).safeParse(raw).success;
+const isInstanceOfGetUnitSettingsRequest = (raw: unknown) =>
+  settingsQuerySchema.safeParse(raw).success;
+const isInstanceOfPostUnitSettingsRequestBody = (raw: unknown) =>
+  settingsBodySchema.safeParse(raw).success;
+const isInstanceOfSetting = (raw: unknown) =>
+  settingSchema.safeParse(raw).success;
 
 describe("request.types.ts", () => {
   describe("isInstanceOfPostUnitSettingsRequestBody", () => {
@@ -397,6 +402,45 @@ describe("request.types.ts", () => {
       expect(isInstanceOfArraySetting("")).toBe(false);
       expect(isInstanceOfArraySetting(0)).toBe(false);
       expect(isInstanceOfArraySetting({})).toBe(false);
+    });
+  });
+});
+
+describe("normalized input", () => {
+  it.each([undefined, "bad", -1, null])(
+    "defaults a bad write timeout %p",
+    (timeout) => {
+      expect(
+        settingsBodySchema.parse({ settings: [], options: { timeout } })
+      ).toEqual({
+        settings: [],
+        timeout: 5000,
+      });
+    }
+  );
+  it("clamps a valid high write timeout and accepts omitted options", () => {
+    expect(settingsBodySchema.parse({ settings: [] }).timeout).toBe(5000);
+    expect(
+      settingsBodySchema.parse({ settings: [], options: { timeout: 20000 } })
+        .timeout
+    ).toBe(10000);
+  });
+  it.each(["", ["engine"], { kind: "thermal" }])(
+    "rejects invalid unit %p",
+    (unit) => {
+      expect(settingsQuerySchema.safeParse({ unit }).success).toBe(false);
+    }
+  );
+  it.each([["100"], { ms: 100 }, "1.5", "2147483648"])(
+    "ignores bad query timeout %p",
+    (timeout) => {
+      expect(settingsQuerySchema.parse({ timeout }).timeout).toBeUndefined();
+    }
+  );
+  it.each(["100", "1e2", 100])("preserves scalar timeout %p", (timeout) => {
+    expect(settingsQuerySchema.parse({ timeout })).toEqual({
+      unit: "both",
+      timeout: 100,
     });
   });
 });

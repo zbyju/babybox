@@ -80,8 +80,10 @@
         return data + " sekund";
       case SettingsTableRowValueType.Days:
         return prettyFloat(parseInt(data) / 86400, 0) + " dní";
-      default:
+      case SettingsTableRowValueType.String:
         return data;
+      default:
+        return type satisfies never;
     }
   }
 

@@ -470,19 +470,9 @@ for rcfile in "$HOME/.bashrc" "$HOME/.profile"; do
     echo 'export PATH="$HOME/.bun/bin:$PATH"' >> "$rcfile"
   fi
 done
-info "Instaluji Bun $BUN_VERSION do $HOME/.bun/bin"
 ensure_npm_prefix
-ensure_bun
-ensure_pm2
-if [ "$(pnpm --version 2>/dev/null || echo none)" != "$PNPM_VERSION" ]; then
-  info "Instaluji pnpm $PNPM_VERSION..."
-  npm install -g "pnpm@$PNPM_VERSION"
-fi
-cd "$BABYBOX_DIR/source/apps/startup"
-info "Instaluji zavislosti (pnpm install --frozen-lockfile)..."
-pnpm install --frozen-lockfile
-info "Spoustim instalaci a prvni start panelu..."
-node src/index.js --install --ubuntu
+info "Instaluji Bun $BUN_VERSION a zavislosti, potom spoustim panel..."
+bash "$UBUNTU_SCRIPTS_DIR/install.sh"
 ok "Panel nainstalovan a spusten"
 
 # ----- Hotovo -----------------------------------------------------------------------

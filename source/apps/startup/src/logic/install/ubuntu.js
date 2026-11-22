@@ -1,7 +1,5 @@
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
-const path = require("path");
-const sudo = require("sudo-prompt");
 const logger = require("../../logger");
 const strings = require("../../strings");
 const { pinnedPm2Version } = require("./pm2-version");
@@ -37,31 +35,6 @@ async function installDeps(exec, logger) {
     logger.error("install", strings.installDepsFailed, err);
     throw err;
   }
-}
-
-// eslint-disable-next-line no-unused-vars
-async function copyStartup() {
-  const pathToScript = path.resolve("./scripts/windows/startup.bat");
-  const pathToLink = path.resolve(
-    "C:/ProgramData/Microsoft/Windows/Start Menu/Programs/StartUp/babybox.bat"
-  );
-  const sudoOptions = {
-    name: "Babybox Startup",
-  };
-  return sudo.exec(
-    `mklink "${pathToLink}" "${pathToScript}"`,
-    sudoOptions,
-    (error, stdout, stderr) => {
-      if (error || stderr) {
-        const err = error || new Error(String(stderr));
-        err.stderr = stderr;
-        logger.error("install", strings.installFailed, err);
-        return false;
-      }
-      logger.info("install", strings.installSucceeded);
-      return true;
-    }
-  );
 }
 
 module.exports = async function install(options = {}) {

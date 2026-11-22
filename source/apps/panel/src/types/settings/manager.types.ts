@@ -1,3 +1,4 @@
+export type { Setting as SettingsToSend, SettingResult as SettingsSendResult } from "@babybox/config-schema";
 import type { Moment } from "moment";
 
 export enum LogEntryType {
@@ -16,17 +17,4 @@ export interface LogEntry {
 export interface SettingsResult {
   type: LogEntryType;
   message?: string;
-}
-
-export interface SettingsSendResult {
-  unit: "thermal" | "engine";
-  value: number;
-  index: number;
-  result: boolean;
-}
-
-export interface SettingsToSend {
-  unit: "thermal" | "engine";
-  index: number;
-  value: number;
 }

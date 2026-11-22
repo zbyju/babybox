@@ -1,0 +1,15 @@
+[
+  { "stored": 1, "env": "5010", "fallback": 6000, "expected": 1 },
+  { "stored": "65535", "env": "5010", "fallback": 6000, "expected": 65535 },
+  { "stored": 0, "env": "5010", "fallback": 6000, "expected": 5010 },
+  { "stored": 65536, "env": "5010", "fallback": 6000, "expected": 5010 },
+  { "stored": 4.5, "env": "10oops", "fallback": 6000, "expected": 6000 },
+  { "stored": "", "env": "1e2", "fallback": 6000, "expected": 6000 },
+  {
+    "stored": "999999999999999999999999999999999999999999999999999",
+    "env": "65536",
+    "fallback": 6000,
+    "expected": 6000
+  },
+  { "stored": null, "env": [100], "fallback": 6000, "expected": 6000 }
+]

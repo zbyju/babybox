@@ -58,19 +58,23 @@ export enum TableValuesState {
   Error,
 }
 
-export interface TableValues {
-  state: TableValuesState;
-  blockValues?: Record<string, TableBlockValue>;
-  rowValues?: Record<string, TableRowValue>;
-}
+type TablePayload = {
+  blockValues: Record<string, TableBlockValue>;
+  rowValues: Record<string, TableRowValue>;
+};
 
-export interface TableTemperaturesValues extends TableValues {
-  blockValues?: {
+export type TableValues<Payload extends TablePayload = TablePayload> =
+  | ({ state: TableValuesState.Ok } & Payload)
+  | { state: TableValuesState.Loading; blockValues?: never; rowValues?: never }
+  | { state: TableValuesState.Error; blockValues?: never; rowValues?: never };
+
+export type TableTemperaturesValues = TableValues<{
+  blockValues: {
     isHeatingCasing: TableBlockValue;
     isHeatingAir: TableBlockValue;
     isCoolingAir: TableBlockValue;
   };
-  rowValues?: {
+  rowValues: {
     optimalTemperature: TableRowValue;
     innerTemperature: TableRowValue;
     outsideTemperature: TableRowValue;
@@ -80,23 +84,24 @@ export interface TableTemperaturesValues extends TableValues {
     hystersionHeating: TableRowValue;
     hystersionCooling: TableRowValue;
   };
-}
+}>;
 
-export interface TableDoorsValues extends TableValues {
-  blockValues?: {
+export type TableDoorsValues = TableValues<{
+  blockValues: {
     isBlocked: TableBlockValue;
   };
-  rowValues?: {
+  rowValues: {
     leftPosition: TableRowValue;
     rightPosition: TableRowValue;
     leftLoad: TableRowValue;
     rightLoad: TableRowValue;
     beamAboveContainer: TableRowValue;
   };
-}
+}>;
 
-export interface TableVoltagesValues extends TableValues {
-  rowValues?: {
+export type TableVoltagesValues = TableValues<{
+  blockValues: Record<string, never>;
+  rowValues: {
     inVoltage: TableRowValue;
     batteryVoltage: TableRowValue;
     unitsVoltage: TableRowValue;
@@ -105,10 +110,11 @@ export interface TableVoltagesValues extends TableValues {
     batteryGoalVoltage: TableRowValue;
     unitsGoalVoltage: TableRowValue;
   };
-}
+}>;
 
-export interface TableConnectionValues extends TableValues {
-  rowValues?: {
+export type TableConnectionValues = TableValues<{
+  blockValues: Record<string, never>;
+  rowValues: {
     requests: TableRowValue;
     successfulRequests: TableRowValue;
     failedRequests: TableRowValue;
@@ -116,4 +122,4 @@ export interface TableConnectionValues extends TableValues {
     timeout: TableRowValue;
     timeToInspection: TableRowValue;
   };
-}
+}>;

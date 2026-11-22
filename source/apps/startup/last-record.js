@@ -2,6 +2,7 @@
 // message is the step output, collapsed, without a node_modules stack.
 
 const childProcess = require("child_process");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -110,12 +111,33 @@ function buildRecord(step, ok, message, date, versions) {
 
 function writeRecord(logPath, record) {
   const filePath = path.join(path.dirname(logPath), "startup.last.json");
+  let ownedTemp;
   try {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, `${JSON.stringify(record)}\n`);
+    const tempPath =
+      filePath +
+      "." +
+      process.pid +
+      "." +
+      crypto.randomBytes(8).toString("hex");
+    const fd = fs.openSync(tempPath, "wx");
+    ownedTemp = tempPath;
+    try {
+      fs.writeFileSync(fd, JSON.stringify(record) + "\n");
+    } finally {
+      fs.closeSync(fd);
+    }
+    fs.renameSync(tempPath, filePath);
     return true;
-  } catch (err) {
-    // The caller logs the failure. A throw would stop the panel.
+  } catch {
+    // A status write must not stop the panel.
+    if (ownedTemp) {
+      try {
+        fs.unlinkSync(ownedTemp);
+      } catch {
+        // No other writer owns this path.
+      }
+    }
     return false;
   }
 }

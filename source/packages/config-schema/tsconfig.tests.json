@@ -7,7 +7,6 @@
     "moduleResolution": "node16",
     // Checked here, never written. The build tsconfig excludes test files.
     "noEmit": true,
-    // Vitest is imported by name. This package needs no ambient types.
-    "types": []
+    "types": ["node"]
   }
 }

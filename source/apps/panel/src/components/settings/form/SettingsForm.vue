@@ -27,8 +27,8 @@
   import moment from "moment";
   import { type Ref, ref, watch } from "vue";
 
-  import { type JsonResponse, HttpError } from "@/api/http";
-  import { getSettings, sendSettings } from "@/api/units";
+  import { HttpError, ProtocolError } from "@/api/http";
+  import { getSettings, sendSettings, type SettingsRead } from "@/api/units";
   import SettingsActions from "@/components/settings/form/SettingsFormActions.vue";
   import SettingsFilters from "@/components/settings/form/SettingsFormFilters.vue";
   import SettingsLog from "@/components/settings/form/SettingsFormLog.vue";
@@ -56,7 +56,6 @@
   import {
     getChangedSettings,
     isSettingChanged,
-    readUnitSettings,
     settingsSendToStates,
     settingsSendToStatesError,
   } from "@/utils/settings/settings";
@@ -160,68 +159,39 @@
   async function onLoadAction() {
     addLogMessage("Načítám aktuální hodnoty parametrů");
 
-    /*
-     * The request is caught on its own, so only a failed request can be
-     * blamed on the backend.
-     * Reading the response is caught below, where an error means the panel
-     * got an answer it could not use.
-     */
-    let response: JsonResponse;
+    let settings: SettingsRead<"both">;
     try {
-      response = await getSettings();
-    } catch (err: unknown) {
-      if (!(err instanceof HttpError)) {
-        // Timed out, or the request never reached the backend.
-        addLogMessage(
-          "Parametry nemohly být načteny - problém s backend serverem",
-          LogEntryType.Error,
-        );
-      } else if (err.status === 500) {
+      settings = await getSettings();
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 500) {
         addLogMessage(
           "Parametry nemohly být načteny - problém s připojením k jednotkám",
           LogEntryType.Error,
         );
+      } else if (error instanceof HttpError || error instanceof ProtocolError) {
+        addLogMessage(
+          "Parametry nemohly být načteny - neznámá chyba",
+          LogEntryType.Error,
+        );
       } else {
         addLogMessage(
-          "Parametry nemohly být načteny - neznámý error",
+          "Parametry nemohly být načteny - problém s backend serverem",
           LogEntryType.Error,
         );
       }
       return;
     }
 
-    try {
-      const settings = readUnitSettings(response.data);
-      if (
-        response.status >= 200 &&
-        response.status <= 299 &&
-        settings !== undefined
-      ) {
-        values.value = values.value.map(
-          (v: SettingsTableRowValue, i: number) => {
-            const row = rows[i];
-            if (row === undefined) return v;
-            const engine =
-              row.engine !== null ? settings.engine[row.engine - 100] : null;
-            const thermal =
-              row.thermal !== null ? settings.thermal[row.thermal - 100] : null;
-            return {
-              ...v,
-              engine,
-              thermal,
-            };
-          },
-        );
-        addLogMessage("Parametry úspěšně načteny", LogEntryType.Success);
-      } else {
-        throw { msg: "Status code not OK" };
-      }
-    } catch {
-      addLogMessage(
-        "Parametry nemohly být načteny - neznámý error",
-        LogEntryType.Error,
-      );
-    }
+    values.value = values.value.map((value, index) => {
+      const row = rows[index];
+      if (row === undefined) return value;
+      return {
+        ...value,
+        engine: row.engine === null ? null : settings.engine[row.engine - 100],
+        thermal: row.thermal === null ? null : settings.thermal[row.thermal - 100],
+      };
+    });
+    addLogMessage("Parametry úspěšně načteny", LogEntryType.Success);
   }
 
   async function onSaveAction() {
@@ -234,32 +204,38 @@
         "Nebyly provedeny žádné změny, žádné nové parametry!",
         LogEntryType.Error,
       );
-    try {
-      addLogMessage(
-        `Odesílám změnu ${changedValues.length} parametrů`,
-        LogEntryType.Info,
-      );
-      const response = await sendSettings(changedValues);
-      if (response.status >= 200 && response.status <= 299) {
-        addLogMessage(`Parametry úspěšně uloženy`, LogEntryType.Success);
-        onLoadAction();
+    addLogMessage(
+      `Odesílám změnu ${changedValues.length} parametrů`,
+      LogEntryType.Info,
+    );
 
-        values.value = settingsSendToStates(response, values.value, rows);
-      } else {
-        throw { msg: "Status code is not OK" };
-      }
-    } catch (err) {
-      addLogMessage("Chyba při ukládání parametrů", LogEntryType.Error);
-      onLoadAction();
-      values.value = values.value = settingsSendToStatesError(
-        changedValues,
-        values.value,
-        rows,
-      );
+    let outcome: Awaited<ReturnType<typeof sendSettings>>;
+    try {
+      outcome = await sendSettings(changedValues);
+    } catch {
+      outcome = { kind: "unconfirmed" };
     }
+
+    switch (outcome.kind) {
+      case "confirmed":
+        values.value = settingsSendToStates(outcome.results, values.value, rows);
+        addLogMessage("Parametry úspěšně uloženy", LogEntryType.Success);
+        break;
+      case "rejected":
+        values.value = settingsSendToStates(outcome.results, values.value, rows);
+        addLogMessage("Některé změny parametrů byly odmítnuty", LogEntryType.Error);
+        break;
+      case "unconfirmed":
+        values.value = settingsSendToStatesError(changedValues, values.value, rows);
+        addLogMessage("Uložení parametrů se nepodařilo potvrdit", LogEntryType.Error);
+        break;
+      default:
+        outcome satisfies never;
+    }
+    await onLoadAction();
   }
 
-  onLoadAction();
+  void onLoadAction();
 </script>
 
 <style lang="stylus">

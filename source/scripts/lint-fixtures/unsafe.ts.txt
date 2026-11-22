@@ -1,0 +1,11 @@
+export const value: { label: string } = JSON.parse('{"label":"legacy"}');
+
+type State = { kind: "saved" } | { kind: "failed"; message: string };
+export function label(state: State): string {
+  switch (state.kind) {
+    case "saved":
+      return "saved";
+  }
+  const exhaustive: never = state;
+  return exhaustive;
+}

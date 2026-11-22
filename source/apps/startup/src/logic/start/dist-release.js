@@ -1,7 +1,6 @@
 // Assemble dist-next, then swap it into the live dist.
 // The live dist stays in place until that new tree is complete.
 // A failed start puts the previous dist back and starts both apps from it.
-// Rollback install uses the repo dist directory, not source/dist.
 // An already-current pull still builds when dist/release.json lacks HEAD.
 // OS_HOLD and CPU_HOLD skip that build while the hold is still true.
 // release.json is written only after START_PANEL succeeds.
@@ -96,11 +95,14 @@ function createContext(options) {
     }),
     delay: pick(opts.delay, delayMs),
     requireConfigerBuild: opts.requireConfigerBuild === true,
+    requireHealthy: opts.requireHealthy === true,
     paths: {
       source: path.join(repoRoot, "source"),
       dist: path.join(repoRoot, "dist"),
       dist2: path.join(repoRoot, "dist2"),
       distNext: path.join(repoRoot, "dist-next"),
+      transaction: path.join(repoRoot, "dist-transaction"),
+      committed: path.join(repoRoot, "dist-committed"),
       backendDist: path.join(repoRoot, "source", "apps", "backend", "dist"),
       panelDist: path.join(repoRoot, "source", "apps", "panel", "dist"),
       configerDist: path.join(repoRoot, "source", "apps", "configer", "dist"),
@@ -550,12 +552,79 @@ async function assembleDistNext(ctx) {
   return true;
 }
 
-function dropNodeModules(fileSystem, dir) {
-  const modules = path.join(dir, "node_modules");
-  if (fileSystem.existsSync(modules)) {
-    // node_modules is read-only on Windows and blocks rename.
-    fileSystem.rmSync(modules, { maxRetries: 3, recursive: true });
+function removeTree(fileSystem, dir) {
+  fileSystem.rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
+}
+
+function pendingRelease(dir) {
+  return path.join(dir, ".pending-release");
+}
+
+function transactionConfiger(ctx) {
+  return path.join(ctx.paths.transaction, "configer");
+}
+
+// Finish the snapshot before a build can modify the configer artifact.
+function beginRelease(ctx) {
+  const fileSystem = ctx.fs;
+  const { committed, configerDist, dist, transaction } = ctx.paths;
+  try {
+    removeTree(fileSystem, committed);
+    fileSystem.rmSync(pendingRelease(dist), { force: true });
+    if (fileSystem.existsSync(dist) && fileSystem.existsSync(configerDist)) {
+      const staged = path.join(committed, "configer");
+      fileSystem.copySync(configerDist, staged);
+      fileSystem.renameSync(committed, transaction);
+    } else {
+      fileSystem.mkdirSync(transaction, { recursive: true });
+    }
+    return true;
+  } catch (err) {
+    fail(ctx, "DIST_PREPARE", err);
+    return false;
   }
+}
+
+// Until the transaction directory is committed, the backup owns rollback.
+async function recoverRelease(ctx) {
+  const fileSystem = ctx.fs;
+  const { configerDist, dist, dist2, distNext, transaction } = ctx.paths;
+  const pending = fileSystem.existsSync(transaction);
+  const hasLive = fileSystem.existsSync(dist);
+  const restoreDist =
+    fileSystem.existsSync(dist2) &&
+    (!hasLive || (pending && fileSystem.existsSync(pendingRelease(dist))));
+  if (!pending && !restoreDist) return true;
+
+  try {
+    await stopPm2(ctx);
+    if (restoreDist) {
+      if (hasLive) {
+        removeTree(fileSystem, distNext);
+        fileSystem.renameSync(dist, distNext);
+      }
+      fileSystem.renameSync(dist2, dist);
+    }
+    const backupConfiger = transactionConfiger(ctx);
+    if (fileSystem.existsSync(backupConfiger)) {
+      const failedConfiger = path.join(transaction, "failed-configer");
+      if (fileSystem.existsSync(configerDist)) {
+        removeTree(fileSystem, failedConfiger);
+        fileSystem.renameSync(configerDist, failedConfiger);
+      }
+      fileSystem.renameSync(backupConfiger, configerDist);
+    }
+    removeTree(fileSystem, transaction);
+  } catch (err) {
+    fail(ctx, "SWAP", err);
+    return false;
+  }
+  try {
+    removeTree(fileSystem, distNext);
+  } catch (err) {
+    ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
+  }
+  return true;
 }
 
 async function stopPm2(ctx) {
@@ -573,31 +642,17 @@ async function stopPm2(ctx) {
 
 async function swapIn(ctx) {
   const fileSystem = ctx.fs;
-  const hadLive = fileSystem.existsSync(ctx.paths.dist);
+  const { dist, dist2, distNext } = ctx.paths;
   begin(ctx, "SWAP");
   try {
     await stopPm2(ctx);
-    if (fileSystem.existsSync(ctx.paths.dist2)) {
-      fileSystem.rmSync(ctx.paths.dist2, { recursive: true, force: true });
+    if (fileSystem.existsSync(dist)) {
+      fileSystem.writeFileSync(pendingRelease(distNext), "");
+      removeTree(fileSystem, dist2);
+      fileSystem.renameSync(dist, dist2);
     }
-    if (hadLive) {
-      dropNodeModules(fileSystem, ctx.paths.dist);
-      fileSystem.renameSync(ctx.paths.dist, ctx.paths.dist2);
-    }
-    dropNodeModules(fileSystem, ctx.paths.distNext);
-    fileSystem.renameSync(ctx.paths.distNext, ctx.paths.dist);
+    fileSystem.renameSync(distNext, dist);
   } catch (err) {
-    if (
-      hadLive &&
-      !fileSystem.existsSync(ctx.paths.dist) &&
-      fileSystem.existsSync(ctx.paths.dist2)
-    ) {
-      try {
-        fileSystem.renameSync(ctx.paths.dist2, ctx.paths.dist);
-      } catch (restoreErr) {
-        ctx.logger.error("SWAP", strings.overrideRollbackFailed, restoreErr);
-      }
-    }
     fail(ctx, "SWAP", err);
     return false;
   }
@@ -620,18 +675,10 @@ function isPlainObject(value) {
 }
 
 function positivePort(value) {
-  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-    if (Math.floor(value) === value) {
-      return value;
-    }
-  }
   if (typeof value === "string" && /^[0-9]+$/.test(value)) {
-    const parsed = Number(value);
-    if (parsed > 0) {
-      return parsed;
-    }
+    value = Number(value);
   }
-  return 0;
+  return Number.isInteger(value) && value >= 1 && value <= 65535 ? value : 0;
 }
 
 function safeRoutePrefix(prefix) {
@@ -720,18 +767,6 @@ function mergePlain(base, extra) {
   return out;
 }
 
-function loadStoredConfig(fileSystem, dir) {
-  const mainFile = path.join(dir, "main.json");
-  if (!fileExists(fileSystem, mainFile)) {
-    return null;
-  }
-  const main = readConfigObject(fileSystem, mainFile);
-  if (main) {
-    return main;
-  }
-  return readConfigObject(fileSystem, path.join(dir, "main.json.bak"));
-}
-
 function section(merged, key) {
   if (!isPlainObject(merged[key])) {
     return {};
@@ -742,7 +777,11 @@ function section(merged, key) {
 function bindTargets(ctx) {
   const dir = path.join(ctx.paths.source, "apps", "configer", "configs");
   const base = readConfigObject(ctx.fs, path.join(dir, "base.json"));
-  const stored = loadStoredConfig(ctx.fs, dir);
+  const main = path.join(dir, "main.json");
+  const backup = readConfigObject(ctx.fs, path.join(dir, "main.json.bak"));
+  const stored = fileExists(ctx.fs, main)
+    ? readConfigObject(ctx.fs, main) || backup
+    : null;
   if (base === null && stored === null) {
     return {
       configerUrl: statusUrl(DEFAULT_CONFIGER_PORT, DEFAULT_PREFIX),
@@ -751,11 +790,23 @@ function bindTargets(ctx) {
   }
   const merged = mergePlain(base || {}, stored);
   const configer = section(merged, "configer");
+  const backupConfiger = section(backup || {}, "configer");
+  const baseConfiger = section(base || {}, "configer");
+  const configerPort = [
+    configer.port,
+    backupConfiger.port,
+    baseConfiger.port,
+  ].find((value) => value === 0 || positivePort(value) !== 0);
+  const configerPrefix = [
+    configer.url,
+    backupConfiger.url,
+    baseConfiger.url,
+  ].find((value) => typeof value === "string");
   const backend = section(merged, "backend");
   return {
     configerUrl: statusUrl(
-      choosePort(configer.port, ctx.env, CONFIGER_PORT_FALLBACK),
-      rawPrefix(configer.url, ctx.env)
+      choosePort(configerPort, ctx.env, CONFIGER_PORT_FALLBACK),
+      rawPrefix(configerPrefix, ctx.env)
     ),
     backendUrl: statusUrl(
       choosePort(backend.port, ctx.env, BACKEND_PORT_FALLBACK),
@@ -944,6 +995,8 @@ async function startLive(ctx) {
   try {
     begin(ctx, "START_CONFIGER");
     await startOne(ctx, "start:configer");
+    if (ctx.requireHealthy)
+      await waitForStatus(ctx, bindTargets(ctx).configerUrl);
     end(ctx, "START_CONFIGER");
   } catch (err) {
     ctx.logger.error("start", strings.startConfigerFailed, err);
@@ -952,6 +1005,8 @@ async function startLive(ctx) {
   try {
     begin(ctx, "START_PANEL");
     await startOne(ctx, "start:main");
+    if (ctx.requireHealthy)
+      await waitForStatus(ctx, bindTargets(ctx).backendUrl);
     end(ctx, "START_PANEL");
   } catch (err) {
     ctx.logger.error("start", strings.startFailed, err);
@@ -996,81 +1051,36 @@ async function startNew(ctx) {
   return "";
 }
 
-async function swapBack(ctx) {
-  const fileSystem = ctx.fs;
-  if (!fileSystem.existsSync(ctx.paths.dist2)) {
-    return false;
+async function recoverAndStart(ctx) {
+  if (!(await recoverRelease(ctx))) return false;
+  return startPrevious(ctx);
+}
+
+async function runRelease(ctx) {
+  if (!(await assembleDistNext(ctx)) || !(await swapIn(ctx))) {
+    return recoverAndStart(ctx);
   }
-  try {
-    fileSystem.rmSync(ctx.paths.distNext, { recursive: true, force: true });
-    if (fileSystem.existsSync(ctx.paths.dist)) {
-      dropNodeModules(fileSystem, ctx.paths.dist);
-      fileSystem.renameSync(ctx.paths.dist, ctx.paths.distNext);
+  const failedStep = await startNew(ctx);
+  if (failedStep !== "") {
+    if (!ctx.fs.existsSync(ctx.paths.dist2)) {
+      await recoverRelease(ctx);
+      return false;
     }
-    fileSystem.renameSync(ctx.paths.dist2, ctx.paths.dist);
-  } catch (err) {
-    if (
-      !fileSystem.existsSync(ctx.paths.dist) &&
-      fileSystem.existsSync(ctx.paths.distNext)
-    ) {
-      try {
-        fileSystem.renameSync(ctx.paths.distNext, ctx.paths.dist);
-      } catch (restoreErr) {
-        ctx.logger.error("SWAP", strings.overrideRollbackFailed, restoreErr);
-      }
-    }
-    ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
-    return false;
+    return recoverAndStart(ctx);
   }
+
   try {
-    fileSystem.rmSync(ctx.paths.distNext, { recursive: true, force: true });
+    ctx.fs.renameSync(ctx.paths.transaction, ctx.paths.committed);
   } catch (err) {
-    ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
-  }
-  try {
-    // --no-save keeps the copied lock and writes nothing on stderr.
-    await ctx.exec(`${ctx.bun} install --no-save`, {
-      cwd: ctx.paths.dist,
-      maxBuffer: 32 * 1024 * 1024,
-    });
-  } catch (err) {
-    ctx.logger.error("SWAP", strings.overrideRollbackFailed, err);
+    fail(ctx, "SWAP", err);
+    return recoverAndStart(ctx);
   }
   return true;
 }
 
-async function runRelease(ctx) {
-  const prepared = await assembleDistNext(ctx);
-  if (!prepared) {
-    if (ctx.fs.existsSync(ctx.paths.dist)) {
-      return startLive(ctx);
-    }
-    return false;
-  }
-  const swapped = await swapIn(ctx);
-  if (!swapped) {
-    if (ctx.fs.existsSync(ctx.paths.dist)) {
-      return startLive(ctx);
-    }
-    return false;
-  }
-  const failedStep = await startNew(ctx);
-  if (failedStep === "") {
-    return true;
-  }
-  await stopPm2(ctx);
-  if (!ctx.fs.existsSync(ctx.paths.dist2)) {
-    return false;
-  }
-  const restored = await swapBack(ctx);
-  if (!restored) {
-    return false;
-  }
-  return startLive(ctx);
-}
-
 async function onStartup(options) {
   const ctx = createContext(options);
+  if (!(await recoverRelease(ctx))) return false;
   const previous = readLast(ctx);
   const ready = await prepareTree(ctx);
   if (!ready) {
@@ -1091,10 +1101,8 @@ async function onStartup(options) {
     sha = "";
   }
   if (needsBuild(ctx, previous, updateRes, boot, sha)) {
-    const built = await build(ctx);
-    if (!built) {
-      return startPrevious(ctx);
-    }
+    if (!beginRelease(ctx)) return startPrevious(ctx);
+    if (!(await build(ctx))) return recoverAndStart(ctx);
     return runRelease(ctx);
   }
   return startLive(ctx);
@@ -1102,4 +1110,5 @@ async function onStartup(options) {
 
 module.exports = {
   onStartup,
+  choosePort,
 };

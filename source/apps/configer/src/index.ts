@@ -1,3 +1,4 @@
+import { bindingPort } from "@babybox/config-schema";
 import express from "express";
 import * as dotenv from "dotenv";
 import { dirname } from "node:path";
@@ -33,8 +34,7 @@ async function main() {
   app.use(express.json());
 
   // Routes
-  const rawPrefix =
-    main.data()?.configer.url || process.env["API_PREFIX"] || "";
+  const rawPrefix = main.binding.url || process.env["API_PREFIX"] || "";
   const prefix = safeRoutePrefix(rawPrefix);
   if (prefix !== rawPrefix) {
     console.error(
@@ -60,7 +60,7 @@ async function main() {
   // Last, so it sees what every route above threw.
   app.use(jsonErrors);
 
-  const port = main.data()?.configer.port || process.env["PORT"] || 6000;
+  const port = bindingPort(main.binding.port, process.env["PORT"], 6000);
   app.listen(port, () => {
     const color =
       process.env["NODE_ENV"] === "production" ? "\x1b[32m" : "\x1b[35m";

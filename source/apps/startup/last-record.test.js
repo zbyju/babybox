@@ -70,12 +70,33 @@ describe("startup last record", () => {
         WHEN,
         versions()
       );
-      writeRecord(logPath, failed);
-      expect(JSON.parse(fs.readFileSync(filePath, "utf8"))).toEqual(failed);
-      writeRecord(
-        logPath,
-        buildRecord("BUILD_CONFIGER", true, "", WHEN, versions())
+      expect(writeRecord(logPath, failed)).toBe(true);
+      const replacement = buildRecord(
+        "BUILD_CONFIGER",
+        true,
+        "",
+        WHEN,
+        versions()
       );
+      fs.writeFileSync(
+        path.join(root, "startup.last.json.other"),
+        "other writer"
+      );
+      const rename = vi.spyOn(fs, "renameSync").mockImplementationOnce(() => {
+        throw new Error("rename denied");
+      });
+      try {
+        expect(writeRecord(logPath, replacement)).toBe(false);
+        expect(JSON.parse(fs.readFileSync(filePath, "utf8"))).toEqual(failed);
+        expect(fs.readdirSync(root).sort()).toEqual([
+          "startup.last.json",
+          "startup.last.json.other",
+        ]);
+      } finally {
+        rename.mockRestore();
+      }
+
+      expect(writeRecord(logPath, replacement)).toBe(true);
       const last = JSON.parse(fs.readFileSync(filePath, "utf8"));
       expect(last.step).toBe("BUILD_CONFIGER");
       expect(last.ok).toBe(true);

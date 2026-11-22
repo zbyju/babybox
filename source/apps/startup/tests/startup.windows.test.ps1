@@ -483,9 +483,8 @@ $wantOld = (Get-FileHash -Algorithm SHA256 -Path $script:OldExe).Hash
 $gotOld = (Get-FileHash -Algorithm SHA256 -Path $script:InstalledBun).Hash
 if ($wantOld -eq $gotOld) { Pass } else { Fail "bad checksum replaced bun.exe" }
 
-Write-Host "a good zip whose bun prints 9.9.9 is not the pin"
+Write-Host "a checksum-good candidate with the wrong version keeps the working Bun"
 Reset-Case
-$script:StubBunMissing = $true
 $script:StubBunPrint = "9.9.9"
 $script:RewriteSha = $true
 Invoke-Case
@@ -494,13 +493,9 @@ Expect-Log "Bun je 9.9.9, chceme $($script:BunVersion)"
 Expect-NoLog "je nainstalovany"
 Expect-Called "pnpm run start"
 Expect-Rc 0
-if (Test-Path $script:InstalledBun) {
-  $gotNew = (Get-FileHash -Algorithm SHA256 -Path $script:InstalledBun).Hash
-  $wantNew = (Get-FileHash -Algorithm SHA256 -Path $script:ZipExe).Hash
-  if ($gotNew -eq $wantNew) { Pass } else { Fail "wrong bun was not copied before the version check" }
-} else {
-  Fail "bun.exe was not written"
-}
+$wantOld = (Get-FileHash -Algorithm SHA256 -Path $script:OldExe).Hash
+$gotOld = (Get-FileHash -Algorithm SHA256 -Path $script:InstalledBun).Hash
+if ($wantOld -eq $gotOld) { Pass } else { Fail "wrong candidate replaced working bun.exe" }
 
 Write-Host "a checksum-good zip with no bun.exe does not install"
 Reset-Case

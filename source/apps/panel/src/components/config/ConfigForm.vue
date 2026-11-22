@@ -92,12 +92,12 @@
     type ConfigError,
     type MainConfig,
     configForm,
-    parseMainConfig,
   } from "@babybox/config-schema";
   import moment from "moment";
   import { type Ref, computed, ref } from "vue";
 
   import { getConfig, saveConfig } from "@/api/config";
+  import { HttpError, ProtocolError } from "@/api/http";
   import { reloadBackendConfig } from "@/api/reload";
   import ConfigFormSection from "@/components/config/ConfigFormSection.vue";
   import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
@@ -258,18 +258,19 @@
   async function load() {
     addLogMessage("Načítám konfiguraci z configeru");
 
-    let body: unknown;
+    let parsed: Awaited<ReturnType<typeof getConfig>>;
     try {
-      body = await getConfig();
-    } catch {
-      addLogMessage(
-        "Konfiguraci nelze načíst - configer neodpovídá",
-        LogEntryType.Error,
-      );
+      parsed = await getConfig();
+    } catch (error) {
+      const message = error instanceof ProtocolError
+        ? "Configer vrátil nečitelnou konfiguraci."
+        : error instanceof HttpError
+          ? `Konfiguraci nelze načíst (HTTP ${error.status}).`
+          : "Konfiguraci nelze načíst - configer neodpovídá";
+      addLogMessage(message, LogEntryType.Error);
       return;
     }
 
-    const parsed = parseMainConfig(body);
     if (!parsed.ok) {
       addLogMessage(
         "Uložená konfigurace neodpovídá schématu. Oprav ji ručně v main.json a restartuj configer.",

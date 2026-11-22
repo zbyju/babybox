@@ -139,15 +139,7 @@ make_bun_zip() {
   dir="$(dirname "$zip_path")/zip-src"
   rm -rf "$dir"
   mkdir -p "$dir/bun-linux-x64"
-  cat > "$dir/bun-linux-x64/bun" <<'EOF'
-#!/bin/bash
-if [ "${1:-}" = "-v" ]; then
-  printf '%s\n' "1.4.2"
-  exit 0
-fi
-exit 0
-EOF
-  chmod +x "$dir/bun-linux-x64/bun"
+  write_bun_stub "$dir/bun-linux-x64/bun" "$CANDIDATE_PRINT" "$CANDIDATE_EXIT"
   rm -f "$zip_path"
   (
     cd "$dir" || exit 1
@@ -160,6 +152,8 @@ reset_case() {
   STUB_BUN_MISSING=0
   STUB_BUN_PRINT="1.4.2"
   STUB_BUN_EXIT=0
+  CANDIDATE_PRINT="1.4.2"
+  CANDIDATE_EXIT=0
   HOLD_VERSION=""
   NPM_INSTALL_EXIT=0
   PM2_UPDATE_EXIT=0
@@ -295,6 +289,21 @@ else
 fi
 expect_rc 0
 
+echo "a bad candidate keeps the old executable across login"
+reset_case
+STUB_BUN_PRINT="0.0.1"
+CANDIDATE_PRINT="9.9.9"
+REWRITE_SHA=1
+run_case
+expect_log "Bun je 9.9.9, chceme 1.4.2"
+expect_called "pnpm run start --ubuntu"
+if [ "$("$SANDBOX/home/.bun/bin/bun" -v 2>/dev/null)" = "0.0.1" ]; then
+  pass
+else
+  fail "candidate replaced the working Bun"
+fi
+expect_rc 0
+
 echo "stazeni selze -> panel nabehne"
 reset_case
 STUB_BUN_MISSING=1
@@ -396,8 +405,9 @@ reset_case
 run_case
 expect_not_called "git "
 
-echo "install-all.sh vola ensure_bun a neinstaluje pnpm 12"
-if grep -q 'ensure_bun' "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
+echo "install-all.sh runs the same frozen install as install.sh"
+if grep -q 'install.sh' "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
+  && grep -q 'install-workspace.js' "$SRC_STARTUP/scripts/ubuntu/install.sh" \
   && grep -q 'startup.sh' "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
   && ! grep -q 'pnpm@12' "$SRC_STARTUP/scripts/ubuntu/install-all.sh" \
   && ! grep -q 'x64-baseline' "$SRC_STARTUP/scripts/ubuntu/install-all.sh"
