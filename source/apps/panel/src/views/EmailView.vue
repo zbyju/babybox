@@ -1,40 +1,8 @@
 <template>
   <div class="email-workspace">
-    <header class="email-heading">
-      <div>
-        <h2>Provoz e-mailů</h2>
-        <p>Zvolte, jak jednotky a kamera odesílají e-maily.</p>
-      </div>
-      <span
-        v-if="relayWorkspace && (statusUnavailable || status)"
-        class="status"
-        :class="
-          status && !status.error && status.runtimeSupported
-            ? 'neutral'
-            : 'warning'
-        "
-      >
-        <span aria-hidden="true">●</span>
-        {{ statusUnavailable ? "Stav nedostupný" : "Živý přehled" }}
-      </span>
-    </header>
-
-    <details
-      class="card routing-card"
-      :open="!receiving || routing !== savedRouting"
-    >
-      <summary>
-        <strong>Jak se odesílají e-maily?</strong>
-        <span v-if="routing" class="hint">{{
-          routingOptions.find((option) => option.value === routing)?.title
-        }}</span>
-      </summary>
-      <fieldset
-        v-if="settings"
-        class="routing"
-        aria-label="Způsob odesílání e-mailů"
-        :disabled="busy"
-      >
+    <section class="card routing-card">
+      <fieldset v-if="settings" class="routing" :disabled="busy">
+        <legend>Jak se odesílají e-maily?</legend>
         <div class="routing-options">
           <label
             v-for="option in routingOptions"
@@ -63,7 +31,7 @@
           nastavuje a ověřuje na jednotkách a kameře.
         </p>
         <BaseButton
-          v-if="routing === 'direct' || routing !== savedRouting"
+          v-if="routing !== savedRouting"
           variant="accent"
           :disabled="busy"
           @click="save"
@@ -79,23 +47,7 @@
         {{ settingsMessage }}
       </p>
       <p v-else-if="!settings" role="status">Načítání nastavení…</p>
-    </details>
-
-    <nav
-      v-if="receiving && relayWorkspace"
-      class="email-sections"
-      aria-label="Správa e-mailů"
-    >
-      <button
-        v-for="item in sections"
-        :key="item.id"
-        type="button"
-        :aria-pressed="section === item.id"
-        @click="changeSection(item.id)"
-      >
-        {{ item.label }}
-      </button>
-    </nav>
+    </section>
 
     <template v-if="relayWorkspace">
       <p v-if="receiving && !status && !statusUnavailable" role="status">
@@ -108,6 +60,73 @@
       >
         Stav e-mailové služby nelze načíst. Panel se znovu pokusí o spojení.
       </p>
+
+      <section
+        v-if="receiving && section === 'overview'"
+        ref="overviewCards"
+        class="overview-cards"
+        aria-label="Přehled zpráv"
+      >
+        <article class="card overview-card">
+          <div class="overview-card-title">
+            <h3>Fronta zpráv</h3>
+            <BaseButton
+              variant="primary"
+              data-detail="queue"
+              @click="openDetail('queue')"
+              >Zobrazit frontu</BaseButton
+            >
+          </div>
+          <p v-if="status" class="overview-total">
+            <strong>{{ status.queue.length }}</strong> / 100 zpráv ·
+            {{ queueSize }} / 100 MiB
+          </p>
+          <p v-else class="hint">Stav fronty zatím není k dispozici.</p>
+          <dl v-if="queueTotals" class="overview-metrics">
+            <div>
+              <dt>Čekají</dt>
+              <dd>{{ queueTotals.waiting }}</dd>
+            </div>
+            <div>
+              <dt>Odesílá se</dt>
+              <dd>{{ queueTotals.active }}</dd>
+            </div>
+            <div>
+              <dt>Vyžadují zásah</dt>
+              <dd>{{ queueTotals.attention }}</dd>
+            </div>
+          </dl>
+        </article>
+        <article class="card overview-card">
+          <div class="overview-card-title">
+            <h3>Historie zpráv</h3>
+            <BaseButton
+              variant="primary"
+              data-detail="history"
+              @click="openDetail('history')"
+              >Zobrazit historii</BaseButton
+            >
+          </div>
+          <p v-if="status" class="overview-total">
+            <strong>{{ status.history.length }}</strong> záznamů / 100
+          </p>
+          <p v-else class="hint">Historie zatím není k dispozici.</p>
+          <dl v-if="historyTotals" class="overview-metrics">
+            <div>
+              <dt>Úspěch</dt>
+              <dd class="metric-success">{{ historyTotals.success }}</dd>
+            </div>
+            <div>
+              <dt>Chyba</dt>
+              <dd class="metric-danger">{{ historyTotals.danger }}</dd>
+            </div>
+            <div>
+              <dt>Rozpracováno</dt>
+              <dd>{{ historyTotals.neutral }}</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
 
       <section
         v-if="receiving && section === 'overview'"
@@ -126,19 +145,6 @@
           </p>
           <p v-if="status?.error" class="diagnostic">{{ status.error }}</p>
         </div>
-        <div class="tile">
-          <h3>Fronta zpráv</h3>
-          <p v-if="status">
-            <strong>{{ status.queue.length }} / 100</strong> zpráv ·
-            {{
-              (status.bytes / 1048576).toLocaleString("cs-CZ", {
-                maximumFractionDigits: 2,
-              })
-            }}
-            / 100 MiB
-          </p>
-          <p v-else>Stav fronty zatím není k dispozici.</p>
-        </div>
       </section>
       <p v-if="status?.historyError" class="notice warning" role="status">
         <span aria-hidden="true">⚠ </span> Historii nelze spolehlivě
@@ -146,7 +152,7 @@
         {{ status.historyError }}
       </p>
 
-      <section v-if="section === 'overview'" class="card">
+      <section v-if="receiving && section === 'overview'" class="card">
         <h3>Poslední příjem ze zařízení</h3>
         <p class="hint">Podle posledních 100 záznamů v historii panelu.</p>
         <dl class="sources">
@@ -165,308 +171,331 @@
           </div>
         </dl>
       </section>
-      <section v-if="section === 'setup' && settings" class="card">
-        <h3>Nastavení odesílání z panelu</h3>
-        <form v-if="settings" @submit.prevent="save">
-          <fieldset v-if="routing === 'panel'" :disabled="busy">
-            <legend>Adresáti</legend>
-            <p class="hint">Více adres oddělte čárkou.</p>
-            <label
-              >Adresáti jednotek
-              <BaseInput
-                v-model="settings.unitRecipients"
-                type="text"
-                maxlength="8000"
-              />
-            </label>
-            <label
-              >Adresáti kamery
-              <BaseInput
-                v-model="settings.cameraRecipients"
-                type="text"
-                maxlength="8000"
-              />
-            </label>
-          </fieldset>
-          <fieldset v-if="routing !== 'direct'" :disabled="busy">
-            <legend>Odchozí účet</legend>
-            <label
-              >SMTP server (TLS, port 465)
-              <BaseInput
-                v-model="settings.host"
-                type="text"
-                maxlength="253"
-                autocomplete="off"
-              />
-            </label>
-            <div class="account-fields">
+      <details
+        v-if="section === 'overview' && settings"
+        :open="routing !== savedRouting || busy || !!settingsMessage"
+        class="card smtp-disclosure"
+      >
+        <summary>SMTP nastavení a test</summary>
+        <section>
+          <h3>Nastavení odesílání z panelu</h3>
+          <form v-if="settings" @submit.prevent="save">
+            <fieldset v-if="routing === 'panel'" :disabled="busy">
+              <legend>Adresáti</legend>
+              <p class="hint">Více adres oddělte čárkou.</p>
               <label
-                >SMTP uživatel
+                >Adresáti jednotek
                 <BaseInput
-                  v-model="settings.user"
+                  v-model="settings.unitRecipients"
                   type="text"
-                  maxlength="1000"
+                  maxlength="8000"
+                />
+              </label>
+              <label
+                >Adresáti kamery
+                <BaseInput
+                  v-model="settings.cameraRecipients"
+                  type="text"
+                  maxlength="8000"
+                />
+              </label>
+            </fieldset>
+            <fieldset v-if="routing !== 'direct'" :disabled="busy">
+              <legend>Odchozí účet</legend>
+              <label
+                >SMTP server (TLS, port 465)
+                <BaseInput
+                  v-model="settings.host"
+                  type="text"
+                  maxlength="253"
                   autocomplete="off"
                 />
               </label>
+              <div class="account-fields">
+                <label
+                  >SMTP uživatel
+                  <BaseInput
+                    v-model="settings.user"
+                    type="text"
+                    maxlength="1000"
+                    autocomplete="off"
+                  />
+                </label>
+                <label
+                  >SMTP heslo
+                  <BaseInput
+                    v-model="settings.password"
+                    type="password"
+                    maxlength="1000"
+                    autocomplete="new-password"
+                  />
+                </label>
+              </div>
               <label
-                >SMTP heslo
+                >Náhradní odesílatel (volitelné)
                 <BaseInput
-                  v-model="settings.password"
-                  type="password"
-                  maxlength="1000"
-                  autocomplete="new-password"
+                  v-model="settings.senderOverride"
+                  type="text"
+                  maxlength="320"
                 />
               </label>
-            </div>
-            <label
-              >Náhradní odesílatel (volitelné)
-              <BaseInput
-                v-model="settings.senderOverride"
-                type="text"
-                maxlength="320"
-              />
-            </label>
-          </fieldset>
-          <BaseButton variant="accent" type="submit" :disabled="busy"
-            >Uložit nastavení</BaseButton
-          >
-        </form>
-        <p v-if="settingsMessage" class="notice" role="status">
-          {{ settingsMessage }}
-        </p>
-      </section>
-      <details
-        v-if="section === 'setup' && receiving"
-        class="card test-disclosure"
-      >
-        <summary>Test odesílání</summary>
-        <p class="hint">
-          Test použije uložený SMTP účet a odešle zprávu na jedinou zadanou
-          adresu.
-        </p>
-        <form @submit.prevent="act('test', { recipient: testRecipient })">
-          <fieldset :disabled="busy">
-            <label
-              >Adresa pro test
-              <BaseInput
-                v-model="testRecipient"
-                type="email"
-                required
-                autocomplete="off"
-              />
-            </label>
-            <BaseButton
-              variant="primary"
-              type="submit"
-              :disabled="busy || !status?.runtimeSupported"
-              >Zařadit test do fronty</BaseButton
+            </fieldset>
+            <BaseButton variant="accent" type="submit" :disabled="busy"
+              >Uložit nastavení</BaseButton
             >
-          </fieldset>
-        </form>
-        <p v-if="testMessage" class="notice" role="status">
-          {{ testMessage }}
-        </p>
-        <p
-          v-if="testRecord"
-          class="status"
-          :class="statusTone(recordStatus(testRecord))"
-          role="status"
-        >
-          <span aria-hidden="true">{{
-            statusIcon(recordStatus(testRecord))
-          }}</span>
-          {{ label(recordStatus(testRecord)) }}
-        </p>
-      </details>
-      <section v-if="section === 'queue' && status" class="card">
-        <h3>Fronta a opakování</h3>
-        <p class="hint">
-          Zprávy ve frontě mají platnost 24 hodin od přijetí. Restart obsah
-          fronty smaže.
-        </p>
-        <p v-if="!status.queue.length">Ve frontě nejsou žádné zprávy.</p>
-        <template v-else>
-          <label v-for="item in status.queue" :key="item.id" class="queue-row">
-            <input
-              v-model="selected"
-              :value="item.id"
-              type="checkbox"
-              :disabled="item.active || busy || !!confirmation"
-            />
-            <span>
-              <strong>{{ item.subject || "(bez předmětu)" }}</strong>
-              <span class="queue-meta hint"
-                >{{ time(item.receivedAt) }} · Pokusů: {{ item.attempts }}</span
+          </form>
+          <p v-if="settingsMessage" class="notice" role="status">
+            {{ settingsMessage }}
+          </p>
+        </section>
+        <section v-if="receiving" class="smtp-test">
+          <h3>Test odesílání</h3>
+          <p class="hint">
+            Test použije uložený SMTP účet a odešle zprávu na jedinou zadanou
+            adresu.
+          </p>
+          <form @submit.prevent="act('test', { recipient: testRecipient })">
+            <fieldset :disabled="busy">
+              <label
+                >Adresa pro test
+                <BaseInput
+                  v-model="testRecipient"
+                  type="email"
+                  required
+                  autocomplete="off"
+                />
+              </label>
+              <BaseButton
+                variant="primary"
+                type="submit"
+                :disabled="busy || !status?.runtimeSupported"
+                >Zařadit test do fronty</BaseButton
               >
-            </span>
-            <span class="status" :class="statusTone(queueStatus(item))">{{
-              label(queueStatus(item))
+            </fieldset>
+          </form>
+          <p v-if="testMessage" class="notice" role="status">
+            {{ testMessage }}
+          </p>
+          <p
+            v-if="testRecord"
+            class="status"
+            :class="statusTone(recordStatus(testRecord))"
+            role="status"
+          >
+            <span aria-hidden="true">{{
+              statusIcon(recordStatus(testRecord))
             }}</span>
-          </label>
-          <div class="actions">
-            <BaseButton
-              variant="primary"
-              :disabled="busy || !selected.length || !!confirmation"
-              @click="act('retry', { ids: selected })"
-              >Opakovat vybrané</BaseButton
+            {{ label(recordStatus(testRecord)) }}
+          </p>
+        </section>
+      </details>
+
+      <div v-if="section !== 'overview'" class="detail-toolbar">
+        <BaseButton variant="primary" @click="returnToOverview"
+          >Zpět na přehled e-mailů</BaseButton
+        >
+      </div>
+      <section v-if="section === 'queue'" class="card">
+        <h3 ref="detailHeading" tabindex="-1">Fronta a opakování</h3>
+        <template v-if="status">
+          <p class="hint">
+            Zprávy ve frontě mají platnost 24 hodin od přijetí. Restart obsah
+            fronty smaže.
+          </p>
+          <p v-if="!status.queue.length">Ve frontě nejsou žádné zprávy.</p>
+          <template v-else>
+            <label
+              v-for="item in status.queue"
+              :key="item.id"
+              class="queue-row"
             >
-            <BaseButton
-              variant="error"
-              :disabled="busy || !selected.length || !!confirmation"
-              @click="askConfirmation('delete')"
-              >Odstranit vybrané</BaseButton
-            >
-            <BaseButton
-              variant="error"
-              :disabled="
-                busy ||
-                !!confirmation ||
-                !status.queue.some((item) => !item.active)
-              "
-              @click="askConfirmation('clear')"
-              >Vyprázdnit frontu</BaseButton
-            >
-          </div>
-          <div v-if="confirmation" class="notice warning">
-            <p id="queue-confirmation" role="alert">
-              {{
-                confirmation === "clear"
-                  ? "Odstranit všechny zprávy kromě právě odesílané?"
-                  : `Odstranit vybrané zprávy (${confirmationIds.length})?`
-              }}
-              Obsah odstraněných zpráv se ztratí.
-            </p>
+              <input
+                v-model="selected"
+                :value="item.id"
+                type="checkbox"
+                :disabled="item.active || busy || !!confirmation"
+              />
+              <span>
+                <strong>{{ item.subject || "(bez předmětu)" }}</strong>
+                <span class="queue-meta hint"
+                  >{{ time(item.receivedAt) }} · Pokusů:
+                  {{ item.attempts }}</span
+                >
+              </span>
+              <span class="status" :class="statusTone(queueStatus(item))">{{
+                label(queueStatus(item))
+              }}</span>
+            </label>
             <div class="actions">
+              <BaseButton
+                variant="primary"
+                :disabled="busy || !selected.length || !!confirmation"
+                @click="act('retry', { ids: selected })"
+                >Opakovat vybrané</BaseButton
+              >
+              <BaseButton
+                variant="error"
+                :disabled="busy || !selected.length || !!confirmation"
+                @click="askConfirmation('delete')"
+                >Odstranit vybrané</BaseButton
+              >
               <BaseButton
                 variant="error"
                 :disabled="
-                  busy || (confirmation === 'delete' && !confirmationIds.length)
+                  busy ||
+                  !!confirmation ||
+                  !status.queue.some((item) => !item.active)
                 "
-                aria-describedby="queue-confirmation"
-                @click="confirmAction"
-                >Potvrdit odstranění</BaseButton
-              >
-              <BaseButton
-                ref="cancelButton"
-                variant="primary"
-                :disabled="busy"
-                @click="cancelConfirmation"
-                >Zrušit</BaseButton
+                @click="askConfirmation('clear')"
+                >Vyprázdnit frontu</BaseButton
               >
             </div>
+            <div v-if="confirmation" class="notice warning">
+              <p id="queue-confirmation" role="alert">
+                {{
+                  confirmation === "clear"
+                    ? "Odstranit všechny zprávy kromě právě odesílané?"
+                    : `Odstranit vybrané zprávy (${confirmationIds.length})?`
+                }}
+                Obsah odstraněných zpráv se ztratí.
+              </p>
+              <div class="actions">
+                <BaseButton
+                  variant="error"
+                  :disabled="
+                    busy ||
+                    (confirmation === 'delete' && !confirmationIds.length)
+                  "
+                  aria-describedby="queue-confirmation"
+                  @click="confirmAction"
+                  >Potvrdit odstranění</BaseButton
+                >
+                <BaseButton
+                  ref="cancelButton"
+                  variant="primary"
+                  :disabled="busy"
+                  @click="cancelConfirmation"
+                  >Zrušit</BaseButton
+                >
+              </div>
+            </div>
+          </template>
+          <p v-if="queueMessage" class="notice" role="status">
+            {{ queueMessage }}
+          </p>
+        </template>
+      </section>
+
+      <section v-if="section === 'history'" class="card">
+        <h3 ref="detailHeading" tabindex="-1">
+          Historie zpráv přijatých panelem
+        </h3>
+        <template v-if="status">
+          <p class="hint">
+            Úspěch znamená přijetí SMTP serverem. Doručení do schránky tím není
+            potvrzeno.
+          </p>
+          <p v-if="!status.history.length">
+            V historii zatím nejsou žádné zprávy.
+          </p>
+          <div v-else class="history">
+            <div class="log-columns log-header" aria-hidden="true">
+              <span>Předmět</span>
+              <span>Zdroj</span>
+              <span>Přijato panelem</span>
+              <span>Výsledek</span>
+            </div>
+            <details
+              v-for="record in status.history"
+              :key="record.id"
+              class="history-row"
+            >
+              <summary class="log-columns">
+                <strong>{{ record.subject || "(bez předmětu)" }}</strong>
+                <span>{{ sourceName(record.source) }}</span>
+                <time :datetime="new Date(record.receivedAt).toISOString()">{{
+                  time(record.receivedAt)
+                }}</time>
+                <span class="status" :class="resultKind(record)">
+                  <span aria-hidden="true">{{
+                    resultLabels[resultKind(record)].icon
+                  }}</span>
+                  {{ resultLabels[resultKind(record)].label }}
+                </span>
+              </summary>
+              <div class="record-details">
+                <p class="record-outcome">
+                  <strong>{{ label(recordStatus(record)) }}</strong>
+                </p>
+                <dl class="envelope">
+                  <div>
+                    <dt>Odesílatel</dt>
+                    <dd>{{ record.sender || "—" }}</dd>
+                  </div>
+                  <div>
+                    <dt>Původní adresáti</dt>
+                    <dd>{{ record.requestedRecipients.join(", ") || "—" }}</dd>
+                  </div>
+                  <div v-if="record.sourceIp">
+                    <dt>IP zařízení</dt>
+                    <dd>{{ record.sourceIp }}</dd>
+                  </div>
+                </dl>
+                <div
+                  v-if="Object.keys(record.recipients).length"
+                  class="detail-section"
+                >
+                  <h4>Výsledky podle adresátů</h4>
+                  <ul class="recipients">
+                    <li
+                      v-for="(outcome, address) in record.recipients"
+                      :key="address"
+                    >
+                      <span>{{ address }}</span>
+                      <span class="status" :class="statusTone(outcome)">{{
+                        label(outcome)
+                      }}</span>
+                    </li>
+                  </ul>
+                </div>
+                <div class="detail-section">
+                  <h4>Události zprávy</h4>
+                  <ol v-if="record.events.length" class="events">
+                    <li v-for="(event, i) in record.events" :key="i">
+                      <div class="event-heading">
+                        <strong>{{ label(event.kind) }}</strong>
+                        <time
+                          class="hint"
+                          :datetime="new Date(event.at).toISOString()"
+                          >{{ time(event.at) }}</time
+                        >
+                      </div>
+                      <p v-if="event.detail" class="hint">{{ event.detail }}</p>
+                    </li>
+                  </ol>
+                  <p v-else class="hint">Bez zaznamenaných událostí.</p>
+                </div>
+                <p v-if="!record.contentAvailable" class="hint">
+                  Obsah zprávy už není k dispozici pro další pokus.
+                </p>
+                <details
+                  v-if="
+                    record.text || record.headers || record.attachments.length
+                  "
+                >
+                  <summary>Obsah zprávy a přílohy</summary>
+                  <p class="hint">Velikost zprávy: {{ record.bytes }} bajtů</p>
+                  <p v-for="(attachment, i) in record.attachments" :key="i">
+                    {{ attachment.filename }} ({{ attachment.contentType }},
+                    {{ attachment.size }} bajtů)
+                  </p>
+                  <pre v-if="record.text">{{ record.text }}</pre>
+                  <pre v-if="record.headers">{{ record.headers }}</pre>
+                </details>
+              </div>
+            </details>
           </div>
         </template>
-        <p v-if="queueMessage" class="notice" role="status">
-          {{ queueMessage }}
-        </p>
-      </section>
-      <section v-if="section === 'history' && status" class="card">
-        <h3>Historie zpráv přijatých panelem</h3>
-        <p class="hint">
-          Úspěch znamená přijetí SMTP serverem. Doručení do schránky tím není
-          potvrzeno.
-        </p>
-        <p v-if="!status.history.length">
-          V historii zatím nejsou žádné zprávy.
-        </p>
-        <div v-else class="history">
-          <div class="log-columns log-header" aria-hidden="true">
-            <span>Předmět</span>
-            <span>Zdroj</span>
-            <span>Přijato panelem</span>
-            <span>Výsledek</span>
-          </div>
-          <details
-            v-for="record in status.history"
-            :key="record.id"
-            class="history-row"
-          >
-            <summary class="log-columns">
-              <strong>{{ record.subject || "(bez předmětu)" }}</strong>
-              <span>{{ sourceName(record.source) }}</span>
-              <time :datetime="new Date(record.receivedAt).toISOString()">{{
-                time(record.receivedAt)
-              }}</time>
-              <span class="status" :class="resultKind(record)">
-                <span aria-hidden="true">{{
-                  resultLabels[resultKind(record)].icon
-                }}</span>
-                {{ resultLabels[resultKind(record)].label }}
-              </span>
-            </summary>
-            <div class="record-details">
-              <p class="record-outcome">
-                <strong>{{ label(recordStatus(record)) }}</strong>
-              </p>
-              <dl class="envelope">
-                <div>
-                  <dt>Odesílatel</dt>
-                  <dd>{{ record.sender || "—" }}</dd>
-                </div>
-                <div>
-                  <dt>Původní adresáti</dt>
-                  <dd>{{ record.requestedRecipients.join(", ") || "—" }}</dd>
-                </div>
-                <div v-if="record.sourceIp">
-                  <dt>IP zařízení</dt>
-                  <dd>{{ record.sourceIp }}</dd>
-                </div>
-              </dl>
-              <div
-                v-if="Object.keys(record.recipients).length"
-                class="detail-section"
-              >
-                <h4>Výsledky podle adresátů</h4>
-                <ul class="recipients">
-                  <li
-                    v-for="(outcome, address) in record.recipients"
-                    :key="address"
-                  >
-                    <span>{{ address }}</span>
-                    <span class="status" :class="statusTone(outcome)">{{
-                      label(outcome)
-                    }}</span>
-                  </li>
-                </ul>
-              </div>
-              <div class="detail-section">
-                <h4>Události zprávy</h4>
-                <ol v-if="record.events.length" class="events">
-                  <li v-for="(event, i) in record.events" :key="i">
-                    <div class="event-heading">
-                      <strong>{{ label(event.kind) }}</strong>
-                      <time
-                        class="hint"
-                        :datetime="new Date(event.at).toISOString()"
-                        >{{ time(event.at) }}</time
-                      >
-                    </div>
-                    <p v-if="event.detail" class="hint">{{ event.detail }}</p>
-                  </li>
-                </ol>
-                <p v-else class="hint">Bez zaznamenaných událostí.</p>
-              </div>
-              <p v-if="!record.contentAvailable" class="hint">
-                Obsah zprávy už není k dispozici pro další pokus.
-              </p>
-              <details
-                v-if="
-                  record.text || record.headers || record.attachments.length
-                "
-              >
-                <summary>Obsah zprávy a přílohy</summary>
-                <p class="hint">Velikost zprávy: {{ record.bytes }} bajtů</p>
-                <p v-for="(attachment, i) in record.attachments" :key="i">
-                  {{ attachment.filename }} ({{ attachment.contentType }},
-                  {{ attachment.size }} bajtů)
-                </p>
-                <pre v-if="record.text">{{ record.text }}</pre>
-                <pre v-if="record.headers">{{ record.headers }}</pre>
-              </details>
-            </div>
-          </details>
-        </div>
       </section>
     </template>
   </div>
@@ -534,29 +563,41 @@
     () => savedRouting.value !== undefined && savedRouting.value !== "direct",
   );
 
-  const sections = [
-    { id: "overview", label: "Přehled" },
-    { id: "setup", label: "SMTP a test" },
-    { id: "queue", label: "Fronta" },
-    { id: "history", label: "Historie" },
-  ] as const;
-  type Section = (typeof sections)[number]["id"];
-  const section = ref<Section>("overview");
+  type Detail = "queue" | "history";
+  const section = ref<"overview" | Detail>("overview");
+  const overviewCards = useTemplateRef("overviewCards");
+  const detailHeading = useTemplateRef("detailHeading");
   const relayWorkspace = computed(
     () => routing.value !== undefined && routing.value !== "direct",
   );
 
-  function changeSection(value: Section) {
+  function openDetail(detail: Detail) {
+    section.value = detail;
+    void nextTick(() => detailHeading.value?.focus());
+  }
+
+  function returnToOverview() {
+    const detail = section.value;
+    resetDetail();
+    void nextTick(() =>
+      overviewCards.value
+        ?.querySelector<HTMLElement>(`[data-detail="${detail}"]`)
+        ?.focus(),
+    );
+  }
+
+  function resetDetail() {
     confirmation.value = null;
     confirmationIds.value = [];
-    section.value = value;
+    section.value = "overview";
   }
 
   function selectRouting(value: Routing) {
     if (!settings.value) return;
     settings.value.listener = value === "direct" ? "disabled" : "enabled";
     if (value !== "direct") settings.value.mode = value;
-    changeSection(value === "direct" ? "overview" : "setup");
+    resetDetail();
+    settingsMessage.value = "";
   }
 
   const status = ref<EmailStatus>();
@@ -659,6 +700,28 @@
     neutral: { icon: "•", label: "Rozpracováno" },
   };
 
+  const queueSize = computed(() =>
+    ((status.value?.bytes ?? 0) / 1048576).toLocaleString("cs-CZ", {
+      maximumFractionDigits: 2,
+    }),
+  );
+  const queueTotals = computed(() => {
+    if (!status.value) return undefined;
+    const totals = { waiting: 0, active: 0, attention: 0 };
+    for (const item of status.value.queue) {
+      if (item.active) totals.active++;
+      else if (item.stopped || item.paused) totals.attention++;
+      else totals.waiting++;
+    }
+    return totals;
+  });
+  const historyTotals = computed(() => {
+    if (!status.value) return undefined;
+    const totals = { success: 0, danger: 0, neutral: 0 };
+    for (const record of status.value.history) totals[resultKind(record)]++;
+    return totals;
+  });
+
   function resultKind(record: RecordView) {
     if (record.status === "accepted") return "success";
     if (record.status === "pending" && !queueById.value.get(record.id)?.stopped)
@@ -747,8 +810,8 @@
         timeout: CONFIGER_TIMEOUT,
       });
       if (!response.ok) throw new Error();
-      savedRouting.value = routing.value;
       const result = await reloadBackendConfig();
+      if (result.ok) savedRouting.value = routing.value;
       settingsMessage.value = result.ok
         ? "Nastavení uloženo a načteno backendem."
         : "Nastavení uloženo. Backend ho nyní nemohl načíst; zkuste uložit znovu.";
@@ -833,30 +896,22 @@
     color-scheme dark
     overflow-wrap anywhere
 
-  .email-heading
-    display flex
-    align-items center
-    justify-content space-between
-    gap 12px
-
-  h2, h3, p
+  h3, p
     margin 0
-  h2
-    font-size 1.65rem
   h3
     font-size 1.08rem
   p, .hint, dd
     line-height 1.5
-  .email-heading p, .hint
+  .hint
     color #c4c7de
     font-size .9rem
-  .email-heading p
-    margin-top 4px
 
   .service-grid, .sources, .account-fields
     display grid
     gap 12px
-  .service-grid, .sources
+  .service-grid
+    grid-template-columns repeat(2, minmax(0, 1fr))
+  .sources
     grid-template-columns repeat(3, minmax(0, 1fr))
   .account-fields
     grid-template-columns repeat(2, minmax(0, 1fr))
@@ -1043,43 +1098,61 @@
     outline 2px solid #c3b6ff
     outline-offset 2px
 
-  .email-sections
+  .overview-cards
+    display grid
+    grid-template-columns repeat(2, minmax(0, 1fr))
+    gap 12px
+  .overview-card
+    align-content start
+    &:focus-within
+      border-color #716b95
+  .overview-card-title
     display flex
+    align-items center
+    justify-content space-between
     flex-wrap wrap
     gap 8px
-    border-bottom 1px solid #3b3763
-    button
-      cursor pointer
-      background transparent
-      border 0
-      border-radius 6px 6px 0 0
-      border-bottom 3px solid transparent
-      color #ded9ff
-      padding 10px 16px
-      font inherit
+  .overview-total strong
+    font-size 1.45rem
+  .overview-metrics
+    display grid
+    grid-template-columns repeat(3, minmax(0, 1fr))
+    gap 8px
+    margin 0
+    > div
+      padding 8px 10px
+      background #191638
+      border-radius 6px
+    dt
+      color #c4c7de
+      font-size .83rem
+    dd
+      font-size 1.1rem
       font-weight 700
-      &:hover, &[aria-pressed="true"]
-        background #25224b
-      &[aria-pressed="true"]
-        border-bottom-color #b29cff
-      &:focus-visible
-        outline 2px solid #c3b6ff
-        outline-offset 2px
-
-  .routing-card, .test-disclosure
+    .metric-success
+      color #a0f0c6
+    .metric-danger
+      color #ffc0cb
+  .smtp-disclosure
     display block
     > summary
       font-weight 700
       cursor pointer
-      .hint
-        margin-left 12px
-        font-weight 400
     > :not(summary)
-      margin-top 10px
+      margin-top 16px
+  .smtp-disclosure > section > h3
+    margin-bottom 12px
+  .smtp-test
+    padding-top 16px
+    border-top 1px solid #3b3763
+    form
+      margin-top 12px
 
   .routing
     margin 0
     gap 10px
+  .routing legend
+    font-size 1.18rem
   .routing button
     justify-self start
   .routing-options
@@ -1121,6 +1194,6 @@
       grid-area 1 / 3 / span 3
 
   @media (max-width: 650px)
-    .service-grid, .sources, .account-fields
+    .service-grid, .sources, .account-fields, .overview-cards
       grid-template-columns minmax(0, 1fr)
 </style>

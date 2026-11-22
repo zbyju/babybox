@@ -91,9 +91,9 @@ describe("boot", () => {
     const original = JSON.stringify(legacy);
     writeFileSync(file("main.json"), original);
     const db = await mainConfig(configDir);
-    expect(db.data().email).toEqual(defaultConfig().email);
-    expect(db.data().units).toEqual(legacy.units);
-    expect(db.data().camera).toEqual(legacy.camera);
+    expect(db.data()["email"]).toEqual(defaultConfig().email);
+    expect(db.data()["units"]).toEqual(legacy.units);
+    expect(db.data()["camera"]).toEqual(legacy.camera);
     expect(readFileSync(file("main.json"), "utf8")).toBe(original);
     expect(existsSync(file("main.json.bak"))).toBe(false);
   });

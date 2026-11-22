@@ -61,12 +61,15 @@ describe("email maintenance page", () => {
     for (let i = 0; i < 12; i++) await Promise.resolve();
     await nextTick();
   }
-  async function openSection(label: string) {
-    Array.from(
-      element.querySelectorAll<HTMLButtonElement>(".email-sections button"),
-    )
-      .find((button) => button.textContent?.trim() === label)
+  async function openDetail(detail: "queue" | "history") {
+    element
+      .querySelector<HTMLButtonElement>(`[data-detail="${detail}"]`)
       ?.click();
+    await flush();
+  }
+
+  async function returnToOverview() {
+    element.querySelector<HTMLButtonElement>(".detail-toolbar button")?.click();
     await flush();
   }
 
@@ -98,16 +101,15 @@ describe("email maintenance page", () => {
   });
 
   it("escapes message content and masks the SMTP password", async () => {
-    await openSection("Historie");
+    await openDetail("history");
     expect(element.querySelector("script")).toBeNull();
     expect(element.querySelector("img")).toBeNull();
     expect(element.textContent).toContain("<script>bad()</script>");
-    await openSection("SMTP a test");
+    await returnToOverview();
     expect(element.querySelector('input[type="password"]')).toBeTruthy();
   });
 
   it("saves only email settings so unrelated device configuration is not overwritten", async () => {
-    await openSection("SMTP a test");
     element
       .querySelector("form")
       ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -124,8 +126,32 @@ describe("email maintenance page", () => {
     expect(reloadBackendConfig).toHaveBeenCalledOnce();
   });
 
+  it("shows routing and summary counts first, then gives detail rows their own view", async () => {
+    expect(
+      element.querySelector(".routing-card legend")?.textContent,
+    ).toContain("Jak se odesílají e-maily?");
+    expect(element.querySelector(".routing-card summary")).toBeNull();
+    const cards = element.querySelectorAll(".overview-card");
+    expect(cards).toHaveLength(2);
+    expect(cards[0]?.querySelector(".overview-total strong")?.textContent).toBe(
+      "1",
+    );
+    expect(cards[1]?.querySelector(".overview-total strong")?.textContent).toBe(
+      "1",
+    );
+    expect(element.querySelector(".queue-row")).toBeNull();
+    await openDetail("queue");
+    expect(document.activeElement?.textContent).toContain("Fronta a opakování");
+    expect(element.querySelector(".overview-cards")).toBeNull();
+    expect(element.querySelector(".queue-row")).not.toBeNull();
+    await returnToOverview();
+    expect(document.activeElement).toBe(
+      element.querySelector('[data-detail="queue"]'),
+    );
+  });
+
   it("shows a single log row with its result and keeps diagnostics in its details", async () => {
-    await openSection("Historie");
+    await openDetail("history");
     const rows = element.querySelectorAll(".history-row");
     expect(rows).toHaveLength(1);
     const row = rows[0];
@@ -150,7 +176,7 @@ describe("email maintenance page", () => {
     routing?.click();
     await flush();
     expect(element.querySelector('input[type="password"]')).toBeNull();
-    expect(element.querySelector(".email-sections")).toBeNull();
+    expect(element.querySelector(".overview-cards")).toBeNull();
 
     element.querySelector<HTMLButtonElement>(".routing-card button")?.click();
     await flush();
@@ -166,7 +192,7 @@ describe("email maintenance page", () => {
     expect(element.querySelector('input[type="email"]')).toBeNull();
     expect(element.querySelector(".history-row")).toBeNull();
     expect(element.querySelector(".queue-row")).toBeNull();
-    expect(element.querySelector(".email-sections")).toBeNull();
+    expect(element.querySelector(".overview-cards")).toBeNull();
     const posts = vi
       .mocked(fetchWithTimeout)
       .mock.calls.filter(([, options]) => options?.method === "POST");
@@ -174,7 +200,6 @@ describe("email maintenance page", () => {
   });
 
   it("shows panel recipient fields only when the panel selects recipients", async () => {
-    await openSection("SMTP a test");
     expect(element.textContent).not.toContain("Adresáti jednotek");
     expect(element.querySelector('input[type="password"]')).not.toBeNull();
     const routing = element.querySelector<HTMLInputElement>(
@@ -187,7 +212,7 @@ describe("email maintenance page", () => {
   });
 
   it("requires an inline confirmation before deleting and never opens a blocking dialog", async () => {
-    await openSection("Fronta");
+    await openDetail("queue");
     const confirm = vi.spyOn(window, "confirm");
     const button = Array.from(element.querySelectorAll("button")).find(
       (button) => button.textContent?.includes("Vyprázdnit frontu"),
