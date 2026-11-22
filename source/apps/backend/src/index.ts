@@ -99,7 +99,7 @@ async function main() {
   let attempt = 1;
   while (answer.status === "failed") {
     console.log(
-      `Config not available (attempt \${attempt}): \${answer.msg} Retrying in \${CONFIG_RETRY_DELAY_MS}ms.`
+      `Config not available (attempt ${attempt}): ${answer.msg} Retrying in ${CONFIG_RETRY_DELAY_MS}ms.`
     );
     await wait(CONFIG_RETRY_DELAY_MS);
     answer = await readConfig(fetchConfig);

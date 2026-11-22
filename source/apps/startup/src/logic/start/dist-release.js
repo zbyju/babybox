@@ -15,6 +15,7 @@ const path = require("path");
 const util = require("util");
 
 const fs = require("fs-extra");
+const dotenv = require("dotenv");
 
 const bootstrap = require("../../../bootstrap");
 const lastRecord = require("../../../last-record");
@@ -475,9 +476,9 @@ async function headSha(ctx) {
   return String(result.stdout || "").trim();
 }
 
-async function startPrevious(ctx) {
+async function startPrevious(ctx, requireHealthy = ctx.requireHealthy) {
   if (ctx.fs.existsSync(ctx.paths.dist)) {
-    return startLive(ctx);
+    return startLive(ctx, requireHealthy);
   }
   return false;
 }
@@ -774,6 +775,19 @@ function section(merged, key) {
   return merged[key];
 }
 
+function serviceEnv(ctx, file) {
+  let defaults;
+  try {
+    defaults = dotenv.parse(ctx.fs.readFileSync(file, "utf8"));
+  } catch {
+    defaults = {};
+  }
+  return {
+    PORT: pick(ctx.env.PORT, defaults.PORT),
+    API_PREFIX: pick(ctx.env.API_PREFIX, defaults.API_PREFIX),
+  };
+}
+
 function bindTargets(ctx) {
   const dir = path.join(ctx.paths.source, "apps", "configer", "configs");
   const base = readConfigObject(ctx.fs, path.join(dir, "base.json"));
@@ -803,14 +817,16 @@ function bindTargets(ctx) {
     baseConfiger.url,
   ].find((value) => typeof value === "string");
   const backend = section(merged, "backend");
+  const configerEnv = serviceEnv(ctx, path.join(dir, "..", ".env"));
+  const backendEnv = serviceEnv(ctx, path.join(ctx.paths.dist, ".env"));
   return {
     configerUrl: statusUrl(
-      choosePort(configerPort, ctx.env, CONFIGER_PORT_FALLBACK),
-      rawPrefix(configerPrefix, ctx.env)
+      choosePort(configerPort, configerEnv, CONFIGER_PORT_FALLBACK),
+      rawPrefix(configerPrefix, configerEnv)
     ),
     backendUrl: statusUrl(
-      choosePort(backend.port, ctx.env, BACKEND_PORT_FALLBACK),
-      rawPrefix(backend.url, ctx.env)
+      choosePort(backend.port, backendEnv, BACKEND_PORT_FALLBACK),
+      rawPrefix(backend.url, backendEnv)
     ),
   };
 }
@@ -989,14 +1005,13 @@ function startOne(ctx, script) {
 }
 
 // Does not write a success record, so a failed upgrade stays visible for the next boot.
-async function startLive(ctx) {
+async function startLive(ctx, requireHealthy = ctx.requireHealthy) {
   await stopPm2(ctx);
   let ok = true;
   try {
     begin(ctx, "START_CONFIGER");
     await startOne(ctx, "start:configer");
-    if (ctx.requireHealthy)
-      await waitForStatus(ctx, bindTargets(ctx).configerUrl);
+    if (requireHealthy) await waitForStatus(ctx, bindTargets(ctx).configerUrl);
     end(ctx, "START_CONFIGER");
   } catch (err) {
     ctx.logger.error("start", strings.startConfigerFailed, err);
@@ -1005,8 +1020,7 @@ async function startLive(ctx) {
   try {
     begin(ctx, "START_PANEL");
     await startOne(ctx, "start:main");
-    if (ctx.requireHealthy)
-      await waitForStatus(ctx, bindTargets(ctx).backendUrl);
+    if (requireHealthy) await waitForStatus(ctx, bindTargets(ctx).backendUrl);
     end(ctx, "START_PANEL");
   } catch (err) {
     ctx.logger.error("start", strings.startFailed, err);
@@ -1053,7 +1067,7 @@ async function startNew(ctx) {
 
 async function recoverAndStart(ctx) {
   if (!(await recoverRelease(ctx))) return false;
-  return startPrevious(ctx);
+  return startPrevious(ctx, true);
 }
 
 async function runRelease(ctx) {

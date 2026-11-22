@@ -42,6 +42,11 @@ test ! -d apps/configer/dist
 test ! -d "$root/dist"
 test "$(node -v)" = v18.12.1
 echo "Fresh checkout $(git rev-parse HEAD) on $(node -p 'process.platform')"
+# A real box has a tracking branch. Pin this fixture's upstream to its checkout.
+git switch -c fresh-install-fixture
+git init -q --bare "$sandbox/upstream.git"
+git remote add fresh-fixture "$sandbox/upstream.git"
+git push -q --set-upstream fresh-fixture fresh-install-fixture
 if "$windows"; then
   run_batch apps/startup/scripts/windows/install.bat
 else

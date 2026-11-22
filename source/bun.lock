@@ -91,6 +91,7 @@
       "name": "startup",
       "version": "1.0.0",
       "dependencies": {
+        "dotenv": "18.0.10",
         "fs-extra": "11.4.1",
         "moment": "2.31.0",
         "pino": "9.14.0",

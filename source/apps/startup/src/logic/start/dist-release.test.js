@@ -871,13 +871,19 @@ describe("dist-next release", () => {
   });
 
   it.each([
-    ["before the first rename", false, false],
-    ["between the two renames", true, false],
-    ["after the candidate rename", true, true],
-    ["between the rollback renames", true, false],
+    ["before the first rename", false, false, true],
+    ["between the two renames", true, false, true],
+    ["after the candidate rename", true, true, true],
+    ["between the rollback renames", true, false, true],
+    [
+      "before the rollback health check, if the previous service is down",
+      true,
+      true,
+      false,
+    ],
   ])(
     "recovers a boot interrupted %s and rolls back a failed retry offline",
-    async (boundary, movedOld, promotedNew) => {
+    async (boundary, movedOld, promotedNew, healthyPrevious) => {
       const root = createRoot();
       const live = path.join(root, "dist");
       const second = path.join(root, "dist2");
@@ -940,18 +946,18 @@ describe("dist-next release", () => {
         const result = await onStartup(
           baseOptions(root, harness, {
             ...clock,
-            requireHealthy: true,
             statusWaitMs: 2,
             async httpGet(target) {
               const isNew =
                 fs.readFileSync(path.join(live, "index.js"), "utf8") === "new";
               checked.push([isNew, target]);
-              if (isNew && target.includes(":5000/")) return 503;
+              if (target.includes(":5000/") && (isNew || !healthyPrevious))
+                return 503;
               return 200;
             },
           })
         );
-        expect(result).toBe(true);
+        expect(result).toBe(healthyPrevious);
         expect(checked).toContainEqual([true, statusUrl(5000, "/api/v1")]);
         expect(checked).toContainEqual([false, statusUrl(5000, "/api/v1")]);
         expect(installCwds(harness)).toEqual([staged]);
@@ -1506,6 +1512,8 @@ describe("dist-next release", () => {
           nowMs: clock.nowMs,
           delay: clock.delay,
           httpGet: async (target) => {
+            if (fs.existsSync(path.join(root, "dist", "release.json")))
+              return 200;
             expect(target).toBe(url);
             clock.advance(budget);
             throw new Error("down");
@@ -1554,6 +1562,8 @@ describe("dist-next release", () => {
           nowMs: clock.nowMs,
           delay: clock.delay,
           httpGet: async (target) => {
+            if (fs.existsSync(path.join(root, "dist", "release.json")))
+              return 200;
             if (target === configer) {
               return 200;
             }
@@ -1608,6 +1618,8 @@ describe("dist-next release", () => {
           nowMs: clock.nowMs,
           delay: clock.delay,
           httpGet: async (target) => {
+            if (fs.existsSync(path.join(root, "dist", "release.json")))
+              return 200;
             releaseSeen.push(
               fs.existsSync(path.join(root, "dist", "release.json"))
             );
@@ -1827,6 +1839,46 @@ describe("dist-next release", () => {
     }
   });
 
+  it("uses each deployed .env for empty bindings, with parent environment taking precedence", async () => {
+    const root = createRoot();
+    const harness = createHarness();
+    const seen = [];
+    writeConfig(root, "main.json", {
+      configer: { port: 0, url: "" },
+      backend: { port: 0, url: "" },
+    });
+    const apps = path.join(root, "source", "apps");
+    fs.writeFileSync(
+      path.join(apps, "configer", ".env"),
+      "PORT=5101\nAPI_PREFIX=/configer\n"
+    );
+    fs.writeFileSync(
+      path.join(apps, "backend", ".env"),
+      "PORT=5100\nAPI_PREFIX=/backend\n"
+    );
+    prepareRelease(harness);
+    try {
+      expect(
+        await onStartup(
+          baseOptions(root, harness, {
+            env: { API_PREFIX: "/system" },
+            httpGet: async (url) => {
+              seen.push(url);
+              return 200;
+            },
+          })
+        )
+      ).toBe(true);
+      expect(seen).toEqual([
+        statusUrl(5101, "/system"),
+        statusUrl(5100, "/system"),
+        statusUrl(5101, "/system"),
+      ]);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("retries status until a later answer is 200", async () => {
     const root = createRoot();
     const harness = createHarness();
@@ -1885,7 +1937,7 @@ describe("dist-next release", () => {
         })
       );
       expect(Date.now() - started).toBeLessThan(500);
-      expect(code).toBe(true);
+      expect(code).toBe(false);
       expect(readRecord(root).step).toBe("START_CONFIGER");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe(
@@ -1997,7 +2049,7 @@ describe("dist-next release", () => {
       const opts = baseOptions(root, harness, { statusWaitMs: budget });
       delete opts.httpGet;
       const code = await onStartup(opts);
-      expect(code).toBe(true);
+      expect(code).toBe(false);
       expect(readRecord(root).step).toBe("START_CONFIGER");
       expect(readRecord(root).ok).toBe(false);
       expect(readRecord(root).message).toBe(
