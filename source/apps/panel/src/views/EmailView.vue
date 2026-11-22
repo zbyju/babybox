@@ -1,13 +1,25 @@
 <template>
   <div class="email-workspace">
-    <section class="card routing-card">
-      <fieldset v-if="settings" class="routing" :disabled="busy">
-        <legend>Jak se odesílají e-maily?</legend>
+    <section v-if="section === 'overview'" class="routing-card">
+      <div class="section-title">
+        <h2 id="email-routing-title">Jak se odesílají e-maily?</h2>
+        <InlineHelp label="Jak nastavit cíl SMTP">
+          Cíl SMTP se nastavuje přímo na jednotkách a kameře. Uložení zde jejich
+          nastavení nemění.
+        </InlineHelp>
+      </div>
+      <fieldset
+        v-if="settings"
+        class="routing"
+        aria-labelledby="email-routing-title"
+        :disabled="busy"
+      >
         <div class="routing-options">
           <label
             v-for="option in routingOptions"
             :key="option.value"
             class="routing-option"
+            :class="{ selected: routing === option.value }"
           >
             <input
               type="radio"
@@ -22,16 +34,8 @@
             </span>
           </label>
         </div>
-        <p class="hint">
-          Cíl SMTP se nastavuje přímo na jednotkách a kameře. Uložení této volby
-          zařízení nepřenastaví.
-        </p>
-        <p v-if="routing === 'direct'" class="hint">
-          Panel v tomto režimu nepřijímá nové zprávy. Přímé odesílání se
-          nastavuje a ověřuje na jednotkách a kameře.
-        </p>
         <BaseButton
-          v-if="routing !== savedRouting"
+          v-if="routing === 'direct' && routing !== savedRouting"
           variant="accent"
           :disabled="busy"
           @click="save"
@@ -62,132 +66,25 @@
       </p>
 
       <section
-        v-if="receiving && section === 'overview'"
-        ref="overviewCards"
-        class="overview-cards"
-        aria-label="Přehled zpráv"
-      >
-        <article class="card overview-card">
-          <div class="overview-card-title">
-            <h3>Fronta zpráv</h3>
-            <BaseButton
-              variant="primary"
-              data-detail="queue"
-              @click="openDetail('queue')"
-              >Zobrazit frontu</BaseButton
-            >
-          </div>
-          <p v-if="status" class="overview-total">
-            <strong>{{ status.queue.length }}</strong> / 100 zpráv ·
-            {{ queueSize }} / 100 MiB
-          </p>
-          <p v-else class="hint">Stav fronty zatím není k dispozici.</p>
-          <dl v-if="queueTotals" class="overview-metrics">
-            <div>
-              <dt>Čekají</dt>
-              <dd>{{ queueTotals.waiting }}</dd>
-            </div>
-            <div>
-              <dt>Odesílá se</dt>
-              <dd>{{ queueTotals.active }}</dd>
-            </div>
-            <div>
-              <dt>Vyžadují zásah</dt>
-              <dd>{{ queueTotals.attention }}</dd>
-            </div>
-          </dl>
-        </article>
-        <article class="card overview-card">
-          <div class="overview-card-title">
-            <h3>Historie zpráv</h3>
-            <BaseButton
-              variant="primary"
-              data-detail="history"
-              @click="openDetail('history')"
-              >Zobrazit historii</BaseButton
-            >
-          </div>
-          <p v-if="status" class="overview-total">
-            <strong>{{ status.history.length }}</strong> záznamů / 100
-          </p>
-          <p v-else class="hint">Historie zatím není k dispozici.</p>
-          <dl v-if="historyTotals" class="overview-metrics">
-            <div>
-              <dt>Úspěch</dt>
-              <dd class="metric-success">{{ historyTotals.success }}</dd>
-            </div>
-            <div>
-              <dt>Chyba</dt>
-              <dd class="metric-danger">{{ historyTotals.danger }}</dd>
-            </div>
-            <div>
-              <dt>Rozpracováno</dt>
-              <dd>{{ historyTotals.neutral }}</dd>
-            </div>
-          </dl>
-        </article>
-      </section>
-
-      <section
-        v-if="receiving && section === 'overview'"
-        class="service-grid"
-        aria-label="Stav e-mailové služby"
-      >
-        <div class="tile">
-          <h3>Příjem zpráv</h3>
-          <p>{{ status?.listener || "Stav příjmu zatím není k dispozici." }}</p>
-        </div>
-        <div class="tile">
-          <h3>Odchozí SMTP</h3>
-          <p :class="status?.error ? 'warning' : undefined">
-            <span v-if="status?.error" aria-hidden="true">⚠ </span>
-            {{ outboundStatus }}
-          </p>
-          <p v-if="status?.error" class="diagnostic">{{ status.error }}</p>
-        </div>
-      </section>
-      <p v-if="status?.historyError" class="notice warning" role="status">
-        <span aria-hidden="true">⚠ </span> Historii nelze spolehlivě
-        zaznamenávat.
-        {{ status.historyError }}
-      </p>
-
-      <section v-if="receiving && section === 'overview'" class="card">
-        <h3>Poslední příjem ze zařízení</h3>
-        <p class="hint">Podle posledních 100 záznamů v historii panelu.</p>
-        <dl class="sources">
-          <div v-for="source in sources" :key="source.id">
-            <dt>{{ source.name }}</dt>
-            <dd>
-              <time
-                v-if="source.last"
-                :datetime="new Date(source.last.receivedAt).toISOString()"
-                >{{ time(source.last.receivedAt) }}</time
-              >
-              <span v-else>{{
-                status ? "Bez záznamu" : "Stav nedostupný"
-              }}</span>
-            </dd>
-          </div>
-        </dl>
-      </section>
-      <details
         v-if="section === 'overview' && settings"
-        :open="routing !== savedRouting || busy || !!settingsMessage"
-        class="card smtp-disclosure"
+        class="card smtp-setup"
       >
-        <summary>SMTP nastavení a test</summary>
-        <section>
-          <h3>Nastavení odesílání z panelu</h3>
-          <form v-if="settings" @submit.prevent="save">
-            <fieldset v-if="routing === 'panel'" :disabled="busy">
-              <legend>Adresáti</legend>
-              <p class="hint">Více adres oddělte čárkou.</p>
+        <div class="section-title">
+          <h3>SMTP nastavení</h3>
+          <InlineHelp label="Připojení SMTP">
+            Panel odesílá zprávy přes TLS na portu 465.
+          </InlineHelp>
+        </div>
+        <form @submit.prevent="save">
+          <fieldset v-if="routing === 'panel'" :disabled="busy">
+            <legend>Adresáti</legend>
+            <div class="account-fields">
               <label
                 >Adresáti jednotek
                 <BaseInput
                   v-model="settings.unitRecipients"
                   type="text"
+                  placeholder="adresy oddělené čárkou"
                   maxlength="8000"
                 />
               </label>
@@ -196,64 +93,69 @@
                 <BaseInput
                   v-model="settings.cameraRecipients"
                   type="text"
+                  placeholder="adresy oddělené čárkou"
                   maxlength="8000"
                 />
               </label>
-            </fieldset>
-            <fieldset v-if="routing !== 'direct'" :disabled="busy">
-              <legend>Odchozí účet</legend>
-              <label
-                >SMTP server (TLS, port 465)
-                <BaseInput
-                  v-model="settings.host"
-                  type="text"
-                  maxlength="253"
-                  autocomplete="off"
-                />
-              </label>
-              <div class="account-fields">
-                <label
-                  >SMTP uživatel
-                  <BaseInput
-                    v-model="settings.user"
-                    type="text"
-                    maxlength="1000"
-                    autocomplete="off"
-                  />
-                </label>
-                <label
-                  >SMTP heslo
-                  <BaseInput
-                    v-model="settings.password"
-                    type="password"
-                    maxlength="1000"
-                    autocomplete="new-password"
-                  />
-                </label>
-              </div>
-              <label
-                >Náhradní odesílatel (volitelné)
-                <BaseInput
-                  v-model="settings.senderOverride"
-                  type="text"
-                  maxlength="320"
-                />
-              </label>
-            </fieldset>
-            <BaseButton variant="accent" type="submit" :disabled="busy"
-              >Uložit nastavení</BaseButton
-            >
-          </form>
-          <p v-if="settingsMessage" class="notice" role="status">
-            {{ settingsMessage }}
-          </p>
-        </section>
-        <section v-if="receiving" class="smtp-test">
-          <h3>Test odesílání</h3>
-          <p class="hint">
-            Test použije uložený SMTP účet a odešle zprávu na jedinou zadanou
-            adresu.
-          </p>
+            </div>
+          </fieldset>
+          <fieldset
+            :disabled="busy"
+            class="account-fields"
+            aria-label="Odchozí účet"
+          >
+            <label
+              >SMTP server
+              <BaseInput
+                v-model="settings.host"
+                type="text"
+                maxlength="253"
+                autocomplete="off"
+              />
+            </label>
+            <label
+              >SMTP uživatel
+              <BaseInput
+                v-model="settings.user"
+                type="text"
+                maxlength="1000"
+                autocomplete="off"
+              />
+            </label>
+            <label
+              >SMTP heslo
+              <BaseInput
+                v-model="settings.password"
+                type="password"
+                maxlength="1000"
+                autocomplete="new-password"
+              />
+            </label>
+            <label
+              >Náhradní odesílatel (volitelné)
+              <BaseInput
+                v-model="settings.senderOverride"
+                type="text"
+                maxlength="320"
+              />
+            </label>
+          </fieldset>
+          <BaseButton variant="accent" type="submit" :disabled="busy"
+            >Uložit nastavení</BaseButton
+          >
+        </form>
+        <p v-if="settingsMessage" class="notice" role="status">
+          {{ settingsMessage }}
+        </p>
+        <div v-if="receiving && status" class="smtp-health">
+          <span>{{ status.listener }}</span>
+          <span :class="{ warning: status.error }">{{ outboundStatus }}</span>
+          <InlineHelp v-if="status.error" label="Podrobnosti chyby SMTP">{{
+            status.error
+          }}</InlineHelp>
+        </div>
+        <details v-if="receiving" class="smtp-test">
+          <summary>Zkušební e-mail</summary>
           <form @submit.prevent="act('test', { recipient: testRecipient })">
             <fieldset :disabled="busy">
               <label
@@ -287,8 +189,107 @@
             }}</span>
             {{ label(recordStatus(testRecord)) }}
           </p>
-        </section>
-      </details>
+        </details>
+      </section>
+
+      <section
+        v-if="receiving && section === 'overview'"
+        ref="overviewCards"
+        class="overview-cards"
+        aria-label="Přehled zpráv"
+      >
+        <article class="card overview-card">
+          <div class="overview-card-title">
+            <h3>Fronta zpráv</h3>
+            <BaseButton
+              variant="primary"
+              data-detail="queue"
+              @click="openDetail('queue')"
+              >Zobrazit frontu</BaseButton
+            >
+          </div>
+          <p v-if="status" class="overview-total">
+            <strong>{{ status.queue.length }}</strong> / 100 zpráv ·
+            {{ queueSize }} / 100 MiB
+          </p>
+          <p v-else class="hint">Stav fronty zatím není k dispozici.</p>
+          <dl v-if="queueTotals" class="overview-metrics">
+            <div>
+              <dt>Čekají</dt>
+              <dd>{{ queueTotals.waiting }}</dd>
+            </div>
+            <div>
+              <dt>Odesílá se</dt>
+              <dd>{{ queueTotals.active }}</dd>
+            </div>
+            <div>
+              <dt>Pozastaveno</dt>
+              <dd>{{ queueTotals.paused }}</dd>
+            </div>
+            <div>
+              <dt>Selhalo</dt>
+              <dd class="metric-danger">{{ queueTotals.failed }}</dd>
+            </div>
+          </dl>
+        </article>
+        <article class="card overview-card">
+          <div class="overview-card-title">
+            <h3>Historie zpráv</h3>
+            <BaseButton
+              variant="primary"
+              data-detail="history"
+              @click="openDetail('history')"
+              >Zobrazit historii</BaseButton
+            >
+          </div>
+          <p v-if="status" class="overview-total">
+            <strong>{{ status.history.length }}</strong> záznamů / 100
+          </p>
+          <p v-else class="hint">Historie zatím není k dispozici.</p>
+          <dl v-if="historyTotals" class="overview-metrics">
+            <div>
+              <dt>Úspěch</dt>
+              <dd class="metric-success">{{ historyTotals.success }}</dd>
+            </div>
+            <div>
+              <dt>Chyba</dt>
+              <dd class="metric-danger">{{ historyTotals.danger }}</dd>
+            </div>
+            <div>
+              <dt>Rozpracováno</dt>
+              <dd>{{ historyTotals.neutral }}</dd>
+            </div>
+          </dl>
+          <div v-if="status" class="source-summary">
+            <div class="section-title">
+              <h4>Poslední příjem ze zařízení</h4>
+              <InlineHelp label="Jak se počítá poslední příjem">
+                Z posledních 100 záznamů přijatých panelem.
+              </InlineHelp>
+            </div>
+            <dl class="sources">
+              <div v-for="source in sources" :key="source.id">
+                <dt>{{ source.name }}</dt>
+                <dd>
+                  <time
+                    v-if="source.last"
+                    :datetime="new Date(source.last.receivedAt).toISOString()"
+                    >{{ time(source.last.receivedAt) }}</time
+                  >
+                  <span v-else>{{
+                    status ? "Bez záznamu" : "Stav nedostupný"
+                  }}</span>
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <p v-if="status?.historyError" class="notice warning" role="status">
+            <span aria-hidden="true">⚠ </span> Historii nelze spolehlivě
+            zaznamenávat.
+            {{ status.historyError }}
+          </p>
+        </article>
+      </section>
 
       <div v-if="section !== 'overview'" class="detail-toolbar">
         <BaseButton variant="primary" @click="returnToOverview"
@@ -296,12 +297,14 @@
         >
       </div>
       <section v-if="section === 'queue'" class="card">
-        <h3 ref="detailHeading" tabindex="-1">Fronta a opakování</h3>
+        <div class="section-title">
+          <h3 ref="detailHeading" tabindex="-1">Fronta a opakování</h3>
+          <InlineHelp label="Platnost zpráv ve frontě">
+            Zprávy mají platnost 24 hodin od přijetí. Restart obsah fronty
+            smaže.
+          </InlineHelp>
+        </div>
         <template v-if="status">
-          <p class="hint">
-            Zprávy ve frontě mají platnost 24 hodin od přijetí. Restart obsah
-            fronty smaže.
-          </p>
           <p v-if="!status.queue.length">Ve frontě nejsou žádné zprávy.</p>
           <template v-else>
             <label
@@ -387,14 +390,21 @@
       </section>
 
       <section v-if="section === 'history'" class="card">
-        <h3 ref="detailHeading" tabindex="-1">
-          Historie zpráv přijatých panelem
-        </h3>
+        <div class="section-title">
+          <h3 ref="detailHeading" tabindex="-1">
+            Historie zpráv přijatých panelem
+          </h3>
+          <InlineHelp label="Co znamená výsledek Úspěch">
+            SMTP server zprávu přijal. Výsledek nepotvrzuje doručení do
+            schránky.
+          </InlineHelp>
+        </div>
+        <p v-if="status?.historyError" class="notice warning" role="status">
+          <span aria-hidden="true">⚠ </span> Historii nelze spolehlivě
+          zaznamenávat.
+          {{ status.historyError }}
+        </p>
         <template v-if="status">
-          <p class="hint">
-            Úspěch znamená přijetí SMTP serverem. Doručení do schránky tím není
-            potvrzeno.
-          </p>
           <p v-if="!status.history.length">
             V historii zatím nejsou žádné zprávy.
           </p>
@@ -524,6 +534,7 @@
   import { reloadBackendConfig } from "@/api/reload";
   import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
   import BaseInput from "@/components/panel/HTMLElements/BaseInput.vue";
+  import InlineHelp from "@/components/panel/HTMLElements/InlineHelp.vue";
 
   import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
@@ -641,7 +652,7 @@
     if (!status.value.configured)
       return "Doplňte SMTP server, uživatele a heslo.";
     if (status.value.error) return "Služba hlásí chybu";
-    return "Účet nastaven · výsledek ověříte testem";
+    return "SMTP účet nastaven";
   });
   const sourceName = (id: string) =>
     id === "test"
@@ -707,10 +718,11 @@
   );
   const queueTotals = computed(() => {
     if (!status.value) return undefined;
-    const totals = { waiting: 0, active: 0, attention: 0 };
+    const totals = { waiting: 0, active: 0, paused: 0, failed: 0 };
     for (const item of status.value.queue) {
       if (item.active) totals.active++;
-      else if (item.stopped || item.paused) totals.attention++;
+      else if (item.stopped) totals.failed++;
+      else if (item.paused) totals.paused++;
       else totals.waiting++;
     }
     return totals;
@@ -896,7 +908,7 @@
     color-scheme dark
     overflow-wrap anywhere
 
-  h3, p
+  h2, h3, h4, p
     margin 0
   h3
     font-size 1.08rem
@@ -906,16 +918,14 @@
     color #c4c7de
     font-size .9rem
 
-  .service-grid, .sources, .account-fields
+  .sources, .account-fields
     display grid
     gap 12px
-  .service-grid
-    grid-template-columns repeat(2, minmax(0, 1fr))
   .sources
     grid-template-columns repeat(3, minmax(0, 1fr))
   .account-fields
     grid-template-columns repeat(2, minmax(0, 1fr))
-  .tile, .card
+  .card
     border 1px solid #3b3763
     border-radius 12px
     background #100e2c
@@ -924,20 +934,20 @@
   .card
     display grid
     gap 10px
-  .tile h3
-    margin-bottom 8px
-    color #c4c7de
-  .diagnostic
-    margin-top 4px
-    color #ffcd88
-    font-size .9rem
-
+  .section-title
+    display flex
+    align-items center
+    gap 8px
+    h2
+      font-size 1.18rem
+  .source-summary
+    border-top 1px solid #3b3763
+    padding-top 10px
   .sources
-    margin 2px 0 0
-  .sources > div
-    padding 10px 12px
-    background #191638
-    border-radius 4px
+    margin 6px 0 0
+    font-size .88rem
+    dd
+      margin 2px 0 0
   dt
     font-weight 700
   dd
@@ -1106,6 +1116,8 @@
     align-content start
     &:focus-within
       border-color #716b95
+  .overview-card:first-child .overview-metrics
+    grid-template-columns repeat(4, minmax(0, 1fr))
   .overview-card-title
     display flex
     align-items center
@@ -1133,26 +1145,27 @@
       color #a0f0c6
     .metric-danger
       color #ffc0cb
-  .smtp-disclosure
-    display block
+  .smtp-health
+    display flex
+    flex-wrap wrap
+    align-items center
+    gap 6px 14px
+    font-size .9rem
+    color #c4c7de
+  .smtp-test
+    border-top 1px solid #3b3763
+    padding-top 10px
     > summary
       font-weight 700
       cursor pointer
-    > :not(summary)
-      margin-top 16px
-  .smtp-disclosure > section > h3
-    margin-bottom 12px
-  .smtp-test
-    padding-top 16px
-    border-top 1px solid #3b3763
     form
       margin-top 12px
-
+  .routing-card
+    display grid
+    gap 10px
   .routing
     margin 0
     gap 10px
-  .routing legend
-    font-size 1.18rem
   .routing button
     justify-self start
   .routing-options
@@ -1164,7 +1177,6 @@
     align-items flex-start
     gap 9px
     background #191638
-    border 1px solid #666086
     border-radius 8px
     padding 12px
     cursor pointer
@@ -1176,8 +1188,14 @@
       height 1rem
       margin 3px 0 0
       accent-color #8d70ff
+    &.selected
+      background #25224b
     &:focus-within
-      border-color #c3b6ff
+      outline 2px solid #c3b6ff
+
+  @media (max-width: 900px)
+    .overview-card:first-child .overview-metrics
+      grid-template-columns repeat(2, minmax(0, 1fr))
 
   @media (max-width: 750px)
     .routing-options
@@ -1194,6 +1212,6 @@
       grid-area 1 / 3 / span 3
 
   @media (max-width: 650px)
-    .service-grid, .sources, .account-fields, .overview-cards
+    .sources, .account-fields, .overview-cards
       grid-template-columns minmax(0, 1fr)
 </style>

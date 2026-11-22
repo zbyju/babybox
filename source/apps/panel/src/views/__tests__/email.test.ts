@@ -127,12 +127,20 @@ describe("email maintenance page", () => {
   });
 
   it("shows routing and summary counts first, then gives detail rows their own view", async () => {
+    expect(element.querySelector(".routing-card h2")?.textContent).toContain(
+      "Jak se odesílají e-maily?",
+    );
     expect(
-      element.querySelector(".routing-card legend")?.textContent,
-    ).toContain("Jak se odesílají e-maily?");
-    expect(element.querySelector(".routing-card summary")).toBeNull();
+      element.querySelector(".routing-card fieldset")?.closest("details"),
+    ).toBeNull();
     const cards = element.querySelectorAll(".overview-card");
     expect(cards).toHaveLength(2);
+    const form = element.querySelector(".smtp-setup");
+    expect(form?.nextElementSibling).toBe(
+      element.querySelector(".overview-cards"),
+    );
+    expect(cards[0]?.textContent).toContain("Selhalo");
+    expect(cards[1]?.querySelector(".sources")).not.toBeNull();
     expect(cards[0]?.querySelector(".overview-total strong")?.textContent).toBe(
       "1",
     );
@@ -144,6 +152,8 @@ describe("email maintenance page", () => {
     expect(document.activeElement?.textContent).toContain("Fronta a opakování");
     expect(element.querySelector(".overview-cards")).toBeNull();
     expect(element.querySelector(".queue-row")).not.toBeNull();
+    expect(element.querySelector(".routing-card")).toBeNull();
+    expect(element.querySelector(".smtp-setup")).toBeNull();
     await returnToOverview();
     expect(document.activeElement).toBe(
       element.querySelector('[data-detail="queue"]'),
@@ -152,6 +162,7 @@ describe("email maintenance page", () => {
 
   it("shows a single log row with its result and keeps diagnostics in its details", async () => {
     await openDetail("history");
+    expect(element.querySelector(".routing-card")).toBeNull();
     const rows = element.querySelectorAll(".history-row");
     expect(rows).toHaveLength(1);
     const row = rows[0];
