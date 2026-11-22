@@ -44,6 +44,8 @@ echo "Fresh checkout $(git rev-parse HEAD) on $(node -p 'process.platform')"
 # A real box has a tracking branch. Pin this fixture's upstream to its checkout.
 git switch -c fresh-install-fixture
 git init -q --bare "$sandbox/upstream.git"
+# CI checks out only the tested commit. The fixture upstream may keep that same boundary.
+git -C "$sandbox/upstream.git" config receive.shallowUpdate true
 git remote add fresh-fixture "$sandbox/upstream.git"
 git push -q --set-upstream fresh-fixture fresh-install-fixture
 if "$windows"; then
