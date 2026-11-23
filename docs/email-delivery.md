@@ -26,7 +26,7 @@ authoritative; this file tracks implementation and release gates.
 4. Add port 25 reception inside the backend (implemented), restricted to current configured
    engine, thermal and camera IPs. Test actual device AUTH/session behavior and
    camera message sizes. Bind or mail failures must not prevent backend startup.
-   Enabled by default on supported runtimes; an older runtime reports it unavailable.
+   Disabled by default; an older runtime reports it unavailable.
 5. Add Czech settings, listener/transport status, history and confirmed queue
    actions on a dedicated page (implemented and exercised locally). Monitoring
    and watchdog traffic remain in the global app manager.
@@ -80,8 +80,9 @@ workspace and runs a full pnpm 7 install. Backend tests use the workspace's
 Vitest dependency so its newer toolchain peers stay out of that install.
 
 `email` is an optional configuration section. Configer merges the new defaults into
-old configurations in memory without rewriting their files. Device mode and enabled
-reception are defaults; no outbound credentials are assumed. The email page PATCHes
+old configurations in memory without rewriting their files. Direct device delivery
+and disabled panel reception are defaults; explicitly saved settings are retained.
+No outbound credentials are assumed. The email page PATCHes
 only this section and asks the backend to reload it. SMTP listener changes take
 effect on the next email worker tick. A failed bind is retried after 30 seconds.
 Device allowlisting reads the current config.

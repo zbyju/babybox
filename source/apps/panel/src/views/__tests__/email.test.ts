@@ -74,7 +74,10 @@ describe("email maintenance page", () => {
   }
 
   beforeEach(async () => {
-    vi.mocked(getConfig).mockResolvedValue(parseMainConfig(defaultConfig()));
+    const config = defaultConfig();
+    if (!config.email) throw new Error("Expected email defaults");
+    config.email.listener = "enabled";
+    vi.mocked(getConfig).mockResolvedValue(parseMainConfig(config));
     vi.mocked(reloadBackendConfig).mockResolvedValue({
       ok: true,
       unapplied: [],
@@ -121,7 +124,7 @@ describe("email maintenance page", () => {
     const patch: unknown =
       typeof body === "string" ? JSON.parse(body) : undefined;
     expect(patch).toEqual({
-      email: defaultConfig().email,
+      email: { ...defaultConfig().email, listener: "enabled" },
     });
     expect(reloadBackendConfig).toHaveBeenCalledOnce();
   });
@@ -210,6 +213,21 @@ describe("email maintenance page", () => {
     expect(posts).toHaveLength(0);
   });
 
+  it("selects direct device delivery for a default configuration", async () => {
+    vi.mocked(getConfig).mockResolvedValue(parseMainConfig(defaultConfig()));
+    app.unmount();
+    app = createApp(EmailView);
+    app.mount(element);
+    await flush();
+
+    expect(
+      element.querySelector<HTMLInputElement>(
+        '[name="email-routing"][value="direct"]',
+      )?.checked,
+    ).toBe(true);
+    expect(element.querySelector(".smtp-setup")).toBeNull();
+  });
+
   it("shows panel recipient fields only when the panel selects recipients", async () => {
     expect(element.textContent).not.toContain("Adresáti jednotek");
     expect(element.querySelector('input[type="password"]')).not.toBeNull();
@@ -225,6 +243,7 @@ describe("email maintenance page", () => {
   it("manages unit and camera addresses separately and saves both lists in the existing format", async () => {
     const config = defaultConfig();
     if (!config.email) throw new Error("Expected email defaults");
+    config.email.listener = "enabled";
     config.email.mode = "panel";
     config.email.unitRecipients = "first@example.test; second@example.test";
     config.email.cameraRecipients = "camera@example.test";

@@ -48,7 +48,7 @@ export function defaultConfig(): MainConfig {
       refreshRequestLimit: 50000,
     },
     email: {
-      listener: "enabled",
+      listener: "disabled",
       mode: "device",
       host: "",
       user: "",

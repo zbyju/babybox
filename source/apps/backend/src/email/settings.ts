@@ -21,7 +21,7 @@ export interface EmailSettings {
 }
 
 export const defaultEmailSettings: EmailSettings = {
-  listener: "enabled",
+  listener: "disabled",
   mode: "device",
   host: "",
   user: "",

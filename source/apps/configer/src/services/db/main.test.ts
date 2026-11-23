@@ -92,10 +92,22 @@ describe("boot", () => {
     writeFileSync(file("main.json"), original);
     const db = await mainConfig(configDir);
     expect(db.data()["email"]).toEqual(defaultConfig().email);
+    expect(db.data()["email"]).toMatchObject({ listener: "disabled" });
     expect(db.data()["units"]).toEqual(legacy.units);
     expect(db.data()["camera"]).toEqual(legacy.camera);
     expect(readFileSync(file("main.json"), "utf8")).toBe(original);
     expect(existsSync(file("main.json.bak"))).toBe(false);
+  });
+  it("preserves an explicitly enabled email listener", async () => {
+    const saved = base();
+    if (!saved.email) throw new Error("Expected email defaults");
+    saved.email.listener = "enabled";
+    const original = JSON.stringify(saved);
+    writeFileSync(file("main.json"), original);
+
+    const db = await mainConfig(configDir);
+    expect(db.data()["email"]).toMatchObject({ listener: "enabled" });
+    expect(readFileSync(file("main.json"), "utf8")).toBe(original);
   });
   it("boots from base.json when there is no main.json, and writes nothing", async () => {
     const db = await mainConfig(configDir);

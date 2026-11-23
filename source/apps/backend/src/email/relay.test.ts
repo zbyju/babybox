@@ -38,6 +38,7 @@ describe("email relay isolation and recipient tracking", () => {
     dir = await fs.mkdtemp(path.join(os.tmpdir(), "babybox-relay-"));
     settings = {
       ...defaultEmailSettings,
+      listener: "enabled",
       host: "smtp.example.com",
       user: "sender@example.com",
       password: "secret",
@@ -61,6 +62,13 @@ describe("email relay isolation and recipient tracking", () => {
   afterEach(async () => {
     await relay.close();
     await fs.rm(dir, { recursive: true, force: true });
+  });
+
+  it("does not start the SMTP listener when an older configuration has no email settings", async () => {
+    delete config.email;
+    await relay.start(0, "127.0.0.1");
+    expect(relay.status().listener).toContain("vypnut");
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("keeps old panels running without importing unsupported SMTP libraries", async () => {
