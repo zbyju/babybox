@@ -1,6 +1,6 @@
 {
-  "backend": "2.0.0",
-  "configer": "2.0.0",
-  "frontend": "2.0.0",
-  "startup": "2.0.0"
+  "backend": "2.1.0",
+  "configer": "2.1.0",
+  "frontend": "2.1.0",
+  "startup": "2.1.0"
 }
