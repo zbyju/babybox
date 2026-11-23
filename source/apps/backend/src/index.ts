@@ -21,7 +21,7 @@ import { modulesObject } from "./modules/init.js";
 import { router as engineRoute } from "./routes/engineRoute.js";
 import { router as reloadRoute } from "./routes/reloadRoute.js";
 import { restartRouter } from "./routes/restartRoute.js";
-import { desktopPanel } from "./modules/desktopPanel.js";
+import { desktopPanel, restoreFirefoxSession } from "./modules/desktopPanel.js";
 import { router as thermalRoute } from "./routes/thermalRoute.js";
 import { router as unitsRoute } from "./routes/unitsRoute.js";
 import { safeRoutePrefix } from "./utils/routePrefix.js";
@@ -120,7 +120,7 @@ async function main() {
     void open("http://localhost:" + port).catch((error: unknown) => {
       console.error(error instanceof Error ? error.message : String(error));
     });
-  });
+  }, restoreFirefoxSession);
 
   // Setup logger - morgan
   if (process.env["NODE_ENV"] === "development") {
@@ -304,7 +304,7 @@ async function main() {
   bound = { port, prefix };
 
   app.listen(port, () => {
-    if (process.env["NODE_ENV"] === "production") panel.openIfMissing();
+    if (process.env["NODE_ENV"] === "production") void panel.openIfMissing();
     const color =
       process.env["NODE_ENV"] === "production" ? "\x1b[32m" : "\x1b[35m";
 
