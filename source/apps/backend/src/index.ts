@@ -20,7 +20,8 @@ import type {
 import { modulesObject } from "./modules/init.js";
 import { router as engineRoute } from "./routes/engineRoute.js";
 import { router as reloadRoute } from "./routes/reloadRoute.js";
-import { router as restartRoute } from "./routes/restartRoute.js";
+import { restartRouter } from "./routes/restartRoute.js";
+import { desktopPanel } from "./modules/desktopPanel.js";
 import { router as thermalRoute } from "./routes/thermalRoute.js";
 import { router as unitsRoute } from "./routes/unitsRoute.js";
 import { safeRoutePrefix } from "./utils/routePrefix.js";
@@ -115,6 +116,11 @@ async function main() {
   const app = express();
   app.set("query parser", "extended");
   const port = bindingPort(loaded.backend.port, process.env["PORT"], 5000);
+  const panel = desktopPanel(() => {
+    void open("http://localhost:" + port).catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : String(error));
+    });
+  });
 
   // Setup logger - morgan
   if (process.env["NODE_ENV"] === "development") {
@@ -150,7 +156,7 @@ async function main() {
   app.use(prefix + "/units", unitsRoute);
   app.use(prefix + "/engine", engineRoute);
   app.use(prefix + "/thermal", thermalRoute);
-  app.use(prefix + "/restart", restartRoute);
+  app.use(prefix + "/restart", restartRouter(panel.checkIn));
   app.use(prefix + "/reload", reloadRoute);
 
   const email = new EmailRelay(() => config);
@@ -198,11 +204,9 @@ async function main() {
             process.env["pm_id"] === undefined ||
             email.status().queue.length
           ) {
-            res
-              .status(409)
-              .send({
-                msg: "Panel nyní nelze bezpečně restartovat. Zkontrolujte frontu nebo použijte běžný restart panelu.",
-              });
+            res.status(409).send({
+              msg: "Panel nyní nelze bezpečně restartovat. Zkontrolujte frontu nebo použijte běžný restart panelu.",
+            });
             return;
           }
           listenerRepairPendingRestart = false;
@@ -292,14 +296,6 @@ async function main() {
         headers: { "Cache-Control": INDEX_CACHE_CONTROL },
       });
     });
-
-    /*
-     * A browser that will not open is not a reason to stop serving. Without
-     * the catch the rejected promise ends the process on Node 15 and newer.
-     */
-    open("http://localhost:" + port).catch((err: unknown) => {
-      console.error(err instanceof Error ? err.message : String(err));
-    });
   }
 
   // Last, so it sees what every route above threw.
@@ -308,6 +304,7 @@ async function main() {
   bound = { port, prefix };
 
   app.listen(port, () => {
+    if (process.env["NODE_ENV"] === "production") panel.openIfMissing();
     const color =
       process.env["NODE_ENV"] === "production" ? "\x1b[32m" : "\x1b[35m";
 

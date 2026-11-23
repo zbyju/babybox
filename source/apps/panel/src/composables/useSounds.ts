@@ -48,6 +48,9 @@ export const useSounds = () => {
 
 class BabyboxSoundPlayer {
   playing: Howl | null;
+  private requested: { name: string; loop: boolean } | undefined;
+  private claim: AbortController | undefined;
+  private ownsAudio = false;
 
   constructor() {
     this.playing = null;
@@ -81,9 +84,52 @@ class BabyboxSoundPlayer {
   }
 
   playSound(name: string, loop = true) {
-    if (this.playing) this.playing.stop();
+    this.requested = { name, loop };
+    if (
+      this.ownsAudio ||
+      typeof navigator === "undefined" ||
+      !navigator.locks
+    ) {
+      this.playRequested();
+      return;
+    }
+    if (this.claim) return;
+    const claim = new AbortController();
+    this.claim = claim;
+    void navigator.locks
+      .request(
+        "babybox-panel-alarm-audio",
+        { signal: claim.signal },
+        async () => {
+          if (claim.signal.aborted) return;
+          const released = new Promise<void>((resolve) => {
+            claim.signal.addEventListener("abort", () => resolve(), {
+              once: true,
+            });
+          });
+          this.ownsAudio = true;
+          this.playRequested();
+          await released;
+        },
+      )
+      .catch(() => {
+        // If the browser cannot arbitrate, keep alarms audible.
+        if (this.claim === claim && !claim.signal.aborted) {
+          this.ownsAudio = false;
+          this.playRequested();
+        }
+      })
+      .finally(() => {
+        if (this.claim === claim) this.claim = undefined;
+      });
+  }
 
-    const howl = this.loadHowl(name, loop);
+  private playRequested() {
+    this.playing?.stop();
+    const request = this.requested;
+    if (!request) return;
+
+    const howl = this.loadHowl(request.name, request.loop);
     if (howl === null) return;
 
     this.playing = howl;
@@ -95,5 +141,10 @@ class BabyboxSoundPlayer {
 
   stopSound() {
     this.playing?.stop();
+    this.playing = null;
+    this.requested = undefined;
+    this.ownsAudio = false;
+    this.claim?.abort();
+    this.claim = undefined;
   }
 }
