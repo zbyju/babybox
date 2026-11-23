@@ -59,6 +59,57 @@
       <p v-else-if="!settings" role="status">Načítání nastavení…</p>
     </section>
 
+    <section
+      v-if="section === 'overview' && settings"
+      class="card smtp-diagnostics"
+    >
+      <h4>Diagnostika SMTP</h4>
+      <dl>
+        <dt>Příjem na panelu</dt>
+        <dd>
+          {{ status?.listener ?? "Stav neznámý" }}
+        </dd>
+        <dt>Připojení k odchozímu serveru</dt>
+        <dd>{{ outboundStatus }}</dd>
+      </dl>
+      <p v-if="smtpCheck?.msg || (!checkingSmtp && status?.error)" class="hint">
+        {{ smtpCheck?.msg || status?.error }}
+      </p>
+      <div class="actions">
+        <BaseButton
+          :disabled="busy || checkingSmtp"
+          variant="primary"
+          @click="diagnose('recheck-listener')"
+        >
+          Zkontrolovat příjem
+        </BaseButton>
+        <BaseButton
+          :disabled="busy || checkingSmtp || !status?.runtimeSupported"
+          variant="primary"
+          @click="diagnose('check-smtp')"
+        >
+          Ověřit připojení
+        </BaseButton>
+        <BaseButton
+          v-if="status?.canRepairListener && !restartAfterRepair"
+          :disabled="busy || checkingSmtp"
+          variant="accent"
+          @click="diagnose('repair-listener')"
+        >
+          Opravit oprávnění portu 25
+        </BaseButton>
+        <BaseButton
+          v-if="restartAfterRepair"
+          :disabled="busy || checkingSmtp || Boolean(status?.queue.length)"
+          variant="accent"
+          @click="diagnose('restart-after-listener-repair')"
+        >
+          Restartovat panel a použít opravu
+        </BaseButton>
+      </div>
+      <p v-if="diagnosticMessage" role="status">{{ diagnosticMessage }}</p>
+    </section>
+
     <template v-if="relayWorkspace">
       <p v-if="receiving && !status && !statusUnavailable" role="status">
         Načítání stavu…
@@ -166,20 +217,17 @@
           <BaseButton
             variant="accent"
             type="submit"
-            :disabled="busy || editingRecipients"
+            :disabled="busy || checkingSmtp || editingRecipients"
             >Uložit nastavení</BaseButton
           >
         </form>
-        <p v-if="settingsMessage" class="notice" role="status">
+        <p
+          class="settings-feedback"
+          :class="{ notice: settingsMessage }"
+          role="status"
+        >
           {{ settingsMessage }}
         </p>
-        <div v-if="receiving && status" class="smtp-health">
-          <span>{{ status.listener }}</span>
-          <span :class="{ warning: status.error }">{{ outboundStatus }}</span>
-          <InlineHelp v-if="status.error" label="Podrobnosti chyby SMTP">{{
-            status.error
-          }}</InlineHelp>
-        </div>
         <details v-if="receiving" class="smtp-test">
           <summary>Ověřit odesílání</summary>
           <p class="hint">
@@ -650,6 +698,10 @@
     () => editingUnitRecipients.value || editingCameraRecipients.value,
   );
   const testRecipient = ref("");
+  const checkingSmtp = ref(false);
+  const restartAfterRepair = ref(false);
+  const smtpCheck = ref<{ ok: boolean; msg: string }>();
+  const diagnosticMessage = ref("");
   const selected = ref<string[]>([]);
   const confirmation = ref<"delete" | "clear" | null>(null);
   const confirmationIds = ref<string[]>([]);
@@ -677,13 +729,16 @@
     status.value?.history.find((record) => record.id === testId.value),
   );
   const outboundStatus = computed(() => {
-    if (!status.value) return "Stav odesílání zatím není k dispozici.";
+    if (checkingSmtp.value) return "Probíhá kontrola";
+    if (smtpCheck.value)
+      return smtpCheck.value.ok ? "Připojení funguje" : "Připojení selhalo";
+    if (!status.value) return "Stav neznámý";
     if (!status.value.runtimeSupported)
       return "Odesílání v této verzi není dostupné.";
     if (!status.value.configured)
       return "Chybí server, přihlašovací jméno nebo heslo.";
     if (status.value.error) return "Odesílání hlásí chybu";
-    return "Údaje k účtu jsou vyplněné";
+    return "Stav neznámý";
   });
   const sourceName = (id: string) =>
     id === "test"
@@ -839,11 +894,17 @@
     }
   }
   async function refresh() {
-    if (receiving.value) await readStatus();
+    if (settings.value) await readStatus();
     if (!disposed) refreshTimer = setTimeout(refresh, 5000);
   }
   async function save() {
-    if (busy.value || editingRecipients.value || !settings.value) return;
+    if (
+      busy.value ||
+      checkingSmtp.value ||
+      editingRecipients.value ||
+      !settings.value
+    )
+      return;
     busy.value = true;
     try {
       const response = await fetchWithTimeout(`${CONFIGER_API_URL}/main`, {
@@ -858,18 +919,57 @@
         savedRouting.value = routing.value;
         testId.value = "";
         testMessage.value = "";
+        smtpCheck.value = undefined;
+        diagnosticMessage.value = "";
         statusRequest++;
-        status.value = undefined;
       }
       settingsMessage.value = result.ok
         ? "Nastavení bylo uloženo a panel ho už používá. Pro ověření odešlete zkušební e-mail."
         : "Nastavení se uložilo, ale panel ho zatím nepoužívá. Zkuste uložit znovu.";
-      if (receiving.value) await readStatus();
+      await readStatus();
     } catch {
       settingsMessage.value =
         "Uložení se nepodařilo potvrdit. Obnovte stránku a zkontrolujte uložené údaje.";
     } finally {
       busy.value = false;
+    }
+  }
+  async function diagnose(
+    action:
+      | "check-smtp"
+      | "recheck-listener"
+      | "repair-listener"
+      | "restart-after-listener-repair",
+  ) {
+    if (checkingSmtp.value || busy.value) return;
+    checkingSmtp.value = true;
+    diagnosticMessage.value = "";
+    if (action === "check-smtp") smtpCheck.value = undefined;
+    try {
+      const response = await fetchWithTimeout(
+        `${backendApi().baseUrl}/email/${action}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          timeout: action === "repair-listener" ? 95_000 : 75_000,
+        },
+      );
+      const result = await decodeJson(response, emailActionResultSchema);
+      if (action === "check-smtp" && result.ok !== undefined)
+        smtpCheck.value = { ok: result.ok, msg: result.msg };
+      else {
+        diagnosticMessage.value = result.msg;
+        if (action === "repair-listener" && result.restartAvailable)
+          restartAfterRepair.value = true;
+        if (action === "restart-after-listener-repair" && response.ok)
+          restartAfterRepair.value = false;
+      }
+      await readStatus();
+    } catch {
+      diagnosticMessage.value = "Výsledek kontroly se nepodařilo načíst.";
+    } finally {
+      checkingSmtp.value = false;
     }
   }
   async function act(action: EmailAction, body: unknown) {
@@ -1203,13 +1303,16 @@
     display grid
     align-content start
     gap 4px
-  .smtp-health
-    display flex
-    flex-wrap wrap
-    align-items center
-    gap 6px 14px
-    font-size .9rem
-    color #c4c7de
+  .smtp-diagnostics
+    dl
+      display grid
+      grid-template-columns minmax(0, 1fr) minmax(0, 2fr)
+      gap 6px 14px
+      margin 0
+    dd
+      margin 0
+  .settings-feedback
+    min-block-size 3rem
   .smtp-test
     border-top 1px solid #3b3763
     padding-top 10px

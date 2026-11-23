@@ -28,6 +28,7 @@ const emailRecord = z.object({
 
 export const emailStatusSchema = z.object({
   listener: z.string(),
+  canRepairListener: z.boolean().optional(),
   error: z.string().nullable(),
   historyError: z.string().nullable(),
   configured: z.boolean(),
@@ -50,6 +51,8 @@ export const emailStatusSchema = z.object({
 export const emailActionResultSchema = z.object({
   msg: z.string(),
   id: z.string().optional(),
+  ok: z.boolean().optional(),
+  restartAvailable: z.boolean().optional(),
 });
 
 export type EmailStatus = z.infer<typeof emailStatusSchema>;

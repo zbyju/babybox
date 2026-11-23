@@ -9,6 +9,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 import { EmailRelay } from "./email/relay.js";
+import { repairListenerPermission } from "./email/listenerRepair.js";
 import { object } from "./email/settings.js";
 import { fetchConfig } from "./fetch/fetchConfig.js";
 import { jsonErrors } from "./middleware/jsonErrors.js";
@@ -153,6 +154,8 @@ async function main() {
   app.use(prefix + "/reload", reloadRoute);
 
   const email = new EmailRelay(() => config);
+  let listenerRepairPendingRestart = false;
+  let listenerRepairInProgress = false;
   app.get(prefix + "/email", (_req, res) => res.send(email.status()));
   app.post(prefix + "/email/:action", async (req, res) => {
     try {
@@ -163,6 +166,73 @@ async function main() {
       }
       const body: unknown = req.body;
       const fields = object(body) ? body : {};
+      if (action === "check-smtp") {
+        res.send(await email.checkOutbound());
+        return;
+      }
+      if (action === "recheck-listener") {
+        email.recheckListener();
+        res.send({ msg: "Panel znovu zkontroluje příjem SMTP." });
+        return;
+      }
+      if (
+        action === "repair-listener" ||
+        action === "restart-after-listener-repair"
+      ) {
+        const localOrigin = `http://localhost:${port}`;
+        const peer = req.socket.remoteAddress;
+        if (
+          !["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(peer ?? "") ||
+          req.get("host") !== `localhost:${port}` ||
+          req.get("origin") !== localOrigin ||
+          !req.is("application/json")
+        ) {
+          res
+            .status(403)
+            .send({ msg: "Opravu spusťte přímo na počítači panelu." });
+          return;
+        }
+        if (action === "restart-after-listener-repair") {
+          if (
+            !listenerRepairPendingRestart ||
+            process.env["pm_id"] === undefined ||
+            email.status().queue.length
+          ) {
+            res
+              .status(409)
+              .send({
+                msg: "Panel nyní nelze bezpečně restartovat. Zkontrolujte frontu nebo použijte běžný restart panelu.",
+              });
+            return;
+          }
+          listenerRepairPendingRestart = false;
+          res.once("finish", () => setTimeout(() => process.exit(0), 250));
+          res.send({ msg: "Panel se restartuje a znovu zkontroluje port 25." });
+          return;
+        }
+        if (listenerRepairInProgress || !email.status().canRepairListener) {
+          res
+            .status(409)
+            .send({ msg: "Oprávnění příjmu SMTP nyní nelze opravit." });
+          return;
+        }
+        listenerRepairInProgress = true;
+        try {
+          await repairListenerPermission();
+          listenerRepairPendingRestart = true;
+          res.send({
+            msg: "Oprávnění bylo nastaveno. Restartujte panel, aby ho mohl použít.",
+            restartAvailable: process.env["pm_id"] !== undefined,
+          });
+        } catch {
+          res.status(409).send({
+            msg: "Oprávnění se nepodařilo nastavit. Zkontrolujte schválení správcem a dostupnost pkexec a setcap.",
+          });
+        } finally {
+          listenerRepairInProgress = false;
+        }
+        return;
+      }
       if (action === "test") {
         const recipient = fields["recipient"];
         const id = await email.test(

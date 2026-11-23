@@ -23,7 +23,12 @@ import {
   sourceFor,
   supportedRuntime,
 } from "./settings.js";
-import { classifyFailure, routedContent, submit } from "./transport.js";
+import {
+  classifyFailure,
+  routedContent,
+  submit,
+  verifySmtp,
+} from "./transport.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +49,7 @@ export class EmailRelay {
   private settingKey = "";
   private configurationError: string | null = null;
   private nextBindAt = 0;
+  private bindPermissionDenied = false;
   private started = false;
   private readonly ready: Promise<void>;
   private listenPort = 25;
@@ -90,6 +96,7 @@ export class EmailRelay {
   private async updateListener(enabled: boolean): Promise<void> {
     if (!this.started || !supportedRuntime(this.runtime)) return;
     if (!enabled) {
+      this.bindPermissionDenied = false;
       const server = this.server;
       if (server?.server.listening)
         await new Promise<void>((resolve) => server.close(resolve));
@@ -100,8 +107,10 @@ export class EmailRelay {
     this.nextBindAt = Date.now() + 30_000;
     try {
       await this.listen(this.listenPort, this.listenHost);
+      this.bindPermissionDenied = false;
     } catch (error) {
       const code = object(error) ? error["code"] : undefined;
+      this.bindPermissionDenied = code === "EACCES" || code === "EPERM";
       const port = this.listenPort;
       if (code === "EACCES" || code === "EPERM")
         this.listener = `Příjem SMTP nelze spustit. Panel nemá oprávnění naslouchat na portu ${port} (${code}).`;
@@ -458,6 +467,10 @@ export class EmailRelay {
     }
     return {
       listener: this.listener,
+      canRepairListener:
+        this.bindPermissionDenied &&
+        process.platform === "linux" &&
+        this.startupListenerEnabled(),
       error:
         settingsChanged && supportedRuntime(this.runtime)
           ? null
@@ -473,6 +486,36 @@ export class EmailRelay {
       bytes: this.queue.bytes,
       history: this.history.list(),
     };
+  }
+
+  private startupListenerEnabled(): boolean {
+    try {
+      return emailSettings(this.getConfig()).listener === "enabled";
+    } catch {
+      return false;
+    }
+  }
+
+  recheckListener(): void {
+    this.nextBindAt = 0;
+  }
+
+  async checkOutbound(): Promise<{ ok: boolean; msg: string }> {
+    if (!supportedRuntime(this.runtime))
+      return {
+        ok: false,
+        msg: "SMTP není v tomto běhovém prostředí dostupné.",
+      };
+    const settings = emailSettings(this.getConfig());
+    try {
+      await verifySmtp(settings);
+      return {
+        ok: true,
+        msg: "Připojení a přihlášení k SMTP serveru funguje.",
+      };
+    } catch (error) {
+      return { ok: false, msg: diagnostic(error, settings) };
+    }
   }
 
   async action(

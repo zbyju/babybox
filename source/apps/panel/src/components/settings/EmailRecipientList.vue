@@ -1,7 +1,11 @@
 <template>
   <fieldset class="recipient-list" :disabled="disabled">
     <legend>{{ label }}</legend>
-    <div v-if="editing" class="recipient-editor">
+    <div
+      class="recipient-editor"
+      :class="{ inactive: !editing }"
+      :inert="!editing"
+    >
       <label :for="inputId">
         {{
           editingIndex === null
@@ -24,10 +28,9 @@
         @keydown.esc.prevent="cancel"
       />
       <p
-        v-if="error"
         :id="inputId + '-error'"
         class="recipient-error"
-        role="alert"
+        :role="error ? 'alert' : undefined"
       >
         {{ error }}
       </p>
@@ -41,30 +44,32 @@
       </div>
     </div>
 
-    <ul v-if="recipients.length" class="recipient-rows">
-      <li v-for="(address, index) in recipients" :key="address">
-        <span>{{ address }}</span>
-        <div class="recipient-actions">
-          <BaseButton
-            size="small"
-            variant="primary"
-            :aria-label="`Upravit adresu ${address}`"
-            :disabled="editing"
-            @click="start(index)"
-            >Upravit</BaseButton
-          >
-          <BaseButton
-            size="small"
-            variant="error"
-            :aria-label="`Odebrat adresu ${address}`"
-            :disabled="editing"
-            @click="remove(index)"
-            >Odebrat</BaseButton
-          >
-        </div>
-      </li>
-    </ul>
-    <p v-else class="recipient-empty">Žádní adresáti</p>
+    <div class="recipient-scroll">
+      <ul v-if="recipients.length" class="recipient-rows">
+        <li v-for="(address, index) in recipients" :key="address">
+          <span>{{ address }}</span>
+          <div class="recipient-actions">
+            <BaseButton
+              size="small"
+              variant="primary"
+              :aria-label="`Upravit adresu ${address}`"
+              :disabled="editing"
+              @click="start(index)"
+              >Upravit</BaseButton
+            >
+            <BaseButton
+              size="small"
+              variant="error"
+              :aria-label="`Odebrat adresu ${address}`"
+              :disabled="editing"
+              @click="remove(index)"
+              >Odebrat</BaseButton
+            >
+          </div>
+        </li>
+      </ul>
+      <p v-else class="recipient-empty">Žádní adresáti</p>
+    </div>
 
     <BaseButton
       ref="addButton"
@@ -215,6 +220,13 @@
     padding 10px
     background #191638
     border-radius 6px
+    &.inactive
+      visibility hidden
+
+  .recipient-scroll
+    block-size 8rem
+    overflow-y auto
+    scrollbar-gutter stable
 
   .recipient-rows
     list-style none
@@ -248,4 +260,5 @@
 
   .recipient-error
     color #ffc0cb
+    min-height 2.5em
 </style>

@@ -186,6 +186,35 @@ describe("email maintenance page", () => {
     expect(reloadBackendConfig).toHaveBeenCalledOnce();
   });
 
+  it("shows the listener separately from the result of checking outbound SMTP", async () => {
+    expect(element.querySelector(".smtp-diagnostics")?.textContent).toContain(
+      "Stav neznámý",
+    );
+    vi.mocked(fetchWithTimeout).mockImplementation(
+      async (url) =>
+        new Response(
+          JSON.stringify(
+            String(url).endsWith("/check-smtp")
+              ? { ok: true, msg: "Přihlášení ověřeno." }
+              : state,
+          ),
+        ),
+    );
+    const button = [
+      ...element.querySelectorAll(".smtp-diagnostics button"),
+    ].find((item) => item.textContent?.includes("Ověřit připojení"));
+    if (!(button instanceof HTMLButtonElement))
+      throw new Error("Expected SMTP check button");
+    button.click();
+    await flush();
+    expect(element.querySelector(".smtp-diagnostics")?.textContent).toContain(
+      "Připojení funguje",
+    );
+    expect(element.querySelector(".smtp-diagnostics")?.textContent).toContain(
+      state.listener,
+    );
+  });
+
   it("shows routing and summary counts first, then gives detail rows their own view", async () => {
     expect(element.querySelector(".routing-card h2")?.textContent).toContain(
       "Jak se odesílají e-maily?",

@@ -78,13 +78,7 @@ type CreateTransport = (options: Record<string, unknown>) => {
   close(): void;
 };
 
-export async function submit(
-  settings: EmailSettings,
-  sender: string,
-  recipient: string,
-  raw: Buffer,
-  createTransport?: CreateTransport
-): Promise<string> {
+function transportOptions(settings: EmailSettings) {
   if (
     !settings.host.trim() ||
     !settings.user ||
@@ -96,20 +90,12 @@ export async function submit(
       { code: "EAUTH" }
     );
   }
-  if ((sender && !mailbox(sender)) || !mailbox(recipient)) {
-    throw Object.assign(new Error("Neplatný odesílatel nebo adresát."), {
-      responseCode: 550,
-    });
-  }
-  // Lazy load: deployed Node 18 panels must still boot and monitor normally.
-  const connect: CreateTransport =
-    createTransport ?? (await import("nodemailer")).default.createTransport;
-  const transport = connect({
+  return {
     host: settings.host.trim(),
     port: 465,
     secure: true,
     auth: { user: settings.user, pass: settings.password },
-    tls: { rejectUnauthorized: true, minVersion: "TLSv1.2" },
+    tls: { rejectUnauthorized: true, minVersion: "TLSv1.2" as const },
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
     socketTimeout: 30_000,
@@ -118,7 +104,37 @@ export async function submit(
     debug: false,
     disableFileAccess: true,
     disableUrlAccess: true,
-  });
+  };
+}
+
+export async function verifySmtp(settings: EmailSettings): Promise<void> {
+  const options = transportOptions(settings);
+  const { default: nodemailer } = await import("nodemailer");
+  const transport = nodemailer.createTransport(options);
+  try {
+    await transport.verify();
+  } finally {
+    transport.close();
+  }
+}
+
+export async function submit(
+  settings: EmailSettings,
+  sender: string,
+  recipient: string,
+  raw: Buffer,
+  createTransport?: CreateTransport
+): Promise<string> {
+  const options = transportOptions(settings);
+  if ((sender && !mailbox(sender)) || !mailbox(recipient)) {
+    throw Object.assign(new Error("Neplatný odesílatel nebo adresát."), {
+      responseCode: 550,
+    });
+  }
+  // Lazy load: deployed Node 18 panels must still boot and monitor normally.
+  const connect: CreateTransport =
+    createTransport ?? (await import("nodemailer")).default.createTransport;
+  const transport = connect(options);
   try {
     const result = await transport.sendMail({
       envelope: { from: sender, to: [recipient] },

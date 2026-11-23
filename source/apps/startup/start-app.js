@@ -50,6 +50,33 @@ function appSpec(name, sourceDir) {
   return null;
 }
 
+function prepareSmtpPort(run, exe) {
+  try {
+    const threshold = Number(
+      fs.readFileSync("/proc/sys/net/ipv4/ip_unprivileged_port_start", "utf8")
+    );
+    if (threshold <= 25) return;
+    const bun = path.join(os.homedir(), ".bun", "bin", "bun");
+    if (exe !== bun || fs.realpathSync(bun) !== bun) return;
+    const probe = childProcess.spawnSync("/usr/sbin/getcap", [bun], {
+      encoding: "utf8",
+      timeout: 2000,
+    });
+    if (/\bcap_net_bind_service=ep\b/.test(probe.stdout || "")) return;
+    const prepared = childProcess.spawnSync(
+      "/usr/bin/sudo",
+      ["-n", "/usr/sbin/setcap", "cap_net_bind_service=ep", bun],
+      { stdio: "ignore", timeout: 5000 }
+    );
+    if (prepared.status !== 0)
+      run.stdout.write(
+        "Port SMTP 25 vyžaduje oprávnění správce. Opravu lze spustit v panelu.\n"
+      );
+  } catch {
+    // Keep monitoring available if the operating system cannot prepare SMTP.
+  }
+}
+
 function readText(filePath) {
   try {
     return fs.readFileSync(filePath, "utf8");
@@ -188,6 +215,8 @@ function start(name, options) {
   }
   const runtime = chooseRuntime(run);
   if (runtime.kind === "BUN") {
+    if (name === "main" && run.platform === "linux")
+      prepareSmtpPort(run, runtime.exe);
     // The app's GET /status runs bun -v from PATH.
     bootstrap.prependPath(run.env, path.dirname(runtime.exe));
     const other =
