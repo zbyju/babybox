@@ -100,9 +100,15 @@ export class EmailRelay {
     this.nextBindAt = Date.now() + 30_000;
     try {
       await this.listen(this.listenPort, this.listenHost);
-    } catch {
-      this.listener =
-        "Příjem SMTP nelze spustit. Zkontrolujte port a oprávnění.";
+    } catch (error) {
+      const code = object(error) ? error["code"] : undefined;
+      const port = this.listenPort;
+      if (code === "EACCES" || code === "EPERM")
+        this.listener = `Příjem SMTP nelze spustit. Panel nemá oprávnění naslouchat na portu ${port} (${code}).`;
+      else if (code === "EADDRINUSE")
+        this.listener = `Příjem SMTP nelze spustit. Port ${port} je obsazený (EADDRINUSE).`;
+      else
+        this.listener = `Příjem SMTP nelze spustit. Zkontrolujte port ${port} a oprávnění.`;
     }
   }
 
@@ -207,7 +213,7 @@ export class EmailRelay {
       this.listener = "Chyba příjmu SMTP. Zkontrolujte port a oprávnění.";
     });
     return new Promise((resolve, reject) => {
-      const failed = () => reject(new Error("SMTP bind failed"));
+      const failed = (error: Error) => reject(error);
       server.once("error", failed);
       server.listen(port, host, () => {
         server.removeListener("error", failed);
@@ -259,7 +265,7 @@ export class EmailRelay {
     // Device settings may have changed while MIME parsing was running.
     if (!test && !this.allowed(ip))
       throw smtpError("Zdroj již není povolen.", 554);
-    const admitted = this.queue.enqueue(raw, receivedAt);
+    const admitted = this.queue.enqueue(raw, receivedAt, test);
     this.discard(admitted.discarded);
     if (admitted.id === undefined)
       throw smtpError("Fronta nemá dostatečnou kapacitu.", 452);

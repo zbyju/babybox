@@ -227,6 +227,40 @@ describe("email relay isolation and recipient tracking", () => {
     expect(relay.status().error).toContain("535 second");
   });
 
+  it("lets a new test verify SMTP during an authentication pause without restarting", async () => {
+    const rejected = Object.assign(new Error("535 authentication failed"), {
+      code: "EAUTH",
+      responseCode: 535,
+    });
+    send.mockRejectedValueOnce(rejected).mockRejectedValueOnce(rejected);
+    await relay.test("first@example.com");
+    await relay.tick();
+    await relay.receive(
+      "127.0.0.1",
+      "unit@example.com",
+      ["alarm@example.com"],
+      raw
+    );
+    await relay.tick();
+    expect(send).toHaveBeenCalledTimes(1);
+
+    await relay.test("second@example.com");
+    await relay.tick();
+    await relay.tick();
+    expect(send.mock.calls.map((call) => call[2])).toEqual([
+      "first@example.com",
+      "second@example.com",
+    ]);
+
+    await relay.test("third@example.com");
+    await relay.tick();
+    await relay.tick();
+    expect(send.mock.calls.slice(2).map((call) => call[2])).toEqual([
+      "third@example.com",
+      "alarm@example.com",
+    ]);
+  });
+
   it("pauses a camera with no panel recipients while units keep delivering", async () => {
     settings.mode = "panel";
     settings.unitRecipients = "units@example.com";
@@ -473,7 +507,7 @@ describe("email relay isolation and recipient tracking", () => {
         "24.22.2"
       );
       await blocked.start(port, "127.0.0.1");
-      expect(blocked.status().listener).toMatch(/nelze spustit/);
+      expect(blocked.status().listener).toContain("EADDRINUSE");
       await relay.close();
       vi.useFakeTimers({ toFake: ["Date"] });
       try {

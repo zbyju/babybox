@@ -21,6 +21,7 @@ interface Entry {
   dueAt: number;
   stopped: boolean;
   routePaused: boolean;
+  testProbe: boolean;
 }
 
 export type AttemptResult =
@@ -86,7 +87,8 @@ export class EmailQueue {
 
   enqueue(
     content: Buffer,
-    receivedAt = this.now()
+    receivedAt = this.now(),
+    testProbe = false
   ): {
     id?: number;
     rejected?: "too-large" | "busy";
@@ -121,6 +123,7 @@ export class EmailQueue {
       dueAt: receivedAt,
       stopped: false,
       routePaused: false,
+      testProbe,
     };
     this.entries.push(entry);
     return { id: entry.id, discarded };
@@ -131,16 +134,15 @@ export class EmailQueue {
     discarded: DiscardedEmail[];
   } {
     const discarded = this.expire();
-    if (
-      this.active ||
-      this.connectionPaused ||
-      this.now() < this.cooldownUntil
-    ) {
+    if (this.active || this.now() < this.cooldownUntil) {
       return { discarded };
     }
     const eligible = this.entries.filter(
       (entry) =>
-        !entry.stopped && !entry.routePaused && entry.dueAt <= this.now()
+        !entry.stopped &&
+        !entry.routePaused &&
+        entry.dueAt <= this.now() &&
+        (!this.connectionPaused || entry.testProbe)
     );
     // Unattempted arrivals first. Among retries, newest receipt first as well.
     eligible.sort(
@@ -149,6 +151,7 @@ export class EmailQueue {
     const entry = eligible[0];
     if (!entry) return { discarded };
     this.active = entry;
+    entry.testProbe = false;
     entry.attempts++;
     return {
       message: {
@@ -165,6 +168,7 @@ export class EmailQueue {
     if (!entry || entry.id !== id) throw new Error("No matching active email");
     this.active = undefined;
     if (result === "complete") {
+      this.connectionPaused = false;
       this.entries = this.entries.filter((item) => item !== entry);
     } else {
       if (result === "permanent") entry.stopped = true;
@@ -227,7 +231,7 @@ export class EmailQueue {
       dueAt: entry.dueAt,
       active: entry === this.active,
       stopped: entry.stopped,
-      paused: entry.routePaused || this.connectionPaused,
+      paused: entry.routePaused || (this.connectionPaused && !entry.testProbe),
     }));
   }
 
