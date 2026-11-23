@@ -142,7 +142,7 @@
             :disabled="busy || checkingSmtp"
           />
         </div>
-        <p class="settings-feedback" role="status">{{ recipientMessage }}</p>
+        <p class="recipient-feedback" role="status">{{ recipientMessage }}</p>
       </section>
 
       <section
@@ -1338,7 +1338,9 @@
     .metric-danger
       color #ffc0cb
   .recipient-groups
-    margin-bottom 14px
+    align-items start
+  .recipient-feedback
+    min-block-size 1.5em
   .password-field
     display grid
     align-content start

@@ -1,18 +1,7 @@
 <template>
   <fieldset class="recipient-list" :disabled="disabled">
     <legend>{{ label }}</legend>
-    <div
-      class="recipient-editor"
-      :class="{ inactive: !editing }"
-      :inert="!editing"
-    >
-      <label :for="inputId">
-        {{
-          editingIndex === null
-            ? "Nová e-mailová adresa"
-            : "Upravit e-mailovou adresu"
-        }}
-      </label>
+    <form class="recipient-editor" @submit.prevent="apply">
       <BaseInput
         :id="inputId"
         ref="addressInput"
@@ -21,28 +10,34 @@
         inputmode="email"
         autocomplete="email"
         maxlength="320"
+        placeholder="E-mailová adresa"
+        :aria-label="`${editing ? 'Upravit e-mailovou adresu' : 'Nová e-mailová adresa'} · ${label}`"
         :aria-invalid="!!error"
         :aria-describedby="error ? inputId + '-error' : undefined"
         @update:model-value="error = ''"
-        @keydown.enter.prevent="apply"
         @keydown.esc.prevent="cancel"
       />
-      <p
-        :id="inputId + '-error'"
-        class="recipient-error"
-        :role="error ? 'alert' : undefined"
-      >
-        {{ error }}
-      </p>
       <div class="recipient-actions">
-        <BaseButton size="small" variant="primary" @click="apply">
-          {{ editingIndex === null ? "Přidat" : "Uložit změnu" }}
+        <BaseButton size="small" type="submit" variant="secondary">
+          {{ editing ? "Uložit" : "Přidat" }}
         </BaseButton>
-        <BaseButton size="small" variant="secondary" @click="cancel"
+        <BaseButton
+          v-if="editing"
+          size="small"
+          variant="secondary"
+          @click="cancel"
           >Zrušit</BaseButton
         >
       </div>
-    </div>
+    </form>
+    <p
+      v-if="error"
+      :id="inputId + '-error'"
+      class="recipient-error"
+      role="alert"
+    >
+      {{ error }}
+    </p>
 
     <div class="recipient-scroll">
       <ul v-if="recipients.length" class="recipient-rows">
@@ -70,16 +65,6 @@
       </ul>
       <p v-else class="recipient-empty">Žádní adresáti</p>
     </div>
-
-    <BaseButton
-      ref="addButton"
-      size="small"
-      variant="secondary"
-      :aria-label="`Přidat adresu · ${label}`"
-      :disabled="editing"
-      @click="start(null)"
-      >Přidat adresu</BaseButton
-    >
   </fieldset>
 </template>
 
@@ -95,27 +80,33 @@
     disabled?: boolean;
     save: (value: string) => Promise<boolean>;
   }>();
-  const editing = ref(false);
   const recipients = computed(() => [
     ...new Set(props.value.split(/[\s,;]+/).filter(Boolean)),
   ]);
   const inputId = useId();
   const addressInput = useTemplateRef("addressInput");
-  const addButton = useTemplateRef("addButton");
   const editingIndex = ref<number | null>(null);
-  const draft = ref("");
+  const editing = computed(() => editingIndex.value !== null);
+  const newAddress = ref("");
+  const editAddress = ref("");
+  const draft = computed({
+    get: () => (editing.value ? editAddress.value : newAddress.value),
+    set: (value: string) => {
+      if (editing.value) editAddress.value = value;
+      else newAddress.value = value;
+    },
+  });
   const error = ref("");
   let editTrigger: HTMLElement | null = null;
 
-  function start(index: number | null) {
+  function start(index: number) {
     editTrigger =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
     editingIndex.value = index;
-    draft.value = index === null ? "" : (recipients.value[index] ?? "");
+    editAddress.value = recipients.value[index] ?? "";
     error.value = "";
-    editing.value = true;
     void nextTick(() => {
       const input = addressInput.value?.$el;
       if (input instanceof HTMLInputElement) {
@@ -159,7 +150,12 @@
         "Seznam je příliš dlouhý. Nejdřív odeberte některou adresu.";
       return;
     }
-    if (await props.save(serialized)) finish();
+    if (await props.save(serialized)) {
+      if (index === null) newAddress.value = "";
+      editingIndex.value = null;
+      error.value = "";
+      focusInput();
+    }
   }
 
   async function remove(index: number) {
@@ -167,29 +163,24 @@
     const next = recipients.value
       .filter((_, position) => position !== index)
       .join(",");
-    if (await props.save(next)) focusAdd();
-  }
-
-  function finish() {
-    editing.value = false;
-    editingIndex.value = null;
-    focusAdd();
+    if (await props.save(next)) focusInput();
   }
 
   function cancel() {
-    editing.value = false;
+    if (!editing.value) return;
     editingIndex.value = null;
+    error.value = "";
     if (editTrigger?.isConnected) {
       void nextTick(() => editTrigger?.focus());
     } else {
-      focusAdd();
+      focusInput();
     }
   }
 
-  function focusAdd() {
+  function focusInput() {
     void nextTick(() => {
-      const button = addButton.value?.$el;
-      if (button instanceof HTMLElement) button.focus();
+      const input = addressInput.value?.$el;
+      if (input instanceof HTMLInputElement) input.focus();
     });
   }
 </script>
@@ -210,15 +201,15 @@
 
   .recipient-editor
     display grid
-    gap 6px
-    padding 10px
-    background #191638
-    border-radius 6px
-    &.inactive
-      visibility hidden
+    grid-template-columns minmax(0, 1fr) auto
+    align-items center
+    gap 8px
+    :deep(input)
+      width 100%
+      min-width 0
 
   .recipient-scroll
-    block-size 8rem
+    max-block-size 8rem
     overflow-y auto
     scrollbar-gutter stable
 
@@ -242,9 +233,6 @@
     flex-wrap wrap
     gap 6px
 
-  .recipient-list > button
-    justify-self start
-
   .recipient-empty, .recipient-error
     margin 0
     font-size .9rem
@@ -254,5 +242,4 @@
 
   .recipient-error
     color #ffc0cb
-    min-height 2.5em
 </style>

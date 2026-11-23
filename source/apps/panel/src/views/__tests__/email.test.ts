@@ -368,12 +368,8 @@ describe("email maintenance page", () => {
       if (!input) throw new Error("Expected recipient editor");
       input.value = address;
       input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "Enter",
-          bubbles: true,
-          cancelable: true,
-        }),
+      input.form?.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true }),
       );
     };
     click(units, "Upravit adresu first@example.test");
@@ -388,19 +384,22 @@ describe("email maintenance page", () => {
     expect(units?.textContent).toContain("updated@example.test");
     expect(units?.textContent).not.toContain("first@example.test");
 
-    click(camera, "Přidat adresu · Adresáti kamery");
-    await flush();
+    const cameraInput = camera?.querySelector("input");
+    if (!cameraInput)
+      throw new Error("Expected an always-visible camera recipient input");
+    expect(cameraInput.closest("[inert]")).toBeNull();
     enterAddress(camera, "invalid");
     await flush();
     expect(camera?.querySelector('[role="alert"]')).not.toBeNull();
-    const cameraInput = camera?.querySelector("input");
-    if (!cameraInput) throw new Error("Expected camera recipient input");
     cameraInput.value = "new-camera@example.test";
     cameraInput.dispatchEvent(new Event("input", { bubbles: true }));
     [...camera.querySelectorAll(".recipient-editor button")]
       .find((button) => button.textContent?.trim() === "Přidat")
       ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     await flush();
+    expect(camera?.querySelector("input")).toBe(cameraInput);
+    expect(cameraInput.value).toBe("");
+    expect(document.activeElement).toBe(cameraInput);
     expect(camera?.querySelector(".recipient-rows")?.textContent).toContain(
       "new-camera@example.test",
     );
