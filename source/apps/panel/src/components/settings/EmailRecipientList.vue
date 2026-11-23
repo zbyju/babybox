@@ -36,9 +36,9 @@
       </p>
       <div class="recipient-actions">
         <BaseButton size="small" variant="primary" @click="apply">
-          {{ editingIndex === null ? "Přidat do seznamu" : "Potvrdit úpravu" }}
+          {{ editingIndex === null ? "Přidat" : "Uložit změnu" }}
         </BaseButton>
-        <BaseButton size="small" variant="primary" @click="cancel"
+        <BaseButton size="small" variant="secondary" @click="cancel"
           >Zrušit</BaseButton
         >
       </div>
@@ -51,7 +51,7 @@
           <div class="recipient-actions">
             <BaseButton
               size="small"
-              variant="primary"
+              variant="secondary"
               :aria-label="`Upravit adresu ${address}`"
               :disabled="editing"
               @click="start(index)"
@@ -59,7 +59,7 @@
             >
             <BaseButton
               size="small"
-              variant="error"
+              variant="secondary"
               :aria-label="`Odebrat adresu ${address}`"
               :disabled="editing"
               @click="remove(index)"
@@ -74,7 +74,7 @@
     <BaseButton
       ref="addButton"
       size="small"
-      variant="primary"
+      variant="secondary"
       :aria-label="`Přidat adresu · ${label}`"
       :disabled="editing"
       @click="start(null)"
@@ -84,23 +84,20 @@
 </template>
 
 <script lang="ts" setup>
-  import {
-    computed,
-    nextTick,
-    onBeforeUnmount,
-    ref,
-    useId,
-    useTemplateRef,
-  } from "vue";
+  import { computed, nextTick, ref, useId, useTemplateRef } from "vue";
 
   import BaseButton from "@/components/panel/HTMLElements/BaseButton.vue";
   import BaseInput from "@/components/panel/HTMLElements/BaseInput.vue";
 
-  defineProps<{ label: string; disabled?: boolean }>();
-  const value = defineModel<string>({ required: true });
-  const editing = defineModel<boolean>("editing", { required: true });
+  const props = defineProps<{
+    label: string;
+    value: string;
+    disabled?: boolean;
+    save: (value: string) => Promise<boolean>;
+  }>();
+  const editing = ref(false);
   const recipients = computed(() => [
-    ...new Set(value.value.split(/[\s,;]+/).filter(Boolean)),
+    ...new Set(props.value.split(/[\s,;]+/).filter(Boolean)),
   ]);
   const inputId = useId();
   const addressInput = useTemplateRef("addressInput");
@@ -128,7 +125,8 @@
     });
   }
 
-  function apply() {
+  async function apply() {
+    if (props.disabled) return;
     const address = draft.value.trim();
     if (
       !/^[^\s@<>,;]+@[^\s@<>,;]+$/u.test(address) ||
@@ -161,15 +159,15 @@
         "Seznam je příliš dlouhý. Nejdřív odeberte některou adresu.";
       return;
     }
-    value.value = serialized;
-    finish();
+    if (await props.save(serialized)) finish();
   }
 
-  function remove(index: number) {
-    value.value = recipients.value
+  async function remove(index: number) {
+    if (props.disabled || editing.value) return;
+    const next = recipients.value
       .filter((_, position) => position !== index)
       .join(",");
-    focusAdd();
+    if (await props.save(next)) focusAdd();
   }
 
   function finish() {
@@ -194,10 +192,6 @@
       if (button instanceof HTMLElement) button.focus();
     });
   }
-
-  onBeforeUnmount(() => {
-    editing.value = false;
-  });
 </script>
 
 <style scoped lang="stylus">

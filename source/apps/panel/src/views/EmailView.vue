@@ -78,14 +78,14 @@
       <div class="actions">
         <BaseButton
           :disabled="busy || checkingSmtp"
-          variant="primary"
+          variant="secondary"
           @click="diagnose('recheck-listener')"
         >
           Zkontrolovat příjem
         </BaseButton>
         <BaseButton
           :disabled="busy || checkingSmtp || !status?.runtimeSupported"
-          variant="primary"
+          variant="secondary"
           @click="diagnose('check-smtp')"
         >
           Ověřit připojení
@@ -123,6 +123,29 @@
       </p>
 
       <section
+        v-if="section === 'overview' && routing === 'panel' && settings"
+        class="card recipient-card"
+      >
+        <h3>Správa adresátů</h3>
+        <p class="hint">Změny v seznamech se ukládají automaticky.</p>
+        <div class="account-fields recipient-groups">
+          <EmailRecipientList
+            :value="settings.unitRecipients"
+            :save="(value) => saveRecipients('unitRecipients', value)"
+            label="Adresáti jednotek"
+            :disabled="busy || checkingSmtp"
+          />
+          <EmailRecipientList
+            :value="settings.cameraRecipients"
+            :save="(value) => saveRecipients('cameraRecipients', value)"
+            label="Adresáti kamery"
+            :disabled="busy || checkingSmtp"
+          />
+        </div>
+        <p class="settings-feedback" role="status">{{ recipientMessage }}</p>
+      </section>
+
+      <section
         v-if="section === 'overview' && settings"
         class="card smtp-setup"
       >
@@ -135,23 +158,6 @@
           </InlineHelp>
         </div>
         <form @submit.prevent="save">
-          <div
-            v-if="routing === 'panel'"
-            class="account-fields recipient-groups"
-          >
-            <EmailRecipientList
-              v-model="settings.unitRecipients"
-              v-model:editing="editingUnitRecipients"
-              label="Adresáti jednotek"
-              :disabled="busy"
-            />
-            <EmailRecipientList
-              v-model="settings.cameraRecipients"
-              v-model:editing="editingCameraRecipients"
-              label="Adresáti kamery"
-              :disabled="busy"
-            />
-          </div>
           <fieldset
             :disabled="busy"
             class="account-fields"
@@ -186,15 +192,31 @@
                   autocomplete="new-password"
                 />
                 <BaseButton
-                  variant="primary"
+                  variant="secondary"
+                  class="password-toggle"
                   type="button"
+                  :aria-label="showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'"
+                  :title="showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'"
                   :aria-pressed="showPassword"
                   aria-controls="email-password"
                   @click="showPassword = !showPassword"
-                  >{{
-                    showPassword ? "Skrýt heslo" : "Zobrazit heslo"
-                  }}</BaseButton
                 >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"
+                    />
+                    <circle cx="12" cy="12" r="2.5" />
+                    <path v-if="showPassword" d="m3 3 18 18" />
+                  </svg>
+                </BaseButton>
               </div>
             </div>
             <div class="sender-field">
@@ -217,7 +239,7 @@
           <BaseButton
             variant="accent"
             type="submit"
-            :disabled="busy || checkingSmtp || editingRecipients"
+            :disabled="busy || checkingSmtp"
             >Uložit nastavení</BaseButton
           >
         </form>
@@ -279,7 +301,7 @@
           <div class="overview-card-title">
             <h3>Fronta zpráv</h3>
             <BaseButton
-              variant="primary"
+              variant="secondary"
               data-detail="queue"
               @click="openDetail('queue')"
               >Zobrazit frontu</BaseButton
@@ -313,7 +335,7 @@
           <div class="overview-card-title">
             <h3>Historie zpráv</h3>
             <BaseButton
-              variant="primary"
+              variant="secondary"
               data-detail="history"
               @click="openDetail('history')"
               >Zobrazit historii</BaseButton
@@ -366,7 +388,7 @@
       </section>
 
       <div v-if="section !== 'overview'" class="detail-toolbar">
-        <BaseButton variant="primary" @click="returnToOverview"
+        <BaseButton variant="secondary" @click="returnToOverview"
           >Zpět na přehled e-mailů</BaseButton
         >
       </div>
@@ -407,7 +429,7 @@
             </label>
             <div class="actions">
               <BaseButton
-                variant="primary"
+                variant="secondary"
                 :disabled="busy || !selected.length || !!confirmation"
                 @click="act('retry', { ids: selected })"
                 >Zkusit odeslat znovu</BaseButton
@@ -451,7 +473,7 @@
                 >
                 <BaseButton
                   ref="cancelButton"
-                  variant="primary"
+                  variant="secondary"
                   :disabled="busy"
                   @click="cancelConfirmation"
                   >Zrušit</BaseButton
@@ -692,11 +714,7 @@
   const testId = ref("");
   const showPassword = ref(false);
   const busy = ref(false);
-  const editingUnitRecipients = ref(false);
-  const editingCameraRecipients = ref(false);
-  const editingRecipients = computed(
-    () => editingUnitRecipients.value || editingCameraRecipients.value,
-  );
+  const recipientMessage = ref("");
   const testRecipient = ref("");
   const checkingSmtp = ref(false);
   const restartAfterRepair = ref(false);
@@ -897,23 +915,57 @@
     if (settings.value) await readStatus();
     if (!disposed) refreshTimer = setTimeout(refresh, 5000);
   }
+  async function patchEmail(email: Partial<Settings>) {
+    const response = await fetchWithTimeout(`${CONFIGER_API_URL}/main`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+      timeout: CONFIGER_TIMEOUT,
+    });
+    if (!response.ok) throw new Error("Email settings were not saved");
+  }
+
+  async function saveRecipients(
+    field: "unitRecipients" | "cameraRecipients",
+    value: string,
+  ): Promise<boolean> {
+    const current = settings.value;
+    if (busy.value || checkingSmtp.value || !current) return false;
+    if (current[field] === value) return true;
+    busy.value = true;
+    recipientMessage.value = "Ukládám adresáty…";
+    try {
+      await patchEmail({ [field]: value });
+      current[field] = value;
+      const result = await reloadBackendConfig().catch(() => ({ ok: false }));
+      recipientMessage.value = result.ok
+        ? "Adresáti uloženi."
+        : "Adresáti jsou uloženi, ale panel změnu zatím nepoužívá. Zkuste uložit nastavení znovu.";
+      void readStatus();
+      return true;
+    } catch {
+      recipientMessage.value =
+        "Uložení adresátů se nepodařilo potvrdit. Zkuste to znovu.";
+      return false;
+    } finally {
+      busy.value = false;
+    }
+  }
+
   async function save() {
-    if (
-      busy.value ||
-      checkingSmtp.value ||
-      editingRecipients.value ||
-      !settings.value
-    )
-      return;
+    if (busy.value || checkingSmtp.value || !settings.value) return;
     busy.value = true;
     try {
-      const response = await fetchWithTimeout(`${CONFIGER_API_URL}/main`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: settings.value }),
-        timeout: CONFIGER_TIMEOUT,
+      const { listener, mode, host, user, password, senderOverride } =
+        settings.value;
+      await patchEmail({
+        listener,
+        mode,
+        host,
+        user,
+        password,
+        senderOverride,
       });
-      if (!response.ok) throw new Error();
       const result = await reloadBackendConfig();
       if (result.ok) {
         savedRouting.value = routing.value;
@@ -1292,6 +1344,13 @@
     align-content start
     gap 4px
     min-width 0
+  .password-toggle
+    width 40px
+    padding 0
+    svg
+      display block
+      width 20px
+      height 20px
   .password-input
     display flex
     gap 8px

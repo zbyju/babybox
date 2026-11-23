@@ -88,6 +88,14 @@
     background-color color-primary
     background-image linear-gradient(120deg, color-primary 0%, #4A148C 40%, color-primary-hover 70%, color-primary 100%)
 
+  .base-button.variant-secondary
+    background-color transparent
+    box-shadow inset 0 0 0 1px #716b95
+
+  .base-button.variant-secondary:hover:not(:disabled)
+    background-color rgba(195, 182, 255, .12)
+    animation none
+
   .base-button.variant-success
     background-color color-success
     background-image linear-gradient(120deg, color-success 0%, #00E5A0 40%, color-success-hover 70%, color-success 100%)

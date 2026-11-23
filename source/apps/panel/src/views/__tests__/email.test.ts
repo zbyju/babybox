@@ -181,7 +181,14 @@ describe("email maintenance page", () => {
     const patch: unknown =
       typeof body === "string" ? JSON.parse(body) : undefined;
     expect(patch).toEqual({
-      email: { ...defaultConfig().email, listener: "enabled" },
+      email: {
+        listener: "enabled",
+        mode: "device",
+        host: "",
+        user: "",
+        password: "",
+        senderOverride: "",
+      },
     });
     expect(reloadBackendConfig).toHaveBeenCalledOnce();
   });
@@ -287,7 +294,14 @@ describe("email maintenance page", () => {
     const patch: unknown =
       typeof body === "string" ? JSON.parse(body) : undefined;
     expect(patch).toEqual({
-      email: { ...defaultConfig().email, listener: "disabled" },
+      email: {
+        listener: "disabled",
+        mode: "device",
+        host: "",
+        user: "",
+        password: "",
+        senderOverride: "",
+      },
     });
     expect(element.querySelector('input[type="email"]')).toBeNull();
     expect(element.querySelector(".history-row")).toBeNull();
@@ -339,7 +353,10 @@ describe("email maintenance page", () => {
     app.mount(element);
     await flush();
 
-    const [units, camera] = element.querySelectorAll(".recipient-list");
+    expect(element.querySelector(".smtp-setup .recipient-list")).toBeNull();
+    const [units, camera] = element.querySelectorAll(
+      ".recipient-card .recipient-list",
+    );
     expect(units?.textContent).toContain("second@example.test");
     expect(camera?.textContent).toContain("camera@example.test");
     const click = (group: Element | undefined, label: string) =>
@@ -359,18 +376,13 @@ describe("email maintenance page", () => {
         }),
       );
     };
-    const save = element.querySelector<HTMLButtonElement>(
-      ".smtp-setup button[type=submit]",
-    );
     click(units, "Upravit adresu first@example.test");
     await flush();
-    expect(save?.disabled).toBe(true);
     enterAddress(units, "second@example.test");
     await flush();
     expect(units?.querySelector('[role="alert"]')?.textContent).toContain(
       "už je",
     );
-    expect(save?.disabled).toBe(true);
     enterAddress(units, "updated@example.test");
     await flush();
     expect(units?.textContent).toContain("updated@example.test");
@@ -381,30 +393,34 @@ describe("email maintenance page", () => {
     enterAddress(camera, "invalid");
     await flush();
     expect(camera?.querySelector('[role="alert"]')).not.toBeNull();
-    enterAddress(camera, "new-camera@example.test");
+    const cameraInput = camera?.querySelector("input");
+    if (!cameraInput) throw new Error("Expected camera recipient input");
+    cameraInput.value = "new-camera@example.test";
+    cameraInput.dispatchEvent(new Event("input", { bubbles: true }));
+    [...camera.querySelectorAll(".recipient-editor button")]
+      .find((button) => button.textContent?.trim() === "Přidat")
+      ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     await flush();
+    expect(camera?.querySelector(".recipient-rows")?.textContent).toContain(
+      "new-camera@example.test",
+    );
     click(camera, "Odebrat adresu camera@example.test");
     await flush();
 
-    expect(
-      vi
-        .mocked(fetchWithTimeout)
-        .mock.calls.some(([, options]) => options?.method === "PATCH"),
-    ).toBe(false);
-    expect(save?.disabled).toBe(false);
-    save?.click();
-    await flush();
-    const body = vi
+    const writes = vi
       .mocked(fetchWithTimeout)
-      .mock.calls.find(([, options]) => options?.method === "PATCH")?.[1]?.body;
-    const patch: unknown =
-      typeof body === "string" ? JSON.parse(body) : undefined;
-    expect(patch).toMatchObject({
-      email: {
-        unitRecipients: "updated@example.test,second@example.test",
-        cameraRecipients: "new-camera@example.test",
+      .mock.calls.filter(([, options]) => options?.method === "PATCH")
+      .map(([, options]) => JSON.parse(String(options?.body)));
+    expect(writes).toEqual([
+      { email: { unitRecipients: "updated@example.test,second@example.test" } },
+      {
+        email: {
+          cameraRecipients: "camera@example.test,new-camera@example.test",
+        },
       },
-    });
+      { email: { cameraRecipients: "new-camera@example.test" } },
+    ]);
+    expect(reloadBackendConfig).toHaveBeenCalledTimes(3);
   });
 
   it("requires an inline confirmation before deleting and never opens a blocking dialog", async () => {

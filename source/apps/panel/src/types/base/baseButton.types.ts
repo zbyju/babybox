@@ -4,6 +4,7 @@
  */
 export const BUTTON_VARIANTS = [
   "primary",
+  "secondary",
   "success",
   "error",
   "warning",
