@@ -363,8 +363,12 @@ describe("email maintenance page", () => {
       group
         ?.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)
         ?.click();
-    const enterAddress = (group: Element | undefined, address: string) => {
-      const input = group?.querySelector("input");
+    const enterAddress = (
+      group: Element | undefined,
+      address: string,
+      selector = "input",
+    ) => {
+      const input = group?.querySelector<HTMLInputElement>(selector);
       if (!input) throw new Error("Expected recipient editor");
       input.value = address;
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -372,14 +376,18 @@ describe("email maintenance page", () => {
         new Event("submit", { bubbles: true, cancelable: true }),
       );
     };
+    const unitAddField = units?.querySelector<HTMLInputElement>("input");
+    expect(unitAddField?.value).toBe("");
     click(units, "Upravit adresu first@example.test");
     await flush();
-    enterAddress(units, "second@example.test");
+    expect(units?.querySelector("input")).toBe(unitAddField);
+    expect(unitAddField?.value).toBe("");
+    enterAddress(units, "second@example.test", "li input");
     await flush();
     expect(units?.querySelector('[role="alert"]')?.textContent).toContain(
       "už je",
     );
-    enterAddress(units, "updated@example.test");
+    enterAddress(units, "updated@example.test", "li input");
     await flush();
     expect(units?.textContent).toContain("updated@example.test");
     expect(units?.textContent).not.toContain("first@example.test");

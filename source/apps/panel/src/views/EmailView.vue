@@ -126,8 +126,10 @@
         v-if="section === 'overview' && routing === 'panel' && settings"
         class="card recipient-card"
       >
-        <h3>Správa adresátů</h3>
-        <p class="hint">Změny v seznamech se ukládají automaticky.</p>
+        <div class="recipient-heading">
+          <h3>Správa adresátů</h3>
+          <span class="hint" role="status">{{ recipientMessage }}</span>
+        </div>
         <div class="account-fields recipient-groups">
           <EmailRecipientList
             :value="settings.unitRecipients"
@@ -142,7 +144,6 @@
             :disabled="busy || checkingSmtp"
           />
         </div>
-        <p class="recipient-feedback" role="status">{{ recipientMessage }}</p>
       </section>
 
       <section
@@ -1339,8 +1340,15 @@
       color #ffc0cb
   .recipient-groups
     align-items start
-  .recipient-feedback
-    min-block-size 1.5em
+  .recipient-card
+    gap 6px
+    padding 10px 12px
+  .recipient-heading
+    display flex
+    flex-wrap wrap
+    align-items baseline
+    justify-content space-between
+    gap 4px 12px
   .password-field
     display grid
     align-content start
