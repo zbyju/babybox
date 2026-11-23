@@ -36,6 +36,7 @@ set "BUN_DIR=%USERPROFILE%\.bun\bin"
 set "BUN_EXE=%BUN_DIR%\bun.exe"
 set "HOLD_FILE=%USERPROFILE%\.bun\cpu-hold"
 set "PATH=%BUN_DIR%;%PATH%"
+set "BUN_READY=0"
 
 call :main
 set "RC=%ERRORLEVEL%"
@@ -50,6 +51,7 @@ if not exist "%VERSIONS%" goto :main_no_versions
 call :read_versions
 if errorlevel 1 goto :main_bad_versions
 call :ensure_bun
+if not errorlevel 1 set "BUN_READY=1"
 goto :main_after_bun
 
 :main_os_skip
@@ -69,17 +71,15 @@ goto :run_deps
 call :log "versions.env je neuplny - kontrolu verzi preskakuji"
 
 :run_deps
-call :deps_ok
-if errorlevel 1 call :log "Zavislosti chybi - panel presto spoustim"
 cd /d "%STARTUP_DIR%"
 if errorlevel 1 goto :main_no_dir
-call pnpm run start
+call node check-startup-deps.js
+if errorlevel 1 call :install_startup_deps
+call pnpm run start >>"%LOG_FILE%" 2>&1
 set "PNPM_RC=!ERRORLEVEL!"
 exit /b !PNPM_RC!
 
 :start_held_panel
-call :deps_ok
-if errorlevel 1 call :log "Zavislosti chybi - panel presto spoustim"
 cd /d "%STARTUP_DIR%"
 if errorlevel 1 goto :main_no_dir
 call pnpm run start 2>>"%LOG_FILE%"
@@ -340,9 +340,16 @@ exit /b 0
 call :log "pm2 se nepodarilo nainstalovat"
 exit /b 1
 
-:deps_ok
-if not exist "%STARTUP_DIR%\node_modules\pino" exit /b 1
-if not exist "%STARTUP_DIR%\..\backend\node_modules\express" exit /b 1
-if not exist "%STARTUP_DIR%\..\configer\node_modules\express" exit /b 1
-if not exist "%STARTUP_DIR%\..\panel\node_modules\vue" exit /b 1
-exit /b 0
+:install_startup_deps
+call :log "Zavislosti startup chybi nebo maji jinou verzi. Instaluji workspace."
+if not "!BUN_READY!"=="1" goto :install_startup_deps_no_bun
+pushd "%SOURCE_DIR%"
+if errorlevel 1 exit /b 1
+"%BUN_EXE%" install --frozen-lockfile >>"%LOG_FILE%" 2>&1
+set "INSTALL_RC=!ERRORLEVEL!"
+popd
+if not "!INSTALL_RC!"=="0" call :log "Instalace zavislosti selhala - zkousim spustit panel."
+exit /b !INSTALL_RC!
+:install_startup_deps_no_bun
+call :log "Bun neni pripraven - zkousim spustit panel."
+exit /b 1

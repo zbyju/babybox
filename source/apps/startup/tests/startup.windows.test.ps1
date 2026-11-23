@@ -140,6 +140,8 @@ function Reset-Case {
   $script:OsRelease = "10.0.17763"
   $script:UseRealVer = $false
   $script:OmitVersions = $false
+  $script:CheckDepsExit = "0"
+  $script:InstallExit = "0"
 }
 
 function New-BunStub([string]$Dest) {
@@ -162,6 +164,11 @@ public class BunStub {
     if (printed == null) printed = "";
     if (args.Length > 0 && args[0] == "-v" && printed.Length > 0) {
       Console.WriteLine(printed);
+    }
+    if (args.Length > 0 && args[0] == "install") {
+      int installCode = 0;
+      int.TryParse(Environment.GetEnvironmentVariable("INSTALL_EXIT"), out installCode);
+      return installCode;
     }
     string code = Environment.GetEnvironmentVariable("STUB_BUN_EXIT");
     if (code == "-1073741795" || code == "3221225501") return -1073741795;
@@ -306,6 +313,7 @@ exit /b 1
 @echo off
 setlocal EnableDelayedExpansion
 >>"%CALLS%" echo node %*
+if "%~1"=="check-startup-deps.js" exit /b %CHECK_DEPS_EXIT%
 if "%~2"=="" exit /b 1
 if "%~5"=="" exit /b 1
 for %%D in ("%~5") do set "DIR=%%~dpD"
@@ -357,6 +365,8 @@ exit /b 99
   $psi.EnvironmentVariables["PM2_UPDATE_EXIT"] = $script:Pm2UpdateExit
   $psi.EnvironmentVariables["STUB_BUN_PRINT"] = $script:StubBunPrint
   $psi.EnvironmentVariables["STUB_BUN_EXIT"] = $script:StubBunExit
+  $psi.EnvironmentVariables["CHECK_DEPS_EXIT"] = $script:CheckDepsExit
+  $psi.EnvironmentVariables["INSTALL_EXIT"] = $script:InstallExit
   if ($script:UseRealVer) {
     if ($psi.EnvironmentVariables.ContainsKey("BABYBOX_OS_RELEASE")) {
       [void]$psi.EnvironmentVariables.Remove("BABYBOX_OS_RELEASE")
@@ -658,35 +668,32 @@ Expect-NotCalled "bun-windows-x64.zip"
 Expect-Called "pnpm run start"
 Expect-Rc 0
 
-Write-Host "missing pino is logged and the panel still starts"
+Write-Host "missing startup dependencies are installed before the panel starts"
 Reset-Case
-$script:SeedDeps = "startup/winston backend/express configer/express panel/vue"
+$script:CheckDepsExit = "1"
 Invoke-Case
-Expect-Log "Zavislosti chybi"
+Expect-Log "Zavislosti startup chybi"
+Expect-Called "bun install --frozen-lockfile"
 Expect-Called "pnpm run start"
 Expect-Rc 0
 
-Write-Host "missing vue is logged and the panel still starts"
+Write-Host "failed dependency installation still attempts startup"
 Reset-Case
-$script:SeedDeps = "startup/pino backend/express configer/express"
+$script:CheckDepsExit = "1"
+$script:InstallExit = "1"
 Invoke-Case
-Expect-Log "Zavislosti chybi"
+Expect-Log "Instalace zavislosti selhala"
 Expect-Called "pnpm run start"
 Expect-Rc 0
 
-Write-Host "missing backend express is logged and the panel still starts"
+Write-Host "missing Bun does not attempt dependency installation"
 Reset-Case
-$script:SeedDeps = "startup/pino configer/express panel/vue"
+$script:CheckDepsExit = "1"
+$script:StubBunMissing = $true
+$script:CurlFail = "1"
 Invoke-Case
-Expect-Log "Zavislosti chybi"
-Expect-Called "pnpm run start"
-Expect-Rc 0
-
-Write-Host "missing configer express is logged and the panel still starts"
-Reset-Case
-$script:SeedDeps = "startup/pino backend/express panel/vue"
-Invoke-Case
-Expect-Log "Zavislosti chybi"
+Expect-Log "Bun neni pripraven"
+Expect-NotCalled "bun install"
 Expect-Called "pnpm run start"
 Expect-Rc 0
 
