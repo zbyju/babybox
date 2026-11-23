@@ -221,25 +221,14 @@ ensure_pm2() {
   fi
 }
 
-# The startup app loads pino.
-deps_ok() {
-  local probe app pkg
-  for probe in startup:pino backend:express configer:express panel:vue; do
-    app="${probe%%:*}"
-    pkg="${probe#*:}"
-    if [ ! -d "$BABYBOX_DIR/source/apps/$app/node_modules/$pkg" ]; then
-      return 1
-    fi
-  done
-}
-
 main() {
   log "Start"
+  local bun_ready=0
   if [ -f "$STARTUP_DIR/versions.env" ]; then
     # shellcheck disable=SC1090,SC1091
     . "$STARTUP_DIR/versions.env"
     if require_versions; then
-      ensure_bun || true
+      if ensure_bun; then bun_ready=1; fi
       ensure_npm_prefix || true
       ensure_pm2 || true
     else
@@ -249,15 +238,21 @@ main() {
     log "versions.env chybi — kontrolu verzi preskakuji"
   fi
 
-  if ! deps_ok; then
-    log "Zavislosti chybi — panel presto spoustim"
-  fi
-
   cd "$STARTUP_DIR" || {
     log "Adresar $STARTUP_DIR neexistuje — koncim"
     exit 1
   }
-  pnpm run start --ubuntu
+  if ! node check-startup-deps.js; then
+    log "Zavislosti startup chybi nebo maji jinou verzi. Instaluji workspace."
+    if [ "$bun_ready" = 1 ]; then
+      if ! (cd "$BABYBOX_DIR/source" && run "$HOME/.bun/bin/bun" install --frozen-lockfile); then
+        log "Instalace zavislosti selhala — zkousim spustit panel."
+      fi
+    else
+      log "Bun neni pripraven — zkousim spustit panel."
+    fi
+  fi
+  pnpm run start --ubuntu >>"$LOG_FILE" 2>&1
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then

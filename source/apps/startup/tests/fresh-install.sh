@@ -72,6 +72,44 @@ check_services() {
 }
 
 check_services
+# Simulate a checkout whose old installation cannot load the new startup app.
+# The login launcher must repair the workspace before invoking the updater.
+node - <<'EOF'
+const fs = require("fs");
+const path = require("path");
+const startup = path.resolve("apps/startup");
+const entry = require.resolve("dotenv", { paths: [startup] });
+let dir = path.dirname(entry);
+while (!fs.existsSync(path.join(dir, "package.json"))) {
+  const parent = path.dirname(dir);
+  if (parent === dir) throw new Error("dotenv package root not found");
+  dir = parent;
+}
+const hidden = dir + ".fixture-hidden";
+if (fs.existsSync(hidden)) throw new Error("fixture path already exists");
+fs.renameSync(dir, hidden);
+fs.writeFileSync(path.join(startup, "..", "..", "logs", "hidden-dep-fixture.json"), JSON.stringify(hidden));
+EOF
+if node apps/startup/check-startup-deps.js; then
+  echo "Startup probe did not detect the missing dependency" >&2
+  exit 1
+fi
+if "$windows"; then
+  launcher="$sandbox/appdata/Microsoft/Windows/Start Menu/Programs/Startup/Babybox.bat"
+  test -f "$launcher"
+  run_batch "$launcher"
+else
+  bash apps/startup/scripts/ubuntu/startup.sh
+fi
+node apps/startup/check-startup-deps.js
+check_services
+node - <<'EOF'
+const fs = require("fs");
+const marker = "logs/hidden-dep-fixture.json";
+const hidden = JSON.parse(fs.readFileSync(marker, "utf8"));
+fs.rmSync(hidden, { recursive: true, force: true });
+fs.unlinkSync(marker);
+EOF
 curl -fsS -X PATCH -H 'Content-Type: application/json' \
   --data '{"babybox":{"name":"Fresh install fixture"}}' "$config_api/config/main" \
   >"$sandbox/saved.json"

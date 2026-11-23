@@ -81,13 +81,22 @@ echo "PATH=$PATH" >> "$CALLS"
 exit 0
 EOF
 
+  cat > "$bin/node" <<'EOF'
+#!/bin/bash
+echo "node $*" >> "$CALLS"
+if [ "${1:-}" = "check-startup-deps.js" ]; then
+  exit "${CHECK_DEPS_EXIT:-0}"
+fi
+exit 1
+EOF
+
   cat > "$bin/n" <<'EOF'
 #!/bin/bash
 echo "n $*" >> "$CALLS"
 exit 1
 EOF
 
-  chmod +x "$bin/npm" "$bin/pm2" "$bin/pnpm" "$bin/n"
+  chmod +x "$bin/npm" "$bin/pm2" "$bin/pnpm" "$bin/n" "$bin/node"
 }
 
 write_curl() {
@@ -128,6 +137,9 @@ echo "bun \$*" >> "\$CALLS"
 if [ "\${1:-}" = "-v" ]; then
   printf '%s\n' "${print_version}"
 fi
+if [ "\${1:-}" = "install" ]; then
+  exit "\${INSTALL_EXIT:-0}"
+fi
 exit ${status}
 EOF
   chmod +x "$dest"
@@ -161,6 +173,8 @@ reset_case() {
   DROP_KEY=""
   REWRITE_SHA=0
   SEED_DEPS="$ALL_PROBES"
+  CHECK_DEPS_EXIT=0
+  INSTALL_EXIT=0
 }
 
 run_case() {
@@ -222,6 +236,8 @@ run_case() {
     NPM_INSTALL_EXIT="$NPM_INSTALL_EXIT" \
     PM2_UPDATE_EXIT="$PM2_UPDATE_EXIT" \
     CURL_FAIL="$CURL_FAIL" \
+    CHECK_DEPS_EXIT="$CHECK_DEPS_EXIT" \
+    INSTALL_EXIT="$INSTALL_EXIT" \
     bash "$startup_dir/scripts/ubuntu/startup.sh" >"$sandbox/stdout" 2>&1 &
   local pid=$!
   (
@@ -392,13 +408,32 @@ expect_not_called "curl "
 expect_called "pnpm run start --ubuntu"
 expect_rc 0
 
-echo "chybi pino -> log, winston nestaci, panel nabehne"
+echo "missing startup dependency installs before starting"
 reset_case
-SEED_DEPS="startup/winston backend/express configer/express panel/vue"
+CHECK_DEPS_EXIT=1
 run_case
-expect_log "Zavislosti chybi"
+expect_log "Zavislosti startup chybi"
+expect_called "bun install --frozen-lockfile"
 expect_called "pnpm run start --ubuntu"
 expect_rc 0
+
+echo "failed install is logged and startup is still attempted"
+reset_case
+CHECK_DEPS_EXIT=1
+INSTALL_EXIT=1
+run_case
+expect_log "Instalace zavislosti selhala"
+expect_called "pnpm run start --ubuntu"
+
+echo "missing Bun does not run install"
+reset_case
+CHECK_DEPS_EXIT=1
+STUB_BUN_MISSING=1
+CURL_FAIL=1
+run_case
+expect_log "Bun neni pripraven"
+expect_not_called "bun install"
+expect_called "pnpm run start --ubuntu"
 
 echo "git pull se nespousti"
 reset_case
@@ -417,8 +452,8 @@ else
   fail "install-all.sh nema pin Bun"
 fi
 
-echo "startup.sh sonda je pino"
-if grep -q 'startup:pino' "$SRC_STARTUP/scripts/ubuntu/startup.sh" \
+echo "startup.sh checks the startup dependency probe"
+if grep -q 'check-startup-deps.js' "$SRC_STARTUP/scripts/ubuntu/startup.sh" \
   && ! grep -q 'winston' "$SRC_STARTUP/scripts/ubuntu/startup.sh"
 then
   pass
