@@ -16,6 +16,7 @@ const buildHowl = (name: string): Howl => {
     autoplay: false,
     preload: true,
     loop: true,
+    mute: import.meta.env.MODE === "local-ai",
   });
   howls.set(name, howl);
   /*

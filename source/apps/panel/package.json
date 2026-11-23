@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
+    "dev:local-ai": "vite --mode local-ai",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --port 5050",
     "test:unit": "vitest --environment jsdom",
