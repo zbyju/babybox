@@ -112,6 +112,63 @@ describe("email maintenance page", () => {
     expect(element.querySelector('input[type="password"]')).toBeTruthy();
   });
 
+  it("reveals and hides the password without submitting or changing it", async () => {
+    const input = element.querySelector<HTMLInputElement>("#email-password");
+    if (!input) throw new Error("Expected password input");
+    input.value = "test password";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    const button = element.querySelector<HTMLButtonElement>(
+      '[aria-controls="email-password"]',
+    );
+    expect(input.type).toBe("password");
+    expect(button?.getAttribute("aria-pressed")).toBe("false");
+    button?.click();
+    await flush();
+    expect(input.type).toBe("text");
+    expect(input.value).toBe("test password");
+    expect(button?.getAttribute("aria-pressed")).toBe("true");
+    button?.click();
+    await flush();
+    expect(input.type).toBe("password");
+    expect(input.value).toBe("test password");
+    expect(vi.mocked(reloadBackendConfig)).not.toHaveBeenCalled();
+  });
+
+  it("clears the previous test result and refreshes status after a successful save", async () => {
+    vi.mocked(fetchWithTimeout).mockImplementation(
+      async (_url, options) =>
+        new Response(
+          JSON.stringify(
+            options?.method === "POST" ? { msg: "Hotovo", id: "one" } : state,
+          ),
+        ),
+    );
+    const recipient = element.querySelector<HTMLInputElement>(
+      '.smtp-test input[type="email"]',
+    );
+    if (!recipient) throw new Error("Expected test recipient input");
+    recipient.value = "recipient@example.test";
+    recipient.dispatchEvent(new Event("input", { bubbles: true }));
+    element
+      .querySelector<HTMLFormElement>(".smtp-test form")
+      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+    expect(element.querySelector(".smtp-test .status")).not.toBeNull();
+    const beforeSave = vi.mocked(fetchWithTimeout).mock.calls.length;
+    element
+      .querySelector<HTMLFormElement>(".smtp-setup > form")
+      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+    expect(element.querySelector(".smtp-test .status")).toBeNull();
+    expect(element.textContent).toContain(
+      "Pro ověření odešlete zkušební e-mail",
+    );
+    const calls = vi.mocked(fetchWithTimeout).mock.calls.slice(beforeSave);
+    expect(calls.some(([, options]) => options?.method === "PATCH")).toBe(true);
+    expect(calls.some(([url]) => String(url).endsWith("/email"))).toBe(true);
+    expect(calls.some(([, options]) => options?.method === "POST")).toBe(false);
+  });
+
   it("saves only email settings so unrelated device configuration is not overwritten", async () => {
     element
       .querySelector("form")

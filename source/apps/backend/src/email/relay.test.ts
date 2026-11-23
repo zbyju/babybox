@@ -175,7 +175,10 @@ describe("email relay isolation and recipient tracking", () => {
 
   it("queues without outbound settings, then delivers after settings change", async () => {
     send.mockRejectedValueOnce(
-      Object.assign(new Error("missing settings"), { code: "EAUTH" })
+      Object.assign(new Error("535 5.7.8 authentication failed"), {
+        code: "EAUTH",
+        responseCode: 535,
+      })
     );
     await relay.receive(
       "127.0.0.1",
@@ -186,9 +189,42 @@ describe("email relay isolation and recipient tracking", () => {
     await relay.tick();
     await relay.tick();
     expect(send).toHaveBeenCalledTimes(1);
+    expect(relay.status().error).toContain("535");
     settings.password = "new-secret";
+    expect(relay.status().error).toBeNull();
+    expect(
+      relay
+        .status()
+        .history[0]?.events.some((event) => event.detail.includes("535"))
+    ).toBe(true);
     await relay.tick();
     expect(send).toHaveBeenCalledTimes(2);
+    expect(send.mock.calls[1]?.[0].password).toBe("new-secret");
+    expect(relay.status().history[0]?.status).toBe("accepted");
+    expect(relay.status().error).toBeNull();
+  });
+
+  it("reports a fresh authentication failure after settings change", async () => {
+    send
+      .mockRejectedValueOnce(
+        Object.assign(new Error("535 first"), { code: "EAUTH" })
+      )
+      .mockRejectedValueOnce(
+        Object.assign(new Error("535 second"), { code: "EAUTH" })
+      );
+    await relay.receive(
+      "127.0.0.1",
+      "unit@example.com",
+      ["a@example.com"],
+      raw
+    );
+    await relay.tick();
+    expect(relay.status().error).toContain("535 first");
+    settings.user = "new-user@example.com";
+    expect(relay.status().error).toBeNull();
+    await relay.tick();
+    expect(send.mock.calls[1]?.[0].user).toBe("new-user@example.com");
+    expect(relay.status().error).toContain("535 second");
   });
 
   it("pauses a camera with no panel recipients while units keep delivering", async () => {

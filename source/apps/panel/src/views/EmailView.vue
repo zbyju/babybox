@@ -124,15 +124,28 @@
                 autocomplete="off"
               />
             </label>
-            <label
-              >Heslo k poštovnímu účtu
-              <BaseInput
-                v-model="settings.password"
-                type="password"
-                maxlength="1000"
-                autocomplete="new-password"
-              />
-            </label>
+            <div class="password-field">
+              <label for="email-password">Heslo k poštovnímu účtu</label>
+              <div class="password-input">
+                <BaseInput
+                  id="email-password"
+                  v-model="settings.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  maxlength="1000"
+                  autocomplete="new-password"
+                />
+                <BaseButton
+                  variant="primary"
+                  type="button"
+                  :aria-pressed="showPassword"
+                  aria-controls="email-password"
+                  @click="showPassword = !showPassword"
+                  >{{
+                    showPassword ? "Skrýt heslo" : "Zobrazit heslo"
+                  }}</BaseButton
+                >
+              </div>
+            </div>
             <div class="sender-field">
               <div class="section-title">
                 <label for="email-sender">Adresa odesílatele (volitelná)</label>
@@ -629,6 +642,7 @@
   const testMessage = ref("");
   const queueMessage = ref("");
   const testId = ref("");
+  const showPassword = ref(false);
   const busy = ref(false);
   const editingUnitRecipients = ref(false);
   const editingCameraRecipients = ref(false);
@@ -840,9 +854,15 @@
       });
       if (!response.ok) throw new Error();
       const result = await reloadBackendConfig();
-      if (result.ok) savedRouting.value = routing.value;
+      if (result.ok) {
+        savedRouting.value = routing.value;
+        testId.value = "";
+        testMessage.value = "";
+        statusRequest++;
+        status.value = undefined;
+      }
       settingsMessage.value = result.ok
-        ? "Nastavení bylo uloženo a panel ho už používá."
+        ? "Nastavení bylo uloženo a panel ho už používá. Pro ověření odešlete zkušební e-mail."
         : "Nastavení se uložilo, ale panel ho zatím nepoužívá. Zkuste uložit znovu.";
       if (receiving.value) await readStatus();
     } catch {
@@ -1167,6 +1187,18 @@
       color #ffc0cb
   .recipient-groups
     margin-bottom 14px
+  .password-field
+    display grid
+    align-content start
+    gap 4px
+    min-width 0
+  .password-input
+    display flex
+    gap 8px
+    min-width 0
+    align-items center
+    :deep(.base-input)
+      flex 1 1 auto
   .sender-field
     display grid
     align-content start

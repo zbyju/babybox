@@ -300,6 +300,7 @@ export class EmailRelay {
       const key = JSON.stringify(settings);
       if (key !== this.settingKey) {
         this.settingKey = key;
+        this.error = null;
         this.queue.resume();
         this.nextBindAt = 0;
       }
@@ -441,15 +442,20 @@ export class EmailRelay {
 
   status() {
     let configured = false;
+    let settingsChanged = false;
     try {
       const settings = emailSettings(this.getConfig());
       configured = Boolean(settings.host && settings.user && settings.password);
+      settingsChanged = JSON.stringify(settings) !== this.settingKey;
     } catch {
       /* reported by tick */
     }
     return {
       listener: this.listener,
-      error: this.configurationError ?? this.error,
+      error:
+        settingsChanged && supportedRuntime(this.runtime)
+          ? null
+          : (this.configurationError ?? this.error),
       historyError: this.history.error,
       runtimeSupported: supportedRuntime(this.runtime),
       configured,
