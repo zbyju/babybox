@@ -77,6 +77,48 @@ function prepareSmtpPort(run, exe) {
   }
 }
 
+function prepareWindowsSmtpPort(exe) {
+  // Install and login use the same backend launch path. Keep UAC outside the
+  // update health-check path so declining or delaying it cannot stop monitoring.
+  const powershell = path.join(
+    process.env["SystemRoot"] || "C:\\Windows",
+    "System32",
+    "WindowsPowerShell",
+    "v1.0",
+    "powershell.exe"
+  );
+  let command;
+  try {
+    const script = fs.readFileSync(
+      path.join(__dirname, "scripts", "windows", "prepare-smtp-firewall.ps1"),
+      "utf8"
+    );
+    const literal = (value) =>
+      "([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" +
+      Buffer.from(value, "utf8").toString("base64") +
+      "')))";
+    const logPath = path.join(SOURCE_DIR, "logs", "smtp-firewall.log");
+    command = "& {\n" + script + "\n} " + literal(exe) + " " + literal(logPath);
+  } catch (error) {
+    console.error("SMTP firewall setup:", error.message);
+    return;
+  }
+  const helper = childProcess.spawn(
+    powershell,
+    [
+      "-NoProfile",
+      "-NonInteractive",
+      "-EncodedCommand",
+      Buffer.from(command, "utf16le").toString("base64"),
+    ],
+    { detached: true, windowsHide: true, stdio: "ignore" }
+  );
+  helper.on("error", (error) =>
+    console.error("SMTP firewall setup:", error.message)
+  );
+  helper.unref();
+}
+
 function readText(filePath) {
   try {
     return fs.readFileSync(filePath, "utf8");
@@ -217,6 +259,12 @@ function start(name, options) {
   if (runtime.kind === "BUN") {
     if (name === "main" && run.platform === "linux")
       prepareSmtpPort(run, runtime.exe);
+    if (
+      name === "main" &&
+      process.platform === "win32" &&
+      run.platform === "win32"
+    )
+      prepareWindowsSmtpPort(runtime.exe);
     // The app's GET /status runs bun -v from PATH.
     bootstrap.prependPath(run.env, path.dirname(runtime.exe));
     const other =
